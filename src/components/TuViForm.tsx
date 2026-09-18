@@ -12,10 +12,23 @@ interface TuViFormProps {
   hasCustomKey?: boolean;
 }
 
-function compressImage(file: File, maxWidth = 800, quality = 0.65): Promise<string> {
+function isHeic(file: File): boolean {
+  const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
+  return (
+    name.endsWith('.heic') ||
+    name.endsWith('.heif') ||
+    type === 'image/heic' ||
+    type === 'image/heif' ||
+    type === 'image/heic-sequence' ||
+    type === 'image/heif-sequence'
+  );
+}
+
+function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
     reader.onload = (event) => {
       const img = new Image();
       img.src = event.target?.result as string;
@@ -62,21 +75,41 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
 
   const [anhMatBase64, setAnhMatBase64] = useState<string | undefined>(undefined);
   const [anhTayBase64, setAnhTayBase64] = useState<string | undefined>(undefined);
+  const [isConvertingMat, setIsConvertingMat] = useState(false);
+  const [isConvertingTay, setIsConvertingTay] = useState(false);
 
   const handleImageUpload = async (
     e: ChangeEvent<HTMLInputElement>,
-    setter: (val: string | undefined) => void
+    setter: (val: string | undefined) => void,
+    setConverting: (val: boolean) => void
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setConverting(true);
     try {
-      // Tự động nén ảnh về kích thước tối ưu (max 800px, quality 0.65)
-      const compressed = await compressImage(file, 800, 0.65);
+      let targetBlob: Blob = file;
+
+      // Hỗ trợ tự động chuyển đổi ảnh HEIC từ iPhone sang JPEG chuẩn
+      if (isHeic(file)) {
+        const heic2any = (await import('heic2any')).default;
+        const converted = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8,
+        });
+        targetBlob = Array.isArray(converted) ? converted[0] : converted;
+      }
+
+      // Tự động nén ảnh về kích thước tối ưu cho AI (max 800px, quality 0.65, ~60KB-80KB)
+      const compressed = await compressImage(targetBlob, 800, 0.65);
       setter(compressed);
     } catch (err) {
-      console.error('Lỗi nén ảnh:', err);
-      alert('Không thể đọc file ảnh này. Vui lòng chọn ảnh khác định dạng JPG hoặc PNG.');
+      console.error('Lỗi xử lý ảnh:', err);
+      alert('Không thể đọc định dạng ảnh này. Bạn vui lòng chụp hoặc chọn ảnh khác nhé!');
+    } finally {
+      setConverting(false);
+      e.target.value = '';
     }
   };
 
@@ -296,7 +329,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
                 <label className="block text-xs uppercase tracking-wider text-slate-300 font-medium mb-1">
                   Ảnh khuôn mặt (Diện tướng)
                 </label>
-                {anhMatBase64 ? (
+                {isConvertingMat ? (
+                  <div className="rounded-lg border border-amber-500/40 h-24 bg-slate-950/80 flex flex-col items-center justify-center p-2 text-center">
+                    <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1.5" />
+                    <span className="text-[11px] text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
+                  </div>
+                ) : anhMatBase64 ? (
                   <div className="relative rounded-lg overflow-hidden border border-amber-500/40 h-24 bg-slate-950 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -318,11 +356,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
                     <span className="text-xs text-slate-400 group-hover:text-slate-200">
                       Chọn ảnh mặt rõ nét
                     </span>
+                    <span className="text-[10px] text-slate-500">JPG, PNG, HEIC (iPhone)</span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.heic,.heif,image/heic,image/heif"
                       className="hidden"
-                      onChange={(e) => handleImageUpload(e, setAnhMatBase64)}
+                      onChange={(e) => handleImageUpload(e, setAnhMatBase64, setIsConvertingMat)}
                     />
                   </label>
                 )}
@@ -333,7 +372,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
                 <label className="block text-xs uppercase tracking-wider text-slate-300 font-medium mb-1">
                   Ảnh bàn tay (Thủ tướng)
                 </label>
-                {anhTayBase64 ? (
+                {isConvertingTay ? (
+                  <div className="rounded-lg border border-amber-500/40 h-24 bg-slate-950/80 flex flex-col items-center justify-center p-2 text-center">
+                    <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1.5" />
+                    <span className="text-[11px] text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
+                  </div>
+                ) : anhTayBase64 ? (
                   <div className="relative rounded-lg overflow-hidden border border-amber-500/40 h-24 bg-slate-950 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -355,11 +399,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
                     <span className="text-xs text-slate-400 group-hover:text-slate-200">
                       Chọn ảnh lòng bàn tay
                     </span>
+                    <span className="text-[10px] text-slate-500">JPG, PNG, HEIC (iPhone)</span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.heic,.heif,image/heic,image/heif"
                       className="hidden"
-                      onChange={(e) => handleImageUpload(e, setAnhTayBase64)}
+                      onChange={(e) => handleImageUpload(e, setAnhTayBase64, setIsConvertingTay)}
                     />
                   </label>
                 )}
