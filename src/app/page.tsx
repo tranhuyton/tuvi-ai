@@ -8,10 +8,25 @@ import LaSoBanCo from '@/components/LaSoBanCo';
 import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
 import ApiKeyModal from '@/components/ApiKeyModal';
-import { Key } from 'lucide-react';
+import AuthModal from '@/components/AuthModal';
+import SavedChartsModal from '@/components/SavedChartsModal';
+import UserNav from '@/components/UserNav';
+import { useAuth } from '@/context/AuthContext';
+import {
+  saveOrUpdateChart,
+  getChartDetails,
+  updateChartReading,
+  saveChatMessage,
+} from '@/lib/tuviService';
+import { Key, Bookmark, Check, Sparkles } from 'lucide-react';
 
 export default function HomePage() {
+  const { user } = useAuth();
+
   const [laSo, setLaSo] = useState<LaSoData | null>(null);
+  const [currentDuongSo, setCurrentDuongSo] = useState<DuLieuDuongSo | null>(null);
+  const [currentChartId, setCurrentChartId] = useState<string | null>(null);
+
   const [readingHtml, setReadingHtml] = useState<string | undefined>(undefined);
   const [readingError, setReadingError] = useState<string | undefined>(undefined);
   const [isLoadingReading, setIsLoadingReading] = useState(false);
@@ -19,8 +34,15 @@ export default function HomePage() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
 
+  // Modals
   const [customApiKey, setCustomApiKey] = useState('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSavedChartsModalOpen, setIsSavedChartsModalOpen] = useState(false);
+
+  // Lưu trữ status
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -29,10 +51,12 @@ export default function HomePage() {
     }
   }, []);
 
+  // Xử lý khi nộp form lập lá số mới
   const handleFormSubmit = async (data: DuLieuDuongSo) => {
-    // 1. Tính toán lá số ngay tức khắc
     const calculatedLaSo = lapLaSoTuVi(data, 2026);
     setLaSo(calculatedLaSo);
+    setCurrentDuongSo(data);
+    setCurrentChartId(null);
     setReadingHtml(undefined);
     setReadingError(undefined);
     setChatHistory([]);
@@ -40,7 +64,26 @@ export default function HomePage() {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // 2. Gọi API để AI Thầy Tôn bình giải chuyên sâu kết hợp tướng pháp
+    let createdChartId: string | null = null;
+
+    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database
+    if (user) {
+      try {
+        const saveRes = await saveOrUpdateChart({
+          title: `${data.hoTen} (${data.gioiTinh} - ${data.namDuong})`,
+          duongSoData: data,
+          lasoData: calculatedLaSo,
+        });
+        if (saveRes.chartId) {
+          createdChartId = saveRes.chartId;
+          setCurrentChartId(saveRes.chartId);
+        }
+      } catch (e) {
+        console.warn('Lỗi tự động lưu lá số:', e);
+      }
+    }
+
+    // Gọi AI Thầy Tôn bình giải
     try {
       const res = await fetch('/api/tuvi/reading', {
         method: 'POST',
@@ -61,6 +104,11 @@ export default function HomePage() {
         setReadingError(json.error || 'Có lỗi xảy ra khi kết nối tới Thầy Tôn');
       } else {
         setReadingHtml(json.reading);
+
+        // Nếu đã lưu lá số, tự động cập nhật bài bình giải vào database
+        if (createdChartId && json.reading) {
+          updateChartReading(createdChartId, json.reading);
+        }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -70,6 +118,7 @@ export default function HomePage() {
     }
   };
 
+  // Xử lý gửi tin nhắn hỏi đáp với Thầy Tôn
   const handleSendMessage = async (userQuestion: string) => {
     if (!laSo) return;
     setIsLoadingChat(true);
@@ -100,13 +149,19 @@ export default function HomePage() {
           },
         ]);
       } else {
+        const answer = json.answer;
         setChatHistory((prev) => [
           ...prev,
           {
             q: userQuestion,
-            a: json.answer,
+            a: answer,
           },
         ]);
+
+        // Nếu đã đăng nhập và có chartId, lưu tin nhắn vào database
+        if (currentChartId) {
+          saveChatMessage(currentChartId, userQuestion, answer);
+        }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -123,8 +178,64 @@ export default function HomePage() {
     }
   };
 
+  // Mở lá số đã lưu từ Sổ tay
+  const handleSelectSavedChart = async (chartId: string) => {
+    setIsSavedChartsModalOpen(false);
+    setIsLoadingReading(true);
+
+    try {
+      const { chart, chatMessages, error } = await getChartDetails(chartId);
+      if (error || !chart) {
+        alert('Không thể tải lá số: ' + (error || 'Không tìm thấy'));
+        return;
+      }
+
+      setLaSo(chart.laso_data);
+      setCurrentDuongSo(chart.duong_so_data);
+      setCurrentChartId(chart.id);
+      setReadingHtml(chart.reading_html || undefined);
+      setReadingError(undefined);
+      setChatHistory(chatMessages || []);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e: any) {
+      alert('Lỗi tải dữ liệu lá số: ' + e.message);
+    } finally {
+      setIsLoadingReading(false);
+    }
+  };
+
+  // Nút bấm lưu lá số thủ công (nếu người dùng muốn lưu hoặc lúc tạo chưa đăng nhập)
+  const handleManualSave = async () => {
+    if (!laSo || !currentDuongSo) return;
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    setIsSaving(true);
+    const title = `${currentDuongSo.hoTen} (${currentDuongSo.gioiTinh} - ${currentDuongSo.namDuong})`;
+    const res = await saveOrUpdateChart({
+      id: currentChartId || undefined,
+      title,
+      duongSoData: currentDuongSo,
+      lasoData: laSo,
+      readingHtml,
+    });
+
+    if (res.chartId) {
+      setCurrentChartId(res.chartId);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2500);
+    } else {
+      alert('Không thể lưu lá số: ' + res.error);
+    }
+    setIsSaving(false);
+  };
+
   const handleReset = () => {
     setLaSo(null);
+    setCurrentDuongSo(null);
+    setCurrentChartId(null);
     setReadingHtml(undefined);
     setReadingError(undefined);
     setChatHistory([]);
@@ -132,10 +243,23 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen cosmic-bg py-8 px-3 sm:px-6 md:px-8 flex flex-col justify-between relative">
+    <main className="min-h-screen cosmic-bg py-6 px-3 sm:px-6 md:px-8 flex flex-col justify-between relative">
       <div className="flex-1">
+        {/* Navigation Bar Header */}
+        <UserNav
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenSavedCharts={() => {
+            if (!user) {
+              setIsAuthModalOpen(true);
+            } else {
+              setIsSavedChartsModalOpen(true);
+            }
+          }}
+          onNewChart={handleReset}
+        />
+
         {!laSo ? (
-          <div className="my-auto py-6 sm:py-12">
+          <div className="my-auto py-6 sm:py-10">
             <TuViForm
               onSubmit={handleFormSubmit}
               isLoading={isLoadingReading}
@@ -145,27 +269,70 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="flex justify-end max-w-[1060px] mx-auto">
-              <button
-                type="button"
-                onClick={() => setIsApiKeyModalOpen(true)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-                  customApiKey
-                    ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 hover:bg-amber-500/30'
-                    : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700/80 text-slate-300'
-                }`}
-                title="Cài đặt và kiểm tra Gemini API Key"
-              >
-                <Key className="w-3.5 h-3.5 text-amber-400" />
-                <span>{customApiKey ? 'API Key riêng: Bật' : '⚙️ Cài đặt API Key'}</span>
-              </button>
+            {/* Thanh công cụ phụ khi đang xem lá số */}
+            <div className="flex items-center justify-between max-w-[1060px] mx-auto flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleManualSave}
+                  disabled={isSaving}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border transition shadow-sm ${
+                    saveSuccess
+                      ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300'
+                      : currentChartId
+                      ? 'bg-slate-900/90 hover:bg-slate-800 border-amber-500/40 text-amber-300'
+                      : 'bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold'
+                  }`}
+                  title={currentChartId ? 'Lá số đã được lưu trong sổ tay' : 'Lưu lá số này vào tài khoản'}
+                >
+                  {saveSuccess ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400" />
+                      <span>Đã Lưu Thành Công</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bookmark className="w-4 h-4" />
+                      <span>{currentChartId ? 'Đã Lưu Vào Sổ Tay' : '💾 Lưu Vào Sổ Tay'}</span>
+                    </>
+                  )}
+                </button>
+
+                {!user && (
+                  <span className="text-[11px] text-amber-300/80 italic hidden sm:inline">
+                    (Đăng nhập để tự động lưu trọn đời)
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsApiKeyModalOpen(true)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
+                    customApiKey
+                      ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 hover:bg-amber-500/30'
+                      : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700/80 text-slate-300'
+                  }`}
+                  title="Cài đặt và kiểm tra Gemini API Key"
+                >
+                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{customApiKey ? 'Key riêng: Bật' : '⚙️ API Key'}</span>
+                </button>
+              </div>
             </div>
+
+            {/* Bàn Cờ Lá Số Tử Vi */}
             <LaSoBanCo laSo={laSo} onReset={handleReset} />
+
+            {/* Bài Bình Giải Chuyên Sâu */}
             <LuanGiaiAI
               readingHtml={readingHtml}
               isLoading={isLoadingReading}
               error={readingError}
             />
+
+            {/* Khung Hỏi Đáp Trực Tiếp Với Thầy Tôn */}
             <ChatThayTon
               chatHistory={chatHistory}
               onSendMessage={handleSendMessage}
@@ -176,10 +343,26 @@ export default function HomePage() {
         )}
       </div>
 
+      {/* Modal Cài Đặt API Key */}
       <ApiKeyModal
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
         onKeySaved={(key) => setCustomApiKey(key)}
+      />
+
+      {/* Modal Đăng Nhập / Đăng Ký */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      {/* Modal Sổ Tay Danh Sách Lá Số Đã Lưu */}
+      <SavedChartsModal
+        isOpen={isSavedChartsModalOpen}
+        onClose={() => setIsSavedChartsModalOpen(false)}
+        onSelectChart={handleSelectSavedChart}
+        onNewChart={handleReset}
+        activeChartId={currentChartId}
       />
 
       <footer className="text-center text-xs text-slate-500 py-6 border-t border-slate-800/60 print:hidden mt-8">
