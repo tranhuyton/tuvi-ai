@@ -12,7 +12,7 @@ interface TuViFormProps {
   hasCustomKey?: boolean;
 }
 
-function isHeic(file: File): boolean {
+function isHeicFile(file: File): boolean {
   const name = file.name.toLowerCase();
   const type = file.type.toLowerCase();
   return (
@@ -27,38 +27,38 @@ function isHeic(file: File): boolean {
 
 function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(blob);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth || height > maxWidth) {
-          if (width > height) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          } else {
-            width = Math.round((width * maxWidth) / height);
-            height = maxWidth;
-          }
+    const objectUrl = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth || height > maxWidth) {
+        if (width > height) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        } else {
+          width = Math.round((width * maxWidth) / height);
+          height = maxWidth;
         }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Canvas context không khả dụng'));
-          return;
-        }
-        ctx.drawImage(img, 0, 0, width, height);
-        // Xuất ra JPEG định dạng nén nhẹ, siêu tối ưu cho AI
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = (err) => reject(err);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas context không khả dụng'));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      // Xuất ra JPEG định dạng nén nhẹ, siêu tối ưu cho AI
+      resolve(canvas.toDataURL('image/jpeg', quality));
     };
-    reader.onerror = (err) => reject(err);
+    img.onerror = (err) => {
+      URL.revokeObjectURL(objectUrl);
+      reject(err);
+    };
+    img.src = objectUrl;
   });
 }
 
@@ -90,23 +90,55 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
     try {
       let targetBlob: Blob = file;
 
-      // Hỗ trợ tự động chuyển đổi ảnh HEIC từ iPhone sang JPEG chuẩn
-      if (isHeic(file)) {
-        const heic2any = (await import('heic2any')).default;
-        const converted = await heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.8,
-        });
-        targetBlob = Array.isArray(converted) ? converted[0] : converted;
+      // Bước 1: Kiểm tra định dạng HEIC/HEIF (từ iPhone/iPad)
+      let isHeicFormat = isHeicFile(file);
+      if (!isHeicFormat) {
+        try {
+          const { isHeic } = await import('heic-to');
+          isHeicFormat = await isHeic(file);
+        } catch {
+          isHeicFormat = false;
+        }
+      }
+
+      if (isHeicFormat) {
+        // Bước 2: Thử xem trình duyệt có hỗ trợ giải mã trực tiếp không (Safari trên iOS/macOS hỗ trợ native hardware)
+        let decodedNatively = false;
+        try {
+          const testImg = new Image();
+          const testUrl = URL.createObjectURL(file);
+          await new Promise<void>((resolve, reject) => {
+            testImg.onload = () => resolve();
+            testImg.onerror = () => reject();
+            testImg.src = testUrl;
+          });
+          URL.revokeObjectURL(testUrl);
+          decodedNatively = true;
+        } catch {
+          decodedNatively = false;
+        }
+
+        // Bước 3: Nếu trình duyệt không giải mã native được (như Chrome trên Windows/Android), dùng thư viện heic-to hiện đại (libheif 1.22+)
+        if (!decodedNatively) {
+          const { heicTo } = await import('heic-to');
+          const converted = await heicTo({
+            blob: file,
+            type: 'image/jpeg',
+            quality: 0.85,
+          });
+          targetBlob = converted;
+        }
       }
 
       // Tự động nén ảnh về kích thước tối ưu cho AI (max 800px, quality 0.65, ~60KB-80KB)
       const compressed = await compressImage(targetBlob, 800, 0.65);
       setter(compressed);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Lỗi xử lý ảnh:', err);
-      alert('Không thể đọc định dạng ảnh này. Bạn vui lòng chụp hoặc chọn ảnh khác nhé!');
+      const errMsg = err instanceof Error ? err.message : String(err);
+      alert(
+        `Không thể xử lý ảnh này (${errMsg}).\n\nMẹo: Bạn có thể chụp màn hình bức ảnh (screenshot) hoặc chụp trực tiếp bằng camera rồi tải lên lại nhé!`
+      );
     } finally {
       setConverting(false);
       e.target.value = '';
