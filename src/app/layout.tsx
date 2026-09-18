@@ -1,16 +1,20 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Be_Vietnam_Pro, Lora } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+const beVietnam = Be_Vietnam_Pro({
+  weight: ['300', '400', '500', '600', '700', '800'],
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-be-vietnam',
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+const lora = Lora({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-lora',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -25,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#0a0a0f] text-slate-100 selection:bg-amber-500/30 selection:text-amber-200">
+    <html lang="vi" className={`${beVietnam.variable} ${lora.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-[#0a0a0f] text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
