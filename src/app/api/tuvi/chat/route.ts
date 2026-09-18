@@ -26,8 +26,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Thiếu thông tin lá số' }, { status: 400 });
     }
 
-    const { banMenh, namXemCanChi, tuoiAmXem } = laSo;
+    const { banMenh, namXemCanChi, tuoiAmXem, cungs } = laSo;
     const cungDataStr = buildCungDataPrompt(laSo);
+
+    // Tính chính xác Đại Vận hiện tại
+    const cungDaiVan = cungs.find(
+      (c) => c.daiVan <= tuoiAmXem && tuoiAmXem < c.daiVan + 10
+    );
+    let daiVanInfo = '';
+    if (cungDaiVan) {
+      daiVanInfo = `Đại vận hiện tại: ${cungDaiVan.daiVan} - ${cungDaiVan.daiVan + 9} tuổi tại Cung ${cungDaiVan.chi} (${cungDaiVan.cungName}). (Hiện ${tuoiAmXem} tuổi Âm, không được nhầm đại vận). `;
+    }
 
     let contextChat = '';
     if (thongTinThem && thongTinThem.trim()) {
@@ -47,12 +56,12 @@ export async function POST(req: NextRequest) {
     }
 
     const chatPrompt = `${historyText}Khách hỏi câu mới: '${userQuestion.trim()}'
-Mệnh ${banMenh}. Năm nay ${namXemCanChi}, ${tuoiAmXem} tuổi Âm. ${contextChat}
+Mệnh ${banMenh}. Năm nay ${namXemCanChi}, ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
 12 CUNG:
 ${cungDataStr}
 YÊU CẦU: Trả lời khách 300-500 chữ uyên bác, ân cần, chỉ rõ căn nguyên lá số. Xưng là Thầy Tôn. KHÔNG dùng Markdown **, dùng HTML <b>, <p>.`;
 
-    const result = await callGeminiVision([{ text: chatPrompt }], apiKey);
+    const result = await callGeminiVision([{ text: chatPrompt }], apiKey, 'gemini-3.1-pro-preview');
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 500 });

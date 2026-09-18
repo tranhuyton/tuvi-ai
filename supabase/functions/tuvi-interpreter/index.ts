@@ -59,14 +59,23 @@ serve(async (req) => {
     const targetModel = model || 'gemini-2.5-flash';
     console.log(`[tuvi-interpreter] Calling model: ${targetModel}`);
 
-    // Cấu hình tối ưu tốc độ phản hồi tức thì, bỏ thinking delay kéo dài
+    // Cấu hình tối ưu tốc độ phản hồi:
+    // - Với gemini-3.1-pro-preview: Cần thinkingBudget tối thiểu (1024)
+    // - Với gemini-2.5-flash: Dùng thinkingBudget 0 để phản hồi tức thì siêu tốc
+    const isProPreview = targetModel.includes('3.1') || targetModel.includes('pro');
+    const defaultBudget = isProPreview ? 1024 : 0;
+
     const finalGenConfig = generationConfig || {
       temperature: 0.7,
       maxOutputTokens: 3500,
       thinkingConfig: {
-        thinkingBudget: 0,
+        thinkingBudget: defaultBudget,
       },
     };
+
+    if (finalGenConfig.thinkingConfig && isProPreview && finalGenConfig.thinkingConfig.thinkingBudget === 0) {
+      finalGenConfig.thinkingConfig.thinkingBudget = 1024;
+    }
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${GEMINI_API_KEY}`,

@@ -7,7 +7,7 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { laSo, thongTinThem, chieuCao, canNang, anhMat, anhTay, apiKey } = body as {
+    const { laSo, thongTinThem, chieuCao, canNang, anhMat, anhTay, apiKey, model } = body as {
       laSo: LaSoData;
       thongTinThem?: string;
       chieuCao?: number;
@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       anhMat?: string; // base64 data url: data:image/...;base64,...
       anhTay?: string; // base64 data url: data:image/...;base64,...
       apiKey?: string;
+      model?: string;
     };
 
     if (!laSo || !laSo.duongSo) {
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
       anhTay,
     });
 
-    const result = await callGeminiVision(parts, apiKey);
+    const result = await callGeminiVision(parts, apiKey, model || 'gemini-3.1-pro-preview');
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 500 });

@@ -94,6 +94,7 @@ export default function HomePage() {
     try {
       let readingResult: string | null = null;
       let lastErrMsg: string | null = null;
+      const selectedModel = typeof window !== 'undefined' ? localStorage.getItem('user_gemini_model') || 'gemini-3.1-pro-preview' : 'gemini-3.1-pro-preview';
 
       // Bước 1: Gọi qua API Route
       try {
@@ -108,6 +109,7 @@ export default function HomePage() {
             anhMat: data.anhMat,
             anhTay: data.anhTay,
             apiKey: customApiKey || undefined,
+            model: selectedModel,
           }),
         });
 
@@ -149,7 +151,7 @@ export default function HomePage() {
             anhTay: data.anhTay,
           });
 
-          const directRes = await callGeminiVision(parts, customApiKey || undefined);
+          const directRes = await callGeminiVision(parts, customApiKey || undefined, selectedModel);
           if (directRes.text) {
             readingResult = directRes.text;
             lastErrMsg = null;
@@ -186,6 +188,7 @@ export default function HomePage() {
     setIsLoadingChat(true);
 
     try {
+      const selectedModel = typeof window !== 'undefined' ? localStorage.getItem('user_gemini_model') || 'gemini-3.1-pro-preview' : 'gemini-3.1-pro-preview';
       const res = await fetch('/api/tuvi/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,6 +200,7 @@ export default function HomePage() {
           canNang: laSo.duongSo.canNang,
           chatHistory,
           apiKey: customApiKey || undefined,
+          model: selectedModel,
         }),
       });
 

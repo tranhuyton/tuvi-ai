@@ -46,14 +46,37 @@ export function buildReadingParts(options: {
   anhTay?: string;
 }): GeminiPart[] {
   const { laSo, thongTinThem, chieuCao, canNang, anhMat, anhTay } = options;
-  const { duongSo, namCanChi, banMenh, tenCuc, sinhKhac, namXemCanChi, namXem, tuoiAmXem } = laSo;
+  const { duongSo, namCanChi, banMenh, tenCuc, sinhKhac, namXemCanChi, namXem, tuoiAmXem, cungs } = laSo;
   const { buildCungDataPrompt } = require('./tuvi/anSao');
   const cungDataStr = buildCungDataPrompt(laSo);
+
+  // 1. Tính toán chính xác 100% Cung Đại Vận hiện tại theo Tuổi Âm
+  const cungDaiVanHienTai = cungs.find(
+    (c) => c.daiVan <= tuoiAmXem && tuoiAmXem < c.daiVan + 10
+  );
+
+  let daiVanPromptStr = '';
+  let daiVanInstruction = '3. Phân tích Đại Vận đang chạy.';
+  if (cungDaiVanHienTai) {
+    const startAge = cungDaiVanHienTai.daiVan;
+    const endAge = startAge + 9;
+    daiVanPromptStr = `\nĐẠI VẬN HIỆN TẠI (CHÍNH XÁC): Đang ở Đại vận ${startAge} - ${endAge} tuổi tại Cung ${cungDaiVanHienTai.chi} (${cungDaiVanHienTai.cungName}).
+LƯU Ý QUAN TRỌNG: Hiện tại năm ${namXem} đương số đúng ${tuoiAmXem} tuổi Âm, nằm trong khoảng ${startAge} - ${endAge} tuổi (Ví dụ: 42 tuổi nằm trong khoảng 35 - 44 tuổi tại Cung ${cungDaiVanHienTai.chi}). TUYỆT ĐỐI KHÔNG LUẬN NHẦM sang đại vận khác như 45-54 tuổi!\n`;
+    daiVanInstruction = `3. Phân tích Đại Vận hiện tại: BẮT BUỘC luận giải đúng Đại Vận ${startAge} - ${endAge} tuổi tại Cung ${cungDaiVanHienTai.chi} (${cungDaiVanHienTai.cungName}). Phân tích kỹ đương số đang ở tuổi ${tuoiAmXem} thì cơ hội, vận hạn và biến chuyển trong đại vận ${startAge}-${endAge} này ra sao.`;
+  }
+
+  // 2. Tìm Cung Lưu Niên / Tiểu Vận năm xem
+  const chiNamXem = (namXemCanChi.split(' ')[1] || '').trim();
+  const cungLuuNien = cungs.find((c) => c.chi === chiNamXem);
+  let tieuVanPromptStr = '';
+  if (cungLuuNien) {
+    tieuVanPromptStr = `\nTIỂU VẬN / LƯU NIÊN NĂM ${namXem} (${namXemCanChi}): Đóng tại Cung ${cungLuuNien.chi} (${cungLuuNien.cungName}).\n`;
+  }
 
   let promptText = `Đại sư Tử Vi Thầy Tôn uyên bác. Khách hàng: ${duongSo.hoTen}, ${duongSo.gioiTinh}. KHÔNG xưng AI, KHÔNG dùng bát tự. Xưng là 'Thầy Tôn'.
 KHÔNG dùng Markdown (**). Dùng HTML chuẩn (<b>, <h3>, <h4>, <p>, <ul>, <li>).
 LÁ SỐ: Năm Âm ${namCanChi}. Mệnh ${banMenh}, Cục ${tenCuc}. Sinh khắc: ${sinhKhac}. Xem hạn năm ${namXemCanChi} (${namXem}), ${tuoiAmXem} tuổi.
-CÁC SAO: \n${cungDataStr}\n`;
+${daiVanPromptStr}${tieuVanPromptStr}CÁC SAO: \n${cungDataStr}\n`;
 
   if (thongTinThem && thongTinThem.trim()) {
     promptText += `Hoàn cảnh thực tế của đương số: ${thongTinThem.trim()}.\n`;
@@ -65,7 +88,7 @@ CÁC SAO: \n${cungDataStr}\n`;
   promptText += `YÊU CẦU CẤU TRÚC BÀI LUẬN:
 1. Tổng quan Bản Mệnh, tính cách & tiềm năng (kết hợp phân tích sự bù trừ của Hình Tướng và hoàn cảnh thực tế nếu có).
 2. Điểm nhấn các cung trọng yếu: Mệnh/Thân, Quan Lộc, Tài Bạch, Phu Thê (Nếu có ảnh khuôn mặt hoặc chỉ tay đính kèm, hãy quan sát kỹ Diện tướng và Thủ tướng để luận giải bổ trợ).
-3. Phân tích Đại Vận hiện tại.
+${daiVanInstruction}
 4. Đánh giá Tiểu Vận năm ${namXem} và 4 mùa trọng tâm (Xuân - Hạ - Thu - Đông), định hướng hành động đắc thời và tu dưỡng hóa giải vận hạn. (Nhắc nhở đương số có thể đàm đạo thêm với Thầy ở khung Chat bên dưới).
 Văn phong uyên thâm, thấu tỏ huyền cơ, súc tích, mạch lạc. Trình bày HTML đẹp mắt.`;
 
@@ -97,14 +120,18 @@ Văn phong uyên thâm, thấu tỏ huyền cơ, súc tích, mạch lạc. Trìn
  */
 export async function callGeminiVision(
   parts: GeminiPart[],
-  customApiKey?: string
+  customApiKey?: string,
+  modelName = 'gemini-3.1-pro-preview'
 ): Promise<{ text?: string; error?: string }> {
+  const isPro = modelName.includes('3.1') || modelName.includes('pro');
+  const targetBudget = isPro ? 1024 : 0;
+
   // 1. Trường hợp người dùng có nhập key riêng trong modal cài đặt
   if (customApiKey && customApiKey.trim()) {
     try {
-      const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
-        customApiKey.trim()
-      )}`;
+      const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+        modelName
+      )}:generateContent?key=${encodeURIComponent(customApiKey.trim())}`;
       const res = await fetch(directUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,7 +140,7 @@ export async function callGeminiVision(
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 3500,
-            thinkingConfig: { thinkingBudget: 0 },
+            thinkingConfig: { thinkingBudget: targetBudget },
           },
         }),
         signal: AbortSignal.timeout(120000),
@@ -139,7 +166,15 @@ export async function callGeminiVision(
     {
       url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
       label: 'Supabase tuvi-interpreter',
-      body: { parts },
+      body: {
+        parts,
+        model: modelName,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 3500,
+          thinkingConfig: { thinkingBudget: targetBudget },
+        },
+      },
     },
     {
       url: `${SUPABASE_URL}/functions/v1/omni-vision-solver`,

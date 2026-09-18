@@ -11,6 +11,7 @@ interface ApiKeyModalProps {
 
 export default function ApiKeyModal({ isOpen, onClose, onKeySaved }: ApiKeyModalProps) {
   const [apiKey, setApiKey] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gemini-3.1-pro-preview');
   const [testStatus, setTestStatus] = useState<{
     loading: boolean;
     success?: boolean;
@@ -23,6 +24,8 @@ export default function ApiKeyModal({ isOpen, onClose, onKeySaved }: ApiKeyModal
     if (typeof window !== 'undefined') {
       const savedKey = localStorage.getItem('user_gemini_api_key') || '';
       setApiKey(savedKey);
+      const savedModel = localStorage.getItem('user_gemini_model') || 'gemini-3.1-pro-preview';
+      setSelectedModel(savedModel);
     }
   }, [isOpen]);
 
@@ -34,7 +37,10 @@ export default function ApiKeyModal({ isOpen, onClose, onKeySaved }: ApiKeyModal
       const res = await fetch('/api/tuvi/test-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey: apiKey.trim() || undefined }),
+        body: JSON.stringify({
+          apiKey: apiKey.trim() || undefined,
+          model: selectedModel,
+        }),
       });
       const data = await res.json();
       setTestStatus({
@@ -62,6 +68,7 @@ export default function ApiKeyModal({ isOpen, onClose, onKeySaved }: ApiKeyModal
       } else {
         localStorage.removeItem('user_gemini_api_key');
       }
+      localStorage.setItem('user_gemini_model', selectedModel);
     }
     onKeySaved(trimmed);
     onClose();
@@ -69,8 +76,10 @@ export default function ApiKeyModal({ isOpen, onClose, onKeySaved }: ApiKeyModal
 
   const handleResetDefault = () => {
     setApiKey('');
+    setSelectedModel('gemini-3.1-pro-preview');
     if (typeof window !== 'undefined') {
       localStorage.removeItem('user_gemini_api_key');
+      localStorage.setItem('user_gemini_model', 'gemini-3.1-pro-preview');
     }
     onKeySaved('');
     setTestStatus({ loading: false });
@@ -103,19 +112,63 @@ export default function ApiKeyModal({ isOpen, onClose, onKeySaved }: ApiKeyModal
         </div>
 
         {/* Description */}
-        <div className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 mb-4">
-          <p className="mb-1.5">
-            ⚡ Hệ thống hiện đã được cấu hình mặc định với mô hình <b className="text-amber-400">Gemini 3.8 Flash</b> thế hệ mới siêu nhanh (phản hồi trong 15-20s, không lo timeout).
+        <div className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 mb-4 space-y-2">
+          <p>
+            🔮 Mô hình AI mặc định: <b className="text-amber-400">Gemini 3.1 Pro Preview</b> thế hệ mới nhất — tư duy đa bước sâu sắc, am tường tinh diệu 14 chính tinh &amp; các cách cục Tử Vi cổ truyền.
           </p>
           <p className="text-slate-400">
-            Nếu quý khách muốn dùng riêng mã API Key của mình (hoặc xoay vòng key riêng), xin hãy dán vào ô bên dưới. Key sẽ được lưu an toàn tại trình duyệt của quý khách.
+            Nếu quý khách có Google Gemini API Key cá nhân, có thể dán vào bên dưới để dùng hạn mức riêng không giới hạn.
           </p>
+        </div>
+
+        {/* Model Selector */}
+        <div className="mb-4">
+          <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
+            Chọn Mô Hình AI Bình Giải:
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedModel('gemini-3.1-pro-preview')}
+              className={`p-2.5 rounded-lg border text-left text-xs transition ${
+                selectedModel === 'gemini-3.1-pro-preview'
+                  ? 'bg-amber-500/15 border-amber-500/70 text-amber-300'
+                  : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+              }`}
+            >
+              <div className="font-bold flex items-center justify-between">
+                <span>Gemini 3.1 Pro Preview</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-semibold">Ưu tiên</span>
+              </div>
+              <div className="text-[11px] text-slate-400 mt-1">
+                Luận giải sâu sắc, uyên thâm bậc nhất, văn phong đắc ý.
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedModel('gemini-2.5-flash')}
+              className={`p-2.5 rounded-lg border text-left text-xs transition ${
+                selectedModel === 'gemini-2.5-flash'
+                  ? 'bg-amber-500/15 border-amber-500/70 text-amber-300'
+                  : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+              }`}
+            >
+              <div className="font-bold flex items-center justify-between">
+                <span>Gemini 2.5 Flash</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">Nhanh</span>
+              </div>
+              <div className="text-[11px] text-slate-400 mt-1">
+                Tốc độ tức thì (~5-10s), cô đọng, nhẹ nhàng.
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Input */}
         <div className="mb-4">
           <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
-            Gemini API Key của bạn:
+            Gemini API Key của bạn (Tùy chọn):
           </label>
           <input
             type="text"
