@@ -7,6 +7,8 @@ export interface NgayThangNamSinh {
   gioSinhVal: string; // '0_0', '1', '2', ..., '11', '0_23'
 }
 
+export type ServiceTier = 'free' | 'pro';
+
 export interface DuLieuDuongSo extends NgayThangNamSinh {
   hoTen: string;
   gioiTinh: GioiTinh;
@@ -15,6 +17,7 @@ export interface DuLieuDuongSo extends NgayThangNamSinh {
   canNang?: number;
   anhMat?: string; // base64
   anhTay?: string; // base64
+  tier?: ServiceTier;
 }
 
 export interface AmLichResult {
@@ -73,6 +76,7 @@ export interface LaSoData {
   namXem: number;
   namXemCanChi: string;
   tuoiAmXem: number;
+  tier?: ServiceTier;
   cungs: CungLaSo[];
 }
 

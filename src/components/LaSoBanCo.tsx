@@ -82,10 +82,15 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
   const gioMatch = GIO_ARR[duongSo.gioSinhVal]?.label.match(/\((.*?)\)/);
   const gioText = gioMatch ? gioMatch[1] : (GIO_ARR[duongSo.gioSinhVal]?.label || duongSo.gioSinhVal);
 
-  // Tọa độ Tam hợp Mệnh - Tài - Quan
+  // Tọa độ 3 đường từ Cung Mệnh sang: Tài Bạch, Quan Lộc, và Thiên Di
   const cM = COORD_PERCENT[menhCungIdx];
-  const cTai = COORD_PERCENT[(menhCungIdx + 8) % 12];
-  const cQuan = COORD_PERCENT[(menhCungIdx + 4) % 12];
+  const taiCung = cungs.find((c) => c.cungName.includes('Tài'));
+  const quanCung = cungs.find((c) => c.cungName.includes('Quan'));
+  const diCung = cungs.find((c) => c.cungName.includes('Di'));
+
+  const cTai = taiCung ? COORD_PERCENT[taiCung.cungId] : COORD_PERCENT[(menhCungIdx + 8) % 12];
+  const cQuan = quanCung ? COORD_PERCENT[quanCung.cungId] : COORD_PERCENT[(menhCungIdx + 4) % 12];
+  const cDi = diCung ? COORD_PERCENT[diCung.cungId] : COORD_PERCENT[(menhCungIdx + 6) % 12];
 
   const handlePrint = () => {
     window.print();
@@ -150,35 +155,39 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
         className="bg-white p-2 sm:p-5 rounded-lg shadow-xl overflow-x-auto print:p-0 print:shadow-none"
       >
         <div className="min-w-[760px] relative bg-white">
-          {/* SVG Overlay: Tam hợp Mệnh - Tài - Quan */}
+          {/* SVG Overlay: 3 đường kẻ từ Cung Mệnh sang Tài Bạch, Quan Lộc và Thiên Di */}
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none z-10"
             style={{ clipPath: 'inset(25%)' }}
           >
-            {/* Tam hợp: Mệnh - Tài - Quan (3 cạnh tam giác) */}
+            {/* 1. Kéo từ Cung Mệnh sang Cung Tài Bạch */}
             <line
               x1={`${cM[0]}%`}
               y1={`${cM[1]}%`}
               x2={`${cTai[0]}%`}
               y2={`${cTai[1]}%`}
-              stroke="rgba(0,0,0,0.3)"
+              stroke="rgba(180, 83, 9, 0.55)"
               strokeWidth="1.5"
+              strokeDasharray="4 3"
             />
+            {/* 2. Kéo từ Cung Mệnh sang Cung Quan Lộc */}
             <line
-              x1={`${cTai[0]}%`}
-              y1={`${cTai[1]}%`}
+              x1={`${cM[0]}%`}
+              y1={`${cM[1]}%`}
               x2={`${cQuan[0]}%`}
               y2={`${cQuan[1]}%`}
-              stroke="rgba(0,0,0,0.3)"
+              stroke="rgba(180, 83, 9, 0.55)"
               strokeWidth="1.5"
+              strokeDasharray="4 3"
             />
+            {/* 3. Kéo từ Cung Mệnh sang Cung Thiên Di (Đối cung / Chính chiếu) */}
             <line
-              x1={`${cQuan[0]}%`}
-              y1={`${cQuan[1]}%`}
-              x2={`${cM[0]}%`}
-              y2={`${cM[1]}%`}
-              stroke="rgba(0,0,0,0.3)"
-              strokeWidth="1.5"
+              x1={`${cM[0]}%`}
+              y1={`${cM[1]}%`}
+              x2={`${cDi[0]}%`}
+              y2={`${cDi[1]}%`}
+              stroke="rgba(220, 38, 38, 0.65)"
+              strokeWidth="1.8"
             />
           </svg>
 

@@ -7,8 +7,9 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { laSo, thongTinThem, chieuCao, canNang, anhMat, anhTay, apiKey, model } = body as {
+    const { laSo, tier, thongTinThem, chieuCao, canNang, anhMat, anhTay, apiKey, model } = body as {
       laSo: LaSoData;
+      tier?: 'free' | 'pro';
       thongTinThem?: string;
       chieuCao?: number;
       canNang?: number;
@@ -22,8 +23,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dữ liệu lá số không hợp lệ' }, { status: 400 });
     }
 
+    const currentTier = tier || laSo.tier || 'free';
+    const targetModel = model || (currentTier === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash');
+
     const parts = buildReadingParts({
       laSo,
+      tier: currentTier,
       thongTinThem,
       chieuCao,
       canNang,
@@ -31,7 +36,7 @@ export async function POST(req: NextRequest) {
       anhTay,
     });
 
-    const result = await callGeminiVision(parts, apiKey, model || 'gemini-3.1-pro-preview');
+    const result = await callGeminiVision(parts, apiKey, targetModel);
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 500 });

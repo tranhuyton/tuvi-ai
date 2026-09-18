@@ -39,13 +39,15 @@ function formatTuViHtml(rawText: string): string {
  */
 export function buildReadingParts(options: {
   laSo: import('@/types/tuvi').LaSoData;
+  tier?: 'free' | 'pro';
   thongTinThem?: string;
   chieuCao?: number;
   canNang?: number;
   anhMat?: string;
   anhTay?: string;
 }): GeminiPart[] {
-  const { laSo, thongTinThem, chieuCao, canNang, anhMat, anhTay } = options;
+  const { laSo, tier = 'free', thongTinThem, chieuCao, canNang, anhMat, anhTay } = options;
+  const isPro = tier === 'pro' || laSo.tier === 'pro';
   const { duongSo, namCanChi, banMenh, tenCuc, sinhKhac, namXemCanChi, namXem, tuoiAmXem, cungs } = laSo;
   const { buildCungDataPrompt } = require('./tuvi/anSao');
   const cungDataStr = buildCungDataPrompt(laSo);
@@ -57,10 +59,12 @@ export function buildReadingParts(options: {
 
   let daiVanPromptStr = '';
   let daiVanInstruction = '3. Phân tích Đại Vận đang chạy.';
+  let startAge = 0;
+  let endAge = 0;
   if (cungDaiVanHienTai) {
-    const startAge = cungDaiVanHienTai.daiVan;
-    const endAge = startAge + 9;
-    daiVanPromptStr = `\nĐẠI VẬN HIỆN TẠI (CHÍNH XÁC): Đang ở Đại vận ${startAge} - ${endAge} tuổi tại Cung ${cungDaiVanHienTai.chi} (${cungDaiVanHienTai.cungName}).
+    startAge = cungDaiVanHienTai.daiVan;
+    endAge = startAge + 9;
+    daiVanPromptStr = `\nĐẠI VẬN HIỆN TẠI (CHÍNH XÁC 100%): Đang ở Đại vận ${startAge} - ${endAge} tuổi tại Cung ${cungDaiVanHienTai.chi} (${cungDaiVanHienTai.cungName}).
 LƯU Ý QUAN TRỌNG: Hiện tại năm ${namXem} đương số đúng ${tuoiAmXem} tuổi Âm, nằm trong khoảng ${startAge} - ${endAge} tuổi (Ví dụ: 42 tuổi nằm trong khoảng 35 - 44 tuổi tại Cung ${cungDaiVanHienTai.chi}). TUYỆT ĐỐI KHÔNG LUẬN NHẦM sang đại vận khác như 45-54 tuổi!\n`;
     daiVanInstruction = `3. Phân tích Đại Vận hiện tại: BẮT BUỘC luận giải đúng Đại Vận ${startAge} - ${endAge} tuổi tại Cung ${cungDaiVanHienTai.chi} (${cungDaiVanHienTai.cungName}). Phân tích kỹ đương số đang ở tuổi ${tuoiAmXem} thì cơ hội, vận hạn và biến chuyển trong đại vận ${startAge}-${endAge} này ra sao.`;
   }
@@ -73,24 +77,111 @@ LƯU Ý QUAN TRỌNG: Hiện tại năm ${namXem} đương số đúng ${tuoiAmX
     tieuVanPromptStr = `\nTIỂU VẬN / LƯU NIÊN NĂM ${namXem} (${namXemCanChi}): Đóng tại Cung ${cungLuuNien.chi} (${cungLuuNien.cungName}).\n`;
   }
 
-  let promptText = `Đại sư Tử Vi Thầy Tôn uyên bác. Khách hàng: ${duongSo.hoTen}, ${duongSo.gioiTinh}. KHÔNG xưng AI, KHÔNG dùng bát tự. Xưng là 'Thầy Tôn'.
-KHÔNG dùng Markdown (**). Dùng HTML chuẩn (<b>, <h3>, <h4>, <p>, <ul>, <li>).
-LÁ SỐ: Năm Âm ${namCanChi}. Mệnh ${banMenh}, Cục ${tenCuc}. Sinh khắc: ${sinhKhac}. Xem hạn năm ${namXemCanChi} (${namXem}), ${tuoiAmXem} tuổi.
-${daiVanPromptStr}${tieuVanPromptStr}CÁC SAO: \n${cungDataStr}\n`;
+  let promptText = '';
 
-  if (thongTinThem && thongTinThem.trim()) {
-    promptText += `Hoàn cảnh thực tế của đương số: ${thongTinThem.trim()}.\n`;
-  }
-  if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
-    promptText += `Hình thể: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
-  }
+  if (isPro) {
+    // ==========================================
+    // PRO TIER PROMPT: GEMINI 3.1 PRO PREVIEW (1800 - 2500 TỪ)
+    // ==========================================
+    promptText = `Bạn là ĐẠI SƯ TỬ VI THẦY TÔN uyên bác, thấu triệt dịch học, tử vi đẩu số và tướng pháp bí truyền.
+Đang luận giải cho đương số: ${duongSo.hoTen}, Giới tính: ${duongSo.gioiTinh}.
+XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số là 'quý khách' hoặc tên '${duongSo.hoTen}'. TUYỆT ĐỐI KHÔNG xưng AI, KHÔNG dùng bát tự tử bình.
+ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
 
-  promptText += `YÊU CẦU CẤU TRÚC BÀI LUẬN:
-1. Tổng quan Bản Mệnh, tính cách & tiềm năng (kết hợp phân tích sự bù trừ của Hình Tướng và hoàn cảnh thực tế nếu có).
-2. Điểm nhấn các cung trọng yếu: Mệnh/Thân, Quan Lộc, Tài Bạch, Phu Thê (Nếu có ảnh khuôn mặt hoặc chỉ tay đính kèm, hãy quan sát kỹ Diện tướng và Thủ tướng để luận giải bổ trợ).
-${daiVanInstruction}
-4. Đánh giá Tiểu Vận năm ${namXem} và 4 mùa trọng tâm (Xuân - Hạ - Thu - Đông), định hướng hành động đắc thời và tu dưỡng hóa giải vận hạn. (Nhắc nhở đương số có thể đàm đạo thêm với Thầy ở khung Chat bên dưới).
-Văn phong uyên thâm, thấu tỏ huyền cơ, súc tích, mạch lạc. Trình bày HTML đẹp mắt.`;
+THÔNG TIN LÁ SỐ:
+- Năm sinh Âm lịch: ${namCanChi}. Mệnh: ${banMenh}. Cục: ${tenCuc}. Sinh khắc Mệnh Cục: ${sinhKhac}.
+- Xem hạn năm: ${namXemCanChi} (${namXem}), tuổi Âm lịch: ${tuoiAmXem} tuổi.
+${daiVanPromptStr}${tieuVanPromptStr}
+CHI TIẾT 12 CUNG & TINH ĐẨU:
+${cungDataStr}
+`;
+
+    if (thongTinThem && thongTinThem.trim()) {
+      promptText += `\nHOÀN CẢNH & NGUYỆN VỌNG THỰC TẾ: ${thongTinThem.trim()}.\n`;
+    }
+    if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
+      promptText += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
+    }
+
+    promptText += `
+YÊU CẦU ĐẶC BIỆT DÀNH CHO BẢN CHUYÊN SÂU PRO (ĐỘ DÀI KHOẢNG 1800 - 2500 TỪ):
+Bài luận phải cực kỳ sâu sắc, phân tích đa tầng, giải nghĩa rành mạch căn nguyên cát hung theo 5 phần lớn sau:
+
+<h3>I. ĐẠI CƯƠNG BẢN MỆNH &amp; CHÂN TƯỚNG HUYỀN CƠ</h3>
+- Luận giải sâu sắc về Âm Dương thuận/nghịch lý, Mệnh Cục tương sinh tương khắc và ý nghĩa với số phận đời người.
+- Phân tích cặn kẽ 14 Chính tinh thủ và chiếu Mệnh/Thân, sự giao hội của Tứ Hóa (Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ).
+- NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) gửi kèm: Hãy đối chiếu trực tiếp các nét tướng mạo (ấn đường, chuẩn đầu, cung điền trạch, đường sinh đạo, tâm đạo) với các sao thủ Mệnh để xác tín độ chính xác giờ sinh và thế mạnh thiên bẩm.
+
+<h3>II. TỨ TRỤ MỆNH SỐ: MỆNH - THÂN - TÀI - QUAN - PHU THÊ</h3>
+- Phân tích thế đứng Tam hợp Mệnh - Tài - Quan và cung Thiên Di (Tam Phương Tứ Chính).
+- Đường Quan Lộc &amp; Sự nghiệp: Phù hợp ngành nghề nào, thế bứt phá công danh, đối tác làm ăn hợp mệnh.
+- Đường Tài Bạch &amp; Tiền của: Cung Tài đắc cách ra sao, cách tụ tài, những năm tháng dễ hao tán tiền bạc cần phòng bị.
+- Cung Phu Thê &amp; Gia đạo: Nhân duyên tiền định, tính cách bạn đời, phương pháp giữ gìn lửa ấm hạnh phúc.
+
+<h3>III. CHI TIẾT ĐẠI VẬN HIỆN TẠI (${startAge} - ${endAge} TUỔI)</h3>
+- ${daiVanInstruction}
+- Mổ xẻ chi tiết 2 chặng: 5 năm đầu đại vận và 5 năm cuối đại vận.
+- Cơ hội phát triển vượt bậc ở giai đoạn nào, và những cạm bẫy hung tinh (Kình, Đà, Hỏa, Linh, Không, Kiếp...) cần phải né tránh ở tuổi ${tuoiAmXem}.
+
+<h3>IV. TIỂU VẬN NĂM ${namXem} &amp; BẢN ĐỒ 4 MÙA VẬN KHÍ</h3>
+- Tọa độ cung Lưu Niên năm ${namXem} (${namXemCanChi}) và tác động của các Lưu Tinh (Lưu Thái Tuế, Lưu Lộc Tồn, Lưu Kình Đà...).
+- Khảo sát biến động qua 4 mùa:
+  + Mùa Xuân (Tháng 1, 2, 3 Âm): Khởi sắc hay trì trệ, việc nên mở màn.
+  + Mùa Hạ (Tháng 4, 5, 6 Âm): Đỉnh cao tài lộc hay thử thách quan hệ.
+  + Mùa Thu (Tháng 7, 8, 9 Âm): Biến động công việc, gia đạo, sức khỏe.
+  + Mùa Đông (Tháng 10, 11, 12 Âm): Thu vén thành quả, tích lũy phòng thủ.
+
+<h3>V. BÍ PHÁP TU DƯỠNG &amp; CHIẾN LƯỢC CẢI VẬN TOÀN DIỆN</h3>
+- Phương pháp hóa giải triệt để các sát tinh và hung vận trong lá số bằng phong thủy, tâm thức, lối sống và thiện nghiệp.
+- Lời dặn tâm huyết của Thầy Tôn dành riêng cho đương số. (Nhắc nhở đương số có thể đàm đạo trực tiếp thêm với Thầy ở khung Chat bên dưới).
+
+Văn phong uyên bác, giàu chất văn hóa phương Đông, từ ngữ đắt giá, truyền cảm hứng mạnh mẽ. Trình bày bằng thẻ HTML tinh tế, rõ ràng.`;
+  } else {
+    // ==========================================
+    // FREE TIER PROMPT: GEMINI 2.5 FLASH (800 - 1000 TỪ)
+    // ==========================================
+    promptText = `Bạn là ĐẠI SƯ TỬ VI THẦY TÔN uyên bác.
+Đang luận giải Bản Cơ Bản cho đương số: ${duongSo.hoTen}, Giới tính: ${duongSo.gioiTinh}.
+XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số là 'quý khách' hoặc tên '${duongSo.hoTen}'. TUYỆT ĐỐI KHÔNG xưng AI, KHÔNG dùng bát tự tử bình.
+ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
+
+THÔNG TIN LÁ SỐ:
+- Năm sinh Âm lịch: ${namCanChi}. Mệnh: ${banMenh}, Cục: ${tenCuc}. Sinh khắc: ${sinhKhac}.
+- Xem hạn năm: ${namXemCanChi} (${namXem}), ${tuoiAmXem} tuổi Âm.
+${daiVanPromptStr}${tieuVanPromptStr}
+CHI TIẾT 12 CUNG & TINH ĐẨU:
+${cungDataStr}
+`;
+
+    if (thongTinThem && thongTinThem.trim()) {
+      promptText += `\nHoàn cảnh thực tế: ${thongTinThem.trim()}.\n`;
+    }
+    if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
+      promptText += `Hình thể: Cao ${chieuCao} cm, Nặng ${canNang} kg.\n`;
+    }
+
+    promptText += `
+YÊU CẦU BẢN LUẬN GIẢI CƠ BẢN (ĐỘ DÀI KHOẢNG 800 - 1000 TỪ):
+Bài luận phải mạch lạc, chuẩn xác, đáng tin cậy, bao quát các phương diện chính yếu sau:
+
+<h3>I. TỔNG QUAN BẢN MỆNH &amp; CÁ TÍNH TIỀM NĂNG</h3>
+- Phân tích Bản Mệnh, Cục, Âm Dương thuận nghịch và tính cách nổi trội của đương số dựa trên các Chính tinh thủ Cung Mệnh.
+- Ưu điểm thiên bẩm và khuyết điểm cần tiết chế trong cách đối nhân xử thế.
+
+<h3>II. ĐIỂM SÁNG TAM HỢP MỆNH - TÀI - QUAN</h3>
+- Phân tích trục công danh sự nghiệp (Cung Quan Lộc) và xu hướng tài vận kiếm tiền (Cung Tài Bạch).
+- Đánh giá khả năng bứt phá công việc và hướng đi hợp bản mệnh.
+
+<h3>III. ĐẠI VẬN HIỆN TẠI (${startAge} - ${endAge} TUỔI) &amp; TIỂU VẬN NĂM ${namXem}</h3>
+- ${daiVanInstruction}
+- Điểm sáng và thử thách lớn nhất trong năm ${namXem} (${namXemCanChi}) mà đương số ${tuoiAmXem} tuổi cần lưu tâm.
+
+<h3>IV. LỜI KHUYÊN &amp; ĐỊNH HƯỚNG TỪ THẦY TÔN</h3>
+- Đúc kết lời khuyên thiết thực giúp đương số hành xử đắc thời.
+- Nhắn gửi đương số: Để xem phân tích chuyên sâu đa tầng gấp đôi (soi chiếu Tướng Pháp khuôn mặt/chỉ tay, chi tiết 4 mùa Xuân-Hạ-Thu-Đông và bí pháp cải vận), đương số có thể bấm nút Nâng cấp lên Bản Pro bất cứ lúc nào.
+
+Văn phong uy nghiêm, chuẩn mực, truyền cảm hứng, trình bày HTML đẹp mắt.`;
+  }
 
   const parts: GeminiPart[] = [{ text: promptText }];
 
@@ -139,7 +230,7 @@ export async function callGeminiVision(
           contents: [{ role: 'user', parts }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 3500,
+            maxOutputTokens: isPro ? 6000 : 3000,
             thinkingConfig: { thinkingBudget: targetBudget },
           },
         }),
@@ -171,7 +262,7 @@ export async function callGeminiVision(
         model: modelName,
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 3500,
+          maxOutputTokens: isPro ? 6000 : 3000,
           thinkingConfig: { thinkingBudget: targetBudget },
         },
       },

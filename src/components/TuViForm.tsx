@@ -1,15 +1,14 @@
 'use client';
 
 import React, { useState, ChangeEvent } from 'react';
-import { DuLieuDuongSo, GioiTinh } from '@/types/tuvi';
+import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, Key } from 'lucide-react';
+import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown } from 'lucide-react';
+import PaymentModal from './PaymentModal';
 
 interface TuViFormProps {
-  onSubmit: (data: DuLieuDuongSo) => void;
+  onSubmit: (data: DuLieuDuongSo, tier: ServiceTier) => void;
   isLoading: boolean;
-  onOpenApiKeyModal?: () => void;
-  hasCustomKey?: boolean;
 }
 
 function isHeicFile(file: File): boolean {
@@ -62,7 +61,7 @@ function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<stri
   });
 }
 
-export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCustomKey }: TuViFormProps) {
+export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
   const [hoTen, setHoTen] = useState('');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>('Nam');
   const [ngayDuong, setNgayDuong] = useState(15);
@@ -77,6 +76,11 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
   const [anhTayBase64, setAnhTayBase64] = useState<string | undefined>(undefined);
   const [isConvertingMat, setIsConvertingMat] = useState(false);
   const [isConvertingTay, setIsConvertingTay] = useState(false);
+
+  // Lựa chọn gói dịch vụ
+  const [selectedTier, setSelectedTier] = useState<ServiceTier>('free');
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [pendingPayload, setPendingPayload] = useState<DuLieuDuongSo | null>(null);
 
   const handleImageUpload = async (
     e: ChangeEvent<HTMLInputElement>,
@@ -152,7 +156,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
       return;
     }
 
-    onSubmit({
+    const payload: DuLieuDuongSo = {
       hoTen: hoTen.trim(),
       gioiTinh,
       ngayDuong: Number(ngayDuong),
@@ -164,7 +168,38 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
       canNang: canNang ? Number(canNang) : undefined,
       anhMat: anhMatBase64,
       anhTay: anhTayBase64,
-    });
+      tier: selectedTier,
+    };
+
+    if (selectedTier === 'pro') {
+      setPendingPayload(payload);
+      setIsPaymentOpen(true);
+    } else {
+      onSubmit(payload, 'free');
+    }
+  };
+
+  const handleConfirmProPayment = () => {
+    if (pendingPayload) {
+      onSubmit(pendingPayload, 'pro');
+    } else {
+      // Fallback
+      const payload: DuLieuDuongSo = {
+        hoTen: hoTen.trim() || 'Đương số',
+        gioiTinh,
+        ngayDuong: Number(ngayDuong),
+        thangDuong: Number(thangDuong),
+        namDuong: Number(namDuong),
+        gioSinhVal,
+        thongTinThem: thongTinThem.trim() || undefined,
+        chieuCao: chieuCao ? Number(chieuCao) : undefined,
+        canNang: canNang ? Number(canNang) : undefined,
+        anhMat: anhMatBase64,
+        anhTay: anhTayBase64,
+        tier: 'pro',
+      };
+      onSubmit(payload, 'pro');
+    }
   };
 
   return (
@@ -184,21 +219,10 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
           </div>
         </div>
 
-        {onOpenApiKeyModal && (
-          <button
-            type="button"
-            onClick={onOpenApiKeyModal}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-              hasCustomKey
-                ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 hover:bg-amber-500/30'
-                : 'bg-slate-800 hover:bg-slate-700/80 border-slate-700 text-slate-300'
-            }`}
-            title="Cài đặt và kiểm tra Gemini API Key"
-          >
-            <Key className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">{hasCustomKey ? 'Key riêng' : 'Cài đặt API'}</span>
-          </button>
-        )}
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>AI Trực Tuyến</span>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -445,25 +469,116 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
           </div>
         </div>
 
+        {/* LỰA CHỌN GÓI BÌNH GIẢI */}
+        <div className="pt-5 mt-5 border-t border-slate-700/80">
+          <label className="block text-xs uppercase tracking-wider text-amber-400 font-bold mb-3 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              Chọn Gói Bình Giải <span className="text-red-400">*</span>
+            </span>
+            <span className="text-[11px] font-normal text-slate-400">Bắt buộc chọn trước khi lập lá số</span>
+          </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Gói Cơ Bản (Miễn Phí) */}
+            <div
+              onClick={() => setSelectedTier('free')}
+              className={`relative p-3.5 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                selectedTier === 'free'
+                  ? 'bg-slate-800/95 border-amber-400 ring-2 ring-amber-400 shadow-md shadow-amber-500/10'
+                  : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 opacity-80 hover:opacity-100'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-sm text-slate-100 flex items-center gap-1.5 font-serif">
+                    <span>📜 Bản Miễn Phí</span>
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    0 VNĐ
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Sử dụng <b>Gemini 2.5 Flash</b>. Bài luận chuẩn xác, súc tích (~800 - 1000 từ), phân tích Mệnh Cục, Tam Hợp Mệnh-Tài-Quan, Đại Vận &amp; Tiểu Vận.
+                </p>
+              </div>
+              <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+                <span>Hỏi đáp trực tiếp:</span>
+                <span className="font-medium text-slate-300">20.000đ / câu</span>
+              </div>
+            </div>
+
+            {/* Gói Chuyên Sâu (Bản Pro) */}
+            <div
+              onClick={() => setSelectedTier('pro')}
+              className={`relative p-3.5 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                selectedTier === 'pro'
+                  ? 'bg-gradient-to-b from-amber-950/40 to-slate-900 border-amber-400 ring-2 ring-amber-400 shadow-lg shadow-amber-500/20'
+                  : 'bg-slate-950/60 border-slate-800 hover:border-amber-500/40 opacity-80 hover:opacity-100'
+              }`}
+            >
+              <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
+                Khuyên Dùng
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-sm text-amber-300 flex items-center gap-1.5 font-serif">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    <span>Bản Chuyên Sâu Pro</span>
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    99.000 VNĐ
+                  </span>
+                </div>
+                <p className="text-xs text-slate-200 leading-relaxed">
+                  Sử dụng <b>Gemini 3.1 Pro Preview</b>. Bài luận sâu gấp 2 lần (~1800 - 2500 từ). Soi chiếu 14 Chính tinh, Tướng Pháp (mặt/tay), Đại Vận 10 năm &amp; 4 Mùa Hóa Giải.
+                </p>
+              </div>
+              <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-amber-400 flex items-center justify-between">
+                <span>Ưu đãi hỏi đáp VIP:</span>
+                <span className="font-bold text-amber-300">10.000đ / câu</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Nút Submit */}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full mt-6 py-3.5 px-6 bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white font-bold rounded-xl tracking-wider uppercase text-sm sm:text-base shadow-lg shadow-red-950/50 hover:shadow-red-700/30 transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+          className={`w-full mt-6 py-3.5 px-6 font-bold rounded-xl tracking-wider uppercase text-sm sm:text-base shadow-lg transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 ${
+            selectedTier === 'pro'
+              ? 'bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-slate-950 shadow-amber-950/50'
+              : 'bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white shadow-red-950/50'
+          }`}
         >
           {isLoading ? (
             <>
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               <span>Thầy Đang Quán Tưởng...</span>
+            </>
+          ) : selectedTier === 'pro' ? (
+            <>
+              <Crown className="w-5 h-5" />
+              <span>Thanh Toán &amp; Luận Giải Bản Pro</span>
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              <span>Lập Lá Số &amp; Xem Tướng</span>
+              <span>Lập Lá Số &amp; Luận Giải Miễn Phí</span>
             </>
           )}
         </button>
       </form>
+
+      {/* Modal thanh toán khi người dùng chọn Bản Pro */}
+      <PaymentModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        onConfirm={handleConfirmProPayment}
+        hoTen={hoTen.trim() || 'Đương số'}
+        price={99000}
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ interface SavedChartsModalProps {
   onClose: () => void;
   onSelectChart: (chartId: string) => void;
   onNewChart: () => void;
+  onUpgradeChart?: (chartId: string) => void;
   activeChartId?: string | null;
 }
 
@@ -17,6 +18,7 @@ export default function SavedChartsModal({
   onClose,
   onSelectChart,
   onNewChart,
+  onUpgradeChart,
   activeChartId,
 }: SavedChartsModalProps) {
   const [charts, setCharts] = useState<SavedChart[]>([]);
@@ -135,6 +137,8 @@ export default function SavedChartsModal({
               const hasReading = !!chart.reading_html;
               const msgCount = chart.message_count || 0;
               const ds = chart.duong_so_data;
+              const tier = ds?.tier || chart.laso_data?.tier || (chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO') ? 'pro' : 'free');
+              const isPro = tier === 'pro';
 
               return (
                 <div
@@ -160,6 +164,17 @@ export default function SavedChartsModal({
                       >
                         {ds?.gioiTinh || 'Nam'}
                       </span>
+                      {hasReading && (
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            isPro
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                              : 'bg-slate-800 text-slate-300 border-slate-700'
+                          }`}
+                        >
+                          {isPro ? '👑 Bản Pro' : '📜 Bản Miễn Phí'}
+                        </span>
+                      )}
                       {isActive && (
                         <span className="text-[10px] bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full">
                           Đang xem
@@ -192,6 +207,22 @@ export default function SavedChartsModal({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {hasReading && !isPro && onUpgradeChart && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpgradeChart(chart.id);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-lg text-xs shadow transition transform hover:-translate-y-0.5"
+                        title="Nâng cấp lên Bản Pro Chuyên Sâu"
+                      >
+                        <Sparkles className="w-3 h-3 fill-slate-950" />
+                        <span className="hidden sm:inline">Nâng cấp Pro</span>
+                        <span className="sm:hidden">Pro</span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={(e) => handleDelete(e, chart.id, ds?.hoTen || chart.title)}

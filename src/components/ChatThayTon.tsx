@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChatMessage } from '@/types/tuvi';
-import { MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { ChatMessage, ServiceTier } from '@/types/tuvi';
+import { MessageSquare, Send, CheckCircle2, Crown, Sparkles } from 'lucide-react';
 
 interface ChatThayTonProps {
   chatHistory: ChatMessage[];
   onSendMessage: (question: string) => Promise<void>;
   isLoading: boolean;
   maxQuestions?: number;
+  tier?: ServiceTier;
 }
 
 export default function ChatThayTon({
@@ -16,10 +17,12 @@ export default function ChatThayTon({
   onSendMessage,
   isLoading,
   maxQuestions = 2,
+  tier = 'free',
 }: ChatThayTonProps) {
   const [question, setQuestion] = useState('');
   const count = chatHistory.filter((c) => !c.isError).length;
   const isExhausted = count >= maxQuestions;
+  const isPro = tier === 'pro';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,17 +37,49 @@ export default function ChatThayTon({
     <div className="w-full max-w-[1060px] mx-auto mt-10 mb-16 print:hidden">
       <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md text-slate-100">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-blue-400" />
-            <h3 className="font-bold text-base sm:text-lg text-blue-400 font-serif">
-              Hỏi Đáp Trực Tiếp Với Thầy Tôn
-            </h3>
+            <div>
+              <h3 className="font-bold text-base sm:text-lg text-blue-400 font-serif flex items-center gap-2">
+                <span>Hỏi Đáp Trực Tiếp Với Thầy Tôn</span>
+                {isPro ? (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans font-semibold">
+                    👑 Khách VIP Pro
+                  </span>
+                ) : (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-sans">
+                    📜 Bản Cơ Bản
+                  </span>
+                )}
+              </h3>
+            </div>
           </div>
 
-          <div className="text-xs px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
-            Lượt hỏi: <span className="font-bold text-amber-400">{count}</span> / {maxQuestions}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div
+              className={`text-xs px-3 py-1 rounded-full border font-medium ${
+                isPro
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-300'
+                  : 'bg-blue-500/10 border-blue-500/30 text-blue-300'
+              }`}
+            >
+              {isPro ? 'Phí thỉnh giáo VIP: 10.000đ / câu' : 'Phí thỉnh giáo: 20.000đ / câu'}
+            </div>
+
+            <div className="text-xs px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
+              Lượt hỏi: <span className="font-bold text-amber-400">{count}</span> / {maxQuestions}
+            </div>
           </div>
+        </div>
+
+        {/* Thông báo chính sách phí tượng trưng */}
+        <div className="mb-4 text-xs text-slate-400 bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between flex-wrap gap-2">
+          <span>
+            {isPro
+              ? '✨ Quý khách sở hữu Bản Pro được hưởng đặc quyền thỉnh giáo Thầy Tôn với mức phí ưu đãi 10.000đ/câu hỏi.'
+              : '💡 Bản Miễn Phí có mức phí thỉnh giáo Thầy Tôn là 20.000đ/câu hỏi. Quý khách có thể nâng cấp Bản Pro để nhận ưu đãi VIP 10.000đ/câu.'}
+          </span>
         </div>
 
         {/* Lịch sử tin nhắn */}

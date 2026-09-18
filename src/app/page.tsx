@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { DuLieuDuongSo, LaSoData, ChatMessage } from '@/types/tuvi';
+import React, { useState } from 'react';
+import { DuLieuDuongSo, LaSoData, ChatMessage, ServiceTier } from '@/types/tuvi';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import TuViForm from '@/components/TuViForm';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
-import ApiKeyModal from '@/components/ApiKeyModal';
 import AuthModal from '@/components/AuthModal';
 import SavedChartsModal from '@/components/SavedChartsModal';
+import PaymentModal from '@/components/PaymentModal';
 import UserNav from '@/components/UserNav';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -18,7 +18,7 @@ import {
   updateChartReading,
   saveChatMessage,
 } from '@/lib/tuviService';
-import { Key, Bookmark, Check, Sparkles } from 'lucide-react';
+import { Bookmark, Check, Sparkles, Crown } from 'lucide-react';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -26,41 +26,127 @@ export default function HomePage() {
   const [laSo, setLaSo] = useState<LaSoData | null>(null);
   const [currentDuongSo, setCurrentDuongSo] = useState<DuLieuDuongSo | null>(null);
   const [currentChartId, setCurrentChartId] = useState<string | null>(null);
+  const [currentTier, setCurrentTier] = useState<ServiceTier>('free');
 
   const [readingHtml, setReadingHtml] = useState<string | undefined>(undefined);
   const [readingError, setReadingError] = useState<string | undefined>(undefined);
   const [isLoadingReading, setIsLoadingReading] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
 
   // Modals
-  const [customApiKey, setCustomApiKey] = useState('');
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSavedChartsModalOpen, setIsSavedChartsModalOpen] = useState(false);
+  const [isUpgradePaymentOpen, setIsUpgradePaymentOpen] = useState(false);
 
   // Lưu trữ status
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedKey = localStorage.getItem('user_gemini_api_key') || '';
-      setCustomApiKey(savedKey);
-    }
-  }, []);
+  // Hàm gọi tạo bài bình giải (API Route hoặc Supabase Edge direct fallback)
+  const generateReading = async (
+    calculatedLaSo: LaSoData,
+    duongSoData: DuLieuDuongSo,
+    tier: ServiceTier
+  ): Promise<string | null> => {
+    const selectedModel = tier === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash';
+    let readingResult: string | null = null;
+    let lastErrMsg: string | null = null;
 
-  // Xử lý khi nộp form lập lá số mới
-  const handleFormSubmit = async (data: DuLieuDuongSo) => {
+    // Bước 1: Gọi qua Next.js API Route
+    try {
+      const res = await fetch('/api/tuvi/reading', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          laSo: calculatedLaSo,
+          tier,
+          thongTinThem: duongSoData.thongTinThem,
+          chieuCao: duongSoData.chieuCao,
+          canNang: duongSoData.canNang,
+          anhMat: duongSoData.anhMat,
+          anhTay: duongSoData.anhTay,
+          model: selectedModel,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.reading) {
+          readingResult = json.reading;
+        } else if (json.error) {
+          lastErrMsg = json.error;
+        }
+      } else {
+        const rawText = await res.text().catch(() => '');
+        let parsedError = rawText;
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed.error) parsedError = parsed.error;
+        } catch {
+          // ignore
+        }
+        if (res.status === 413 || parsedError.includes('Request Entity Too Large')) {
+          parsedError = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
+        }
+        lastErrMsg = parsedError || `Lỗi máy chủ (HTTP ${res.status})`;
+      }
+    } catch (fetchErr) {
+      console.warn('API route gặp sự cố mạng hoặc timeout, chuyển sang cổng trực tiếp Supabase Edge...', fetchErr);
+    }
+
+    // Bước 2: Fallback trực tiếp Supabase Edge Function từ trình duyệt nếu Vercel bị timeout
+    if (!readingResult) {
+      try {
+        const { callGeminiVision, buildReadingParts } = await import('@/lib/gemini');
+        const parts = buildReadingParts({
+          laSo: calculatedLaSo,
+          tier,
+          thongTinThem: duongSoData.thongTinThem,
+          chieuCao: duongSoData.chieuCao,
+          canNang: duongSoData.canNang,
+          anhMat: duongSoData.anhMat,
+          anhTay: duongSoData.anhTay,
+        });
+
+        const directRes = await callGeminiVision(parts, undefined, selectedModel);
+        if (directRes.text) {
+          readingResult = directRes.text;
+          lastErrMsg = null;
+        } else if (directRes.error) {
+          lastErrMsg = directRes.error;
+        }
+      } catch (directErr) {
+        console.error('Lỗi cổng trực tiếp:', directErr);
+        const msg = directErr instanceof Error ? directErr.message : String(directErr);
+        lastErrMsg = `Không thể kết nối đến máy chủ: ${msg}`;
+      }
+    }
+
+    if (!readingResult && lastErrMsg) {
+      setReadingError(lastErrMsg);
+    }
+
+    return readingResult;
+  };
+
+  // Xử lý khi nộp form lập lá số mới (chọn Free hoặc Pro)
+  const handleFormSubmit = async (data: DuLieuDuongSo, tier: ServiceTier) => {
+    setCurrentTier(tier);
+
     // Tách riêng dữ liệu cơ bản của đương số (loại bỏ base64 ảnh khỏi lá số lưu trữ)
     const cleanDuongSo: DuLieuDuongSo = {
       ...data,
+      tier,
       anhMat: undefined,
       anhTay: undefined,
     };
 
     const calculatedLaSo = lapLaSoTuVi(cleanDuongSo, 2026);
+    calculatedLaSo.tier = tier;
+
     setLaSo(calculatedLaSo);
     setCurrentDuongSo(data);
     setCurrentChartId(null);
@@ -73,7 +159,7 @@ export default function HomePage() {
 
     let createdChartId: string | null = null;
 
-    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database (bản nhẹ không chứa ảnh base64)
+    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database
     if (user) {
       try {
         const saveRes = await saveOrUpdateChart({
@@ -90,89 +176,14 @@ export default function HomePage() {
       }
     }
 
-    // Gọi AI Thầy Tôn bình giải (ảnh đã được nén siêu nhẹ ~60KB)
+    // Gọi AI Thầy Tôn bình giải
     try {
-      let readingResult: string | null = null;
-      let lastErrMsg: string | null = null;
-      const selectedModel = typeof window !== 'undefined' ? localStorage.getItem('user_gemini_model') || 'gemini-3.1-pro-preview' : 'gemini-3.1-pro-preview';
-
-      // Bước 1: Gọi qua API Route
-      try {
-        const res = await fetch('/api/tuvi/reading', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            laSo: calculatedLaSo,
-            thongTinThem: data.thongTinThem,
-            chieuCao: data.chieuCao,
-            canNang: data.canNang,
-            anhMat: data.anhMat,
-            anhTay: data.anhTay,
-            apiKey: customApiKey || undefined,
-            model: selectedModel,
-          }),
-        });
-
-        if (res.ok) {
-          const json = await res.json();
-          if (json.reading) {
-            readingResult = json.reading;
-          } else if (json.error) {
-            lastErrMsg = json.error;
-          }
-        } else {
-          const rawText = await res.text().catch(() => '');
-          let parsedError = rawText;
-          try {
-            const parsed = JSON.parse(rawText);
-            if (parsed.error) parsedError = parsed.error;
-          } catch {
-            // ignore
-          }
-          if (res.status === 413 || parsedError.includes('Request Entity Too Large')) {
-            parsedError = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
-          }
-          lastErrMsg = parsedError || `Lỗi máy chủ (HTTP ${res.status})`;
-        }
-      } catch (fetchErr) {
-        console.warn('API route /api/tuvi/reading gặp sự cố mạng hoặc timeout, chuyển sang cổng trực tiếp Supabase Edge...', fetchErr);
-      }
-
-      // Bước 2: Tự động Fallback gọi trực tiếp Supabase Edge Function từ trình duyệt nếu Vercel bị timeout/ngắt kết nối
-      if (!readingResult) {
-        try {
-          const { callGeminiVision, buildReadingParts } = await import('@/lib/gemini');
-          const parts = buildReadingParts({
-            laSo: calculatedLaSo,
-            thongTinThem: data.thongTinThem,
-            chieuCao: data.chieuCao,
-            canNang: data.canNang,
-            anhMat: data.anhMat,
-            anhTay: data.anhTay,
-          });
-
-          const directRes = await callGeminiVision(parts, customApiKey || undefined, selectedModel);
-          if (directRes.text) {
-            readingResult = directRes.text;
-            lastErrMsg = null;
-          } else if (directRes.error) {
-            lastErrMsg = directRes.error;
-          }
-        } catch (directErr) {
-          console.error('Lỗi cổng trực tiếp:', directErr);
-          const msg = directErr instanceof Error ? directErr.message : String(directErr);
-          lastErrMsg = `Không thể kết nối đến máy chủ: ${msg}`;
-        }
-      }
-
+      const readingResult = await generateReading(calculatedLaSo, data, tier);
       if (readingResult) {
         setReadingHtml(readingResult);
-        // Nếu đã lưu lá số, tự động cập nhật bài bình giải vào database
         if (createdChartId) {
           updateChartReading(createdChartId, readingResult);
         }
-      } else {
-        setReadingError(lastErrMsg || 'Thầy đang bận luận giải, quý khách vui lòng thử lại sau giây lát!');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -182,13 +193,57 @@ export default function HomePage() {
     }
   };
 
+  // Xử lý nâng cấp lên Bản Pro Chuyên Sâu cho lá số đang xem
+  const handleConfirmUpgradeToPro = async () => {
+    if (!laSo || !currentDuongSo) return;
+
+    setCurrentTier('pro');
+    setIsUpgrading(true);
+    setIsLoadingReading(true);
+    setReadingError(undefined);
+
+    const updatedCleanDuongSo: DuLieuDuongSo = {
+      ...currentDuongSo,
+      tier: 'pro',
+      anhMat: undefined,
+      anhTay: undefined,
+    };
+
+    const updatedLaSo = { ...laSo, tier: 'pro' as ServiceTier };
+    setLaSo(updatedLaSo);
+
+    try {
+      const readingResult = await generateReading(updatedLaSo, currentDuongSo, 'pro');
+      if (readingResult) {
+        setReadingHtml(readingResult);
+        if (currentChartId) {
+          // Cập nhật cả bài bình giải và tier mới vào database
+          await updateChartReading(currentChartId, readingResult);
+          await saveOrUpdateChart({
+            id: currentChartId,
+            title: `${currentDuongSo.hoTen} (${currentDuongSo.gioiTinh} - ${currentDuongSo.namDuong})`,
+            duongSoData: updatedCleanDuongSo,
+            lasoData: updatedLaSo,
+            readingHtml: readingResult,
+          });
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setReadingError(`Lỗi khi nâng cấp Bản Pro: ${msg}`);
+    } finally {
+      setIsLoadingReading(false);
+      setIsUpgrading(false);
+    }
+  };
+
   // Xử lý gửi tin nhắn hỏi đáp với Thầy Tôn
   const handleSendMessage = async (userQuestion: string) => {
     if (!laSo) return;
     setIsLoadingChat(true);
 
     try {
-      const selectedModel = typeof window !== 'undefined' ? localStorage.getItem('user_gemini_model') || 'gemini-3.1-pro-preview' : 'gemini-3.1-pro-preview';
+      const selectedModel = currentTier === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash';
       const res = await fetch('/api/tuvi/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -199,7 +254,6 @@ export default function HomePage() {
           chieuCao: laSo.duongSo.chieuCao,
           canNang: laSo.duongSo.canNang,
           chatHistory,
-          apiKey: customApiKey || undefined,
           model: selectedModel,
         }),
       });
@@ -264,6 +318,14 @@ export default function HomePage() {
         return;
       }
 
+      const detectedTier: ServiceTier =
+        chart.duong_so_data?.tier ||
+        chart.laso_data?.tier ||
+        (chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO')
+          ? 'pro'
+          : 'free');
+
+      setCurrentTier(detectedTier);
       setLaSo(chart.laso_data);
       setCurrentDuongSo(chart.duong_so_data);
       setCurrentChartId(chart.id);
@@ -278,7 +340,7 @@ export default function HomePage() {
     }
   };
 
-  // Nút bấm lưu lá số thủ công (nếu người dùng muốn lưu hoặc lúc tạo chưa đăng nhập)
+  // Nút bấm lưu lá số thủ công
   const handleManualSave = async () => {
     if (!laSo || !currentDuongSo) return;
     if (!user) {
@@ -289,6 +351,7 @@ export default function HomePage() {
     setIsSaving(true);
     const cleanDuongSo: DuLieuDuongSo = {
       ...currentDuongSo,
+      tier: currentTier,
       anhMat: undefined,
       anhTay: undefined,
     };
@@ -315,6 +378,7 @@ export default function HomePage() {
     setLaSo(null);
     setCurrentDuongSo(null);
     setCurrentChartId(null);
+    setCurrentTier('free');
     setReadingHtml(undefined);
     setReadingError(undefined);
     setChatHistory([]);
@@ -342,8 +406,6 @@ export default function HomePage() {
             <TuViForm
               onSubmit={handleFormSubmit}
               isLoading={isLoadingReading}
-              onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
-              hasCustomKey={!!customApiKey}
             />
           </div>
         ) : (
@@ -384,20 +446,28 @@ export default function HomePage() {
                 )}
               </div>
 
+              {/* Huy hiệu gói dịch vụ & Nút Nâng cấp Pro */}
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsApiKeyModalOpen(true)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
-                    customApiKey
-                      ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 hover:bg-amber-500/30'
-                      : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700/80 text-slate-300'
-                  }`}
-                  title="Cài đặt và kiểm tra Gemini API Key"
-                >
-                  <Key className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{customApiKey ? 'Key riêng: Bật' : '⚙️ API Key'}</span>
-                </button>
+                {currentTier === 'pro' ? (
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300 shadow-sm">
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Bản Chuyên Sâu Pro</span>
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-900/90 border border-slate-700 text-slate-300">
+                      <span>📜 Bản Miễn Phí</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsUpgradePaymentOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+                      <span>⚡ Nâng Cấp Pro</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -409,6 +479,9 @@ export default function HomePage() {
               readingHtml={readingHtml}
               isLoading={isLoadingReading}
               error={readingError}
+              tier={currentTier}
+              onUpgrade={() => setIsUpgradePaymentOpen(true)}
+              isUpgrading={isUpgrading}
             />
 
             {/* Khung Hỏi Đáp Trực Tiếp Với Thầy Tôn */}
@@ -417,16 +490,19 @@ export default function HomePage() {
               onSendMessage={handleSendMessage}
               isLoading={isLoadingChat}
               maxQuestions={2}
+              tier={currentTier}
             />
           </div>
         )}
       </div>
 
-      {/* Modal Cài Đặt API Key */}
-      <ApiKeyModal
-        isOpen={isApiKeyModalOpen}
-        onClose={() => setIsApiKeyModalOpen(false)}
-        onKeySaved={(key) => setCustomApiKey(key)}
+      {/* Modal Nâng Cấp Bản Pro Chuyên Sâu */}
+      <PaymentModal
+        isOpen={isUpgradePaymentOpen}
+        onClose={() => setIsUpgradePaymentOpen(false)}
+        onConfirm={handleConfirmUpgradeToPro}
+        hoTen={currentDuongSo?.hoTen || 'Đương số'}
+        price={99000}
       />
 
       {/* Modal Đăng Nhập / Đăng Ký */}
@@ -441,6 +517,10 @@ export default function HomePage() {
         onClose={() => setIsSavedChartsModalOpen(false)}
         onSelectChart={handleSelectSavedChart}
         onNewChart={handleReset}
+        onUpgradeChart={(chartId) => {
+          handleSelectSavedChart(chartId);
+          setIsUpgradePaymentOpen(true);
+        }}
         activeChartId={currentChartId}
       />
 
