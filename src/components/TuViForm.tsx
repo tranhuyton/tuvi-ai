@@ -12,7 +12,7 @@ interface TuViFormProps {
   hasCustomKey?: boolean;
 }
 
-function compressImage(file: File, maxWidth = 1280, quality = 0.85): Promise<string> {
+function compressImage(file: File, maxWidth = 800, quality = 0.65): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -36,10 +36,11 @@ function compressImage(file: File, maxWidth = 1280, quality = 0.85): Promise<str
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-          resolve(event.target?.result as string);
+          reject(new Error('Canvas context không khả dụng'));
           return;
         }
         ctx.drawImage(img, 0, 0, width, height);
+        // Xuất ra JPEG định dạng nén nhẹ, siêu tối ưu cho AI
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.onerror = (err) => reject(err);
@@ -69,20 +70,13 @@ export default function TuViForm({ onSubmit, isLoading, onOpenApiKeyModal, hasCu
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      alert('Kích thước ảnh không được vượt quá 15MB');
-      return;
-    }
-
     try {
-      const compressed = await compressImage(file);
+      // Tự động nén ảnh về kích thước tối ưu (max 800px, quality 0.65)
+      const compressed = await compressImage(file, 800, 0.65);
       setter(compressed);
-    } catch {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setter(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Lỗi nén ảnh:', err);
+      alert('Không thể đọc file ảnh này. Vui lòng chọn ảnh khác định dạng JPG hoặc PNG.');
     }
   };
 

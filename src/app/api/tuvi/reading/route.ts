@@ -3,6 +3,8 @@ import { LaSoData } from '@/types/tuvi';
 import { buildCungDataPrompt } from '@/lib/tuvi/anSao';
 import { callGeminiVision, GeminiPart } from '@/lib/gemini';
 
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

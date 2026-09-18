@@ -53,7 +53,14 @@ export default function HomePage() {
 
   // Xử lý khi nộp form lập lá số mới
   const handleFormSubmit = async (data: DuLieuDuongSo) => {
-    const calculatedLaSo = lapLaSoTuVi(data, 2026);
+    // Tách riêng dữ liệu cơ bản của đương số (loại bỏ base64 ảnh khỏi lá số lưu trữ)
+    const cleanDuongSo: DuLieuDuongSo = {
+      ...data,
+      anhMat: undefined,
+      anhTay: undefined,
+    };
+
+    const calculatedLaSo = lapLaSoTuVi(cleanDuongSo, 2026);
     setLaSo(calculatedLaSo);
     setCurrentDuongSo(data);
     setCurrentChartId(null);
@@ -66,12 +73,12 @@ export default function HomePage() {
 
     let createdChartId: string | null = null;
 
-    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database
+    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database (bản nhẹ không chứa ảnh base64)
     if (user) {
       try {
         const saveRes = await saveOrUpdateChart({
           title: `${data.hoTen} (${data.gioiTinh} - ${data.namDuong})`,
-          duongSoData: data,
+          duongSoData: cleanDuongSo,
           lasoData: calculatedLaSo,
         });
         if (saveRes.chartId) {
@@ -83,7 +90,7 @@ export default function HomePage() {
       }
     }
 
-    // Gọi AI Thầy Tôn bình giải
+    // Gọi AI Thầy Tôn bình giải (ảnh đã được nén siêu nhẹ ~60KB)
     try {
       const res = await fetch('/api/tuvi/reading', {
         method: 'POST',
@@ -99,15 +106,30 @@ export default function HomePage() {
         }),
       });
 
-      const json = await res.json();
-      if (!res.ok || json.error) {
-        setReadingError(json.error || 'Có lỗi xảy ra khi kết nối tới Thầy Tôn');
+      if (!res.ok) {
+        const rawText = await res.text().catch(() => '');
+        let errMsg = rawText;
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed.error) errMsg = parsed.error;
+        } catch {
+          // ignore
+        }
+        if (res.status === 413 || errMsg.includes('Request Entity Too Large')) {
+          errMsg = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
+        }
+        setReadingError(errMsg || `Lỗi máy chủ (HTTP ${res.status})`);
       } else {
-        setReadingHtml(json.reading);
+        const json = await res.json();
+        if (json.error) {
+          setReadingError(json.error);
+        } else {
+          setReadingHtml(json.reading);
 
-        // Nếu đã lưu lá số, tự động cập nhật bài bình giải vào database
-        if (createdChartId && json.reading) {
-          updateChartReading(createdChartId, json.reading);
+          // Nếu đã lưu lá số, tự động cập nhật bài bình giải vào database
+          if (createdChartId && json.reading) {
+            updateChartReading(createdChartId, json.reading);
+          }
         }
       }
     } catch (err: unknown) {
@@ -138,18 +160,26 @@ export default function HomePage() {
         }),
       });
 
-      const json = await res.json();
-      if (!res.ok || json.error) {
+      if (!res.ok) {
+        const rawText = await res.text().catch(() => '');
+        let errMsg = rawText;
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed.error) errMsg = parsed.error;
+        } catch {
+          // ignore
+        }
         setChatHistory((prev) => [
           ...prev,
           {
             q: userQuestion,
-            a: json.error || 'Thầy đang bận, xin quý khách thử lại sau ít phút.',
+            a: errMsg || 'Thầy đang bận, xin quý khách thử lại sau ít phút.',
             isError: true,
           },
         ]);
       } else {
-        const answer = json.answer;
+        const json = await res.json();
+        const answer = json.answer || 'Không nhận được câu trả lời từ Thầy Tôn.';
         setChatHistory((prev) => [
           ...prev,
           {
@@ -213,11 +243,16 @@ export default function HomePage() {
     }
 
     setIsSaving(true);
+    const cleanDuongSo: DuLieuDuongSo = {
+      ...currentDuongSo,
+      anhMat: undefined,
+      anhTay: undefined,
+    };
     const title = `${currentDuongSo.hoTen} (${currentDuongSo.gioiTinh} - ${currentDuongSo.namDuong})`;
     const res = await saveOrUpdateChart({
       id: currentChartId || undefined,
       title,
-      duongSoData: currentDuongSo,
+      duongSoData: cleanDuongSo,
       lasoData: laSo,
       readingHtml,
     });
