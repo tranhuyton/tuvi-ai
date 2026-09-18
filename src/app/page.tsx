@@ -92,45 +92,85 @@ export default function HomePage() {
 
     // Gọi AI Thầy Tôn bình giải (ảnh đã được nén siêu nhẹ ~60KB)
     try {
-      const res = await fetch('/api/tuvi/reading', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          laSo: calculatedLaSo,
-          thongTinThem: data.thongTinThem,
-          chieuCao: data.chieuCao,
-          canNang: data.canNang,
-          anhMat: data.anhMat,
-          anhTay: data.anhTay,
-          apiKey: customApiKey || undefined,
-        }),
-      });
+      let readingResult: string | null = null;
+      let lastErrMsg: string | null = null;
 
-      if (!res.ok) {
-        const rawText = await res.text().catch(() => '');
-        let errMsg = rawText;
-        try {
-          const parsed = JSON.parse(rawText);
-          if (parsed.error) errMsg = parsed.error;
-        } catch {
-          // ignore
-        }
-        if (res.status === 413 || errMsg.includes('Request Entity Too Large')) {
-          errMsg = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
-        }
-        setReadingError(errMsg || `Lỗi máy chủ (HTTP ${res.status})`);
-      } else {
-        const json = await res.json();
-        if (json.error) {
-          setReadingError(json.error);
-        } else {
-          setReadingHtml(json.reading);
+      // Bước 1: Gọi qua API Route
+      try {
+        const res = await fetch('/api/tuvi/reading', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            laSo: calculatedLaSo,
+            thongTinThem: data.thongTinThem,
+            chieuCao: data.chieuCao,
+            canNang: data.canNang,
+            anhMat: data.anhMat,
+            anhTay: data.anhTay,
+            apiKey: customApiKey || undefined,
+          }),
+        });
 
-          // Nếu đã lưu lá số, tự động cập nhật bài bình giải vào database
-          if (createdChartId && json.reading) {
-            updateChartReading(createdChartId, json.reading);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.reading) {
+            readingResult = json.reading;
+          } else if (json.error) {
+            lastErrMsg = json.error;
           }
+        } else {
+          const rawText = await res.text().catch(() => '');
+          let parsedError = rawText;
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed.error) parsedError = parsed.error;
+          } catch {
+            // ignore
+          }
+          if (res.status === 413 || parsedError.includes('Request Entity Too Large')) {
+            parsedError = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
+          }
+          lastErrMsg = parsedError || `Lỗi máy chủ (HTTP ${res.status})`;
         }
+      } catch (fetchErr) {
+        console.warn('API route /api/tuvi/reading gặp sự cố mạng hoặc timeout, chuyển sang cổng trực tiếp Supabase Edge...', fetchErr);
+      }
+
+      // Bước 2: Tự động Fallback gọi trực tiếp Supabase Edge Function từ trình duyệt nếu Vercel bị timeout/ngắt kết nối
+      if (!readingResult) {
+        try {
+          const { callGeminiVision, buildReadingParts } = await import('@/lib/gemini');
+          const parts = buildReadingParts({
+            laSo: calculatedLaSo,
+            thongTinThem: data.thongTinThem,
+            chieuCao: data.chieuCao,
+            canNang: data.canNang,
+            anhMat: data.anhMat,
+            anhTay: data.anhTay,
+          });
+
+          const directRes = await callGeminiVision(parts, customApiKey || undefined);
+          if (directRes.text) {
+            readingResult = directRes.text;
+            lastErrMsg = null;
+          } else if (directRes.error) {
+            lastErrMsg = directRes.error;
+          }
+        } catch (directErr) {
+          console.error('Lỗi cổng trực tiếp:', directErr);
+          const msg = directErr instanceof Error ? directErr.message : String(directErr);
+          lastErrMsg = `Không thể kết nối đến máy chủ: ${msg}`;
+        }
+      }
+
+      if (readingResult) {
+        setReadingHtml(readingResult);
+        // Nếu đã lưu lá số, tự động cập nhật bài bình giải vào database
+        if (createdChartId) {
+          updateChartReading(createdChartId, readingResult);
+        }
+      } else {
+        setReadingError(lastErrMsg || 'Thầy đang bận luận giải, quý khách vui lòng thử lại sau giây lát!');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

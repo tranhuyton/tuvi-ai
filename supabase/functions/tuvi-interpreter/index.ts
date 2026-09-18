@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { parts, contents, prompt, content, imageUrls, model } = await req.json();
+    const { parts, contents, prompt, content, imageUrls, model, generationConfig } = await req.json();
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
     if (!GEMINI_API_KEY) {
@@ -59,12 +59,24 @@ serve(async (req) => {
     const targetModel = model || 'gemini-2.5-flash';
     console.log(`[tuvi-interpreter] Calling model: ${targetModel}`);
 
+    // Cấu hình tối ưu tốc độ phản hồi tức thì, bỏ thinking delay kéo dài
+    const finalGenConfig = generationConfig || {
+      temperature: 0.7,
+      maxOutputTokens: 3500,
+      thinkingConfig: {
+        thinkingBudget: 0,
+      },
+    };
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: requestContents })
+        body: JSON.stringify({
+          contents: requestContents,
+          generationConfig: finalGenConfig,
+        })
       }
     );
 

@@ -35,6 +35,62 @@ function formatTuViHtml(rawText: string): string {
 }
 
 /**
+ * Tạo parts hoàn chỉnh cho bài bình giải Tử Vi Thầy Tôn
+ */
+export function buildReadingParts(options: {
+  laSo: import('@/types/tuvi').LaSoData;
+  thongTinThem?: string;
+  chieuCao?: number;
+  canNang?: number;
+  anhMat?: string;
+  anhTay?: string;
+}): GeminiPart[] {
+  const { laSo, thongTinThem, chieuCao, canNang, anhMat, anhTay } = options;
+  const { duongSo, namCanChi, banMenh, tenCuc, sinhKhac, namXemCanChi, namXem, tuoiAmXem } = laSo;
+  const { buildCungDataPrompt } = require('./tuvi/anSao');
+  const cungDataStr = buildCungDataPrompt(laSo);
+
+  let promptText = `Đại sư Tử Vi Thầy Tôn uyên bác. Khách hàng: ${duongSo.hoTen}, ${duongSo.gioiTinh}. KHÔNG xưng AI, KHÔNG dùng bát tự. Xưng là 'Thầy Tôn'.
+KHÔNG dùng Markdown (**). Dùng HTML chuẩn (<b>, <h3>, <h4>, <p>, <ul>, <li>).
+LÁ SỐ: Năm Âm ${namCanChi}. Mệnh ${banMenh}, Cục ${tenCuc}. Sinh khắc: ${sinhKhac}. Xem hạn năm ${namXemCanChi} (${namXem}), ${tuoiAmXem} tuổi.
+CÁC SAO: \n${cungDataStr}\n`;
+
+  if (thongTinThem && thongTinThem.trim()) {
+    promptText += `Hoàn cảnh thực tế của đương số: ${thongTinThem.trim()}.\n`;
+  }
+  if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
+    promptText += `Hình thể: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
+  }
+
+  promptText += `YÊU CẦU CẤU TRÚC BÀI LUẬN:
+1. Tổng quan Bản Mệnh, tính cách & tiềm năng (kết hợp phân tích sự bù trừ của Hình Tướng và hoàn cảnh thực tế nếu có).
+2. Điểm nhấn các cung trọng yếu: Mệnh/Thân, Quan Lộc, Tài Bạch, Phu Thê (Nếu có ảnh khuôn mặt hoặc chỉ tay đính kèm, hãy quan sát kỹ Diện tướng và Thủ tướng để luận giải bổ trợ).
+3. Phân tích Đại Vận hiện tại.
+4. Đánh giá Tiểu Vận năm ${namXem} và 4 mùa trọng tâm (Xuân - Hạ - Thu - Đông), định hướng hành động đắc thời và tu dưỡng hóa giải vận hạn. (Nhắc nhở đương số có thể đàm đạo thêm với Thầy ở khung Chat bên dưới).
+Văn phong uyên thâm, thấu tỏ huyền cơ, súc tích, mạch lạc. Trình bày HTML đẹp mắt.`;
+
+  const parts: GeminiPart[] = [{ text: promptText }];
+
+  if (anhMat && anhMat.includes(';base64,')) {
+    const [header, base64Data] = anhMat.split(';base64,');
+    const mimeType = header.replace('data:', '') || 'image/jpeg';
+    parts.push({
+      inlineData: { mimeType, data: base64Data },
+    });
+  }
+
+  if (anhTay && anhTay.includes(';base64,')) {
+    const [header, base64Data] = anhTay.split(';base64,');
+    const mimeType = header.replace('data:', '') || 'image/jpeg';
+    parts.push({
+      inlineData: { mimeType, data: base64Data },
+    });
+  }
+
+  return parts;
+}
+
+/**
  * Gọi AI luận giải Tử Vi
  * Ưu tiên gọi qua Supabase Edge Function (dùng key bí mật trong Supabase Secret)
  * Nếu người dùng có tự nhập key cá nhân thì gọi trực tiếp với key đó.
@@ -52,8 +108,15 @@ export async function callGeminiVision(
       const res = await fetch(directUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts }] }),
-        signal: AbortSignal.timeout(60000),
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 3500,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+        signal: AbortSignal.timeout(120000),
       });
 
       if (!res.ok) {
@@ -100,7 +163,7 @@ export async function callGeminiVision(
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(60000),
+        signal: AbortSignal.timeout(120000),
       });
 
       if (!response.ok) {
