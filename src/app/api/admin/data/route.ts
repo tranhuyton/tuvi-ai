@@ -71,17 +71,26 @@ export async function GET(req: NextRequest) {
       message_count: messages?.filter((m) => m.chart_id === c.id).length || 0,
     }));
 
+    // Lấy danh sách đơn hàng quét QR
+    const { getAllOrders } = await import('@/lib/orderStore');
+    const orders = await getAllOrders(100);
+    const paidOrders = orders.filter((o) => o.status === 'PAID');
+    const actualRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+
     return NextResponse.json({
       source: 'direct',
       users: formattedUsers,
       charts: formattedCharts,
+      orders: orders,
       stats: {
         total_users: totalUsers,
         total_charts: totalCharts,
         total_pro: totalPro,
         total_free: totalFree,
         total_messages: totalMessages,
-        estimated_revenue: totalPro * 119000,
+        total_orders: orders.length,
+        paid_orders: paidOrders.length,
+        estimated_revenue: actualRevenue > 0 ? actualRevenue : totalPro * 119000,
       },
     });
   } catch (error: unknown) {

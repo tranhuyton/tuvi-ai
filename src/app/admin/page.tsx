@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import AdminTestStudio from '@/components/admin/AdminTestStudio';
 import AdminUsersTable, { AdminUser } from '@/components/admin/AdminUsersTable';
-import AdminTransactionsTable, { AdminChartItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
+import AdminTransactionsTable, { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
 import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, Database, RefreshCw } from 'lucide-react';
 
 type AdminTab = 'studio' | 'users' | 'transactions' | 'setup';
@@ -20,6 +20,7 @@ export default function AdminPage() {
   // Dữ liệu Admin
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [charts, setCharts] = useState<AdminChartItem[]>([]);
+  const [orders, setOrders] = useState<AdminOrderItem[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     total_users: 0,
     total_charts: 0,
@@ -78,6 +79,7 @@ export default function AdminPage() {
         const data = await res.json();
         setUsers(data.users || []);
         setCharts(data.charts || []);
+        if (data.orders) setOrders(data.orders);
         if (data.stats) setStats(data.stats);
       }
     } catch (err) {
@@ -261,6 +263,7 @@ export default function AdminPage() {
         {activeTab === 'transactions' && (
           <AdminTransactionsTable
             charts={charts}
+            orders={orders}
             stats={stats}
             isLoading={isLoadingData}
             onRefresh={() => fetchAdminData()}
@@ -347,6 +350,36 @@ BEGIN
     RETURN result;
 END;
 $$;`}
+            </div>
+
+            <div className="pt-4 border-t border-slate-800">
+              <h4 className="font-bold text-sm text-amber-400 font-serif mb-2">
+                2. Khởi tạo Bảng Đơn Hàng &amp; Thanh Toán Quét QR (tuvi_orders)
+              </h4>
+              <p className="text-xs text-slate-300 mb-2">
+                Nếu muốn lưu trữ vĩnh viễn các đơn hàng VietQR trên Supabase, anh có thể chạy thêm script này:
+              </p>
+              <div className="p-4 rounded-xl bg-black/80 border border-slate-800 text-xs font-mono text-emerald-400 overflow-x-auto whitespace-pre">
+{`-- Tạo bảng lưu trữ đơn hàng & thanh toán QR
+CREATE TABLE IF NOT EXISTS public.tuvi_orders (
+    id TEXT PRIMARY KEY,
+    order_code VARCHAR(20) UNIQUE NOT NULL,
+    payment_type VARCHAR(50) NOT NULL,
+    amount NUMERIC NOT NULL,
+    ho_ten VARCHAR(255),
+    email VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'PENDING',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    paid_at TIMESTAMPTZ,
+    transaction_id VARCHAR(255),
+    chart_id UUID,
+    user_id UUID
+);
+
+-- Index tra cứu nhanh mã đơn
+CREATE INDEX IF NOT EXISTS idx_tuvi_orders_code ON public.tuvi_orders (order_code);
+CREATE INDEX IF NOT EXISTS idx_tuvi_orders_status ON public.tuvi_orders (status);`}
+              </div>
             </div>
 
             <p className="text-xs text-slate-400">
