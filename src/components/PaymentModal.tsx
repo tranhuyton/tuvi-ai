@@ -64,7 +64,7 @@ export default function PaymentModal({
                 Kích Hoạt Luận Giải Chuyên Sâu (Bản Pro)
               </h3>
               <p className="text-xs text-slate-400">
-                Sử dụng Siêu Trí Tuệ Gemini 3.1 Pro Preview phân tích chuyên sâu
+                Khai mở Đại Pháp Luận Giải Bí Truyền chuyên sâu đa tầng từ Thầy Tôn
               </p>
             </div>
           </div>

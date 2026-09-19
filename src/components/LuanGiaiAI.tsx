@@ -58,7 +58,7 @@ export default function LuanGiaiAI({
                 : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
             }`}
           >
-            {isPro ? '👑 Gói Chuyên Sâu Pro • Gemini 3.1 Pro' : '📜 Gói Cơ Bản • Gemini 2.5 Flash'}
+            {isPro ? '👑 Bản Chuyên Sâu Bí Truyền' : '📜 Bản Luận Giải Khởi Nguyên'}
           </span>
           <p className="text-xs sm:text-sm text-slate-400">
             {isPro
@@ -79,8 +79,8 @@ export default function LuanGiaiAI({
           </h3>
           <p className="text-sm text-slate-400 mt-2 max-w-md">
             {isPro || isUpgrading
-              ? 'Mô hình Gemini 3.1 Pro Preview đang suy luận đa tầng, kết hợp 14 Chính tinh, tướng pháp và 4 mùa hạn vận. Quý khách vui lòng đợi trong giây lát!'
-              : 'Mô hình Gemini 2.5 Flash đang chắt lọc huyền cơ lá số tử vi. Vui lòng kiên nhẫn đợi trong giây lát!'}
+              ? 'Thầy Tôn đang định tâm quán tưởng thâm sâu, soi rọi 14 Chính tinh, đối chiếu Tướng pháp và luận giải vận khí 4 mùa. Quý khách vui lòng tịnh tâm đợi trong giây lát!'
+              : 'Thầy Tôn đang định tâm chắt lọc huyền cơ lá số tử vi và bản mệnh. Quý khách vui lòng kiên nhẫn đợi trong giây lát!'}
           </p>
         </div>
       )}
@@ -157,7 +157,7 @@ export default function LuanGiaiAI({
                   Bạn muốn tìm hiểu sâu sắc hơn về lá số này?
                 </h4>
                 <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                  Bản Pro Chuyên Sâu sử dụng Gemini 3.1 Pro Preview luận giải chi tiết gấp 2 lần, soi chiếu toàn diện Diện tướng/Chỉ tay, 4 mùa hạn vận và giải pháp hóa giải sát tinh.
+                  Bản Chuyên Sâu mở ra đại pháp bí truyền luận giải chi tiết gấp 2 lần, soi chiếu toàn diện Diện tướng/Chỉ tay, biến chuyển 4 mùa hạn vận và giải pháp hóa giải hung sát tinh.
                 </p>
               </div>
               <button

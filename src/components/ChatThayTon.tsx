@@ -126,7 +126,7 @@ export default function ChatThayTon({
             <div className="flex justify-start">
               <div className="bg-slate-800 text-slate-300 rounded-2xl rounded-tl-none px-4 py-3 text-sm flex items-center gap-2 border border-slate-700">
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-                <span>Thầy Tôn đang xem thiên cơ và gõ lời giải đáp...</span>
+                <span>Thầy Tôn đang xem thiên cơ và biên lời giải đáp...</span>
               </div>
             </div>
           )}

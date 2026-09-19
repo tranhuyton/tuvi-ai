@@ -220,8 +220,8 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
         </div>
 
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>AI Trực Tuyến</span>
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Khai Mở Thiên Cơ</span>
         </div>
       </div>
 
@@ -499,7 +499,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                   </span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Sử dụng <b>Gemini 2.5 Flash</b>. Bài luận chuẩn xác, súc tích (~800 - 1000 từ), phân tích Mệnh Cục, Tam Hợp Mệnh-Tài-Quan, Đại Vận &amp; Tiểu Vận.
+                  Pháp môn Khởi Nguyên Căn Bản. Luận giải chuẩn mực, súc tích (~800 - 1000 từ), bao quát Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận &amp; Tiểu Vận năm xem.
                 </p>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
@@ -531,7 +531,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                   </span>
                 </div>
                 <p className="text-xs text-slate-200 leading-relaxed">
-                  Sử dụng <b>Gemini 3.1 Pro Preview</b>. Bài luận sâu gấp 2 lần (~1800 - 2500 từ). Soi chiếu 14 Chính tinh, Tướng Pháp (mặt/tay), Đại Vận 10 năm &amp; 4 Mùa Hóa Giải.
+                  Đại Pháp Bí Truyền Chuyên Sâu. Luận giải chi tiết gấp 2 lần (~1800 - 2500 từ). Khảo sát sâu 14 Chính tinh, phối hợp Tướng Pháp (mặt/chỉ tay), Đại Vận 10 năm &amp; Hóa Giải 4 Mùa.
                 </p>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-amber-400 flex items-center justify-between">

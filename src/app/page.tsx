@@ -525,7 +525,7 @@ export default function HomePage() {
       />
 
       <footer className="text-center text-xs text-slate-500 py-6 border-t border-slate-800/60 print:hidden mt-8">
-        <p>© {new Date().getFullYear()} Tử Vi Thầy Tôn AI. Hệ thống phát triển độc lập trên Next.js &amp; Gemini AI.</p>
+        <p>© {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.</p>
       </footer>
     </main>
   );

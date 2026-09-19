@@ -277,7 +277,7 @@ export async function callGeminiVision(
     },
   ];
 
-  let lastError = 'Không thể kết nối đến máy chủ AI';
+  let lastError = 'Thiên bàn tạm thời chưa thể kết nối';
 
   for (const { url, label, body } of edgeEndpoints) {
     try {
@@ -303,7 +303,7 @@ export async function callGeminiVision(
       const rawText = data.result || data.text;
 
       if (!rawText) {
-        lastError = `[${label}] Không nhận được phản hồi từ AI`;
+        lastError = `[${label}] Chưa nhận được lời bình giải`;
         continue;
       }
 
@@ -316,7 +316,7 @@ export async function callGeminiVision(
   }
 
   return {
-    error: `❌ Thầy đang bận luận giải cho người khác. ${lastError}`,
+    error: `❌ Thầy đang định tâm quán tưởng cho khách trước. Quý khách vui lòng thử lại sau giây lát!`,
   };
 }
 
@@ -390,7 +390,7 @@ export async function testGeminiApiKey(
         success: true,
         latencyMs: elapsed,
         model: 'Supabase Edge Secret (Gemini)',
-        message: 'Hệ thống Thầy Tôn AI kết nối hoàn hảo qua Supabase Edge Function!',
+        message: 'Hệ thống Tử Vi Thầy Tôn kết nối hoàn hảo qua Supabase Edge Function!',
       };
     }
 

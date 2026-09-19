@@ -29,10 +29,10 @@ export default function UserNav({
         </div>
         <div>
           <h1 className="text-base sm:text-lg font-bold font-serif text-amber-400 tracking-wide">
-            TỬ VI THẦY TÔN AI
+            TỬ VI THẦY TÔN
           </h1>
           <p className="text-[11px] text-slate-400 font-sans">
-            Bát Bộ Thần Sát &amp; Tướng Pháp Học
+            Bát Bộ Thần Sát &amp; Tướng Pháp Bí Truyền
           </p>
         </div>
       </div>
