@@ -572,8 +572,8 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
 
         {/* Đặt lịch xem trực tiếp offline */}
         <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap text-xs text-slate-400">
-          <span className="text-slate-300">
-            Quý khách muốn gặp diện kiến Thầy xem trực tiếp?
+          <span className="text-slate-300 font-medium">
+            Tư vấn CSKH hoặc Đặt lịch xem offline:
           </span>
           <div className="flex items-center gap-2 font-medium">
             <a

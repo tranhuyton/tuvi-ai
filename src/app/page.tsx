@@ -594,10 +594,10 @@ export default function HomePage() {
           <a
             href="tel:0935058688"
             className="hover:text-amber-300 transition inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900/80 border border-amber-500/30 rounded-xl"
-            title="Gọi điện trực tiếp đặt lịch xem offline"
+            title="Tư vấn CSKH hoặc đặt lịch xem offline"
           >
             <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
-            <span>Đặt lịch xem offline: <strong className="text-amber-400 font-bold">0935.058.688</strong></span>
+            <span>Tư vấn CSKH &amp; Đặt lịch offline: <strong className="text-amber-400 font-bold">0935.058.688</strong></span>
           </a>
 
           <a
@@ -605,10 +605,10 @@ export default function HomePage() {
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-blue-300 transition inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900/80 border border-blue-500/30 rounded-xl"
-            title="Nhắn Zalo Thầy Tôn (0935.058.688)"
+            title="Tư vấn CSKH qua Zalo Thầy Tôn (0935.058.688)"
           >
             <span className="w-4 h-4 rounded-full bg-[#0068FF] text-white flex items-center justify-center text-[9px] font-black">Z</span>
-            <span>Zalo Thầy Tôn: <strong className="text-blue-400 font-bold">0935.058.688</strong></span>
+            <span>Tư vấn CSKH qua Zalo: <strong className="text-blue-400 font-bold">0935.058.688</strong></span>
           </a>
         </div>
         <p className="text-slate-500 text-[11px] sm:text-xs">
