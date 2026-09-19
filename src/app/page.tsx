@@ -9,7 +9,7 @@ import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
 import AuthModal from '@/components/AuthModal';
 import SavedChartsModal from '@/components/SavedChartsModal';
-import PaymentModal from '@/components/PaymentModal';
+import PaymentModal, { PaymentPurpose } from '@/components/PaymentModal';
 import UserNav from '@/components/UserNav';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -35,11 +35,21 @@ export default function HomePage() {
 
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
+  const [questionsAllowed, setQuestionsAllowed] = useState<number>(0);
 
-  // Modals
+  // Modals & Payment
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSavedChartsModalOpen, setIsSavedChartsModalOpen] = useState(false);
-  const [isUpgradePaymentOpen, setIsUpgradePaymentOpen] = useState(false);
+  const [paymentModalConfig, setPaymentModalConfig] = useState<{
+    isOpen: boolean;
+    type: PaymentPurpose;
+    price: number;
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    type: 'reading_vip',
+    price: 119000,
+  });
 
   // Lưu trữ status
   const [isSaving, setIsSaving] = useState(false);
@@ -153,6 +163,7 @@ export default function HomePage() {
     setReadingHtml(undefined);
     setReadingError(undefined);
     setChatHistory([]);
+    setQuestionsAllowed(tier === 'pro' ? 2 : 0);
     setIsLoadingReading(true);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -198,6 +209,7 @@ export default function HomePage() {
     if (!laSo || !currentDuongSo) return;
 
     setCurrentTier('pro');
+    setQuestionsAllowed((prev) => Math.max(prev, 2));
     setIsUpgrading(true);
     setIsLoadingReading(true);
     setReadingError(undefined);
@@ -234,6 +246,41 @@ export default function HomePage() {
     } finally {
       setIsLoadingReading(false);
       setIsUpgrading(false);
+    }
+  };
+
+  // Mở modal thanh toán nâng cấp Bản Pro
+  const openUpgradeModal = () => {
+    setPaymentModalConfig({
+      isOpen: true,
+      type: 'reading_vip',
+      price: 119000,
+      onConfirm: () => {
+        handleConfirmUpgradeToPro();
+      },
+    });
+  };
+
+  // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp)
+  const handleUnlockQuestions = () => {
+    if (currentTier === 'pro') {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: 'chat_vip',
+        price: 99000,
+        onConfirm: () => {
+          setQuestionsAllowed((prev) => prev + 2);
+        },
+      });
+    } else {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: 'chat_free',
+        price: 49000,
+        onConfirm: () => {
+          setQuestionsAllowed((prev) => prev + 2);
+        },
+      });
     }
   };
 
@@ -332,6 +379,12 @@ export default function HomePage() {
       setReadingHtml(chart.reading_html || undefined);
       setReadingError(undefined);
       setChatHistory(chatMessages || []);
+      const msgCount = (chatMessages || []).filter((c) => !c.isError).length;
+      if (detectedTier === 'pro') {
+        setQuestionsAllowed(Math.max(2, msgCount));
+      } else {
+        setQuestionsAllowed(msgCount);
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
       alert('Lỗi tải dữ liệu lá số: ' + e.message);
@@ -379,6 +432,7 @@ export default function HomePage() {
     setCurrentDuongSo(null);
     setCurrentChartId(null);
     setCurrentTier('free');
+    setQuestionsAllowed(0);
     setReadingHtml(undefined);
     setReadingError(undefined);
     setChatHistory([]);
@@ -460,11 +514,11 @@ export default function HomePage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setIsUpgradePaymentOpen(true)}
+                      onClick={openUpgradeModal}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5"
                     >
                       <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                      <span>⚡ Nâng Cấp Pro</span>
+                      <span>⚡ Nâng Cấp Pro (119.000đ)</span>
                     </button>
                   </div>
                 )}
@@ -480,7 +534,7 @@ export default function HomePage() {
               isLoading={isLoadingReading}
               error={readingError}
               tier={currentTier}
-              onUpgrade={() => setIsUpgradePaymentOpen(true)}
+              onUpgrade={openUpgradeModal}
               isUpgrading={isUpgrading}
             />
 
@@ -489,20 +543,27 @@ export default function HomePage() {
               chatHistory={chatHistory}
               onSendMessage={handleSendMessage}
               isLoading={isLoadingChat}
-              maxQuestions={2}
               tier={currentTier}
+              questionsAllowed={questionsAllowed}
+              onUnlockQuestions={handleUnlockQuestions}
             />
           </div>
         )}
       </div>
 
-      {/* Modal Nâng Cấp Bản Pro Chuyên Sâu */}
+      {/* Modal Thanh Toán Đa Mục Đích */}
       <PaymentModal
-        isOpen={isUpgradePaymentOpen}
-        onClose={() => setIsUpgradePaymentOpen(false)}
-        onConfirm={handleConfirmUpgradeToPro}
+        isOpen={paymentModalConfig.isOpen}
+        onClose={() => setPaymentModalConfig((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (paymentModalConfig.onConfirm) {
+            paymentModalConfig.onConfirm();
+          }
+          setPaymentModalConfig((prev) => ({ ...prev, isOpen: false }));
+        }}
         hoTen={currentDuongSo?.hoTen || 'Đương số'}
-        price={99000}
+        paymentType={paymentModalConfig.type}
+        price={paymentModalConfig.price}
       />
 
       {/* Modal Đăng Nhập / Đăng Ký */}
@@ -519,7 +580,7 @@ export default function HomePage() {
         onNewChart={handleReset}
         onUpgradeChart={(chartId) => {
           handleSelectSavedChart(chartId);
-          setIsUpgradePaymentOpen(true);
+          openUpgradeModal();
         }}
         activeChartId={currentChartId}
       />

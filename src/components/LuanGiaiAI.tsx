@@ -165,7 +165,7 @@ export default function LuanGiaiAI({
                 onClick={onUpgrade}
                 className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition whitespace-nowrap"
               >
-                Nâng Cấp Bản Pro (99.000đ)
+                Nâng Cấp Bản Pro (119.000đ)
               </button>
             </div>
           )}

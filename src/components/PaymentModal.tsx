@@ -3,12 +3,17 @@
 import React, { useState } from 'react';
 import { X, Sparkles, CheckCircle, ShieldCheck, Copy, Check, QrCode } from 'lucide-react';
 
+export type PaymentPurpose = 'reading_vip' | 'chat_free' | 'chat_vip';
+
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   hoTen?: string;
+  paymentType?: PaymentPurpose;
   price?: number;
+  customTitle?: string;
+  customDescription?: string;
 }
 
 export default function PaymentModal({
@@ -16,7 +21,10 @@ export default function PaymentModal({
   onClose,
   onConfirm,
   hoTen = 'Đương số',
-  price = 99000,
+  paymentType = 'reading_vip',
+  price: customPrice,
+  customTitle,
+  customDescription,
 }: PaymentModalProps) {
   const [copiedStk, setCopiedStk] = useState(false);
   const [copiedContent, setCopiedContent] = useState(false);
@@ -31,10 +39,53 @@ export default function PaymentModal({
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9]/g, '')
     .toUpperCase()
-    .slice(0, 12);
-  const syntax = `TUVI PRO ${cleanName || 'KHACH'}`;
+    .slice(0, 10);
 
-  const qrUrl = `https://img.vietqr.io/image/MB-${stk}-compact2.png?amount=${price}&addInfo=${encodeURIComponent(
+  let finalPrice = customPrice;
+  let title = customTitle;
+  let subtitle = customDescription;
+  let syntax = '';
+  let buttonLabel = '';
+  let benefits: string[] = [];
+
+  if (paymentType === 'reading_vip') {
+    finalPrice = finalPrice ?? 119000;
+    title = title || 'Kích Hoạt Luận Giải Chuyên Sâu (Bản VIP)';
+    subtitle = subtitle || 'Khai mở Đại Pháp Luận Giải Bí Truyền chuyên sâu đa tầng từ Thầy Tôn';
+    syntax = `TUVI VIP ${cleanName || 'KHACH'}`;
+    buttonLabel = 'Tôi Đã Chuyển Khoản - Kích Hoạt Bản VIP';
+    benefits = [
+      'Bài luận sâu gấp 2 lần (~1800 - 2500 từ) sắc bén, tỉ mỉ từng cung vị.',
+      'Khảo sát 14 Chính tinh, đối chiếu Diện Tướng (khuôn mặt) & Thủ Tướng (chỉ tay).',
+      'Chi tiết Đại Vận 10 năm từng chặng 5 năm & 4 mùa Xuân - Hạ - Thu - Đông.',
+      'Tặng kèm 02 câu hỏi đàm đạo chuyên sâu trực tiếp cùng Thầy Tôn.',
+    ];
+  } else if (paymentType === 'chat_vip') {
+    finalPrice = finalPrice ?? 99000;
+    title = title || 'Thỉnh Giáo Chuyên Sâu Cùng Thầy Tôn (Bản VIP)';
+    subtitle = subtitle || 'Đặc quyền thỉnh giáo chuyên sâu đa tầng, giải khai mọi khúc mắc';
+    syntax = `HOI VIP ${cleanName || 'KHACH'}`;
+    buttonLabel = 'Tôi Đã Chuyển Khoản - Mở Khóa 2 Câu Hỏi VIP';
+    benefits = [
+      '02 lượt thỉnh giáo chuyên sâu trực tiếp cùng Thầy Tôn.',
+      'Phân tích cặn kẽ tương quan các cung vị, cách cục và hạn vận liên quan.',
+      'Định hướng sách lược ứng biến, hóa giải vận rủi, đón lành tránh dữ.',
+    ];
+  } else {
+    // chat_free
+    finalPrice = finalPrice ?? 49000;
+    title = title || 'Thỉnh Giáo Trực Tiếp Cùng Thầy Tôn (Bản Cơ Bản)';
+    subtitle = subtitle || 'Khai mở lời giải đáp riêng về công danh, sự nghiệp, tình duyên, gia đạo';
+    syntax = `HOI TUVI ${cleanName || 'KHACH'}`;
+    buttonLabel = 'Tôi Đã Chuyển Khoản - Mở Khóa 2 Câu Hỏi';
+    benefits = [
+      '02 lượt hỏi đáp trực tiếp và nhận lời chỉ dẫn riêng biệt từ Thầy Tôn.',
+      'Thầy soi chiếu lá số, phân tích căn duyên khúc mắc của quý khách.',
+      'Lời khuyên hành động thực tế, giúp an tâm định hướng con đường phía trước.',
+    ];
+  }
+
+  const qrUrl = `https://img.vietqr.io/image/MB-${stk}-compact2.png?amount=${finalPrice}&addInfo=${encodeURIComponent(
     syntax
   )}&accountName=${encodeURIComponent(chuTk)}`;
 
@@ -61,10 +112,10 @@ export default function PaymentModal({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold font-serif text-amber-400 flex items-center gap-1.5">
-                Kích Hoạt Luận Giải Chuyên Sâu (Bản Pro)
+                {title}
               </h3>
               <p className="text-xs text-slate-400">
-                Khai mở Đại Pháp Luận Giải Bí Truyền chuyên sâu đa tầng từ Thầy Tôn
+                {subtitle}
               </p>
             </div>
           </div>
@@ -78,17 +129,16 @@ export default function PaymentModal({
 
         {/* Nội dung thanh toán */}
         <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-          {/* Đặc quyền Bản Pro */}
+          {/* Đặc quyền gói */}
           <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-3 sm:p-4 text-xs sm:text-sm text-amber-200 space-y-1.5">
             <div className="font-bold text-amber-300 flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-amber-400 shrink-0" />
-              Đặc quyền Bản Pro Chuyên Sâu ({price.toLocaleString('vi-VN')} đ):
+              Đặc quyền ({finalPrice.toLocaleString('vi-VN')} đ):
             </div>
             <ul className="list-disc list-inside space-y-1 pl-1 text-slate-300 text-xs">
-              <li>Bài luận sâu gấp 2 lần (~1800 - 2500 từ) sắc bén, tỉ mỉ từng cung vị.</li>
-              <li>Kết hợp Diện Tướng khuôn mặt &amp; Thủ Tướng chỉ tay với lá số.</li>
-              <li>Chi tiết Đại Vận 10 năm từng chặng 5 năm &amp; 4 mùa Xuân - Hạ - Thu - Đông.</li>
-              <li>Ưu đãi 50% phí thỉnh giáo riêng với Thầy Tôn (10.000đ/câu hỏi).</li>
+              {benefits.map((b, idx) => (
+                <li key={idx}>{b}</li>
+              ))}
             </ul>
           </div>
 
@@ -102,7 +152,7 @@ export default function PaymentModal({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={qrUrl}
-                alt="VietQR Thanh toán Tử Vi Pro"
+                alt="VietQR Thanh toán Tử Vi Thầy Tôn"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -138,7 +188,7 @@ export default function PaymentModal({
             <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
               <span className="text-slate-400">Số tiền:</span>
               <span className="font-bold text-emerald-400 text-sm">
-                {price.toLocaleString('vi-VN')} VNĐ
+                {finalPrice.toLocaleString('vi-VN')} VNĐ
               </span>
             </div>
             <div className="flex justify-between items-center py-1">
@@ -169,7 +219,7 @@ export default function PaymentModal({
             className="flex-1 py-3 px-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>Tôi Đã Chuyển Khoản - Kích Hoạt Bản Pro</span>
+            <span>{buttonLabel}</span>
           </button>
           <button
             type="button"

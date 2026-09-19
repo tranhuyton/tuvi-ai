@@ -504,7 +504,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
               </div>
               <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
                 <span>Hỏi đáp trực tiếp:</span>
-                <span className="font-medium text-slate-300">20.000đ / câu</span>
+                <span className="font-medium text-slate-300">49.000đ / 2 câu</span>
               </div>
             </div>
 
@@ -527,7 +527,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                     <span>Bản Chuyên Sâu Pro</span>
                   </span>
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    99.000 VNĐ
+                    119.000 VNĐ
                   </span>
                 </div>
                 <p className="text-xs text-slate-200 leading-relaxed">
@@ -536,7 +536,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
               </div>
               <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-amber-400 flex items-center justify-between">
                 <span>Ưu đãi hỏi đáp VIP:</span>
-                <span className="font-bold text-amber-300">10.000đ / câu</span>
+                <span className="font-bold text-amber-300">Tặng 2 câu (Thêm: 99.000đ/2 câu)</span>
               </div>
             </div>
           </div>
@@ -577,7 +577,8 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
         onClose={() => setIsPaymentOpen(false)}
         onConfirm={handleConfirmProPayment}
         hoTen={hoTen.trim() || 'Đương số'}
-        price={99000}
+        paymentType="reading_vip"
+        price={119000}
       />
     </div>
   );

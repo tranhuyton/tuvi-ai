@@ -2,31 +2,36 @@
 
 import React, { useState } from 'react';
 import { ChatMessage, ServiceTier } from '@/types/tuvi';
-import { MessageSquare, Send, CheckCircle2, Crown, Sparkles } from 'lucide-react';
+import { MessageSquare, Send, Crown, Sparkles, Lock } from 'lucide-react';
 
 interface ChatThayTonProps {
   chatHistory: ChatMessage[];
   onSendMessage: (question: string) => Promise<void>;
   isLoading: boolean;
-  maxQuestions?: number;
   tier?: ServiceTier;
+  questionsAllowed?: number;
+  onUnlockQuestions: () => void;
 }
 
 export default function ChatThayTon({
   chatHistory,
   onSendMessage,
   isLoading,
-  maxQuestions = 2,
   tier = 'free',
+  questionsAllowed = 0,
+  onUnlockQuestions,
 }: ChatThayTonProps) {
   const [question, setQuestion] = useState('');
   const count = chatHistory.filter((c) => !c.isError).length;
-  const isExhausted = count >= maxQuestions;
   const isPro = tier === 'pro';
+
+  const isLocked = questionsAllowed === 0;
+  const isExhausted = count >= questionsAllowed && questionsAllowed > 0;
+  const canAsk = count < questionsAllowed;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!question.trim() || isLoading || isExhausted) return;
+    if (!question.trim() || isLoading || !canAsk) return;
 
     const q = question.trim();
     setQuestion('');
@@ -64,30 +69,30 @@ export default function ChatThayTon({
                   : 'bg-blue-500/10 border-blue-500/30 text-blue-300'
               }`}
             >
-              {isPro ? 'Phí thỉnh giáo VIP: 10.000đ / câu' : 'Phí thỉnh giáo: 20.000đ / câu'}
+              {isPro
+                ? 'Hỏi thêm chuyên sâu: 99.000đ / 2 câu'
+                : 'Phí thỉnh giáo: 49.000đ / 2 câu'}
             </div>
 
             <div className="text-xs px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
-              Lượt hỏi: <span className="font-bold text-amber-400">{count}</span> / {maxQuestions}
+              {isLocked ? (
+                <span className="text-amber-400 font-semibold flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Chưa mở khóa
+                </span>
+              ) : (
+                <span>
+                  Lượt hỏi: <span className="font-bold text-amber-400">{count}</span> / {questionsAllowed}
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Thông báo chính sách phí tượng trưng */}
-        <div className="mb-4 text-xs text-slate-400 bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between flex-wrap gap-2">
-          <span>
-            {isPro
-              ? '✨ Quý khách sở hữu Bản Pro được hưởng đặc quyền thỉnh giáo Thầy Tôn với mức phí ưu đãi 10.000đ/câu hỏi.'
-              : '💡 Bản Miễn Phí có mức phí thỉnh giáo Thầy Tôn là 20.000đ/câu hỏi. Quý khách có thể nâng cấp Bản Pro để nhận ưu đãi VIP 10.000đ/câu.'}
-          </span>
-        </div>
-
         {/* Lịch sử tin nhắn */}
         <div className="space-y-4 mb-5 max-h-[500px] overflow-y-auto pr-1">
-          {chatHistory.length === 0 && (
+          {chatHistory.length === 0 && !isLocked && (
             <p className="text-sm text-slate-400 italic text-center py-4">
-              Sau khi xem bài luận, quý khách có thể thỉnh giáo thêm tối đa {maxQuestions} câu hỏi
-              chi tiết về công danh, tài lộc, tình duyên hoặc gia đạo.
+              Quý khách có {questionsAllowed} lượt thỉnh giáo. Hãy nhập câu hỏi cụ thể về công danh, tài lộc, tình duyên hoặc gia đạo để Thầy Tôn giải đáp.
             </p>
           )}
 
@@ -132,8 +137,37 @@ export default function ChatThayTon({
           )}
         </div>
 
-        {/* Khung nhập câu hỏi */}
-        {!isExhausted ? (
+        {/* Khung tương tác / Thanh toán */}
+        {isLocked ? (
+          /* TRẠNG THÁI 1: BẢN FREE CHƯA THANH TOÁN HỎI ĐÁP */
+          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl">
+            <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-base sm:text-lg text-amber-300 font-serif">
+                Thỉnh Giáo Trực Tiếp Cùng Thầy Tôn
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
+                Bản Miễn Phí chưa bao gồm lượt hỏi đáp. Quý khách có thể thỉnh giáo riêng Thầy Tôn để được giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn.
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={onUnlockQuestions}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition transform hover:-translate-y-0.5"
+              >
+                <Sparkles className="w-4 h-4 fill-slate-950" />
+                <span>⚡ Thanh Toán Thỉnh Giáo Thầy Tôn (49.000đ / 2 câu)</span>
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Thanh toán tự động qua mã VietQR chỉ mất vài giây
+            </p>
+          </div>
+        ) : canAsk ? (
+          /* TRẠNG THÁI 2: ĐANG CÒN LƯỢT HỎI */
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
               type="text"
@@ -153,12 +187,43 @@ export default function ChatThayTon({
               <span>Gửi Thầy</span>
             </button>
           </form>
-        ) : (
-          <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-sm font-medium text-center">
-            <CheckCircle2 className="w-4 h-4" />
-            <span>Quý khách đã thỉnh Thầy đủ {maxQuestions} lượt cho lá số này. Chúc quý khách vạn sự hanh thông!</span>
+        ) : isExhausted ? (
+          /* TRẠNG THÁI 3: ĐÃ HỎI XONG 2 CÂU -> HIỆN PROMPT HỎI CÓ MUỐN HỎI THÊM KHÔNG */
+          <div className="bg-slate-950/90 border border-amber-500/40 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
+            <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-base sm:text-lg text-amber-300 font-serif">
+                Quý khách có muốn thỉnh giáo thêm câu hỏi không?
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
+                {isPro
+                  ? `Quý khách đã sử dụng hết ${questionsAllowed} lượt đàm đạo chuyên sâu. Để Thầy Tôn tiếp tục soi chiếu các phương diện khác, quý khách có thể mua thêm 02 câu hỏi chuyên sâu.`
+                  : `Quý khách đã sử dụng hết ${questionsAllowed} lượt thỉnh giáo. Quý khách có thể mua thêm 02 câu hỏi để Thầy Tôn tiếp tục phân tích.`}
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={onUnlockQuestions}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition transform hover:-translate-y-0.5"
+              >
+                {isPro ? (
+                  <>
+                    <Crown className="w-4 h-4" />
+                    <span>Thỉnh Giáo Thêm 2 Câu Chuyên Sâu (99.000đ)</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 fill-slate-950" />
+                    <span>Thỉnh Giáo Thêm 2 Câu (49.000đ)</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
