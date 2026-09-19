@@ -205,6 +205,23 @@ export default function PaymentModal({
                 </button>
               </div>
             </div>
+
+            <div className="pt-2 text-center text-xs text-slate-400">
+              Cần hỗ trợ hoặc đặt lịch xem trực tiếp offline cùng Thầy Tôn?{' '}
+              <a href="tel:0935058688" className="text-amber-400 font-bold hover:underline">
+                0935.058.688
+              </a>{' '}
+              (
+              <a
+                href="https://zalo.me/0935058688"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 font-bold hover:underline"
+              >
+                Nhắn Zalo
+              </a>
+              )
+            </div>
           </div>
         </div>
 

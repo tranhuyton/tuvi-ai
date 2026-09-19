@@ -11,6 +11,7 @@ import AuthModal from '@/components/AuthModal';
 import SavedChartsModal from '@/components/SavedChartsModal';
 import PaymentModal, { PaymentPurpose } from '@/components/PaymentModal';
 import UserNav from '@/components/UserNav';
+import FloatingContact from '@/components/FloatingContact';
 import { useAuth } from '@/context/AuthContext';
 import {
   saveOrUpdateChart,
@@ -18,7 +19,7 @@ import {
   updateChartReading,
   saveChatMessage,
 } from '@/lib/tuviService';
-import { Bookmark, Check, Sparkles, Crown } from 'lucide-react';
+import { Bookmark, Check, Sparkles, Crown, PhoneCall } from 'lucide-react';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -585,8 +586,34 @@ export default function HomePage() {
         activeChartId={currentChartId}
       />
 
-      <footer className="text-center text-xs text-slate-500 py-6 border-t border-slate-800/60 print:hidden mt-8">
-        <p>© {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.</p>
+      {/* Nút Liên Hệ Nhanh (Zalo & Gọi Điện Đặt Lịch Offline) */}
+      <FloatingContact />
+
+      <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2.5">
+        <div className="flex items-center justify-center gap-3 sm:gap-6 flex-wrap text-slate-300 font-medium text-xs sm:text-sm">
+          <a
+            href="tel:0935058688"
+            className="hover:text-amber-300 transition inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900/80 border border-amber-500/30 rounded-xl"
+            title="Gọi điện trực tiếp đặt lịch xem offline"
+          >
+            <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
+            <span>Đặt lịch xem offline: <strong className="text-amber-400 font-bold">0935.058.688</strong></span>
+          </a>
+
+          <a
+            href="https://zalo.me/0935058688"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-300 transition inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900/80 border border-blue-500/30 rounded-xl"
+            title="Nhắn Zalo Thầy Tôn (0935.058.688)"
+          >
+            <span className="w-4 h-4 rounded-full bg-[#0068FF] text-white flex items-center justify-center text-[9px] font-black">Z</span>
+            <span>Zalo Thầy Tôn: <strong className="text-blue-400 font-bold">0935.058.688</strong></span>
+          </a>
+        </div>
+        <p className="text-slate-500 text-[11px] sm:text-xs">
+          © {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.
+        </p>
       </footer>
     </main>
   );

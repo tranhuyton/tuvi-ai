@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, BookOpen, LogOut, PlusCircle, LogIn, Sparkles } from 'lucide-react';
+import { User, BookOpen, LogOut, PlusCircle, LogIn, Sparkles, PhoneCall } from 'lucide-react';
 
 interface UserNavProps {
   onOpenAuthModal: () => void;
@@ -35,6 +35,28 @@ export default function UserNav({
             Bát Bộ Thần Sát &amp; Tướng Pháp Bí Truyền
           </p>
         </div>
+      </div>
+
+      {/* Contact & Hotline Quick Link */}
+      <div className="hidden lg:flex items-center gap-2">
+        <a
+          href="tel:0935058688"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition shadow-sm"
+          title="Gọi điện đặt lịch xem trực tiếp offline cùng Thầy Tôn"
+        >
+          <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
+          <span>Đặt Lịch Offline: <strong className="font-bold text-amber-400">0935.058.688</strong></span>
+        </a>
+        <a
+          href="https://zalo.me/0935058688"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#0068FF]/15 hover:bg-[#0068FF]/25 text-blue-300 border border-blue-500/30 transition shadow-sm"
+          title="Nhắn tin Zalo với Thầy Tôn (0935.058.688)"
+        >
+          <span className="w-3.5 h-3.5 rounded-full bg-[#0068FF] text-white flex items-center justify-center text-[8px] font-black">Z</span>
+          <span>Zalo Thầy</span>
+        </a>
       </div>
 
       {/* Account actions */}

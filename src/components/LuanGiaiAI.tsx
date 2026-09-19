@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, AlertCircle, Crown } from 'lucide-react';
+import { Sparkles, Copy, Check, AlertCircle, Crown, PhoneCall, MessageCircle } from 'lucide-react';
 import { ServiceTier } from '@/types/tuvi';
 
 interface LuanGiaiAIProps {
@@ -169,6 +169,43 @@ export default function LuanGiaiAI({
               </button>
             </div>
           )}
+
+          {/* Khối Đặt Lịch Xem Trực Tiếp Offline Cùng Thầy Tôn */}
+          <div className="mt-8 pt-6 border-t border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 sm:p-6 rounded-2xl border border-amber-500/30 text-slate-100 flex flex-col md:flex-row items-center justify-between gap-5 print:hidden shadow-xl">
+            <div className="space-y-1.5 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2">
+                <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                  <PhoneCall className="w-4 h-4" />
+                </span>
+                <h4 className="font-bold text-amber-300 text-base sm:text-lg font-serif">
+                  Đặt Lịch Luận Giải Trực Tiếp Cùng Thầy Tôn (Xem Offline)
+                </h4>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                Quý khách mong muốn được diện kiến Thầy Tôn trực tiếp để soi diện tướng, thủ tướng (chỉ tay), bấm quẻ Kỳ Môn Độn Giáp và đàm đạo chi tiết vận mệnh? Xin vui lòng liên hệ đặt lịch trước.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto shrink-0">
+              <a
+                href="tel:0935058688"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5"
+              >
+                <PhoneCall className="w-4 h-4 fill-slate-950" />
+                <span>Gọi Đặt Lịch: 0935.058.688</span>
+              </a>
+
+              <a
+                href="https://zalo.me/0935058688"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0068FF] hover:bg-[#0054cc] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition transform hover:-translate-y-0.5"
+              >
+                <span className="w-4 h-4 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[9px] font-black">Z</span>
+                <span>Nhắn Zalo: 0935.058.688</span>
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>
