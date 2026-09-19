@@ -221,11 +221,7 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
               }}
             >
               {/* SVG 3 đường kẻ xuất phát từ 1 điểm Cung Mệnh sang Tài Bạch, Quan Lộc và Thiên Di (Màu nhạt mờ ẩn dưới chữ: z-0) */}
-              <svg
-                className="absolute inset-0 w-full h-full pointer-events-none z-0"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-              >
+              <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
                 {/* 1. Kéo từ 1 điểm Cung Mệnh sang Cung Tài Bạch */}
                 <line
                   x1={`${pM[0]}%`}
@@ -233,7 +229,8 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
                   x2={`${pTai[0]}%`}
                   y2={`${pTai[1]}%`}
                   stroke="rgba(0, 0, 0, 0.2)"
-                  strokeWidth="1.2"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
                 />
                 {/* 2. Kéo từ 1 điểm Cung Mệnh sang Cung Quan Lộc */}
                 <line
@@ -242,7 +239,8 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
                   x2={`${pQuan[0]}%`}
                   y2={`${pQuan[1]}%`}
                   stroke="rgba(0, 0, 0, 0.2)"
-                  strokeWidth="1.2"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
                 />
                 {/* 3. Kéo từ 1 điểm Cung Mệnh sang Cung Thiên Di (Đối cung / Chính chiếu) */}
                 <line
@@ -251,16 +249,8 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
                   x2={`${pDi[0]}%`}
                   y2={`${pDi[1]}%`}
                   stroke="rgba(0, 0, 0, 0.2)"
-                  strokeWidth="1.2"
-                />
-                {/* 4. Cạnh đáy Tam hợp giữa Tài Bạch và Quan Lộc */}
-                <line
-                  x1={`${pTai[0]}%`}
-                  y1={`${pTai[1]}%`}
-                  x2={`${pQuan[0]}%`}
-                  y2={`${pQuan[1]}%`}
-                  stroke="rgba(0, 0, 0, 0.2)"
-                  strokeWidth="1.2"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
                 />
               </svg>
 
