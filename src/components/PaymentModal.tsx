@@ -31,9 +31,9 @@ export default function PaymentModal({
 
   if (!isOpen) return null;
 
-  const bankName = 'MB Bank (Quân Đội)';
-  const stk = '0988888888';
-  const chuTk = 'TRAN HUY TON';
+  const bankName = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
+  const stk = '3386386';
+  const chuTk = 'TRAN THI DIEP';
   const cleanName = hoTen
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -85,7 +85,7 @@ export default function PaymentModal({
     ];
   }
 
-  const qrUrl = `https://img.vietqr.io/image/MB-${stk}-compact2.png?amount=${finalPrice}&addInfo=${encodeURIComponent(
+  const qrUrl = `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${finalPrice}&addInfo=${encodeURIComponent(
     syntax
   )}&accountName=${encodeURIComponent(chuTk)}`;
 
@@ -154,6 +154,9 @@ export default function PaymentModal({
                 src={qrUrl}
                 alt="VietQR Thanh toán Tử Vi Thầy Tôn"
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/payment/vpbank-qr.png';
+                }}
               />
             </div>
             <div className="text-[11px] text-slate-500 mt-1.5">
