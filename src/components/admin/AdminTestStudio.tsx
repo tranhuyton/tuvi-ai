@@ -6,7 +6,8 @@ import { lapLaSoTuVi, buildCungDataPrompt } from '@/lib/tuvi/anSao';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
-import { Sparkles, Crown, Play, RefreshCw, Code2, Clock, FileText, User, Zap, ChevronRight } from 'lucide-react';
+import { Sparkles, Crown, Play, RefreshCw, Code2, Clock, FileText, User, Zap, ChevronRight, AlertCircle } from 'lucide-react';
+import { GIO_ARR } from '@/lib/tuvi/constants';
 
 interface PresetOption {
   label: string;
@@ -24,7 +25,7 @@ const PRESETS: PresetOption[] = [
       ngayDuong: 15,
       thangDuong: 8,
       namDuong: 1985,
-      gioSinhVal: 'Thìn (07h-09h)',
+      gioSinhVal: '4', // Thìn (07h-09h)
       thongTinThem: 'Nghiên cứu dịch học, kinh doanh tư vấn chiến lược.',
       chieuCao: 172,
       canNang: 68,
@@ -40,7 +41,7 @@ const PRESETS: PresetOption[] = [
       ngayDuong: 10,
       thangDuong: 4,
       namDuong: 1995,
-      gioSinhVal: 'Dần (03h-05h)',
+      gioSinhVal: '2', // Dần (03h-05h)
       thongTinThem: 'Kỹ sư phần mềm, đang chuẩn bị khởi nghiệp công nghệ.',
       chieuCao: 170,
       canNang: 65,
@@ -56,7 +57,7 @@ const PRESETS: PresetOption[] = [
       ngayDuong: 22,
       thangDuong: 11,
       namDuong: 1998,
-      gioSinhVal: 'Ngọ (11h-13h)',
+      gioSinhVal: '6', // Ngọ (11h-13h)
       thongTinThem: 'Làm việc trong lĩnh vực tài chính ngân hàng, quan tâm gia đạo.',
       chieuCao: 160,
       canNang: 48,
@@ -308,12 +309,17 @@ export default function AdminTestStudio() {
 
           <div>
             <label className="block text-xs text-slate-400 font-medium mb-1">Giờ sinh:</label>
-            <input
-              type="text"
+            <select
               value={formData.gioSinhVal}
               onChange={(e) => setFormData({ ...formData, gioSinhVal: e.target.value })}
               className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-100"
-            />
+            >
+              {Object.entries(GIO_ARR).map(([key, val]) => (
+                <option key={key} value={key}>
+                  {val.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

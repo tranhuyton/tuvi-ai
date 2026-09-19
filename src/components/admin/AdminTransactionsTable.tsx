@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { DuLieuDuongSo, LaSoData } from '@/types/tuvi';
 import { DollarSign, BookOpen, Crown, Sparkles, MessageSquare, Search, Eye, Calendar, RefreshCw, X } from 'lucide-react';
 import LaSoBanCo from '@/components/LaSoBanCo';
+import { GIO_ARR } from '@/lib/tuvi/constants';
 
 export interface AdminChartItem {
   id: string;
@@ -240,7 +241,7 @@ export default function AdminTransactionsTable({
                           {ds.hoTen || c.title}
                         </div>
                         <div className="text-[11px] text-slate-400">
-                          {ds.gioiTinh} • Sinh {ds.ngayDuong}/{ds.thangDuong}/{ds.namDuong} ({ds.gioSinhVal || '—'})
+                          {ds.gioiTinh} • Sinh {ds.ngayDuong}/{ds.thangDuong}/{ds.namDuong} ({GIO_ARR[ds.gioSinhVal]?.label || ds.gioSinhVal || '—'})
                         </div>
                         {c.user_email && (
                           <div className="text-[10px] text-slate-500 font-mono mt-0.5">

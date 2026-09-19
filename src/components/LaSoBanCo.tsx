@@ -80,19 +80,25 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
     cungs,
   } = laSo;
 
-  const gioMatch = GIO_ARR[duongSo.gioSinhVal]?.label.match(/\((.*?)\)/);
-  const gioText = gioMatch ? gioMatch[1] : (GIO_ARR[duongSo.gioSinhVal]?.label || duongSo.gioSinhVal);
+  const gioObj = GIO_ARR[duongSo.gioSinhVal];
+  const gioMatch = gioObj?.label.match(/\((.*?)\)/);
+  const gioText = gioMatch ? gioMatch[1] : (gioObj?.label || duongSo.gioSinhVal);
+
+  const safeMenhIdx =
+    typeof menhCungIdx === 'number' && !isNaN(menhCungIdx) && menhCungIdx in THIEN_BAN_POINTS
+      ? menhCungIdx
+      : (cungs.find((c) => c.cungName.includes('Mệnh'))?.cungId ?? 2);
 
   // 1 điểm duy nhất xuất phát từ Cung Mệnh
-  const pM = THIEN_BAN_POINTS[menhCungIdx];
+  const pM = THIEN_BAN_POINTS[safeMenhIdx] || [0, 100];
   // 3 điểm đích tương ứng: Tài Bạch, Quan Lộc, và Thiên Di (Chính chiếu)
   const taiCung = cungs.find((c) => c.cungName.includes('Tài'));
   const quanCung = cungs.find((c) => c.cungName.includes('Quan'));
   const diCung = cungs.find((c) => c.cungName.includes('Di'));
 
-  const pTai = taiCung ? THIEN_BAN_POINTS[taiCung.cungId] : THIEN_BAN_POINTS[(menhCungIdx + 8) % 12];
-  const pQuan = quanCung ? THIEN_BAN_POINTS[quanCung.cungId] : THIEN_BAN_POINTS[(menhCungIdx + 4) % 12];
-  const pDi = diCung ? THIEN_BAN_POINTS[diCung.cungId] : THIEN_BAN_POINTS[(menhCungIdx + 6) % 12];
+  const pTai = taiCung ? (THIEN_BAN_POINTS[taiCung.cungId] || [0, 25]) : (THIEN_BAN_POINTS[(safeMenhIdx + 8) % 12] || [0, 25]);
+  const pQuan = quanCung ? (THIEN_BAN_POINTS[quanCung.cungId] || [100, 0]) : (THIEN_BAN_POINTS[(safeMenhIdx + 4) % 12] || [100, 0]);
+  const pDi = diCung ? (THIEN_BAN_POINTS[diCung.cungId] || [25, 0]) : (THIEN_BAN_POINTS[(safeMenhIdx + 6) % 12] || [25, 0]);
 
   const handlePrint = () => {
     window.print();

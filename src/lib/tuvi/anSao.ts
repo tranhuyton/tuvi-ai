@@ -17,6 +17,7 @@ import {
   HOA_KY_MAP,
   NAP_AM_MAP,
   PHU_TINH_DAC_HAM,
+  GIO_ARR,
 } from './constants';
 
 function mod12(n: number): number {
@@ -24,8 +25,31 @@ function mod12(n: number): number {
 }
 
 export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
-  const isLateTy = data.gioSinhVal === '0_23';
-  const gioSinh = isLateTy || data.gioSinhVal === '0_0' ? 0 : parseInt(data.gioSinhVal, 10);
+  const rawVal = String(data.gioSinhVal || '0_0').trim();
+  const isLateTy = rawVal === '0_23' || rawVal.toLowerCase().includes('dạ');
+
+  let gioSinh = 0;
+  if (!isLateTy && rawVal !== '0_0') {
+    const parsed = parseInt(rawVal, 10);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 11) {
+      gioSinh = parsed;
+    } else {
+      // Tìm theo GIO_ARR (ví dụ label có chứa "Thìn" hay "Dần")
+      const entries = Object.entries(GIO_ARR) as [string, { label: string; hourIndex: number; isLateTy?: boolean }][];
+      const foundEntry = entries.find(
+        ([k, v]) =>
+          k === rawVal ||
+          v.label.toLowerCase().includes(rawVal.toLowerCase()) ||
+          rawVal.toLowerCase().includes(v.label.split(' ')[0].toLowerCase())
+      );
+      if (foundEntry) {
+        gioSinh = foundEntry[1].hourIndex;
+      } else {
+        const chiIdx = CHI_ARR.findIndex((c) => rawVal.toLowerCase().includes(c.toLowerCase()));
+        gioSinh = chiIdx >= 0 ? chiIdx : 0;
+      }
+    }
+  }
 
   let nd = data.ngayDuong;
   let td = data.thangDuong;
