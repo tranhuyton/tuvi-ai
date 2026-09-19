@@ -3,7 +3,7 @@
 import React, { useState, ChangeEvent } from 'react';
 import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown } from 'lucide-react';
+import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, PhoneCall } from 'lucide-react';
 import PaymentModal from './PaymentModal';
 
 interface TuViFormProps {
@@ -569,6 +569,33 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
             </>
           )}
         </button>
+
+        {/* Đặt lịch xem trực tiếp offline */}
+        <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap text-xs text-slate-400">
+          <span className="text-slate-300">
+            Quý khách muốn gặp diện kiến Thầy xem trực tiếp?
+          </span>
+          <div className="flex items-center gap-2 font-medium">
+            <a
+              href="tel:0935058688"
+              className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300 transition"
+              title="Gọi điện đặt lịch xem offline"
+            >
+              <PhoneCall className="w-3.5 h-3.5" />
+              <strong className="font-bold">0935.058.688</strong>
+            </a>
+            <span className="text-slate-600">•</span>
+            <a
+              href="https://zalo.me/0935058688"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition"
+              title="Nhắn tin Zalo với Thầy Tôn"
+            >
+              <strong className="font-bold">Zalo Thầy</strong>
+            </a>
+          </div>
+        </div>
       </form>
 
       {/* Modal thanh toán khi người dùng chọn Bản Pro */}
