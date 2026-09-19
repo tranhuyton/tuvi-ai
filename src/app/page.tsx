@@ -612,7 +612,10 @@ export default function HomePage() {
           </a>
         </div>
         <p className="text-slate-500 text-[11px] sm:text-xs">
-          © {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.
+          © {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.{' '}
+          <a href="/admin" className="text-slate-600 hover:text-slate-400 transition ml-1" title="Cổng quản trị Thầy Tôn">
+            [Quản trị]
+          </a>
         </p>
       </footer>
     </main>

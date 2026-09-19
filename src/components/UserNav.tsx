@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { User, BookOpen, LogOut, PlusCircle, LogIn, Sparkles } from 'lucide-react';
+import { User, BookOpen, LogOut, PlusCircle, LogIn, Sparkles, Crown } from 'lucide-react';
 
 interface UserNavProps {
   onOpenAuthModal: () => void;
@@ -74,6 +75,18 @@ export default function UserNav({
               <BookOpen className="w-4 h-4 text-amber-400" />
               <span>Sổ Tay Mệnh Số</span>
             </button>
+
+            {/* Nút vào Quản Trị (dành cho Thầy Tôn) */}
+            {(user?.email?.includes('tranhuyton') || user?.email?.includes('thayton') || profile?.full_name?.toLowerCase().includes('tôn')) && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 text-amber-300 border border-amber-500/50 text-xs sm:text-sm font-bold rounded-xl transition shadow-sm"
+                title="Vào trung tâm quản trị Thầy Tôn"
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-400" />
+                <span>Quản Trị</span>
+              </Link>
+            )}
 
             {/* Tên người dùng & Đăng xuất */}
             <div className="flex items-center gap-1.5 pl-2 border-l border-slate-700/80">
