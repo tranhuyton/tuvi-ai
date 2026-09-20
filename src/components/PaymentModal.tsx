@@ -200,7 +200,6 @@ export default function PaymentModal({
     // Lưu email và quyền lợi mở khóa vào localStorage để bền vững qua các lần F5
     if (typeof window !== 'undefined') {
       if (customerEmail) localStorage.setItem('tuvi_customer_email', customerEmail);
-      localStorage.setItem('tuvi_global_q', '2');
       if (orderCode) localStorage.setItem('tuvi_last_paid_code', orderCode);
     }
 

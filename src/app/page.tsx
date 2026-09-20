@@ -45,9 +45,6 @@ export default function HomePage() {
       if (typeof window !== 'undefined') {
         const key = currentDuongSo ? `${currentDuongSo.hoTen}_${currentDuongSo.namDuong}` : 'default';
         localStorage.setItem(`tuvi_q_${key}`, String(next));
-        if (next > 0) {
-          localStorage.setItem('tuvi_global_q', String(next));
-        }
       }
       return next;
     });
@@ -55,13 +52,18 @@ export default function HomePage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const key = currentDuongSo ? `${currentDuongSo.hoTen}_${currentDuongSo.namDuong}` : 'default';
-      const storedQ = localStorage.getItem(`tuvi_q_${key}`) || localStorage.getItem('tuvi_global_q');
-      if (storedQ && Number(storedQ) > 0) {
-        setQuestionsAllowed((prev) => Math.max(prev, Number(storedQ)));
+      localStorage.removeItem('tuvi_global_q');
+      if (currentDuongSo) {
+        const key = `${currentDuongSo.hoTen}_${currentDuongSo.namDuong}`;
+        const storedQ = localStorage.getItem(`tuvi_q_${key}`);
+        if (storedQ && Number(storedQ) > 0) {
+          setQuestionsAllowed(Number(storedQ));
+        } else if (currentTier === 'free') {
+          setQuestionsAllowed(0);
+        }
       }
     }
-  }, [laSo, currentDuongSo]);
+  }, [laSo, currentDuongSo, currentTier]);
 
   // Modals & Payment
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -192,7 +194,7 @@ export default function HomePage() {
     let initialQ = tier === 'pro' ? 2 : 0;
     if (typeof window !== 'undefined') {
       const key = `${data.hoTen}_${data.namDuong}`;
-      const storedQ = localStorage.getItem(`tuvi_q_${key}`) || localStorage.getItem('tuvi_global_q');
+      const storedQ = localStorage.getItem(`tuvi_q_${key}`);
       if (storedQ && Number(storedQ) > 0) {
         initialQ = Math.max(initialQ, Number(storedQ));
       }
