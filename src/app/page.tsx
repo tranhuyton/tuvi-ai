@@ -419,7 +419,7 @@ export default function HomePage() {
       let allowed = detectedTier === 'pro' ? Math.max(2, msgCount) : msgCount;
       if (typeof window !== 'undefined') {
         const key = chart.id || (chart.duong_so_data ? `${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}` : 'default');
-        const storedQ = localStorage.getItem(`tuvi_q_${key}`) || localStorage.getItem('tuvi_global_q');
+        const storedQ = localStorage.getItem(`tuvi_q_${key}`);
         if (storedQ && Number(storedQ) > 0) {
           allowed = Math.max(allowed, Number(storedQ));
         }
