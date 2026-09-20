@@ -138,6 +138,10 @@ export default function AdminTransactionsTable({
 
   const paidOrdersCount = orders.filter((o) => o.status === 'PAID').length;
   const pendingOrdersCount = orders.filter((o) => o.status === 'PENDING').length;
+  const actualOrdersRevenue = orders
+    .filter((o) => o.status === 'PAID')
+    .reduce((sum, o) => sum + (o.amount || 0), 0);
+  const totalRevenue = actualOrdersRevenue > 0 ? actualOrdersRevenue : (stats.estimated_revenue || 0);
 
   return (
     <div className="space-y-6">
@@ -152,7 +156,7 @@ export default function AdminTransactionsTable({
             <DollarSign className="w-5 h-5 text-amber-400" />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-amber-300 mt-2">
-            {(stats.estimated_revenue || 0).toLocaleString('vi-VN')} đ
+            {totalRevenue.toLocaleString('vi-VN')} đ
           </div>
           <div className="text-[11px] text-slate-400 mt-1">Từ các giao dịch quét VietQR</div>
         </div>

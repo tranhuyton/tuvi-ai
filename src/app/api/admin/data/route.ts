@@ -22,10 +22,21 @@ export async function GET(req: NextRequest) {
       if (!rpcErr && rpcData) {
         const { getAllOrders } = await import('@/lib/orderStore');
         const orders = await getAllOrders(100);
+        const paidOrders = orders.filter((o) => o.status === 'PAID');
+        const actualRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+
+        const updatedStats = {
+          ...(rpcData.stats || {}),
+          total_orders: orders.length,
+          paid_orders: paidOrders.length,
+          estimated_revenue: actualRevenue > 0 ? actualRevenue : (rpcData.stats?.estimated_revenue || 0),
+        };
+
         return NextResponse.json({
           source: 'rpc',
           ...rpcData,
           orders: orders,
+          stats: updatedStats,
         });
       }
     } catch (e) {

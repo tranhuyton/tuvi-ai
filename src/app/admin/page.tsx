@@ -6,9 +6,9 @@ import { useAuth } from '@/context/AuthContext';
 import AdminTestStudio from '@/components/admin/AdminTestStudio';
 import AdminUsersTable, { AdminUser } from '@/components/admin/AdminUsersTable';
 import AdminTransactionsTable, { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
-import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, Database, RefreshCw } from 'lucide-react';
+import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw } from 'lucide-react';
 
-type AdminTab = 'studio' | 'users' | 'transactions' | 'setup';
+type AdminTab = 'studio' | 'users' | 'transactions';
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -242,19 +242,6 @@ export default function AdminPage() {
             <Users className="w-4 h-4" />
             <span>👥 Quản Lý Khách Hàng ({users.length})</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('setup')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
-              activeTab === 'setup'
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            <Database className="w-4 h-4" />
-            <span>⚙️ Hướng Dẫn Cấu Hình SQL</span>
-          </button>
         </div>
 
         {/* Nội Dung Từng Tab */}
@@ -276,116 +263,6 @@ export default function AdminPage() {
             isLoading={isLoadingData}
             onRefresh={() => fetchAdminData()}
           />
-        )}
-
-        {activeTab === 'setup' && (
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4 text-slate-300">
-            <h3 className="font-bold text-lg text-amber-400 font-serif flex items-center gap-2">
-              <Database className="w-5 h-5" />
-              <span>Thiết Lập Quyền Truy Vấn Dữ Liệu Toàn Hệ Thống (Supabase RPC)</span>
-            </h3>
-            <p className="text-xs sm:text-sm leading-relaxed text-slate-300">
-              Do hệ thống áp dụng cơ chế bảo mật nghiêm ngặt <strong>Row Level Security (RLS)</strong>, người dùng thông thường chỉ xem được lá số của chính mình. Để xem được đầy đủ danh sách tài khoản và lá số của tất cả khách hàng trên trang Admin này, anh chỉ cần copy đoạn script SQL bên dưới và dán vào <strong>Supabase SQL Editor</strong> rồi bấm <strong>Run</strong>:
-            </p>
-
-            <div className="p-4 rounded-xl bg-black/80 border border-slate-800 text-xs font-mono text-emerald-400 overflow-x-auto whitespace-pre">
-{`-- Tạo hàm bảo mật RPC lấy dữ liệu tổng quan cho Admin
-CREATE OR REPLACE FUNCTION public.get_admin_dashboard_data()
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-    result JSONB;
-    v_users JSONB;
-    v_charts JSONB;
-    v_total_users INT;
-    v_total_charts INT;
-    v_total_pro INT;
-    v_total_free INT;
-    v_total_messages INT;
-BEGIN
-    SELECT jsonb_agg(u) INTO v_users FROM (
-        SELECT p.id, p.email, p.full_name, p.created_at,
-               COUNT(DISTINCT c.id) AS charts_count,
-               COUNT(DISTINCT m.id) AS messages_count
-        FROM public.tuvi_profiles p
-        LEFT JOIN public.tuvi_charts c ON c.user_id = p.id
-        LEFT JOIN public.tuvi_chat_messages m ON m.user_id = p.id
-        GROUP BY p.id, p.email, p.full_name, p.created_at
-        ORDER BY p.created_at DESC
-    ) u;
-
-    SELECT jsonb_agg(ch) INTO v_charts FROM (
-        SELECT c.id, c.user_id, c.title, c.duong_so_data, c.laso_data, c.created_at, c.updated_at,
-               p.full_name AS user_name, p.email AS user_email,
-               (c.reading_html IS NOT NULL AND length(c.reading_html) > 50) AS has_reading,
-               COUNT(m.id) AS message_count
-        FROM public.tuvi_charts c
-        LEFT JOIN public.tuvi_profiles p ON p.id = c.user_id
-        LEFT JOIN public.tuvi_chat_messages m ON m.chart_id = c.id
-        GROUP BY c.id, c.user_id, c.title, c.duong_so_data, c.laso_data, c.created_at, c.updated_at, p.full_name, p.email, c.reading_html
-        ORDER BY c.created_at DESC
-    ) ch;
-
-    SELECT COUNT(*) INTO v_total_users FROM public.tuvi_profiles;
-    SELECT COUNT(*) INTO v_total_charts FROM public.tuvi_charts;
-    SELECT COUNT(*) INTO v_total_messages FROM public.tuvi_chat_messages;
-    SELECT COUNT(*) INTO v_total_pro FROM public.tuvi_charts WHERE (duong_so_data->>'tier' = 'pro' OR laso_data->>'tier' = 'pro');
-    v_total_free := v_total_charts - v_total_pro;
-
-    result := jsonb_build_object(
-        'users', COALESCE(v_users, '[]'::jsonb),
-        'charts', COALESCE(v_charts, '[]'::jsonb),
-        'stats', jsonb_build_object(
-            'total_users', COALESCE(v_total_users, 0),
-            'total_charts', COALESCE(v_total_charts, 0),
-            'total_pro', COALESCE(v_total_pro, 0),
-            'total_free', COALESCE(v_total_free, 0),
-            'total_messages', COALESCE(v_total_messages, 0),
-            'estimated_revenue', (COALESCE(v_total_pro, 0) * 119000)
-        )
-    );
-    RETURN result;
-END;
-$$;`}
-            </div>
-
-            <div className="pt-4 border-t border-slate-800">
-              <h4 className="font-bold text-sm text-amber-400 font-serif mb-2">
-                2. Khởi tạo Bảng Đơn Hàng &amp; Thanh Toán Quét QR (tuvi_orders)
-              </h4>
-              <p className="text-xs text-slate-300 mb-2">
-                Nếu muốn lưu trữ vĩnh viễn các đơn hàng VietQR trên Supabase, anh có thể chạy thêm script này:
-              </p>
-              <div className="p-4 rounded-xl bg-black/80 border border-slate-800 text-xs font-mono text-emerald-400 overflow-x-auto whitespace-pre">
-{`-- Tạo bảng lưu trữ đơn hàng & thanh toán QR
-CREATE TABLE IF NOT EXISTS public.tuvi_orders (
-    id TEXT PRIMARY KEY,
-    order_code VARCHAR(20) UNIQUE NOT NULL,
-    payment_type VARCHAR(50) NOT NULL,
-    amount NUMERIC NOT NULL,
-    ho_ten VARCHAR(255),
-    email VARCHAR(255),
-    status VARCHAR(20) DEFAULT 'PENDING',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    paid_at TIMESTAMPTZ,
-    transaction_id VARCHAR(255),
-    chart_id UUID,
-    user_id UUID
-);
-
--- Index tra cứu nhanh mã đơn
-CREATE INDEX IF NOT EXISTS idx_tuvi_orders_code ON public.tuvi_orders (order_code);
-CREATE INDEX IF NOT EXISTS idx_tuvi_orders_status ON public.tuvi_orders (status);`}
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-400">
-              * Tệp script này cũng đã được lưu sẵn trong dự án tại: <code className="text-amber-400 font-mono">supabase/migrations/20260919_admin_access.sql</code>.
-            </p>
-          </div>
         )}
       </div>
 

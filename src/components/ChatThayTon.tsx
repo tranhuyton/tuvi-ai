@@ -60,7 +60,7 @@ export default function ChatThayTon({
             <MessageSquare className="w-5 h-5 text-blue-400" />
             <div>
               <h3 className="font-bold text-base sm:text-lg text-blue-400 font-serif flex items-center gap-2">
-                <span>Hỏi Đáp Trực Tiếp Với Thầy Tôn</span>
+                <span>Hỏi Đáp Luận Giải Cùng AI Thầy Tôn</span>
                 {isPro ? (
                   <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans font-semibold">
                     👑 Khách VIP Pro
@@ -71,6 +71,9 @@ export default function ChatThayTon({
                   </span>
                 )}
               </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Trí tuệ nhân tạo kế thừa tri thức &amp; pháp số Tử Vi Đẩu Số bí truyền từ Thầy Tôn
+              </p>
             </div>
           </div>
 
@@ -94,7 +97,7 @@ export default function ChatThayTon({
                 </span>
               ) : (
                 <span>
-                  Lượt hỏi: <span className="font-bold text-amber-400">{count}</span> / {effectiveAllowed}
+                  Lượt hỏi còn lại: <span className="font-bold text-emerald-400">{Math.max(0, effectiveAllowed - count)}</span> / {effectiveAllowed}
                 </span>
               )}
             </div>
@@ -105,7 +108,7 @@ export default function ChatThayTon({
         <div className="space-y-4 mb-5 max-h-[500px] overflow-y-auto pr-1">
           {chatHistory.length === 0 && !isLocked && (
             <p className="text-sm text-slate-400 italic text-center py-4">
-              Quý khách có {effectiveAllowed} lượt thỉnh giáo. Hãy nhập câu hỏi cụ thể về công danh, tài lộc, tình duyên hoặc gia đạo để Thầy Tôn giải đáp.
+              Quý khách có {effectiveAllowed} lượt thỉnh giáo. Hãy nhập câu hỏi cụ thể về công danh, tài lộc, tình duyên hoặc gia đạo để AI Thầy Tôn giải đáp.
             </p>
           )}
 
@@ -128,8 +131,8 @@ export default function ChatThayTon({
                       : 'bg-slate-100 text-slate-900 border border-slate-200'
                   }`}
                 >
-                  <div className="text-[11px] font-bold text-red-700 uppercase tracking-wider mb-1 flex items-center gap-1">
-                    <span>🧙‍♂️ Thầy Tôn:</span>
+                  <div className="text-[11px] font-bold text-amber-900 uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <span>🧙‍♂️ AI Thầy Tôn:</span>
                   </div>
                   <div
                     className="space-y-2 text-justify"
@@ -144,7 +147,7 @@ export default function ChatThayTon({
             <div className="flex justify-start">
               <div className="bg-slate-800 text-slate-300 rounded-2xl rounded-tl-none px-4 py-3 text-sm flex items-center gap-2 border border-slate-700">
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-                <span>Thầy Tôn đang xem thiên cơ và biên lời giải đáp...</span>
+                <span>AI Thầy Tôn đang xem thiên cơ và biên lời giải đáp...</span>
               </div>
             </div>
           )}
@@ -152,29 +155,20 @@ export default function ChatThayTon({
 
         {/* Khung tương tác / Thanh toán */}
         {isLocked ? (
-          /* TRẠNG THÁI 1: BẢN FREE CHƯA THANH TOÁN HỎI ĐÁP */
-          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl">
-            <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          /* TRẠNG THÁI 1: BẢN FREE CHƯA MỞ KHÓA -> CHỈ HIỆN NÚT MÀU XANH KÍCH HOẠT */
+          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/30 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl">
+            <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-bold text-base sm:text-lg text-amber-300 font-serif">
-                Thỉnh Giáo Trực Tiếp Cùng Thầy Tôn
+              <h4 className="font-bold text-base sm:text-lg text-emerald-300 font-serif">
+                Thỉnh Giáo Luận Giải Cùng AI Thầy Tôn
               </h4>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
-                Bản Miễn Phí chưa bao gồm lượt hỏi đáp. Quý khách có thể thỉnh giáo riêng Thầy Tôn để được giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn.
+                Hệ thống AI soi chiếu lá số giúp giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn.
               </p>
             </div>
-            <div className="pt-2 flex flex-col items-center gap-2">
-              <button
-                type="button"
-                onClick={onUnlockQuestions}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition transform hover:-translate-y-0.5"
-              >
-                <Sparkles className="w-4 h-4 fill-slate-950" />
-                <span>⚡ Thanh Toán Thỉnh Giáo Thầy Tôn (49.000đ / 2 câu)</span>
-              </button>
-
+            <div className="pt-2 flex flex-col items-center">
               <button
                 type="button"
                 onClick={() => {
@@ -183,15 +177,12 @@ export default function ChatThayTon({
                     localStorage.setItem('tuvi_global_q', '2');
                   }
                 }}
-                className="mt-1 px-4 py-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-semibold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md transform hover:-translate-y-0.5"
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-500/25 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Đã chuyển khoản thành công? Bấm vào đây để mở khóa ngay</span>
+                <Sparkles className="w-4 h-4 fill-slate-950" />
+                <span>Bấm Vào Đây Để Mở Khóa Hỏi Đáp (Đã Chuyển Khoản)</span>
               </button>
             </div>
-            <p className="text-[11px] text-slate-500">
-              Thanh toán tự động qua mã VietQR chỉ mất vài giây
-            </p>
           </div>
         ) : canAsk ? (
           /* TRẠNG THÁI 2: ĐANG CÒN LƯỢT HỎI */
@@ -226,8 +217,8 @@ export default function ChatThayTon({
               </h4>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
                 {isPro
-                  ? `Quý khách đã sử dụng hết ${questionsAllowed} lượt đàm đạo chuyên sâu. Để Thầy Tôn tiếp tục soi chiếu các phương diện khác, quý khách có thể mua thêm 02 câu hỏi chuyên sâu.`
-                  : `Quý khách đã sử dụng hết ${questionsAllowed} lượt thỉnh giáo. Quý khách có thể mua thêm 02 câu hỏi để Thầy Tôn tiếp tục phân tích.`}
+                  ? `Quý khách đã sử dụng hết ${effectiveAllowed} lượt đàm đạo chuyên sâu. Để Thầy Tôn tiếp tục soi chiếu các phương diện khác, quý khách có thể mua thêm 02 câu hỏi chuyên sâu.`
+                  : `Quý khách đã sử dụng hết ${effectiveAllowed} lượt thỉnh giáo. Quý khách có thể mua thêm 02 câu hỏi để Thầy Tôn tiếp tục phân tích.`}
               </p>
             </div>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">

@@ -254,6 +254,7 @@ export async function getAllOrders(limit: number = 50): Promise<OrderItem[]> {
       .limit(limit);
 
     if (data && data.length > 0) {
+      ordersMap.clear();
       for (const row of data) {
         const item: OrderItem = {
           id: row.id,
