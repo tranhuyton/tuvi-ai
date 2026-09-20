@@ -115,7 +115,7 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
         </tr>
       </table>
 
-      <a href="https://tuvi.tonyenglish.vn" class="cta-btn">
+      <a href="https://tuvithayton.vn" class="cta-btn">
         Trải Nghiệm Dịch Vụ Ngay ➜
       </a>
 
@@ -139,7 +139,7 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
   const smtpPort = Number(process.env.SMTP_PORT || 587);
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
-  const smtpFrom = process.env.SMTP_FROM || 'Tử Vi Thầy Tôn <noreply@tonyenglish.vn>';
+  const smtpFrom = process.env.SMTP_FROM || 'Tử Vi Thầy Tôn <noreply@tuvithayton.vn>';
   const resendApiKey = process.env.RESEND_API_KEY;
 
   // 1. Thử gửi qua Resend API nếu có cấu hình

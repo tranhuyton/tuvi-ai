@@ -18,6 +18,7 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://tuvithayton.vn'),
   title: 'Tử Vi Thầy Tôn - Lập Lá Số, Xem Tướng & Luận Giải Mệnh Số',
   description:
     'Hệ thống lập lá số Tử Vi 108 sao cổ truyền kết hợp phân tích Diện Tướng khuôn mặt, Thủ Tướng bàn tay và bình giải chuyên sâu từ Thầy Tôn.',

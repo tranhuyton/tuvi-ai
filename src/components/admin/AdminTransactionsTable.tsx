@@ -231,7 +231,7 @@ export default function AdminTransactionsTable({
           </span>
         </div>
         <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 font-mono text-slate-200 flex items-center justify-between gap-2 overflow-x-auto">
-          <span>Webhook URL: <strong>https://tuvi.tonyenglish.vn/api/payment/webhook</strong></span>
+          <span>Webhook URL: <strong>https://tuvithayton.vn/api/payment/webhook</strong></span>
           <span className="text-[11px] text-emerald-400 shrink-0">Method: POST (JSON)</span>
         </div>
         <p className="text-[11px] text-slate-400">
