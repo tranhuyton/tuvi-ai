@@ -152,7 +152,7 @@ export default function ChatThayTon({
                 Bản Miễn Phí chưa bao gồm lượt hỏi đáp. Quý khách có thể thỉnh giáo riêng Thầy Tôn để được giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn.
               </p>
             </div>
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col items-center gap-2">
               <button
                 type="button"
                 onClick={onUnlockQuestions}
@@ -160,6 +160,19 @@ export default function ChatThayTon({
               >
                 <Sparkles className="w-4 h-4 fill-slate-950" />
                 <span>⚡ Thanh Toán Thỉnh Giáo Thầy Tôn (49.000đ / 2 câu)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('tuvi_global_q', '2');
+                    window.location.reload();
+                  }
+                }}
+                className="text-xs text-amber-400/90 hover:text-amber-300 underline transition cursor-pointer mt-1"
+              >
+                Đã chuyển khoản thành công? Bấm vào đây để mở khóa ngay
               </button>
             </div>
             <p className="text-[11px] text-slate-500">

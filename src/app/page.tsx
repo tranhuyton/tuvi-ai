@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DuLieuDuongSo, LaSoData, ChatMessage, ServiceTier } from '@/types/tuvi';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import TuViForm from '@/components/TuViForm';
@@ -37,6 +37,31 @@ export default function HomePage() {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [questionsAllowed, setQuestionsAllowed] = useState<number>(0);
+
+  // Đồng bộ và lưu trữ số lượt hỏi vào localStorage để giữ nguyên khi F5 hoặc đổi lá số
+  const updateQuestionsAllowed = (val: number | ((prev: number) => number)) => {
+    setQuestionsAllowed((prev) => {
+      const next = typeof val === 'function' ? val(prev) : val;
+      if (typeof window !== 'undefined') {
+        const key = currentDuongSo ? `${currentDuongSo.hoTen}_${currentDuongSo.namDuong}` : 'default';
+        localStorage.setItem(`tuvi_q_${key}`, String(next));
+        if (next > 0) {
+          localStorage.setItem('tuvi_global_q', String(next));
+        }
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const key = currentDuongSo ? `${currentDuongSo.hoTen}_${currentDuongSo.namDuong}` : 'default';
+      const storedQ = localStorage.getItem(`tuvi_q_${key}`) || localStorage.getItem('tuvi_global_q');
+      if (storedQ && Number(storedQ) > 0) {
+        setQuestionsAllowed((prev) => Math.max(prev, Number(storedQ)));
+      }
+    }
+  }, [laSo, currentDuongSo]);
 
   // Modals & Payment
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -164,7 +189,15 @@ export default function HomePage() {
     setReadingHtml(undefined);
     setReadingError(undefined);
     setChatHistory([]);
-    setQuestionsAllowed(tier === 'pro' ? 2 : 0);
+    let initialQ = tier === 'pro' ? 2 : 0;
+    if (typeof window !== 'undefined') {
+      const key = `${data.hoTen}_${data.namDuong}`;
+      const storedQ = localStorage.getItem(`tuvi_q_${key}`) || localStorage.getItem('tuvi_global_q');
+      if (storedQ && Number(storedQ) > 0) {
+        initialQ = Math.max(initialQ, Number(storedQ));
+      }
+    }
+    setQuestionsAllowed(initialQ);
     setIsLoadingReading(true);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -210,7 +243,7 @@ export default function HomePage() {
     if (!laSo || !currentDuongSo) return;
 
     setCurrentTier('pro');
-    setQuestionsAllowed((prev) => Math.max(prev, 2));
+    updateQuestionsAllowed((prev) => Math.max(prev, 2));
     setIsUpgrading(true);
     setIsLoadingReading(true);
     setReadingError(undefined);
@@ -270,7 +303,7 @@ export default function HomePage() {
         type: 'chat_vip',
         price: 99000,
         onConfirm: () => {
-          setQuestionsAllowed((prev) => prev + 2);
+          updateQuestionsAllowed((prev) => prev + 2);
         },
       });
     } else {
@@ -279,7 +312,7 @@ export default function HomePage() {
         type: 'chat_free',
         price: 49000,
         onConfirm: () => {
-          setQuestionsAllowed((prev) => prev + 2);
+          updateQuestionsAllowed((prev) => prev + 2);
         },
       });
     }
@@ -381,11 +414,15 @@ export default function HomePage() {
       setReadingError(undefined);
       setChatHistory(chatMessages || []);
       const msgCount = (chatMessages || []).filter((c) => !c.isError).length;
-      if (detectedTier === 'pro') {
-        setQuestionsAllowed(Math.max(2, msgCount));
-      } else {
-        setQuestionsAllowed(msgCount);
+      let allowed = detectedTier === 'pro' ? Math.max(2, msgCount) : msgCount;
+      if (typeof window !== 'undefined') {
+        const key = chart.id || (chart.duong_so_data ? `${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}` : 'default');
+        const storedQ = localStorage.getItem(`tuvi_q_${key}`) || localStorage.getItem('tuvi_global_q');
+        if (storedQ && Number(storedQ) > 0) {
+          allowed = Math.max(allowed, Number(storedQ));
+        }
       }
+      setQuestionsAllowed(allowed);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
       alert('Lỗi tải dữ liệu lá số: ' + e.message);

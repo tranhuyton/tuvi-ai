@@ -197,9 +197,11 @@ export default function PaymentModal({
     if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
     setOrderStatus('PAID');
 
-    // Lưu email lại để dùng cho các lần sau
-    if (customerEmail && typeof window !== 'undefined') {
-      localStorage.setItem('tuvi_customer_email', customerEmail);
+    // Lưu email và quyền lợi mở khóa vào localStorage để bền vững qua các lần F5
+    if (typeof window !== 'undefined') {
+      if (customerEmail) localStorage.setItem('tuvi_customer_email', customerEmail);
+      localStorage.setItem('tuvi_global_q', '2');
+      if (orderCode) localStorage.setItem('tuvi_last_paid_code', orderCode);
     }
 
     // Tự động mở khóa và đóng modal sau 1.8 giây hiển thị chúc mừng
