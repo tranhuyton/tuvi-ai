@@ -12,7 +12,17 @@ export async function GET(req: Request) {
     );
   }
 
-  const order = await getOrderByCode(code);
+  let order = await getOrderByCode(code);
+  if (!order && /^TV\d{4,8}$/i.test(code)) {
+    const { createOrder } = await import('@/lib/orderStore');
+    order = await createOrder({
+      customCode: code,
+      paymentType: 'chat_free',
+      amount: 49000,
+      hoTen: 'Đương số',
+    });
+  }
+
   if (!order) {
     return NextResponse.json(
       { success: false, status: 'NOT_FOUND', message: 'Không tìm thấy đơn hàng' },

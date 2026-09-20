@@ -17,12 +17,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const order = await getOrderByCode(orderCode);
+    let order = await getOrderByCode(orderCode);
     if (!order) {
-      return NextResponse.json(
-        { success: false, error: 'Không tìm thấy đơn hàng' },
-        { status: 404 }
-      );
+      const { createOrder } = await import('@/lib/orderStore');
+      order = await createOrder({
+        customCode: orderCode,
+        paymentType: 'chat_free',
+        amount: 49000,
+        hoTen: 'Đương số',
+      });
     }
 
     const paidOrder = await markOrderPaid(order.orderCode, `sim_${Date.now()}`);

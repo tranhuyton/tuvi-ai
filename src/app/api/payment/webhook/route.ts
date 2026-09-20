@@ -72,12 +72,18 @@ export async function POST(req: Request) {
       const match = tx.codeCandidate.match(/TV\d{4,8}/i);
       const matchedCode = match ? match[0].toUpperCase() : tx.codeCandidate.trim().toUpperCase();
 
-      const order = await getOrderByCode(matchedCode);
+      let order = await getOrderByCode(matchedCode);
 
       if (!order) {
-        console.warn(`[PAYMENT WEBHOOK] Không tìm thấy đơn hàng cho mã: ${matchedCode}`);
-        results.push({ code: matchedCode, status: 'NOT_FOUND' });
-        continue;
+        console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong bộ nhớ, tự động khởi tạo để duyệt`);
+        const { createOrder } = await import('@/lib/orderStore');
+        const pType = tx.amount >= 119000 ? 'reading_vip' : (tx.amount >= 99000 ? 'chat_vip' : 'chat_free');
+        order = await createOrder({
+          customCode: matchedCode,
+          paymentType: pType,
+          amount: tx.amount || 49000,
+          hoTen: 'Đương số',
+        });
       }
 
       if (order.status === 'PAID') {
