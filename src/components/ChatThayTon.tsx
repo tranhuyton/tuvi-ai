@@ -213,7 +213,7 @@ export default function ChatThayTon({
               </p>
             </div>
 
-            <div className="pt-2 flex flex-col items-center gap-2.5">
+            <div className="pt-2 flex flex-col items-center">
               {/* NÚT MÀU VÀNG THANH TOÁN */}
               <button
                 type="button"
@@ -222,15 +222,6 @@ export default function ChatThayTon({
               >
                 <Sparkles className="w-4 h-4 fill-slate-950" />
                 <span>⚡ Quét Mã Thanh Toán ({isPro ? '99.000đ' : '49.000đ'} / 2 câu hỏi)</span>
-              </button>
-
-              {/* Nút xác nhận chuyển khoản bên ngoài */}
-              <button
-                type="button"
-                onClick={() => setFlowStep('paid_success')}
-                className="text-xs text-slate-400 hover:text-emerald-400 transition cursor-pointer"
-              >
-                Đã chuyển khoản xong? <span className="underline text-emerald-400 font-semibold">Bấm vào đây để xác nhận</span>
               </button>
             </div>
           </div>
@@ -322,14 +313,6 @@ export default function ChatThayTon({
                     <span>⚡ Thanh Toán Tiếp (49.000đ / 2 câu hỏi)</span>
                   </>
                 )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFlowStep('paid_success')}
-                className="text-xs text-slate-400 hover:text-emerald-400 transition cursor-pointer"
-              >
-                Đã chuyển khoản thêm? <span className="underline text-emerald-400 font-semibold">Bấm vào đây để xác nhận</span>
               </button>
             </div>
           </div>
