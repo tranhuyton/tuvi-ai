@@ -20,9 +20,12 @@ export async function GET(req: NextRequest) {
     try {
       const { data: rpcData, error: rpcErr } = await supabase.rpc('get_admin_dashboard_data');
       if (!rpcErr && rpcData) {
+        const { getAllOrders } = await import('@/lib/orderStore');
+        const orders = await getAllOrders(100);
         return NextResponse.json({
           source: 'rpc',
           ...rpcData,
+          orders: orders,
         });
       }
     } catch (e) {

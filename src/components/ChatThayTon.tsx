@@ -22,12 +22,25 @@ export default function ChatThayTon({
   onUnlockQuestions,
 }: ChatThayTonProps) {
   const [question, setQuestion] = useState('');
+  const [directUnlocked, setDirectUnlocked] = useState(false);
+
+  // Tự động kiểm tra quyền mở khóa đã lưu từ trước
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const gq = localStorage.getItem('tuvi_global_q');
+      if (gq && Number(gq) > 0) {
+        setDirectUnlocked(true);
+      }
+    }
+  }, []);
+
   const count = chatHistory.filter((c) => !c.isError).length;
   const isPro = tier === 'pro';
 
-  const isLocked = questionsAllowed === 0;
-  const isExhausted = count >= questionsAllowed && questionsAllowed > 0;
-  const canAsk = count < questionsAllowed;
+  const effectiveAllowed = directUnlocked ? Math.max(questionsAllowed, 2) : questionsAllowed;
+  const isLocked = effectiveAllowed === 0;
+  const isExhausted = count >= effectiveAllowed && effectiveAllowed > 0;
+  const canAsk = count < effectiveAllowed;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +94,7 @@ export default function ChatThayTon({
                 </span>
               ) : (
                 <span>
-                  Lượt hỏi: <span className="font-bold text-amber-400">{count}</span> / {questionsAllowed}
+                  Lượt hỏi: <span className="font-bold text-amber-400">{count}</span> / {effectiveAllowed}
                 </span>
               )}
             </div>
@@ -92,7 +105,7 @@ export default function ChatThayTon({
         <div className="space-y-4 mb-5 max-h-[500px] overflow-y-auto pr-1">
           {chatHistory.length === 0 && !isLocked && (
             <p className="text-sm text-slate-400 italic text-center py-4">
-              Quý khách có {questionsAllowed} lượt thỉnh giáo. Hãy nhập câu hỏi cụ thể về công danh, tài lộc, tình duyên hoặc gia đạo để Thầy Tôn giải đáp.
+              Quý khách có {effectiveAllowed} lượt thỉnh giáo. Hãy nhập câu hỏi cụ thể về công danh, tài lộc, tình duyên hoặc gia đạo để Thầy Tôn giải đáp.
             </p>
           )}
 
@@ -165,14 +178,15 @@ export default function ChatThayTon({
               <button
                 type="button"
                 onClick={() => {
+                  setDirectUnlocked(true);
                   if (typeof window !== 'undefined') {
                     localStorage.setItem('tuvi_global_q', '2');
-                    window.location.reload();
                   }
                 }}
-                className="text-xs text-amber-400/90 hover:text-amber-300 underline transition cursor-pointer mt-1"
+                className="mt-1 px-4 py-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 font-semibold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md transform hover:-translate-y-0.5"
               >
-                Đã chuyển khoản thành công? Bấm vào đây để mở khóa ngay
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Đã chuyển khoản thành công? Bấm vào đây để mở khóa ngay</span>
               </button>
             </div>
             <p className="text-[11px] text-slate-500">
