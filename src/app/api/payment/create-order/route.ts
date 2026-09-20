@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createOrder, updateOrderEmail } from '@/lib/orderStore';
 
 const BANK_CODE = 'VPB';
-const STK = '3386386';
+const STK = 'AGBSPVUONG2026';
 const CHU_TK = 'TRAN THI DIEP';
 const BANK_NAME = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
 

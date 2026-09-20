@@ -65,7 +65,7 @@ export default function PaymentModal({
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const bankName = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
-  const stk = '3386386';
+  const stk = 'AGBSPVUONG2026';
   const chuTk = 'TRAN THI DIEP';
 
   let finalPrice = customPrice;
@@ -376,7 +376,7 @@ export default function PaymentModal({
                       className="w-full h-full object-contain"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
-                          'https://img.vietqr.io/image/VPB-3386386-compact2.png';
+                          'https://img.vietqr.io/image/VPB-AGBSPVUONG2026-compact2.png';
                       }}
                     />
                   )}
