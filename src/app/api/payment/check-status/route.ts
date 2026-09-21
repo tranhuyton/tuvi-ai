@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getOrderByCode } from '@/lib/orderStore';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
@@ -8,7 +11,7 @@ export async function GET(req: Request) {
   if (!code) {
     return NextResponse.json(
       { success: false, error: 'Thiếu mã đơn hàng (code)' },
-      { status: 400 }
+      { status: 400, headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
     );
   }
 
@@ -30,11 +33,18 @@ export async function GET(req: Request) {
     );
   }
 
-  return NextResponse.json({
-    success: true,
-    status: order.status,
-    orderCode: order.orderCode,
-    amount: order.amount,
-    paidAt: order.paidAt,
-  });
+  return NextResponse.json(
+    {
+      success: true,
+      status: order.status,
+      orderCode: order.orderCode,
+      amount: order.amount,
+      paidAt: order.paidAt,
+    },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      },
+    }
+  );
 }

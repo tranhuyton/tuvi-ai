@@ -142,14 +142,9 @@ export async function createOrder(data: {
  * Tìm đơn hàng theo mã đơn
  */
 export async function getOrderByCode(code: string): Promise<OrderItem | null> {
-  loadOrdersFromFile();
   const cleanCode = code.trim().toUpperCase();
 
-  if (ordersMap.has(cleanCode)) {
-    return ordersMap.get(cleanCode)!;
-  }
-
-  // Thử tìm trong Supabase nếu có
+  // 1. Luôn truy vấn Supabase trước (nguồn dữ liệu chính xác trên Serverless đa container)
   try {
     const { data } = await supabase
       .from('tuvi_orders')
@@ -177,7 +172,13 @@ export async function getOrderByCode(code: string): Promise<OrderItem | null> {
       return order;
     }
   } catch (err) {
-    // Supabase table not created yet
+    // Lỗi mạng hoặc Supabase tạm thời, dùng cache fallback
+  }
+
+  // 2. Fallback sang cache in-memory / file local nếu Supabase không có
+  loadOrdersFromFile();
+  if (ordersMap.has(cleanCode)) {
+    return ordersMap.get(cleanCode)!;
   }
 
   return null;

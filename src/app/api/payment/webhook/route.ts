@@ -3,6 +3,8 @@ import { getOrderByCode, markOrderPaid } from '@/lib/orderStore';
 import { sendPaymentSuccessEmail } from '@/lib/email';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Endpoint Webhook nhận thông báo chuyển khoản ngân hàng (SePay / Casso / PayOS / Custom)
  */
@@ -32,13 +34,29 @@ export async function POST(req: Request) {
         });
       }
     }
-    // 2. Trường hợp SePay: { content, transferAmount, id, ... }
-    else if (payload.content || payload.transferAmount) {
+    // 2. Trường hợp SePay: { content, description, transferAmount, code, id, ... }
+    else if (
+      payload.transferAmount !== undefined ||
+      payload.amount !== undefined ||
+      payload.content !== undefined ||
+      payload.description !== undefined ||
+      payload.code !== undefined
+    ) {
+      const fullContent = [
+        payload.code,
+        payload.content,
+        payload.description,
+        payload.subAccount,
+        payload.referenceCode,
+      ]
+        .filter(Boolean)
+        .join(' ');
+
       txList.push({
-        codeCandidate: payload.content || '',
-        amount: Number(payload.transferAmount || 0),
-        txId: String(payload.id || payload.referenceCode || ''),
-        rawContent: payload.content || '',
+        codeCandidate: fullContent,
+        amount: Number(payload.transferAmount || payload.amount || 0),
+        txId: String(payload.id || payload.referenceCode || payload.tid || `sepay_${Date.now()}`),
+        rawContent: fullContent,
       });
     }
     // 3. Trường hợp PayOS: { data: { orderCode, amount, description, ... } }
@@ -68,14 +86,41 @@ export async function POST(req: Request) {
     const results = [];
 
     for (const tx of txList) {
-      // Tìm mã đơn TVxxxxx trong chuỗi nội dung (Ví dụ: "MBVCB.123... TV83921 TRAN THI DIEP")
-      const match = tx.codeCandidate.match(/TV\d{4,8}/i);
-      const matchedCode = match ? match[0].toUpperCase() : tx.codeCandidate.trim().toUpperCase();
+      // Tìm mã đơn TVxxxxx (hỗ trợ có khoảng trắng, gạch nối: TV49354, TV 49354, TV-49354, TV: 49354)
+      const match = tx.codeCandidate.match(/TV\s*[:\-_]?\s*(\d{4,8})/i);
+      const matchedCode = match ? `TV${match[1]}`.toUpperCase() : null;
 
-      let order = await getOrderByCode(matchedCode);
+      let order = null;
+      if (matchedCode) {
+        order = await getOrderByCode(matchedCode);
+      }
 
-      if (!order) {
-        console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong bộ nhớ, tự động khởi tạo để duyệt`);
+      // Fallback thông minh: Nếu không tìm thấy mã trong nội dung,
+      // tìm đơn hàng PENDING gần nhất (trong 30 phút qua) có đúng số tiền khớp
+      if (!order && tx.amount > 0) {
+        try {
+          const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+          const { data: candidateOrders } = await supabase
+            .from('tuvi_orders')
+            .select('*')
+            .eq('status', 'PENDING')
+            .eq('amount', tx.amount)
+            .gte('created_at', thirtyMinsAgo)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (candidateOrders && candidateOrders.length > 0) {
+            const cand = candidateOrders[0];
+            console.log(`[PAYMENT WEBHOOK] Khớp fallback đơn PENDING gần nhất: ${cand.order_code}`);
+            order = await getOrderByCode(cand.order_code);
+          }
+        } catch (e) {
+          console.warn('[PAYMENT WEBHOOK] Lỗi fallback khớp theo số tiền:', e);
+        }
+      }
+
+      if (!order && matchedCode) {
+        console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong DB, tự động khởi tạo để duyệt`);
         const { createOrder } = await import('@/lib/orderStore');
         const pType = tx.amount >= 119000 ? 'reading_vip' : (tx.amount >= 99000 ? 'chat_vip' : 'chat_free');
         order = await createOrder({
@@ -84,6 +129,11 @@ export async function POST(req: Request) {
           amount: tx.amount || 49000,
           hoTen: 'Đương số',
         });
+      }
+
+      if (!order) {
+        console.warn('[PAYMENT WEBHOOK] Không thể xác định đơn hàng cho giao dịch:', tx);
+        continue;
       }
 
       if (order.status === 'PAID') {
