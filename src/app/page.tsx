@@ -20,7 +20,7 @@ import {
   updateChartReading,
   saveChatMessage,
 } from '@/lib/tuviService';
-import { Sparkles, Crown, PhoneCall } from 'lucide-react';
+import { Sparkles, Crown, PhoneCall, MapPin, Mail } from 'lucide-react';
 
 export default function HomePage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -803,6 +803,12 @@ export default function HomePage() {
                 <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
                   Quý khách mong muốn được diện kiến Thầy Tôn trực tiếp để soi diện tướng, thủ tướng (chỉ tay), bấm quẻ Kỳ Môn Độn Giáp và đàm đạo chi tiết vận mệnh? Xin vui lòng liên hệ đặt lịch trước.
                 </p>
+                <div className="flex items-center gap-1.5 text-xs text-amber-300/90 pt-0.5">
+                  <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>
+                    Địa chỉ: <strong>R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</strong>
+                  </span>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto shrink-0">
@@ -866,7 +872,7 @@ export default function HomePage() {
       {/* Nút Liên Hệ Nhanh (Zalo & Gọi Điện Đặt Lịch Offline) */}
       <FloatingContact />
 
-      <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2.5">
+      <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-6 text-xs text-slate-400 font-medium flex-wrap">
           <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
             Về Thầy Tôn
@@ -882,9 +888,17 @@ export default function HomePage() {
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
           <a href="tel:0935058688" className="hover:text-amber-400 transition">
-            Hotline: <strong className="text-amber-400">0935.058.688</strong>
+            Liên hệ: <strong className="text-amber-400">+84 93 505 8688</strong>
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="mailto:tranhuyton@gmail.com" className="hover:text-amber-300 transition">
+            Email: tranhuyton@gmail.com
           </a>
         </div>
+        <p className="text-slate-400 text-xs flex items-center justify-center gap-1.5 flex-wrap">
+          <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span>Địa chỉ: <strong>R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</strong></span>
+        </p>
         <p className="text-slate-500 text-[11px] sm:text-xs">
           © {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.{' '}
           <a href="/admin" className="text-slate-600 hover:text-slate-400 transition ml-1" title="Cổng quản trị Thầy Tôn">

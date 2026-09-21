@@ -14,6 +14,8 @@ import {
   PhoneCall,
   Compass,
   CheckCircle2,
+  MapPin,
+  Mail,
 } from 'lucide-react';
 
 export default function AboutThayTon() {
@@ -228,6 +230,38 @@ export default function AboutThayTon() {
                 <PhoneCall className="w-3.5 h-3.5" />
                 <span>Liên Hệ Đàm Đạo</span>
               </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Thông tin liên hệ & Địa chỉ đàm đạo trực tiếp */}
+        <div className="relative z-10 mt-6 pt-6 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-slate-300">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              <strong>Địa chỉ:</strong> R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <PhoneCall className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                <strong>Liên hệ:</strong>{' '}
+                <a href="tel:0935058688" className="text-amber-300 hover:underline font-bold">
+                  +84 93 505 8688
+                </a>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Mail className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                <strong>Email:</strong>{' '}
+                <a href="mailto:tranhuyton@gmail.com" className="text-slate-200 hover:text-amber-300 hover:underline">
+                  tranhuyton@gmail.com
+                </a>
+              </span>
             </div>
           </div>
         </div>
