@@ -8,14 +8,26 @@ interface UserNavProps {
   onOpenAuthModal: () => void;
   onOpenSavedCharts: () => void;
   onNewChart: () => void;
+  onSignOut?: () => void;
 }
 
 export default function UserNav({
   onOpenAuthModal,
   onOpenSavedCharts,
   onNewChart,
+  onSignOut,
 }: UserNavProps) {
   const { user, profile, signOut, isLoading } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } finally {
+      if (onSignOut) {
+        onSignOut();
+      }
+    }
+  };
 
   const getFirstName = (fullName?: string | null, email?: string | null) => {
     if (fullName && fullName.trim()) {
@@ -87,7 +99,7 @@ export default function UserNav({
             {/* Nút Log out */}
             <button
               type="button"
-              onClick={signOut}
+              onClick={handleSignOut}
               className="inline-flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 bg-slate-800/60 hover:bg-red-950/40 text-slate-400 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer"
               title="Đăng xuất tài khoản"
             >

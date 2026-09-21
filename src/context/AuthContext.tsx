@@ -142,6 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('tuvi_active_session');
+      }
       await supabase.auth.signOut();
       setUser(null);
       setProfile(null);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DuLieuDuongSo, LaSoData, ChatMessage, ServiceTier, QuestionsQuota } from '@/types/tuvi';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import TuViForm from '@/components/TuViForm';
@@ -22,7 +22,7 @@ import {
 import { Sparkles, Crown, PhoneCall } from 'lucide-react';
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
 
   const [laSo, setLaSo] = useState<LaSoData | null>(null);
   const [currentDuongSo, setCurrentDuongSo] = useState<DuLieuDuongSo | null>(null);
@@ -564,9 +564,35 @@ export default function HomePage() {
     }
   };
 
+  const handleReset = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('tuvi_active_session');
+      window.history.replaceState(null, '', '/');
+    }
+    setLaSo(null);
+    setCurrentDuongSo(null);
+    setCurrentChartId(null);
+    setCurrentTier('free');
+    setQuestionsQuota({ basicAllowed: 0, proAllowed: 0 });
+    setReadingHtml(undefined);
+    setReadingError(undefined);
+    setChatHistory([]);
+    setIsRestoringSession(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Lắng nghe khi người dùng đăng xuất: Tự động dọn dẹp sạch toàn bộ lá số và bình giải cũ
+  const prevUserRef = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (prevUserRef.current && !user) {
+      handleReset();
+    }
+    prevUserRef.current = user ? user.id : null;
+  }, [user]);
+
   // Khôi phục phiên làm việc đang xem khi trang được tải lần đầu / sau khi F5
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isAuthLoading) return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const urlChartId = urlParams.get('chartId');
@@ -578,7 +604,18 @@ export default function HomePage() {
       try {
         const session = JSON.parse(savedSessionStr);
         if (session && session.laSo && session.duongSo) {
-          if (!urlChartId || urlChartId === session.chartId) {
+          // Kiểm tra xem session có phải của tài khoản người dùng đã đăng xuất hay không
+          const isUserAccountSession = Boolean(session.chartId || session.userId || session.tier === 'pro');
+
+          if (!user && isUserAccountSession) {
+            // Hiện tại chưa đăng nhập nhưng phiên lưu là của tài khoản đã đăng xuất -> Dọn dẹp sạch
+            localStorage.removeItem('tuvi_active_session');
+            window.history.replaceState(null, '', '/');
+          } else if (user && session.userId && session.userId !== user.id) {
+            // Đăng nhập tài khoản khác tài khoản trong session cũ -> Dọn sạch session
+            localStorage.removeItem('tuvi_active_session');
+            window.history.replaceState(null, '', '/');
+          } else if (!urlChartId || urlChartId === session.chartId) {
             setLaSo(session.laSo);
             setCurrentDuongSo(session.duongSo);
             setCurrentChartId(session.chartId || null);
@@ -588,8 +625,8 @@ export default function HomePage() {
             if (session.quota) setQuestionsQuota(session.quota);
             hasRestored = true;
 
-            // Nếu có chartId, ngầm làm mới từ database để luôn cập nhật
-            if (session.chartId) {
+            // Nếu có chartId và user đã đăng nhập, ngầm làm mới từ database để luôn cập nhật
+            if (session.chartId && user) {
               getChartDetails(session.chartId)
                 .then(({ chart, chatMessages }) => {
                   if (chart) {
@@ -613,15 +650,19 @@ export default function HomePage() {
       }
     }
 
-    if (!hasRestored && urlChartId) {
+    if (!hasRestored && urlChartId && user) {
       handleSelectSavedChart(urlChartId).finally(() => {
         setIsRestoringSession(false);
       });
       return;
     }
 
+    if (!hasRestored && urlChartId && !user) {
+      window.history.replaceState(null, '', '/');
+    }
+
     setIsRestoringSession(false);
-  }, []);
+  }, [isAuthLoading, user]);
 
   // Tự động lưu phiên làm việc hiện tại vào localStorage để khi F5 / refresh vẫn giữ nguyên trang đang xem
   useEffect(() => {
@@ -638,6 +679,7 @@ export default function HomePage() {
         duongSo: cleanDuongSo,
       };
       const sessionData = {
+        userId: user ? user.id : null,
         chartId: currentChartId,
         laSo: cleanLaSo,
         duongSo: cleanDuongSo,
@@ -656,24 +698,7 @@ export default function HomePage() {
         console.warn('Không thể lưu tuvi_active_session vào localStorage:', err);
       }
     }
-  }, [laSo, currentDuongSo, currentChartId, currentTier, readingHtml, chatHistory, questionsQuota, isRestoringSession]);
-
-
-  const handleReset = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('tuvi_active_session');
-      window.history.replaceState(null, '', '/');
-    }
-    setLaSo(null);
-    setCurrentDuongSo(null);
-    setCurrentChartId(null);
-    setCurrentTier('free');
-    setQuestionsQuota({ basicAllowed: 0, proAllowed: 0 });
-    setReadingHtml(undefined);
-    setReadingError(undefined);
-    setChatHistory([]);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, [laSo, currentDuongSo, currentChartId, currentTier, readingHtml, chatHistory, questionsQuota, isRestoringSession, user]);
 
   return (
     <main className="min-h-screen cosmic-bg py-6 px-3 sm:px-6 md:px-8 flex flex-col justify-between relative">
@@ -689,6 +714,7 @@ export default function HomePage() {
             }
           }}
           onNewChart={handleReset}
+          onSignOut={handleReset}
         />
 
         {isRestoringSession ? (
