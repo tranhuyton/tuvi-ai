@@ -204,25 +204,18 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
 
   return (
     <div className="w-full max-w-xl mx-auto backdrop-blur-xl bg-slate-900/80 border border-amber-500/30 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100">
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/80">
-        <div className="flex items-center gap-3">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-400 shadow-[0_0_15px_rgba(212,175,55,0.25)]">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif">
-              Tử Vi Thầy Tôn
-            </h1>
-            <p className="text-xs text-slate-400">
-              Lập Lá Số &amp; Bình Giải Đa Phương Thức
-            </p>
-          </div>
+      <div className="mb-6 pb-4 border-b border-slate-800/80">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif">
+            LẬP LÁ SỐ TỬ VI
+          </h2>
+          <span className="text-xs sm:text-sm text-amber-400/80 font-serif italic tracking-wide">
+            ✦ Khai mở thiên cơ
+          </span>
         </div>
-
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Khai Mở Thiên Cơ</span>
-        </div>
+        <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          An sao chính xác theo giờ sinh • Bình giải chuyên sâu đa phương thức
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
