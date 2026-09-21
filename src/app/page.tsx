@@ -51,8 +51,12 @@ export default function HomePage() {
     setQuestionsQuota((prev) => {
       const next = typeof val === 'function' ? val(prev) : val;
       if (typeof window !== 'undefined') {
-        const key = getChartStorageKey(currentDuongSo, currentChartId);
-        localStorage.setItem(`tuvi_quota_${key}`, JSON.stringify(next));
+        if (currentChartId) {
+          localStorage.setItem(`tuvi_quota_${currentChartId}`, JSON.stringify(next));
+        }
+        if (currentDuongSo) {
+          localStorage.setItem(`tuvi_quota_${currentDuongSo.hoTen}_${currentDuongSo.namDuong}`, JSON.stringify(next));
+        }
       }
       return next;
     });
@@ -61,8 +65,12 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tuvi_global_q');
-      const key = getChartStorageKey(currentDuongSo, currentChartId);
-      const storedQuotaStr = localStorage.getItem(`tuvi_quota_${key}`);
+      const chartIdKey = currentChartId ? `tuvi_quota_${currentChartId}` : null;
+      const duongSoKey = currentDuongSo ? `tuvi_quota_${currentDuongSo.hoTen}_${currentDuongSo.namDuong}` : null;
+      const storedQuotaStr =
+        (chartIdKey ? localStorage.getItem(chartIdKey) : null) ||
+        (duongSoKey ? localStorage.getItem(duongSoKey) : null);
+
       if (storedQuotaStr) {
         try {
           const parsed = JSON.parse(storedQuotaStr);
@@ -71,35 +79,43 @@ export default function HomePage() {
           if (currentTier === 'pro' && pAllowed === 0) {
             pAllowed = 2; // Luôn đảm bảo khách VIP Pro có tối thiểu 2 câu Pro
           }
-          setQuestionsQuota({ basicAllowed: bAllowed, proAllowed: pAllowed });
+          const normalized: QuestionsQuota = { basicAllowed: bAllowed, proAllowed: pAllowed };
+          if (chartIdKey) localStorage.setItem(chartIdKey, JSON.stringify(normalized));
+          if (duongSoKey) localStorage.setItem(duongSoKey, JSON.stringify(normalized));
+          setQuestionsQuota(normalized);
           return;
         } catch {
           // ignore
         }
       }
 
-      // Migration từ legacy tuvi_q_${key}
-      const legacyQ = localStorage.getItem(`tuvi_q_${key}`);
+      // Migration từ legacy tuvi_q
+      const legacyQ =
+        (chartIdKey ? localStorage.getItem(`tuvi_q_${currentChartId}`) : null) ||
+        (duongSoKey ? localStorage.getItem(`tuvi_q_${currentDuongSo?.hoTen}_${currentDuongSo?.namDuong}`) : null);
+
       if (legacyQ && Number(legacyQ) > 0) {
         const total = Number(legacyQ);
-        if (currentTier === 'pro') {
-          // Nếu đã lên Pro: Giữ nguyên số câu basic đã mua trước đó và cộng thêm 2 câu Pro
-          const initial: QuestionsQuota = {
-            basicAllowed: total,
-            proAllowed: 2,
-          };
-          setQuestionsQuota(initial);
-          localStorage.setItem(`tuvi_quota_${key}`, JSON.stringify(initial));
-          return;
-        } else {
-          const initial: QuestionsQuota = {
-            basicAllowed: total,
-            proAllowed: 0,
-          };
-          setQuestionsQuota(initial);
-          localStorage.setItem(`tuvi_quota_${key}`, JSON.stringify(initial));
-          return;
-        }
+        const initial: QuestionsQuota = {
+          basicAllowed: total,
+          proAllowed: currentTier === 'pro' ? 2 : 0,
+        };
+        if (chartIdKey) localStorage.setItem(chartIdKey, JSON.stringify(initial));
+        if (duongSoKey) localStorage.setItem(duongSoKey, JSON.stringify(initial));
+        setQuestionsQuota(initial);
+        return;
+      }
+
+      // Ưu tiên quota từ database nếu có trong laso
+      if (laSo?.quota) {
+        const initial: QuestionsQuota = {
+          basicAllowed: Number(laSo.quota.basicAllowed || 0),
+          proAllowed: currentTier === 'pro' ? Math.max(2, Number(laSo.quota.proAllowed || 0)) : Number(laSo.quota.proAllowed || 0),
+        };
+        if (chartIdKey) localStorage.setItem(chartIdKey, JSON.stringify(initial));
+        if (duongSoKey) localStorage.setItem(duongSoKey, JSON.stringify(initial));
+        setQuestionsQuota(initial);
+        return;
       }
 
       // Mặc định
@@ -310,10 +326,11 @@ export default function HomePage() {
 
     setCurrentTier('pro');
     // Khi nâng cấp lên Pro: Luôn cộng thêm 2 câu hỏi chuyên sâu VIP Pro!
-    updateQuestionsQuota((prev) => ({
-      basicAllowed: prev.basicAllowed,
-      proAllowed: prev.proAllowed + 2,
-    }));
+    const newQuota: QuestionsQuota = {
+      basicAllowed: questionsQuota.basicAllowed,
+      proAllowed: questionsQuota.proAllowed + 2,
+    };
+    updateQuestionsQuota(newQuota);
     setIsUpgrading(true);
     setIsLoadingReading(true);
     setReadingError(undefined);
@@ -325,7 +342,7 @@ export default function HomePage() {
       anhTay: undefined,
     };
 
-    const updatedLaSo = { ...laSo, tier: 'pro' as ServiceTier };
+    const updatedLaSo = { ...laSo, tier: 'pro' as ServiceTier, quota: newQuota };
     setLaSo(updatedLaSo);
 
     try {
@@ -494,13 +511,15 @@ export default function HomePage() {
       setReadingHtml(chart.reading_html || undefined);
       setReadingError(undefined);
       setChatHistory(chatMessages || []);
-      const key = chart.id || (chart.duong_so_data ? `${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}` : 'default');
       let loadedQuota: QuestionsQuota = {
         basicAllowed: 0,
         proAllowed: detectedTier === 'pro' ? 2 : 0,
       };
       if (typeof window !== 'undefined') {
-        const storedQuotaStr = localStorage.getItem(`tuvi_quota_${key}`);
+        const storedQuotaStr =
+          (chart.id ? localStorage.getItem(`tuvi_quota_${chart.id}`) : null) ||
+          (chart.duong_so_data ? localStorage.getItem(`tuvi_quota_${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}`) : null);
+
         if (storedQuotaStr) {
           try {
             const parsed = JSON.parse(storedQuotaStr);
@@ -510,7 +529,9 @@ export default function HomePage() {
             };
           } catch {}
         } else {
-          const storedQ = localStorage.getItem(`tuvi_q_${key}`);
+          const storedQ =
+            (chart.id ? localStorage.getItem(`tuvi_q_${chart.id}`) : null) ||
+            (chart.duong_so_data ? localStorage.getItem(`tuvi_q_${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}`) : null);
           if (storedQ && Number(storedQ) > 0) {
             const total = Number(storedQ);
             if (detectedTier === 'pro') {
@@ -526,6 +547,16 @@ export default function HomePage() {
             }
           }
         }
+      }
+      if (chart.laso_data?.quota) {
+        loadedQuota = {
+          basicAllowed: Math.max(loadedQuota.basicAllowed, Number(chart.laso_data.quota.basicAllowed || 0)),
+          proAllowed: detectedTier === 'pro' ? Math.max(2, Number(chart.laso_data.quota.proAllowed || 0)) : Number(chart.laso_data.quota.proAllowed || 0),
+        };
+      }
+      if (typeof window !== 'undefined') {
+        if (chart.id) localStorage.setItem(`tuvi_quota_${chart.id}`, JSON.stringify(loadedQuota));
+        if (chart.duong_so_data) localStorage.setItem(`tuvi_quota_${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}`, JSON.stringify(loadedQuota));
       }
       setQuestionsQuota(loadedQuota);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -556,12 +587,15 @@ export default function HomePage() {
       id: currentChartId || undefined,
       title,
       duongSoData: cleanDuongSo,
-      lasoData: laSo,
+      lasoData: { ...laSo, quota: questionsQuota, tier: currentTier },
       readingHtml,
     });
 
     if (res.chartId) {
       setCurrentChartId(res.chartId);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`tuvi_quota_${res.chartId}`, JSON.stringify(questionsQuota));
+      }
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2500);
     } else {

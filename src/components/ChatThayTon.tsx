@@ -29,9 +29,8 @@ export default function ChatThayTon({
   const isPro = tier === 'pro';
 
   // 1. Phân loại lượt hỏi được cấp:
-  const basicAllowed = quota !== undefined ? quota.basicAllowed : (!isPro ? questionsAllowed : 0);
+  const rawBasicAllowed = quota !== undefined ? quota.basicAllowed : (!isPro ? questionsAllowed : 0);
   const proAllowed = quota !== undefined ? quota.proAllowed : (isPro ? (questionsAllowed > 0 ? questionsAllowed : 2) : 0);
-  const totalAllowed = basicAllowed + proAllowed;
 
   // 2. Tính số lượng câu hỏi đã dùng theo từng loại:
   const validMessages = chatHistory.filter((c) => !c.isError);
@@ -39,16 +38,15 @@ export default function ChatThayTon({
   const explicitBasicAsked = validMessages.filter((c) => c.type === 'basic').length;
   const untypedMessages = validMessages.filter((c) => !c.type).length;
 
-  // Đối với tin nhắn cũ chưa gắn nhãn: ưu tiên trừ vào basic trước, phần vượt trừ vào pro
-  const untypedToBasic = Math.min(untypedMessages, Math.max(0, basicAllowed - explicitBasicAsked));
-  const untypedToPro = untypedMessages - untypedToBasic;
-
-  const basicAsked = explicitBasicAsked + untypedToBasic;
-  const proAsked = explicitProAsked + untypedToPro;
+  // Tin nhắn cũ/chưa gắn nhãn (untyped) 100% thuộc lượt Cơ Bản, TUYỆT ĐỐI không trừ vào lượt Chuyên Sâu của khách!
+  const basicAsked = explicitBasicAsked + untypedMessages;
+  const basicAllowed = Math.max(rawBasicAllowed, basicAsked);
+  const proAsked = explicitProAsked;
 
   const basicRemaining = Math.max(0, basicAllowed - basicAsked);
   const proRemaining = Math.max(0, proAllowed - proAsked);
   const totalRemaining = basicRemaining + proRemaining;
+  const totalAllowed = basicAllowed + proAllowed;
 
   // 3. Chế độ câu hỏi đang chọn (mặc định ưu tiên VIP Pro nếu còn):
   const [selectedMode, setSelectedMode] = useState<'basic' | 'vip'>(() => {

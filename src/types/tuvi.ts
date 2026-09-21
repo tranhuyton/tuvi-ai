@@ -77,6 +77,7 @@ export interface LaSoData {
   namXemCanChi: string;
   tuoiAmXem: number;
   tier?: ServiceTier;
+  quota?: QuestionsQuota;
   cungs: CungLaSo[];
 }
 
