@@ -84,4 +84,10 @@ export interface ChatMessage {
   q: string;
   a: string;
   isError?: boolean;
+  type?: 'basic' | 'vip';
+}
+
+export interface QuestionsQuota {
+  basicAllowed: number;
+  proAllowed: number;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { DuLieuDuongSo, LaSoData, ChatMessage, ServiceTier } from '@/types/tuvi';
+import { DuLieuDuongSo, LaSoData, ChatMessage, ServiceTier, QuestionsQuota } from '@/types/tuvi';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import TuViForm from '@/components/TuViForm';
 import LaSoBanCo from '@/components/LaSoBanCo';
@@ -36,15 +36,23 @@ export default function HomePage() {
 
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isLoadingChat, setIsLoadingChat] = useState(false);
-  const [questionsAllowed, setQuestionsAllowed] = useState<number>(0);
+  const [questionsQuota, setQuestionsQuota] = useState<QuestionsQuota>({
+    basicAllowed: 0,
+    proAllowed: 0,
+  });
+
+  const getChartStorageKey = (duongSo?: DuLieuDuongSo | null, chartId?: string | null) =>
+    chartId || (duongSo ? `${duongSo.hoTen}_${duongSo.namDuong}` : 'default');
 
   // Đồng bộ và lưu trữ số lượt hỏi vào localStorage để giữ nguyên khi F5 hoặc đổi lá số
-  const updateQuestionsAllowed = (val: number | ((prev: number) => number)) => {
-    setQuestionsAllowed((prev) => {
+  const updateQuestionsQuota = (
+    val: QuestionsQuota | ((prev: QuestionsQuota) => QuestionsQuota)
+  ) => {
+    setQuestionsQuota((prev) => {
       const next = typeof val === 'function' ? val(prev) : val;
       if (typeof window !== 'undefined') {
-        const key = currentDuongSo ? `${currentDuongSo.hoTen}_${currentDuongSo.namDuong}` : 'default';
-        localStorage.setItem(`tuvi_q_${key}`, String(next));
+        const key = getChartStorageKey(currentDuongSo, currentChartId);
+        localStorage.setItem(`tuvi_quota_${key}`, JSON.stringify(next));
       }
       return next;
     });
@@ -53,17 +61,55 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tuvi_global_q');
-      if (currentDuongSo) {
-        const key = `${currentDuongSo.hoTen}_${currentDuongSo.namDuong}`;
-        const storedQ = localStorage.getItem(`tuvi_q_${key}`);
-        if (storedQ && Number(storedQ) > 0) {
-          setQuestionsAllowed(Number(storedQ));
-        } else if (currentTier === 'free') {
-          setQuestionsAllowed(0);
+      const key = getChartStorageKey(currentDuongSo, currentChartId);
+      const storedQuotaStr = localStorage.getItem(`tuvi_quota_${key}`);
+      if (storedQuotaStr) {
+        try {
+          const parsed = JSON.parse(storedQuotaStr);
+          let bAllowed = Number(parsed.basicAllowed || 0);
+          let pAllowed = Number(parsed.proAllowed || 0);
+          if (currentTier === 'pro' && pAllowed === 0) {
+            pAllowed = 2; // Luôn đảm bảo khách VIP Pro có tối thiểu 2 câu Pro
+          }
+          setQuestionsQuota({ basicAllowed: bAllowed, proAllowed: pAllowed });
+          return;
+        } catch {
+          // ignore
         }
       }
+
+      // Migration từ legacy tuvi_q_${key}
+      const legacyQ = localStorage.getItem(`tuvi_q_${key}`);
+      if (legacyQ && Number(legacyQ) > 0) {
+        const total = Number(legacyQ);
+        if (currentTier === 'pro') {
+          // Nếu đã lên Pro: Giữ nguyên số câu basic đã mua trước đó và cộng thêm 2 câu Pro
+          const initial: QuestionsQuota = {
+            basicAllowed: total,
+            proAllowed: 2,
+          };
+          setQuestionsQuota(initial);
+          localStorage.setItem(`tuvi_quota_${key}`, JSON.stringify(initial));
+          return;
+        } else {
+          const initial: QuestionsQuota = {
+            basicAllowed: total,
+            proAllowed: 0,
+          };
+          setQuestionsQuota(initial);
+          localStorage.setItem(`tuvi_quota_${key}`, JSON.stringify(initial));
+          return;
+        }
+      }
+
+      // Mặc định
+      if (currentTier === 'pro') {
+        setQuestionsQuota({ basicAllowed: 0, proAllowed: 2 });
+      } else {
+        setQuestionsQuota({ basicAllowed: 0, proAllowed: 0 });
+      }
     }
-  }, [laSo, currentDuongSo, currentTier]);
+  }, [laSo, currentDuongSo, currentTier, currentChartId]);
 
   // Modals & Payment
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -191,15 +237,33 @@ export default function HomePage() {
     setReadingHtml(undefined);
     setReadingError(undefined);
     setChatHistory([]);
-    let initialQ = tier === 'pro' ? 2 : 0;
+    let initialQuota: QuestionsQuota = {
+      basicAllowed: 0,
+      proAllowed: tier === 'pro' ? 2 : 0,
+    };
     if (typeof window !== 'undefined') {
       const key = `${data.hoTen}_${data.namDuong}`;
-      const storedQ = localStorage.getItem(`tuvi_q_${key}`);
-      if (storedQ && Number(storedQ) > 0) {
-        initialQ = Math.max(initialQ, Number(storedQ));
+      const storedQuotaStr = localStorage.getItem(`tuvi_quota_${key}`);
+      if (storedQuotaStr) {
+        try {
+          const parsed = JSON.parse(storedQuotaStr);
+          initialQuota = {
+            basicAllowed: Number(parsed.basicAllowed || 0),
+            proAllowed: tier === 'pro' ? Math.max(2, Number(parsed.proAllowed || 0)) : Number(parsed.proAllowed || 0),
+          };
+        } catch {}
+      } else {
+        const storedQ = localStorage.getItem(`tuvi_q_${key}`);
+        if (storedQ && Number(storedQ) > 0) {
+          const total = Number(storedQ);
+          initialQuota = {
+            basicAllowed: total,
+            proAllowed: tier === 'pro' ? 2 : 0,
+          };
+        }
       }
     }
-    setQuestionsAllowed(initialQ);
+    setQuestionsQuota(initialQuota);
     setIsLoadingReading(true);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -245,7 +309,11 @@ export default function HomePage() {
     if (!laSo || !currentDuongSo) return;
 
     setCurrentTier('pro');
-    updateQuestionsAllowed((prev) => Math.max(prev, 2));
+    // Khi nâng cấp lên Pro: Luôn cộng thêm 2 câu hỏi chuyên sâu VIP Pro!
+    updateQuestionsQuota((prev) => ({
+      basicAllowed: prev.basicAllowed,
+      proAllowed: prev.proAllowed + 2,
+    }));
     setIsUpgrading(true);
     setIsLoadingReading(true);
     setReadingError(undefined);
@@ -305,7 +373,10 @@ export default function HomePage() {
         type: 'chat_vip',
         price: 99000,
         onConfirm: () => {
-          updateQuestionsAllowed((prev) => prev + 2);
+          updateQuestionsQuota((prev) => ({
+            ...prev,
+            proAllowed: prev.proAllowed + 2,
+          }));
         },
       });
     } else {
@@ -314,19 +385,22 @@ export default function HomePage() {
         type: 'chat_free',
         price: 49000,
         onConfirm: () => {
-          updateQuestionsAllowed((prev) => prev + 2);
+          updateQuestionsQuota((prev) => ({
+            ...prev,
+            basicAllowed: prev.basicAllowed + 2,
+          }));
         },
       });
     }
   };
 
   // Xử lý gửi tin nhắn hỏi đáp với Thầy Tôn
-  const handleSendMessage = async (userQuestion: string) => {
+  const handleSendMessage = async (userQuestion: string, mode: 'basic' | 'vip' = 'vip') => {
     if (!laSo) return;
     setIsLoadingChat(true);
 
     try {
-      const selectedModel = currentTier === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash';
+      const selectedModel = mode === 'vip' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash';
       const res = await fetch('/api/tuvi/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -337,6 +411,7 @@ export default function HomePage() {
           chieuCao: laSo.duongSo.chieuCao,
           canNang: laSo.duongSo.canNang,
           chatHistory,
+          mode,
           model: selectedModel,
         }),
       });
@@ -356,6 +431,7 @@ export default function HomePage() {
             q: userQuestion,
             a: errMsg || 'Thầy đang bận, xin quý khách thử lại sau ít phút.',
             isError: true,
+            type: mode,
           },
         ]);
       } else {
@@ -366,6 +442,8 @@ export default function HomePage() {
           {
             q: userQuestion,
             a: answer,
+            isError: false,
+            type: mode,
           },
         ]);
 
@@ -380,8 +458,9 @@ export default function HomePage() {
         ...prev,
         {
           q: userQuestion,
-          a: `Lỗi kết nối: ${msg}`,
+          a: `Lỗi kết nối máy chủ: ${msg}`,
           isError: true,
+          type: mode,
         },
       ]);
     } finally {
@@ -415,16 +494,40 @@ export default function HomePage() {
       setReadingHtml(chart.reading_html || undefined);
       setReadingError(undefined);
       setChatHistory(chatMessages || []);
-      const msgCount = (chatMessages || []).filter((c) => !c.isError).length;
-      let allowed = detectedTier === 'pro' ? Math.max(2, msgCount) : msgCount;
+      const key = chart.id || (chart.duong_so_data ? `${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}` : 'default');
+      let loadedQuota: QuestionsQuota = {
+        basicAllowed: 0,
+        proAllowed: detectedTier === 'pro' ? 2 : 0,
+      };
       if (typeof window !== 'undefined') {
-        const key = chart.id || (chart.duong_so_data ? `${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}` : 'default');
-        const storedQ = localStorage.getItem(`tuvi_q_${key}`);
-        if (storedQ && Number(storedQ) > 0) {
-          allowed = Math.max(allowed, Number(storedQ));
+        const storedQuotaStr = localStorage.getItem(`tuvi_quota_${key}`);
+        if (storedQuotaStr) {
+          try {
+            const parsed = JSON.parse(storedQuotaStr);
+            loadedQuota = {
+              basicAllowed: Number(parsed.basicAllowed || 0),
+              proAllowed: detectedTier === 'pro' ? Math.max(2, Number(parsed.proAllowed || 0)) : Number(parsed.proAllowed || 0),
+            };
+          } catch {}
+        } else {
+          const storedQ = localStorage.getItem(`tuvi_q_${key}`);
+          if (storedQ && Number(storedQ) > 0) {
+            const total = Number(storedQ);
+            if (detectedTier === 'pro') {
+              loadedQuota = {
+                basicAllowed: total,
+                proAllowed: 2,
+              };
+            } else {
+              loadedQuota = {
+                basicAllowed: total,
+                proAllowed: 0,
+              };
+            }
+          }
         }
       }
-      setQuestionsAllowed(allowed);
+      setQuestionsQuota(loadedQuota);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
       alert('Lỗi tải dữ liệu lá số: ' + e.message);
@@ -472,7 +575,7 @@ export default function HomePage() {
     setCurrentDuongSo(null);
     setCurrentChartId(null);
     setCurrentTier('free');
-    setQuestionsAllowed(0);
+    setQuestionsQuota({ basicAllowed: 0, proAllowed: 0 });
     setReadingHtml(undefined);
     setReadingError(undefined);
     setChatHistory([]);
@@ -584,8 +687,9 @@ export default function HomePage() {
               onSendMessage={handleSendMessage}
               isLoading={isLoadingChat}
               tier={currentTier}
-              questionsAllowed={questionsAllowed}
+              quota={questionsQuota}
               onUnlockQuestions={handleUnlockQuestions}
+              onUpgradeToPro={openUpgradeModal}
             />
 
             {/* Khối Đặt Lịch Xem Trực Tiếp Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}

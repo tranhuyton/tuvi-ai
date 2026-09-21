@@ -8,7 +8,7 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userQuestion, laSo, thongTinThem, chieuCao, canNang, chatHistory, apiKey } = body as {
+    const { userQuestion, laSo, thongTinThem, chieuCao, canNang, chatHistory, apiKey, mode, questionType } = body as {
       userQuestion: string;
       laSo: LaSoData;
       thongTinThem?: string;
@@ -16,7 +16,11 @@ export async function POST(req: NextRequest) {
       canNang?: number;
       chatHistory?: ChatMessage[];
       apiKey?: string;
+      mode?: 'basic' | 'vip';
+      questionType?: 'basic' | 'vip';
     };
+
+    const activeMode: 'basic' | 'vip' = mode || questionType || 'vip';
 
     if (!userQuestion || !userQuestion.trim()) {
       return NextResponse.json({ error: 'Câu hỏi không được để trống' }, { status: 400 });
@@ -50,24 +54,31 @@ export async function POST(req: NextRequest) {
     if (chatHistory && chatHistory.length > 0) {
       historyText = 'LỊCH SỬ ĐÀM ĐẠO TRƯỚC ĐÓ:\n';
       chatHistory.forEach((c, idx) => {
-        historyText += `Lượt ${idx + 1}:\n- Khách: ${c.q}\n- Thầy Tôn: ${c.a}\n`;
+        const tag = c.type === 'vip' ? '[VIP Pro]' : '[Cơ Bản]';
+        historyText += `Lượt ${idx + 1} ${tag}:\n- Khách: ${c.q}\n- Thầy Tôn: ${c.a}\n`;
       });
       historyText += '\n';
     }
 
-    const chatPrompt = `${historyText}Khách hỏi câu mới: '${userQuestion.trim()}'
+    const requirementText =
+      activeMode === 'vip'
+        ? `YÊU CẦU LUẬN GIẢI CHUYÊN SÂU VIP PRO: Trả lời uyên bác, thấu đáo 400-600 chữ. Phân tích cặn kẽ tương quan 14 Chính tinh, các phụ tinh đắc hãm, Tứ Hóa (Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ), Tuần/Triệt ảnh hưởng, Đại Vận 10 năm hiện tại và lưu niên năm nay. Đưa ra sách lược cụ thể, chỉ dẫn hóa giải điều hung đón điều cát. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>, <ul>, <li>). KHÔNG dùng markdown **.`
+        : `YÊU CẦU LUẬN GIẢI CƠ BẢN: Trả lời 250-350 chữ cô đọng, dễ hiểu, ân cần, giải đáp thẳng thắn và chính xác vào trọng tâm câu hỏi của khách (về công danh, tài lộc, tình cảm hoặc gia đạo) dựa trên cung vị liên quan. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>). KHÔNG dùng markdown **.`;
+
+    const chatPrompt = `${historyText}Khách hỏi câu mới (${activeMode === 'vip' ? 'Gói Chuyên Sâu VIP Pro' : 'Gói Cơ Bản'}): '${userQuestion.trim()}'
 Mệnh ${banMenh}. Năm nay ${namXemCanChi}, ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
 12 CUNG:
 ${cungDataStr}
-YÊU CẦU: Trả lời khách 300-500 chữ uyên bác, ân cần, chỉ rõ căn nguyên lá số. Xưng là Thầy Tôn. KHÔNG dùng Markdown **, dùng HTML <b>, <p>.`;
+${requirementText}`;
 
-    const result = await callGeminiVision([{ text: chatPrompt }], apiKey, 'gemini-3.1-pro-preview');
+    const modelToUse = activeMode === 'vip' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash';
+    const result = await callGeminiVision([{ text: chatPrompt }], apiKey, modelToUse);
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json({ answer: result.text });
+    return NextResponse.json({ answer: result.text, mode: activeMode });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Lỗi máy chủ nội bộ';
     return NextResponse.json({ error: `Lỗi: ${msg}` }, { status: 500 });
