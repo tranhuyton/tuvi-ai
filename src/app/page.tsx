@@ -12,6 +12,7 @@ import SavedChartsModal from '@/components/SavedChartsModal';
 import PaymentModal, { PaymentPurpose } from '@/components/PaymentModal';
 import UserNav from '@/components/UserNav';
 import FloatingContact from '@/components/FloatingContact';
+import AboutThayTon from '@/components/AboutThayTon';
 import { useAuth } from '@/context/AuthContext';
 import {
   saveOrUpdateChart,
@@ -723,11 +724,14 @@ export default function HomePage() {
             <p className="text-sm text-amber-300/80 font-serif">Đang tải lại lá số của quý khách...</p>
           </div>
         ) : !laSo ? (
-          <div className="my-auto py-6 sm:py-10">
+          <div className="my-auto py-6 sm:py-10 space-y-8 sm:space-y-12">
             <TuViForm
               onSubmit={handleFormSubmit}
               isLoading={isLoadingReading}
             />
+
+            {/* Mục Giới thiệu về Thầy Tôn */}
+            <AboutThayTon />
           </div>
         ) : (
           <div className="space-y-6">
@@ -781,6 +785,9 @@ export default function HomePage() {
               onUnlockQuestions={handleUnlockQuestions}
               onUpgradeToPro={openUpgradeModal}
             />
+
+            {/* Mục Giới thiệu về Thầy Tôn */}
+            <AboutThayTon />
 
             {/* Khối Đặt Lịch Xem Trực Tiếp Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
             <div className="mt-8 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 sm:p-6 rounded-2xl border border-amber-500/30 text-slate-100 flex flex-col md:flex-row items-center justify-between gap-5 print:hidden shadow-xl">
@@ -859,7 +866,25 @@ export default function HomePage() {
       {/* Nút Liên Hệ Nhanh (Zalo & Gọi Điện Đặt Lịch Offline) */}
       <FloatingContact />
 
-      <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8">
+      <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2.5">
+        <div className="flex items-center justify-center gap-3 sm:gap-6 text-xs text-slate-400 font-medium flex-wrap">
+          <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
+            Về Thầy Tôn
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a
+            href="https://tonyenglish.vn"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-400 transition"
+          >
+            TonyEnglish.vn
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="tel:0935058688" className="hover:text-amber-400 transition">
+            Hotline: <strong className="text-amber-400">0935.058.688</strong>
+          </a>
+        </div>
         <p className="text-slate-500 text-[11px] sm:text-xs">
           © {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.{' '}
           <a href="/admin" className="text-slate-600 hover:text-slate-400 transition ml-1" title="Cổng quản trị Thầy Tôn">
