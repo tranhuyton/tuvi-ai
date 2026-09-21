@@ -157,11 +157,11 @@ export default function ChatThayTon({
               </div>
             ) : (
               <div className="flex items-center gap-1.5 flex-wrap">
-                {/* Lượt VIP Pro */}
+                {/* Lượt Chuyên Sâu */}
                 {proAllowed > 0 && (
                   <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold flex items-center gap-1">
                     <Crown className="w-3 h-3 text-amber-400" />
-                    <span>VIP Pro: {proRemaining}/{proAllowed}</span>
+                    <span>Chuyên Sâu: {proRemaining}/{proAllowed}</span>
                   </span>
                 )}
                 {/* Lượt Cơ Bản */}
@@ -202,11 +202,11 @@ export default function ChatThayTon({
                     <span>Khách hỏi:</span>
                     {item.type === 'vip' ? (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-semibold border border-amber-400/40">
-                        ⭐ Chuyên Sâu VIP Pro
+                        ⭐ Chuyên Sâu
                       </span>
                     ) : (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-400/20 text-blue-200 font-medium border border-blue-400/30">
-                        📜 Câu Hỏi Cơ Bản
+                        📜 Cơ Bản
                       </span>
                     )}
                   </div>
@@ -232,11 +232,11 @@ export default function ChatThayTon({
                     {item.type === 'vip' ? (
                       <span className="text-[10px] normal-case font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                         <Crown className="w-2.5 h-2.5 text-amber-700" />
-                        <span>Luận giải Chuyên Sâu VIP Pro</span>
+                        <span>Chuyên Sâu</span>
                       </span>
                     ) : (
                       <span className="text-[10px] normal-case font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                        Luận giải Cơ Bản
+                        Cơ Bản
                       </span>
                     )}
                   </div>
@@ -305,16 +305,16 @@ export default function ChatThayTon({
                 {proRemaining > 0 && basicRemaining > 0 ? (
                   <>
                     Hệ thống đã kích hoạt tổng cộng <b className="text-emerald-400 font-bold">{totalRemaining} lượt đàm đạo</b>: gồm{' '}
-                    <span className="text-amber-300 font-bold">{proRemaining} lượt Chuyên Sâu VIP Pro</span> và{' '}
+                    <span className="text-amber-300 font-bold">{proRemaining} lượt Chuyên Sâu</span> và{' '}
                     <span className="text-blue-300 font-bold">{basicRemaining} lượt Cơ Bản</span>.
                   </>
                 ) : proRemaining > 0 ? (
                   <>
-                    Hệ thống đã kích hoạt <b className="text-amber-300 font-bold">{proRemaining} câu hỏi đàm đạo Chuyên Sâu VIP Pro</b> trực tiếp cùng AI Thầy Tôn theo gói quyền lợi của bạn.
+                    Hệ thống đã kích hoạt <b className="text-amber-300 font-bold">{proRemaining} câu hỏi Chuyên Sâu</b> trực tiếp cùng AI Thầy Tôn theo gói quyền lợi của bạn.
                   </>
                 ) : (
                   <>
-                    Hệ thống đã ghi nhận thanh toán. Quý khách có <b className="text-emerald-400 font-bold">{basicRemaining} câu hỏi đàm đạo</b> trực tiếp cùng AI Thầy Tôn.
+                    Hệ thống đã ghi nhận thanh toán. Quý khách có <b className="text-emerald-400 font-bold">{basicRemaining} câu hỏi Cơ Bản</b> trực tiếp cùng AI Thầy Tôn.
                   </>
                 )}
               </p>
@@ -336,11 +336,11 @@ export default function ChatThayTon({
         {/* 3. ĐANG HỎI: Ô NHẬP CÂU HỎI ĐÃ MỞ RA (CÓ BỘ CHUYỂN MODE NẾU CÓ CẢ 2 LOẠI) */}
         {flowStep === 'chatting' && (
           <div className="space-y-2.5 animate-fade-in">
-            {/* BỘ CHUYỂN ĐỔI CHẾ ĐỘ CÂU HỎI (QUESTION MODE SWITCHER) */}
+            {/* BỘ CHUYỂN ĐỔI CHẾ ĐỘ CÂU HỎI */}
             {proRemaining > 0 && basicRemaining > 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-medium">Chế độ câu hỏi:</span>
+                  <span className="text-xs text-slate-400 font-medium">Chế độ:</span>
                   <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
                     <button
                       type="button"
@@ -352,7 +352,7 @@ export default function ChatThayTon({
                       }`}
                     >
                       <Crown className="w-3.5 h-3.5" />
-                      <span>⭐ Chuyên Sâu VIP Pro ({proRemaining} câu)</span>
+                      <span>Chuyên Sâu ({proRemaining} câu)</span>
                     </button>
                     <button
                       type="button"
@@ -364,35 +364,24 @@ export default function ChatThayTon({
                       }`}
                     >
                       <BookOpen className="w-3.5 h-3.5" />
-                      <span>📜 Cơ Bản ({basicRemaining} câu)</span>
+                      <span>Cơ Bản ({basicRemaining} câu)</span>
                     </button>
                   </div>
-                </div>
-                <div className="text-[11px] text-amber-300/90 italic">
-                  {selectedMode === 'vip'
-                    ? '✨ Soi chiếu 14 Chính tinh, Tứ Hóa & Hạn vận sâu sắc'
-                    : '💡 Giải đáp ngắn gọn, trọng tâm câu hỏi'}
                 </div>
               </div>
             ) : proRemaining > 0 ? (
               <div className="flex items-center justify-between gap-2 px-1 text-xs text-amber-300/90 font-medium">
                 <div className="flex items-center gap-1.5">
                   <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Đang áp dụng: <b>Đàm Đạo Chuyên Sâu VIP Pro</b> (còn {proRemaining} câu)</span>
+                  <span>Chế độ: <b>Chuyên Sâu</b> (còn {proRemaining} câu)</span>
                 </div>
-                {basicAsked > 0 && (
-                  <span className="text-[11px] text-slate-400 italic">2 câu cơ bản đã sử dụng xong</span>
-                )}
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2 px-1 text-xs text-blue-300/90 font-medium">
                 <div className="flex items-center gap-1.5">
                   <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Đang áp dụng: <b>Đàm Đạo Cơ Bản</b> (còn {basicRemaining} câu)</span>
+                  <span>Chế độ: <b>Cơ Bản</b> (còn {basicRemaining} câu)</span>
                 </div>
-                {proAsked > 0 && (
-                  <span className="text-[11px] text-amber-400/80 italic">Đã dùng hết {proAsked} câu VIP Pro</span>
-                )}
               </div>
             )}
 
@@ -405,8 +394,8 @@ export default function ChatThayTon({
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder={
                   selectedMode === 'vip'
-                    ? 'Nhập câu hỏi chuyên sâu (Ví dụ: Sự nghiệp đại vận này cần lưu ý sao nào? Cách hóa giải hung tinh?)'
-                    : 'Nhập câu hỏi (Ví dụ: Công việc kinh doanh năm nay có thuận lợi không? Cần lưu ý gì?)'
+                    ? 'Nhập câu hỏi chuyên sâu...'
+                    : 'Nhập câu hỏi cơ bản...'
                 }
                 className="flex-grow px-4 py-3 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
               />
@@ -438,8 +427,8 @@ export default function ChatThayTon({
               </h4>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
                 {isPro
-                  ? `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt đàm đạo cùng Thầy Tôn. Để tiếp tục soi chiếu các phương diện khác, quý khách có thể gia hạn thêm 02 câu hỏi chuyên sâu mới.`
-                  : `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt thỉnh giáo. Quý khách có thể mua thêm câu hỏi hoặc nâng cấp lên Bản VIP Pro để nhận bài luận chi tiết gấp đôi và 02 câu hỏi chuyên sâu.`}
+                  ? `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể gia hạn thêm 02 câu hỏi chuyên sâu.`
+                  : `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro.`}
               </p>
             </div>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -470,7 +459,7 @@ export default function ChatThayTon({
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
                     >
                       <Crown className="w-4 h-4" />
-                      <span>👑 Nâng Cấp Luận Giải VIP Pro (119.000đ - Tặng 2 câu VIP)</span>
+                      <span>👑 Nâng Cấp Luận Giải Pro (119.000đ - Tặng 2 câu chuyên sâu)</span>
                     </button>
                   )}
                 </>
