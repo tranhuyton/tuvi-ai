@@ -334,54 +334,62 @@ export default function ChatThayTon({
         {/* 3. ĐANG HỎI: Ô NHẬP CÂU HỎI ĐÃ MỞ RA (CÓ BỘ CHUYỂN MODE NẾU CÓ CẢ 2 LOẠI) */}
         {flowStep === 'chatting' && (
           <div className="space-y-2.5 animate-fade-in">
-            {/* BỘ CHUYỂN ĐỔI CHẾ ĐỘ CÂU HỎI */}
-            {proRemaining > 0 && basicRemaining > 0 ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-medium">Chế độ:</span>
-                  <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMode('vip')}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
-                        selectedMode === 'vip'
-                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <Crown className="w-3.5 h-3.5" />
-                      <span>Chuyên Sâu ({proRemaining} câu)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMode('basic')}
-                      className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
-                        selectedMode === 'basic'
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Cơ Bản ({basicRemaining} câu)</span>
-                    </button>
-                  </div>
+            {/* BỘ CHUYỂN ĐỔI CHẾ ĐỘ CÂU HỎI (LUÔN HIỂN THỊ TRỰC QUAN ĐẦY ĐỦ CẢ 2 NÚT) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-slate-950/80 border border-slate-800 rounded-xl">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400 font-medium">Chế độ hỏi:</span>
+                <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
+                  {/* Nút Chuyên Sâu */}
+                  <button
+                    type="button"
+                    onClick={() => proRemaining > 0 && setSelectedMode('vip')}
+                    disabled={proRemaining <= 0}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
+                      selectedMode === 'vip' && proRemaining > 0
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20 cursor-pointer'
+                        : proRemaining > 0
+                        ? 'text-slate-400 hover:text-slate-200 cursor-pointer'
+                        : 'text-slate-600 cursor-not-allowed opacity-40'
+                    }`}
+                  >
+                    <Crown className="w-3.5 h-3.5" />
+                    <span>Chuyên Sâu ({proRemaining} câu)</span>
+                  </button>
+
+                  {/* Nút Cơ Bản */}
+                  <button
+                    type="button"
+                    onClick={() => basicRemaining > 0 && setSelectedMode('basic')}
+                    disabled={basicRemaining <= 0}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
+                      selectedMode === 'basic' && basicRemaining > 0
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 cursor-pointer'
+                        : basicRemaining > 0
+                        ? 'text-slate-400 hover:text-slate-200 cursor-pointer'
+                        : 'text-slate-600 cursor-not-allowed opacity-40'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Cơ Bản ({basicRemaining} câu)</span>
+                  </button>
                 </div>
               </div>
-            ) : proRemaining > 0 ? (
-              <div className="flex items-center justify-between gap-2 px-1 text-xs text-amber-300/90 font-medium">
-                <div className="flex items-center gap-1.5">
-                  <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Chế độ: <b>Chuyên Sâu</b> (còn {proRemaining} câu)</span>
-                </div>
+
+              {/* Nhãn trạng thái bên phải */}
+              <div className="text-[11px] text-slate-400 px-1 flex items-center gap-1.5">
+                {selectedMode === 'vip' ? (
+                  <span className="text-amber-300/90 font-medium">Đang chọn: <b>Chuyên Sâu</b></span>
+                ) : (
+                  <span className="text-blue-300/90 font-medium">Đang chọn: <b>Cơ Bản</b></span>
+                )}
+                {basicRemaining === 0 && proRemaining > 0 && (
+                  <span className="text-slate-500">(Cơ bản: 0 câu)</span>
+                )}
+                {proRemaining === 0 && basicRemaining > 0 && (
+                  <span className="text-slate-500">(Chuyên sâu: 0 câu)</span>
+                )}
               </div>
-            ) : (
-              <div className="flex items-center justify-between gap-2 px-1 text-xs text-blue-300/90 font-medium">
-                <div className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Chế độ: <b>Cơ Bản</b> (còn {basicRemaining} câu)</span>
-                </div>
-              </div>
-            )}
+            </div>
 
             <form onSubmit={handleSubmit} className="flex gap-2">
               <input
