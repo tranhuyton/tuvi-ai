@@ -8,9 +8,17 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultTab?: 'signin' | 'signup';
+  customNotice?: string;
+  onSuccess?: () => void;
 }
 
-export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: AuthModalProps) {
+export default function AuthModal({
+  isOpen,
+  onClose,
+  defaultTab = 'signin',
+  customNotice,
+  onSuccess,
+}: AuthModalProps) {
   const { signIn, signUp } = useAuth();
   const [tab, setTab] = useState<'signin' | 'signup'>(defaultTab);
 
@@ -21,6 +29,15 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setTab(defaultTab);
+      setErrorMsg('');
+      setSuccessMsg('');
+      setIsLoading(false);
+    }
+  }, [isOpen, defaultTab]);
 
   if (!isOpen) return null;
 
@@ -39,8 +56,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
         } else {
           setErrorMsg(res.error);
         }
+        setIsLoading(false);
       } else {
-        onClose();
+        setIsLoading(false);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          onClose();
+        }
       }
     } else {
       if (!fullName.trim()) {
@@ -61,15 +84,19 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
         } else {
           setErrorMsg(res.error);
         }
+        setIsLoading(false);
       } else {
-        setSuccessMsg('Đăng ký thành công! Đang tự động đăng nhập...');
+        setSuccessMsg('Đăng ký thành công! Đang tự động chuyển tiếp...');
+        setIsLoading(false);
         setTimeout(() => {
-          onClose();
-        }, 1200);
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            onClose();
+          }
+        }, 700);
       }
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -84,7 +111,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
         </button>
 
         {/* Tiêu đề */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-5">
           <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
             <Sparkles className="w-6 h-6 animate-pulse" />
           </div>
@@ -95,6 +122,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
             Lưu giữ trọn vẹn lá số, lời bình giải và lịch sử đàm đạo cùng Thầy Tôn
           </p>
         </div>
+
+        {/* Thông báo ngữ cảnh khi được mở từ luồng thanh toán / hỏi đáp */}
+        {customNotice && (
+          <div className="mb-5 p-3.5 bg-amber-500/15 border border-amber-500/35 rounded-xl text-amber-200 text-sm sm:text-xs flex items-start gap-2.5 leading-relaxed text-left shadow-inner">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span>{customNotice}</span>
+          </div>
+        )}
 
         {/* Chuyển tab */}
         <div className="flex rounded-xl bg-slate-800/80 p-1 mb-6 border border-slate-700/60">

@@ -130,6 +130,8 @@ export default function HomePage() {
 
   // Modals & Payment
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalNotice, setAuthModalNotice] = useState('');
+  const pendingPostAuthActionRef = useRef<(() => void) | null>(null);
   const [isSavedChartsModalOpen, setIsSavedChartsModalOpen] = useState(false);
   const [paymentModalConfig, setPaymentModalConfig] = useState<{
     isOpen: boolean;
@@ -141,6 +143,45 @@ export default function HomePage() {
     type: 'reading_vip',
     price: 119000,
   });
+
+  // Xử lý khi đăng nhập / đăng ký tài khoản thành công
+  const handleAuthSuccess = async () => {
+    setIsAuthModalOpen(false);
+    setAuthModalNotice('');
+
+    // Nếu đã có lá số trên màn hình nhưng chưa có chartId trong database (khách lập khi chưa đăng nhập)
+    let activeChartId = currentChartId;
+    if (laSo && currentDuongSo && !activeChartId) {
+      try {
+        const cleanDuongSo = {
+          ...currentDuongSo,
+          anhMat: currentDuongSo.anhMat ? '[Ảnh khuôn mặt đã tải lên]' : undefined,
+          anhTay: currentDuongSo.anhTay ? '[Ảnh bàn tay đã tải lên]' : undefined,
+        };
+        const saveRes = await saveOrUpdateChart({
+          title: `${currentDuongSo.hoTen} (${currentDuongSo.gioiTinh} - ${currentDuongSo.namDuong})`,
+          duongSoData: cleanDuongSo,
+          lasoData: laSo,
+          readingHtml: readingHtml,
+        });
+        if (saveRes.chartId) {
+          activeChartId = saveRes.chartId;
+          setCurrentChartId(saveRes.chartId);
+        }
+      } catch (err) {
+        console.warn('Lỗi tự động lưu lá số sau khi đăng nhập:', err);
+      }
+    }
+
+    // Kích hoạt hành động thanh toán đang chờ (nếu có)
+    if (pendingPostAuthActionRef.current) {
+      const action = pendingPostAuthActionRef.current;
+      pendingPostAuthActionRef.current = null;
+      setTimeout(() => {
+        action();
+      }, 120);
+    }
+  };
 
 
   // Hàm gọi tạo bài bình giải (API Route hoặc Supabase Edge direct fallback)
@@ -370,43 +411,71 @@ export default function HomePage() {
 
   // Mở modal thanh toán nâng cấp Bản Pro
   const openUpgradeModal = () => {
-    setPaymentModalConfig({
-      isOpen: true,
-      type: 'reading_vip',
-      price: 119000,
-      onConfirm: () => {
-        handleConfirmUpgradeToPro();
-      },
-    });
+    const proceedToPayment = () => {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: 'reading_vip',
+        price: 119000,
+        onConfirm: () => {
+          handleConfirmUpgradeToPro();
+        },
+      });
+    };
+
+    if (!user) {
+      pendingPostAuthActionRef.current = proceedToPayment;
+      setAuthModalNotice(
+        'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán nâng cấp Bản Pro.'
+      );
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    proceedToPayment();
   };
 
   // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp)
   const handleUnlockQuestions = () => {
-    if (currentTier === 'pro') {
-      setPaymentModalConfig({
-        isOpen: true,
-        type: 'chat_vip',
-        price: 99000,
-        onConfirm: () => {
-          updateQuestionsQuota((prev) => ({
-            ...prev,
-            proAllowed: prev.proAllowed + 2,
-          }));
-        },
-      });
-    } else {
-      setPaymentModalConfig({
-        isOpen: true,
-        type: 'chat_free',
-        price: 49000,
-        onConfirm: () => {
-          updateQuestionsQuota((prev) => ({
-            ...prev,
-            basicAllowed: prev.basicAllowed + 2,
-          }));
-        },
-      });
+    const proceedToPayment = () => {
+      if (currentTier === 'pro') {
+        setPaymentModalConfig({
+          isOpen: true,
+          type: 'chat_vip',
+          price: 99000,
+          onConfirm: () => {
+            updateQuestionsQuota((prev) => ({
+              ...prev,
+              proAllowed: prev.proAllowed + 2,
+            }));
+          },
+        });
+      } else {
+        setPaymentModalConfig({
+          isOpen: true,
+          type: 'chat_free',
+          price: 49000,
+          onConfirm: () => {
+            updateQuestionsQuota((prev) => ({
+              ...prev,
+              basicAllowed: prev.basicAllowed + 2,
+            }));
+          },
+        });
+      }
+    };
+
+    if (!user) {
+      pendingPostAuthActionRef.current = proceedToPayment;
+      setAuthModalNotice(
+        currentTier === 'pro'
+          ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi Chuyên Sâu.'
+          : 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi cùng Thầy Tôn.'
+      );
+      setIsAuthModalOpen(true);
+      return;
     }
+
+    proceedToPayment();
   };
 
   // Xử lý gửi tin nhắn hỏi đáp với Thầy Tôn
@@ -706,9 +775,17 @@ export default function HomePage() {
       <div className="flex-1">
         {/* Navigation Bar Header */}
         <UserNav
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onOpenAuthModal={() => {
+            setAuthModalNotice('');
+            pendingPostAuthActionRef.current = null;
+            setIsAuthModalOpen(true);
+          }}
           onOpenSavedCharts={() => {
             if (!user) {
+              setAuthModalNotice('Quý khách vui lòng đăng nhập hoặc tạo tài khoản để xem Sổ tay danh sách lá số đã lưu.');
+              pendingPostAuthActionRef.current = () => {
+                setIsSavedChartsModalOpen(true);
+              };
               setIsAuthModalOpen(true);
             } else {
               setIsSavedChartsModalOpen(true);
@@ -848,12 +925,19 @@ export default function HomePage() {
         hoTen={currentDuongSo?.hoTen || 'Đương số'}
         paymentType={paymentModalConfig.type}
         price={paymentModalConfig.price}
+        chartId={currentChartId || undefined}
       />
 
       {/* Modal Đăng Nhập / Đăng Ký */}
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          setAuthModalNotice('');
+          pendingPostAuthActionRef.current = null;
+        }}
+        customNotice={authModalNotice}
+        onSuccess={handleAuthSuccess}
       />
 
       {/* Modal Sổ Tay Danh Sách Lá Số Đã Lưu */}
