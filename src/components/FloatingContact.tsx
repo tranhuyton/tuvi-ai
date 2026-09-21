@@ -38,7 +38,7 @@ export default function FloatingContact() {
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
             <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Tư vấn CSKH hoặc Đặt lịch xem offline</span>
+              <span>Tư vấn CSKH hoặc Đặt lịch Online &amp; Offline</span>
             </div>
             <button
               type="button"
@@ -59,7 +59,7 @@ export default function FloatingContact() {
               <PhoneCall className="w-4 h-4 fill-slate-950" />
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <div className="text-[11px] text-amber-400/90 font-medium">Đặt lịch xem offline</div>
+              <div className="text-[11px] text-amber-400/90 font-medium">Đặt lịch xem Online &amp; Offline</div>
               <div className="text-sm font-bold text-amber-300 tracking-wide">{displayPhone}</div>
             </div>
           </a>
@@ -87,7 +87,7 @@ export default function FloatingContact() {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="relative flex items-center gap-2 p-3 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 text-slate-950 shadow-2xl shadow-amber-500/40 hover:from-amber-400 hover:to-amber-500 transition-all duration-300 transform hover:scale-105 active:scale-95 border border-amber-300/40"
-        title={isOpen ? 'Đóng menu' : 'Tư vấn CSKH hoặc Đặt lịch xem offline'}
+        title={isOpen ? 'Đóng menu' : 'Tư vấn CSKH hoặc Đặt lịch xem Online & Offline'}
         aria-expanded={isOpen}
       >
         {/* Ripple ping effect khi đóng */}

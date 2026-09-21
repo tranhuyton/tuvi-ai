@@ -567,16 +567,16 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
           )}
         </button>
 
-        {/* Đặt lịch xem trực tiếp offline */}
+        {/* Đặt lịch xem trực tiếp Online & Offline */}
         <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap text-xs text-slate-400">
           <span className="text-slate-300 font-medium">
-            Tư vấn CSKH hoặc Đặt lịch xem offline:
+            Tư vấn CSKH hoặc Đặt lịch xem Online &amp; Offline:
           </span>
           <div className="flex items-center gap-2 font-medium">
             <a
               href="tel:0935058688"
               className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300 transition"
-              title="Gọi điện đặt lịch xem offline"
+              title="Gọi điện đặt lịch xem Online &amp; Offline"
             >
               <PhoneCall className="w-3.5 h-3.5" />
               <strong className="font-bold">0935.058.688</strong>

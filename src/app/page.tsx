@@ -789,7 +789,7 @@ export default function HomePage() {
             {/* Mục Giới thiệu về Thầy Tôn */}
             <AboutThayTon />
 
-            {/* Khối Đặt Lịch Xem Trực Tiếp Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
+            {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
             <div className="mt-8 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-5 sm:p-6 rounded-2xl border border-amber-500/30 text-slate-100 flex flex-col md:flex-row items-center justify-between gap-5 print:hidden shadow-xl">
               <div className="space-y-1.5 text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start gap-2">
@@ -797,16 +797,16 @@ export default function HomePage() {
                     <PhoneCall className="w-4 h-4" />
                   </span>
                   <h4 className="font-bold text-amber-300 text-base sm:text-lg font-serif">
-                    Đặt Lịch Luận Giải Trực Tiếp Cùng Thầy Tôn (Xem Offline)
+                    Đặt Lịch Luận Giải Cùng Thầy Tôn (Xem Online &amp; Offline 1-1)
                   </h4>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                  Quý khách mong muốn được diện kiến Thầy Tôn trực tiếp để soi diện tướng, thủ tướng (chỉ tay), bấm quẻ Kỳ Môn Độn Giáp và đàm đạo chi tiết vận mệnh? Xin vui lòng liên hệ đặt lịch trước.
+                  Quý khách mong muốn được đàm đạo trực tiếp cùng Thầy Tôn (Xem Offline tại Hà Nội hoặc Luận giải Online 1-1 qua Video Call) để soi diện tướng, thủ tướng (chỉ tay), bấm quẻ Kỳ Môn Độn Giáp và đàm đạo chi tiết vận mệnh? Xin vui lòng liên hệ đặt lịch trước.
                 </p>
                 <div className="flex items-center gap-1.5 text-xs text-amber-300/90 pt-0.5">
                   <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>
-                    Địa chỉ: <strong>R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</strong>
+                    Địa chỉ xem Offline: <strong>R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</strong>
                   </span>
                 </div>
               </div>
