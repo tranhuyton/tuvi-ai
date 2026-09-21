@@ -5,13 +5,11 @@ import {
   X,
   Sparkles,
   CheckCircle,
-  ShieldCheck,
   Copy,
   Check,
   QrCode,
   Loader2,
   Mail,
-  Zap,
   CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -57,9 +55,6 @@ export default function PaymentModal({
   const [copiedStk, setCopiedStk] = useState(false);
   const [copiedContent, setCopiedContent] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
-
-  // Trạng thái đang mô phỏng thanh toán
-  const [isSimulating, setIsSimulating] = useState(false);
 
   // Polling ref
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -229,27 +224,6 @@ export default function PaymentModal({
       } catch (err) {
         // ignore
       }
-    }
-  };
-
-  // Nút giả lập thanh toán (dành cho kiểm thử)
-  const handleSimulatePayment = async () => {
-    if (!orderCode) return;
-    setIsSimulating(true);
-    try {
-      const res = await fetch('/api/payment/simulate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderCode }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        handlePaymentSuccess();
-      }
-    } catch (err) {
-      console.error('Lỗi khi duyệt giả lập:', err);
-    } finally {
-      setIsSimulating(false);
     }
   };
 
@@ -472,41 +446,17 @@ export default function PaymentModal({
 
         {/* Footer Actions */}
         {orderStatus !== 'PAID' && (
-          <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-900/90 flex flex-col sm:flex-row gap-2.5">
-            <button
-              type="button"
-              onClick={() => {
-                // Khách xác nhận thủ công nếu không muốn chờ polling
-                handlePaymentSuccess();
-              }}
-              className="flex-1 py-3 px-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Tôi Đã Chuyển Khoản Thành Công</span>
-            </button>
-
-            {/* Nút Giả lập duyệt nhanh dành cho kiểm thử / test */}
-            <button
-              type="button"
-              onClick={handleSimulatePayment}
-              disabled={isSimulating || !orderCode}
-              className="py-3 px-3.5 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5"
-              title="Mô phỏng khách quét QR và chuyển khoản thành công"
-            >
-              {isSimulating ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
-              )}
-              <span>Test Tự Động Duyệt</span>
-            </button>
-
+          <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-xs text-slate-300">
+              <Loader2 className="w-4 h-4 animate-spin text-amber-400 shrink-0" />
+              <span>Đang chờ chuyển khoản... Hệ thống tự động kích hoạt ngay khi nhận tiền</span>
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs sm:text-sm font-medium transition"
+              className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer"
             >
-              Để sau
+              Đóng
             </button>
           </div>
         )}
