@@ -419,15 +419,18 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
               {/* Ảnh bàn tay */}
               <div>
                 <label className="block text-xs uppercase tracking-wider text-slate-300 font-medium mb-1">
-                  Ảnh bàn tay (Thủ tướng)
+                  Ảnh bàn tay (Thủ tướng){' '}
+                  <span className="text-amber-400 font-semibold normal-case tracking-normal">
+                    (Nam trái, Nữ phải)
+                  </span>
                 </label>
                 {isConvertingTay ? (
-                  <div className="rounded-lg border border-amber-500/40 h-24 bg-slate-950/80 flex flex-col items-center justify-center p-2 text-center">
+                  <div className="rounded-lg border border-amber-500/40 min-h-24 bg-slate-950/80 flex flex-col items-center justify-center p-2 text-center">
                     <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1.5" />
                     <span className="text-[11px] text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
                   </div>
                 ) : anhTayBase64 ? (
-                  <div className="relative rounded-lg overflow-hidden border border-amber-500/40 h-24 bg-slate-950 flex items-center justify-center">
+                  <div className="relative rounded-lg overflow-hidden border border-amber-500/40 min-h-24 bg-slate-950 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={anhTayBase64}
@@ -443,11 +446,12 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center h-24 border border-dashed border-slate-700 hover:border-amber-400/60 rounded-lg cursor-pointer bg-slate-950/40 hover:bg-slate-950/60 transition group">
+                  <label className="flex flex-col items-center justify-center min-h-24 py-2 px-1 text-center border border-dashed border-slate-700 hover:border-amber-400/60 rounded-lg cursor-pointer bg-slate-950/40 hover:bg-slate-950/60 transition group">
                     <Upload className="w-5 h-5 text-slate-400 group-hover:text-amber-400 transition mb-1" />
                     <span className="text-xs text-slate-400 group-hover:text-slate-200">
-                      Chọn ảnh lòng bàn tay
+                      Chọn ảnh lòng bàn tay <strong className="text-amber-400 font-semibold">({gioiTinh === 'Nam' ? 'Tay Trái' : 'Tay Phải'})</strong>
                     </span>
+                    <span className="text-[10px] text-amber-400/90 font-medium">Nam tay trái • Nữ tay phải</span>
                     <span className="text-[10px] text-slate-500">JPG, PNG, HEIC (iPhone)</span>
                     <input
                       type="file"
