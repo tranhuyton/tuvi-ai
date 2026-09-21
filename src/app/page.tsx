@@ -19,7 +19,7 @@ import {
   updateChartReading,
   saveChatMessage,
 } from '@/lib/tuviService';
-import { Bookmark, Check, Sparkles, Crown, PhoneCall } from 'lucide-react';
+import { Sparkles, Crown, PhoneCall } from 'lucide-react';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -141,9 +141,6 @@ export default function HomePage() {
     price: 119000,
   });
 
-  // Lưu trữ status
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Hàm gọi tạo bài bình giải (API Route hoặc Supabase Edge direct fallback)
   const generateReading = async (
@@ -661,42 +658,6 @@ export default function HomePage() {
     }
   }, [laSo, currentDuongSo, currentChartId, currentTier, readingHtml, chatHistory, questionsQuota, isRestoringSession]);
 
-  // Nút bấm lưu lá số thủ công
-  const handleManualSave = async () => {
-    if (!laSo || !currentDuongSo) return;
-    if (!user) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-
-    setIsSaving(true);
-    const cleanDuongSo: DuLieuDuongSo = {
-      ...currentDuongSo,
-      tier: currentTier,
-      anhMat: undefined,
-      anhTay: undefined,
-    };
-    const title = `${currentDuongSo.hoTen} (${currentDuongSo.gioiTinh} - ${currentDuongSo.namDuong})`;
-    const res = await saveOrUpdateChart({
-      id: currentChartId || undefined,
-      title,
-      duongSoData: cleanDuongSo,
-      lasoData: { ...laSo, quota: questionsQuota, tier: currentTier },
-      readingHtml,
-    });
-
-    if (res.chartId) {
-      setCurrentChartId(res.chartId);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`tuvi_quota_${res.chartId}`, JSON.stringify(questionsQuota));
-      }
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2500);
-    } else {
-      alert('Không thể lưu lá số: ' + res.error);
-    }
-    setIsSaving(false);
-  };
 
   const handleReset = () => {
     if (typeof window !== 'undefined') {
@@ -744,42 +705,8 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Thanh công cụ phụ khi đang xem lá số */}
-            <div className="flex items-center justify-between max-w-[1060px] mx-auto flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleManualSave}
-                  disabled={isSaving}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold border transition shadow-sm ${
-                    saveSuccess
-                      ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300'
-                      : currentChartId
-                      ? 'bg-slate-900/90 hover:bg-slate-800 border-amber-500/40 text-amber-300'
-                      : 'bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold'
-                  }`}
-                  title={currentChartId ? 'Lá số đã được lưu trong sổ tay' : 'Lưu lá số này vào tài khoản'}
-                >
-                  {saveSuccess ? (
-                    <>
-                      <Check className="w-4 h-4 text-emerald-400" />
-                      <span>Đã Lưu Thành Công</span>
-                    </>
-                  ) : (
-                    <>
-                      <Bookmark className="w-4 h-4" />
-                      <span>{currentChartId ? 'Đã Lưu Vào Sổ Tay' : '💾 Lưu Vào Sổ Tay'}</span>
-                    </>
-                  )}
-                </button>
-
-                {!user && (
-                  <span className="text-[11px] text-amber-300/80 italic hidden sm:inline">
-                    (Đăng nhập để tự động lưu trọn đời)
-                  </span>
-                )}
-              </div>
-
+            {/* Thanh trạng thái gói dịch vụ khi đang xem lá số */}
+            <div className="flex items-center justify-end max-w-[1060px] mx-auto">
               {/* Huy hiệu gói dịch vụ & Nút Nâng cấp Pro */}
               <div className="flex items-center gap-2">
                 {currentTier === 'pro' ? (
@@ -906,28 +833,7 @@ export default function HomePage() {
       {/* Nút Liên Hệ Nhanh (Zalo & Gọi Điện Đặt Lịch Offline) */}
       <FloatingContact />
 
-      <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2.5">
-        <div className="flex items-center justify-center gap-3 sm:gap-6 flex-wrap text-slate-300 font-medium text-xs sm:text-sm">
-          <a
-            href="tel:0935058688"
-            className="hover:text-amber-300 transition inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900/80 border border-amber-500/30 rounded-xl"
-            title="Tư vấn CSKH hoặc đặt lịch xem offline"
-          >
-            <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
-            <span>Tư vấn CSKH &amp; Đặt lịch offline: <strong className="text-amber-400 font-bold">0935.058.688</strong></span>
-          </a>
-
-          <a
-            href="https://zalo.me/0935058688"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-blue-300 transition inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900/80 border border-blue-500/30 rounded-xl"
-            title="Tư vấn CSKH qua Zalo Thầy Tôn (0935.058.688)"
-          >
-            <span className="w-4 h-4 rounded-full bg-[#0068FF] text-white flex items-center justify-center text-[9px] font-black">Z</span>
-            <span>Tư vấn CSKH qua Zalo: <strong className="text-blue-400 font-bold">0935.058.688</strong></span>
-          </a>
-        </div>
+      <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8">
         <p className="text-slate-500 text-[11px] sm:text-xs">
           © {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.{' '}
           <a href="/admin" className="text-slate-600 hover:text-slate-400 transition ml-1" title="Cổng quản trị Thầy Tôn">

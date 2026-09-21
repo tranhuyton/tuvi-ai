@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { LaSoData } from '@/types/tuvi';
 import CungView from './CungView';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { Download, RefreshCw, Printer } from 'lucide-react';
+import { Download, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface LaSoBanCoProps {
   laSo: LaSoData;
@@ -52,8 +52,12 @@ const TT_COORDS: Record<number, { l: string; t: string }> = {
 };
 
 export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
-  const banCoRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const boardInnerRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [boardHeight, setBoardHeight] = useState(880);
+  const [isFitMode, setIsFitMode] = useState(true);
 
   const {
     duongSo,
@@ -80,6 +84,33 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
     cungs,
   } = laSo;
 
+  // Tự động đo và co giãn lá số vừa khít chiều ngang màn hình điện thoại
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current && boardInnerRef.current) {
+        const cWidth = containerRef.current.clientWidth;
+        const bHeight = boardInnerRef.current.offsetHeight;
+        if (bHeight > 0) {
+          setBoardHeight(bHeight);
+        }
+        const targetWidth = 760;
+        if (cWidth < targetWidth && isFitMode) {
+          setScale(cWidth / targetWidth);
+        } else {
+          setScale(1);
+        }
+      }
+    };
+
+    updateSize();
+    const timer = setTimeout(updateSize, 120);
+    window.addEventListener('resize', updateSize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updateSize);
+    };
+  }, [isFitMode, cungs]);
+
   const gioObj = GIO_ARR[duongSo.gioSinhVal];
   const gioMatch = gioObj?.label.match(/\((.*?)\)/);
   const gioText = gioMatch ? gioMatch[1] : (gioObj?.label || duongSo.gioSinhVal);
@@ -100,24 +131,60 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
   const pQuan = quanCung ? (THIEN_BAN_POINTS[quanCung.cungId] || [100, 0]) : (THIEN_BAN_POINTS[(safeMenhIdx + 4) % 12] || [100, 0]);
   const pDi = diCung ? (THIEN_BAN_POINTS[diCung.cungId] || [25, 0]) : (THIEN_BAN_POINTS[(safeMenhIdx + 6) % 12] || [25, 0]);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const handleDownload = async () => {
     try {
       setIsExporting(true);
       const htmlToImage = await import('html-to-image');
-      if (banCoRef.current) {
-        const dataUrl = await htmlToImage.toPng(banCoRef.current, { quality: 0.95 });
+      if (boardInnerRef.current) {
+        const node = boardInnerRef.current;
+        const fullHeight = node.scrollHeight || node.offsetHeight || boardHeight;
+
+        // Chụp toàn bộ 100% lá số với độ phân giải cao sắc nét (2x)
+        const dataUrl = await htmlToImage.toPng(node, {
+          quality: 0.98,
+          pixelRatio: 2,
+          width: 760,
+          height: fullHeight,
+          style: {
+            transform: 'none',
+            width: '760px',
+            margin: '0',
+            backgroundColor: '#ffffff',
+          },
+        });
+
+        const fileName = `La_So_Tu_Vi_${duongSo.hoTen.replace(/\s+/g, '_')}.png`;
+
+        // Trên điện thoại: Ưu tiên mở Share Sheet để người dùng bấm "Lưu hình ảnh" vào Thư viện ảnh
+        if (typeof navigator !== 'undefined' && navigator.share) {
+          try {
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            const file = new File([blob], fileName, { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: `Lá Số Tử Vi - ${duongSo.hoTen}`,
+                text: `Lá số Tử Vi của ${duongSo.hoTen} - Tử Vi Thầy Tôn`,
+              });
+              return;
+            }
+          } catch (shareErr: any) {
+            // Nếu người dùng chỉ bấm Hủy (AbortError) thì kết thúc bình thường
+            if (shareErr.name === 'AbortError') return;
+          }
+        }
+
+        // Tải file trực tiếp nếu là Desktop hoặc trình duyệt không hỗ trợ Share Sheet
         const link = document.createElement('a');
-        link.download = `La_So_Tu_Vi_${duongSo.hoTen.replace(/\s+/g, '_')}.png`;
+        link.download = fileName;
         link.href = dataUrl;
         link.click();
       }
     } catch (err) {
       console.error('Lỗi xuất ảnh lá số:', err);
-      alert('Không thể xuất ảnh lúc này. Bạn có thể dùng tính năng In trang (Print) để lưu thành PDF.');
+      alert('Không thể xuất ảnh lúc này. Xin quý khách vui lòng thử lại sau.');
     } finally {
       setIsExporting(false);
     }
@@ -126,43 +193,69 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
   return (
     <div className="w-full max-w-[1060px] mx-auto">
       {/* Thanh công cụ thao tác */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 print:hidden px-1">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3 print:hidden px-1">
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg border border-slate-600 text-sm font-semibold transition"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-xs sm:text-sm font-semibold transition cursor-pointer"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
           <span>Lập Lá Số Mới</span>
         </button>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg border border-slate-600 text-sm font-medium transition"
-          >
-            <Printer className="w-4 h-4" />
-            <span>In PDF</span>
-          </button>
+          {/* Nút bật/tắt phóng to trên mobile nếu chiều rộng màn hình nhỏ */}
+          {scale < 1 || !isFitMode ? (
+            <button
+              type="button"
+              onClick={() => setIsFitMode(!isFitMode)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-xs sm:text-sm font-medium transition cursor-pointer"
+              title={isFitMode ? 'Phóng to 100%' : 'Co vừa màn hình'}
+            >
+              {isFitMode ? (
+                <>
+                  <ZoomIn className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Phóng To</span>
+                </>
+              ) : (
+                <>
+                  <ZoomOut className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Vừa Màn Hình</span>
+                </>
+              )}
+            </button>
+          ) : null}
+
+          {/* Nút Tải ảnh lá số */}
           <button
             type="button"
             onClick={handleDownload}
             disabled={isExporting}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600/90 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold shadow-md transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>{isExporting ? 'Đang tạo...' : 'Tải Ảnh Lá Số'}</span>
+            <span>{isExporting ? 'Đang xuất ảnh...' : 'Tải Ảnh Lá Số'}</span>
           </button>
         </div>
       </div>
 
-      {/* Khung chứa lá số */}
+      {/* Khung chứa lá số - Tự động co giãn theo chiều rộng màn hình mobile */}
       <div
-        ref={banCoRef}
-        className="bg-white p-2 sm:p-5 rounded-lg shadow-xl overflow-x-auto print:p-0 print:shadow-none"
+        ref={containerRef}
+        className="w-full relative bg-white rounded-xl shadow-xl overflow-hidden print:p-0 print:shadow-none"
+        style={{
+          height: scale < 1 && isFitMode ? `${boardHeight * scale}px` : 'auto',
+          overflowX: scale < 1 && isFitMode ? 'hidden' : 'auto',
+        }}
       >
-        <div className="min-w-[760px] relative bg-white">
+        <div
+          ref={boardInnerRef}
+          className="w-[760px] relative bg-white p-2 sm:p-4 select-none"
+          style={{
+            transform: scale < 1 && isFitMode ? `scale(${scale})` : 'none',
+            transformOrigin: 'top left',
+          }}
+        >
           {/* Huy hiệu TUẦN và TRIỆT */}
           {tuanGoc === trietGoc ? (
             <div
