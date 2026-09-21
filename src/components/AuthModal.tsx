@@ -88,10 +88,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
           <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
             <Sparkles className="w-6 h-6 animate-pulse" />
           </div>
-          <h2 className="text-2xl font-bold font-serif text-amber-400">
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif text-amber-400">
             {tab === 'signin' ? 'Đăng Nhập Tài Khoản' : 'Đăng Ký Thành Viên'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-sm sm:text-xs text-slate-300 mt-1">
             Lưu giữ trọn vẹn lá số, lời bình giải và lịch sử đàm đạo cùng Thầy Tôn
           </p>
         </div>
@@ -105,10 +105,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
               setErrorMsg('');
               setSuccessMsg('');
             }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${
+            className={`flex-1 py-2.5 text-base sm:text-sm font-medium rounded-lg transition cursor-pointer ${
               tab === 'signin'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
             Đăng Nhập
@@ -120,10 +120,10 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
               setErrorMsg('');
               setSuccessMsg('');
             }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${
+            className={`flex-1 py-2.5 text-base sm:text-sm font-medium rounded-lg transition cursor-pointer ${
               tab === 'signup'
                 ? 'bg-amber-500 text-slate-950 font-bold shadow'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
             Đăng Ký
@@ -132,14 +132,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
 
         {/* Thông báo lỗi / thành công */}
         {errorMsg && (
-          <div className="mb-4 p-3 bg-red-950/80 border border-red-500/40 rounded-xl text-red-200 text-xs flex items-start gap-2">
+          <div className="mb-4 p-3.5 bg-red-950/80 border border-red-500/40 rounded-xl text-red-200 text-sm sm:text-xs flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mb-4 p-3 bg-emerald-950/80 border border-emerald-500/40 rounded-xl text-emerald-200 text-xs flex items-start gap-2">
+          <div className="mb-4 p-3.5 bg-emerald-950/80 border border-emerald-500/40 rounded-xl text-emerald-200 text-sm sm:text-xs flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
@@ -149,7 +149,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
         <form onSubmit={handleSubmit} className="space-y-4">
           {tab === 'signup' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Họ và tên của bạn</label>
+              <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Họ và tên của bạn</label>
               <div className="relative">
                 <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -158,14 +158,14 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
                   placeholder="Ví dụ: Trần Văn An"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+                  className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Địa chỉ Email</label>
+            <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Địa chỉ Email</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -174,13 +174,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
                 placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+                className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Mật khẩu</label>
+            <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Mật khẩu</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -189,7 +189,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
                 placeholder="Tối thiểu 6 ký tự"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+                className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
               />
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = 'signin' }: Au
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-2 py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-base sm:text-sm transition shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isLoading ? 'Đang xử lý...' : tab === 'signin' ? 'Đăng Nhập Ngay' : 'Tạo Tài Khoản Mới'}
           </button>

@@ -197,9 +197,9 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-xs sm:text-sm font-semibold transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-sm font-semibold transition cursor-pointer"
         >
-          <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+          <RefreshCw className="w-4 h-4 text-amber-400" />
           <span>Lập Lá Số Mới</span>
         </button>
 
@@ -209,17 +209,17 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
             <button
               type="button"
               onClick={() => setIsFitMode(!isFitMode)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-xs sm:text-sm font-medium transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-sm font-medium transition cursor-pointer"
               title={isFitMode ? 'Phóng to 100%' : 'Co vừa màn hình'}
             >
               {isFitMode ? (
                 <>
-                  <ZoomIn className="w-3.5 h-3.5 text-blue-400" />
+                  <ZoomIn className="w-4 h-4 text-blue-400" />
                   <span>Phóng To</span>
                 </>
               ) : (
                 <>
-                  <ZoomOut className="w-3.5 h-3.5 text-emerald-400" />
+                  <ZoomOut className="w-4 h-4 text-emerald-400" />
                   <span>Vừa Màn Hình</span>
                 </>
               )}
@@ -231,7 +231,7 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
             type="button"
             onClick={handleDownload}
             disabled={isExporting}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
           >
             <Download className="w-4 h-4" />
             <span>{isExporting ? 'Đang xuất ảnh...' : 'Tải Ảnh Lá Số'}</span>

@@ -70,36 +70,36 @@ export default function SavedChartsModal({
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+            <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold font-serif text-amber-400 flex items-center gap-2">
                 Sổ Tay Mệnh Số Của Bạn
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-sm sm:text-xs text-slate-300">
                 {charts.length} lá số đã lưu kèm trọn bộ lời bình giải &amp; lịch sử hỏi đáp
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition"
+            className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Search bar & Nút thêm mới */}
-        <div className="p-3 sm:p-4 border-b border-slate-800/80 bg-slate-950/40 flex flex-col sm:flex-row gap-2">
+        <div className="p-3.5 sm:p-4 border-b border-slate-800/80 bg-slate-950/40 flex flex-col sm:flex-row gap-2.5">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Tìm kiếm theo tên đương số..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+              className="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
             />
           </div>
           <button
@@ -107,7 +107,7 @@ export default function SavedChartsModal({
               onClose();
               onNewChart();
             }}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm rounded-xl transition cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Lập Lá Số Mới</span>
@@ -119,15 +119,15 @@ export default function SavedChartsModal({
           {isLoading ? (
             <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
               <div className="w-6 h-6 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-              <p className="text-xs">Đang mở sổ tay mệnh số...</p>
+              <p className="text-sm sm:text-xs">Đang mở sổ tay mệnh số...</p>
             </div>
           ) : filteredCharts.length === 0 ? (
             <div className="py-12 text-center text-slate-400">
               <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500">
                 <BookOpen className="w-6 h-6" />
               </div>
-              <p className="text-sm font-medium">Chưa có lá số nào trong sổ tay</p>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-base sm:text-sm font-medium">Chưa có lá số nào trong sổ tay</p>
+              <p className="text-sm sm:text-xs text-slate-400 mt-1">
                 Lập một lá số mới để Thầy Tôn bình giải và tự động lưu vào đây nhé!
               </p>
             </div>
@@ -151,12 +151,12 @@ export default function SavedChartsModal({
                   }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h3 className="font-bold text-base text-slate-100 group-hover:text-amber-300 transition truncate">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <h3 className="font-bold text-base sm:text-base text-slate-100 group-hover:text-amber-300 transition truncate">
                         {ds?.hoTen || chart.title}
                       </h3>
                       <span
-                        className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           ds?.gioiTinh === 'Nữ'
                             ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
                             : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
@@ -166,7 +166,7 @@ export default function SavedChartsModal({
                       </span>
                       {hasReading && (
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
                             isPro
                               ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
                               : 'bg-slate-800 text-slate-300 border-slate-700'
@@ -176,15 +176,15 @@ export default function SavedChartsModal({
                         </span>
                       )}
                       {isActive && (
-                        <span className="text-[10px] bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full">
+                        <span className="text-xs bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded-full">
                           Đang xem
                         </span>
                       )}
                     </div>
 
-                    <div className="text-xs text-slate-400 flex items-center gap-3 flex-wrap">
+                    <div className="text-sm sm:text-xs text-slate-300 flex items-center gap-3 flex-wrap">
                       <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         Sinh: {ds?.ngayDuong}/{ds?.thangDuong}/{ds?.namDuong}
                       </span>
 
@@ -194,7 +194,7 @@ export default function SavedChartsModal({
                           Đã có bình giải
                         </span>
                       ) : (
-                        <span className="text-slate-500 text-[11px]">Chưa bình giải</span>
+                        <span className="text-slate-400 text-xs">Chưa bình giải</span>
                       )}
 
                       {msgCount > 0 && (

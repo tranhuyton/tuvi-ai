@@ -206,23 +206,23 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
     <div className="w-full max-w-xl mx-auto backdrop-blur-xl bg-slate-900/80 border border-amber-500/30 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100">
       <div className="mb-6 pb-4 border-b border-slate-800/80">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-wide text-amber-400 font-serif">
             LẬP LÁ SỐ TỬ VI
           </h2>
-          <span className="text-xs sm:text-sm text-amber-400/80 font-serif italic tracking-wide">
+          <span className="text-sm sm:text-base text-amber-400/80 font-serif italic tracking-wide">
             ✦ Khai mở thiên cơ
           </span>
         </div>
-        <p className="text-xs sm:text-sm text-slate-400 mt-1">
+        <p className="text-sm sm:text-base text-slate-300 mt-1">
           An sao chính xác theo giờ sinh • Bình giải chuyên sâu đa phương thức
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-4">
         {/* Họ tên */}
         <div>
-          <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
-            <User className="w-3.5 h-3.5 inline mr-1 text-amber-400" />
+          <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
+            <User className="w-4 h-4 sm:w-3.5 sm:h-3.5 inline mr-1 text-amber-400" />
             Họ tên đương số <span className="text-red-400">*</span>
           </label>
           <input
@@ -231,20 +231,20 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
             value={hoTen}
             onChange={(e) => setHoTen(e.target.value)}
             placeholder="Ví dụ: Trần Huy Tôn..."
-            className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
+            className="w-full px-3.5 py-3 sm:py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
           />
         </div>
 
         {/* Giới tính & Giờ sinh */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
+            <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
               Giới tính
             </label>
             <select
               value={gioiTinh}
               onChange={(e) => setGioiTinh(e.target.value as GioiTinh)}
-              className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-amber-400 transition"
+              className="w-full px-3.5 py-3 sm:py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
             >
               <option value="Nam">Nam</option>
               <option value="Nữ">Nữ</option>
@@ -252,14 +252,14 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
-              <Clock className="w-3.5 h-3.5 inline mr-1 text-amber-400" />
+            <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
+              <Clock className="w-4 h-4 sm:w-3.5 sm:h-3.5 inline mr-1 text-amber-400" />
               Giờ sinh (Chi)
             </label>
             <select
               value={gioSinhVal}
               onChange={(e) => setGioSinhVal(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-amber-400 transition"
+              className="w-full px-3.5 py-3 sm:py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
             >
               {Object.entries(GIO_ARR).map(([key, val]) => (
                 <option key={key} value={key}>
@@ -272,8 +272,8 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
 
         {/* Ngày - Tháng - Năm sinh Dương Lịch */}
         <div>
-          <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
-            <Calendar className="w-3.5 h-3.5 inline mr-1 text-amber-400" />
+          <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
+            <Calendar className="w-4 h-4 sm:w-3.5 sm:h-3.5 inline mr-1 text-amber-400" />
             Ngày tháng năm sinh (Dương lịch) <span className="text-red-400">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -286,9 +286,9 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                 value={ngayDuong}
                 onChange={(e) => setNgayDuong(Number(e.target.value))}
                 placeholder="Ngày"
-                className="w-full px-3 py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm text-center focus:outline-none focus:border-amber-400 transition"
+                className="w-full px-3 py-3 sm:py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm text-center focus:outline-none focus:border-amber-400 transition"
               />
-              <span className="block text-[11px] text-slate-400 text-center mt-1">Ngày</span>
+              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">Ngày</span>
             </div>
             <div>
               <input
@@ -299,9 +299,9 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                 value={thangDuong}
                 onChange={(e) => setThangDuong(Number(e.target.value))}
                 placeholder="Tháng"
-                className="w-full px-3 py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm text-center focus:outline-none focus:border-amber-400 transition"
+                className="w-full px-3 py-3 sm:py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm text-center focus:outline-none focus:border-amber-400 transition"
               />
-              <span className="block text-[11px] text-slate-400 text-center mt-1">Tháng</span>
+              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">Tháng</span>
             </div>
             <div>
               <input
@@ -312,23 +312,23 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                 value={namDuong}
                 onChange={(e) => setNamDuong(Number(e.target.value))}
                 placeholder="Năm"
-                className="w-full px-3 py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm text-center focus:outline-none focus:border-amber-400 transition"
+                className="w-full px-3 py-3 sm:py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm text-center focus:outline-none focus:border-amber-400 transition"
               />
-              <span className="block text-[11px] text-slate-400 text-center mt-1">Năm</span>
+              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">Năm</span>
             </div>
           </div>
         </div>
 
         {/* Khối Thực Chứng & Tướng Pháp (Tùy chọn) */}
         <div className="pt-4 mt-4 border-t border-slate-700/60">
-          <div className="flex items-center gap-1.5 mb-3 text-amber-400 font-semibold text-xs uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 mb-3 text-amber-400 font-semibold text-sm sm:text-sm uppercase tracking-wider">
             <Sparkles className="w-4 h-4" />
             Dữ liệu Thực Chứng &amp; Tướng Pháp (Tùy chọn)
           </div>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs uppercase tracking-wider text-slate-300 font-medium mb-1">
+              <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
                 Hoàn cảnh, Nghề nghiệp hiện tại...
               </label>
               <textarea
@@ -336,13 +336,13 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                 value={thongTinThem}
                 onChange={(e) => setThongTinThem(e.target.value)}
                 placeholder="Ví dụ: Đang làm kỹ sư IT, đã kết hôn, muốn hỏi sâu về đường làm ăn kinh doanh..."
-                className="w-full px-3.5 py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-amber-400 transition resize-none"
+                className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition resize-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-300 font-medium mb-1">
+                <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
                   Chiều cao (cm)
                 </label>
                 <input
@@ -352,11 +352,11 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                   value={chieuCao ?? ''}
                   onChange={(e) => setChieuCao(e.target.value ? Number(e.target.value) : undefined)}
                   placeholder="VD: 170"
-                  className="w-full px-3 py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-amber-400 transition"
+                  className="w-full px-3 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
                 />
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-300 font-medium mb-1">
+                <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
                   Cân nặng (kg)
                 </label>
                 <input
@@ -366,7 +366,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                   value={canNang ?? ''}
                   onChange={(e) => setCanNang(e.target.value ? Number(e.target.value) : undefined)}
                   placeholder="VD: 65"
-                  className="w-full px-3 py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-amber-400 transition"
+                  className="w-full px-3 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
                 />
               </div>
             </div>
@@ -375,13 +375,13 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               {/* Ảnh mặt */}
               <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-300 font-medium mb-1">
+                <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
                   Ảnh khuôn mặt (Diện tướng)
                 </label>
                 {isConvertingMat ? (
                   <div className="rounded-lg border border-amber-500/40 h-24 bg-slate-950/80 flex flex-col items-center justify-center p-2 text-center">
                     <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1.5" />
-                    <span className="text-[11px] text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
+                    <span className="text-xs text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
                   </div>
                 ) : anhMatBase64 ? (
                   <div className="relative rounded-lg overflow-hidden border border-amber-500/40 h-24 bg-slate-950 flex items-center justify-center">
@@ -402,10 +402,10 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                 ) : (
                   <label className="flex flex-col items-center justify-center h-24 border border-dashed border-slate-700 hover:border-amber-400/60 rounded-lg cursor-pointer bg-slate-950/40 hover:bg-slate-950/60 transition group">
                     <ImageIcon className="w-5 h-5 text-slate-400 group-hover:text-amber-400 transition mb-1" />
-                    <span className="text-xs text-slate-400 group-hover:text-slate-200">
+                    <span className="text-sm sm:text-xs text-slate-300 group-hover:text-slate-100 font-medium">
                       Chọn ảnh mặt rõ nét
                     </span>
-                    <span className="text-[10px] text-slate-500">JPG, PNG, HEIC (iPhone)</span>
+                    <span className="text-xs sm:text-[10px] text-slate-400">JPG, PNG, HEIC (iPhone)</span>
                     <input
                       type="file"
                       accept="image/*,.heic,.heif,image/heic,image/heif"
@@ -418,7 +418,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
 
               {/* Ảnh bàn tay */}
               <div>
-                <label className="block text-xs uppercase tracking-wider text-slate-300 font-medium mb-1">
+                <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
                   Ảnh bàn tay (Thủ tướng){' '}
                   <span className="text-amber-400 font-semibold normal-case tracking-normal">
                     (Nam trái, Nữ phải)
@@ -427,7 +427,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                 {isConvertingTay ? (
                   <div className="rounded-lg border border-amber-500/40 min-h-24 bg-slate-950/80 flex flex-col items-center justify-center p-2 text-center">
                     <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1.5" />
-                    <span className="text-[11px] text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
+                    <span className="text-xs text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
                   </div>
                 ) : anhTayBase64 ? (
                   <div className="relative rounded-lg overflow-hidden border border-amber-500/40 min-h-24 bg-slate-950 flex items-center justify-center">
@@ -448,11 +448,11 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
                 ) : (
                   <label className="flex flex-col items-center justify-center min-h-24 py-2 px-1 text-center border border-dashed border-slate-700 hover:border-amber-400/60 rounded-lg cursor-pointer bg-slate-950/40 hover:bg-slate-950/60 transition group">
                     <Upload className="w-5 h-5 text-slate-400 group-hover:text-amber-400 transition mb-1" />
-                    <span className="text-xs text-slate-400 group-hover:text-slate-200">
-                      Chọn ảnh lòng bàn tay <strong className="text-amber-400 font-semibold">({gioiTinh === 'Nam' ? 'Tay Trái' : 'Tay Phải'})</strong>
+                    <span className="text-sm sm:text-xs text-slate-300 group-hover:text-slate-100 font-medium">
+                      Chọn ảnh lòng bàn tay <strong className="text-amber-400 font-bold">({gioiTinh === 'Nam' ? 'Tay Trái' : 'Tay Phải'})</strong>
                     </span>
-                    <span className="text-[10px] text-amber-400/90 font-medium">Nam tay trái • Nữ tay phải</span>
-                    <span className="text-[10px] text-slate-500">JPG, PNG, HEIC (iPhone)</span>
+                    <span className="text-xs sm:text-[10px] text-amber-400 font-semibold">Nam tay trái • Nữ tay phải</span>
+                    <span className="text-xs sm:text-[10px] text-slate-400">JPG, PNG, HEIC (iPhone)</span>
                     <input
                       type="file"
                       accept="image/*,.heic,.heif,image/heic,image/heif"
@@ -468,19 +468,19 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
 
         {/* LỰA CHỌN GÓI BÌNH GIẢI */}
         <div className="pt-5 mt-5 border-t border-slate-700/80">
-          <label className="block text-xs uppercase tracking-wider text-amber-400 font-bold mb-3 flex items-center justify-between">
+          <label className="block text-sm sm:text-base uppercase tracking-wider text-amber-400 font-bold mb-3 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-400" />
               Chọn Gói Bình Giải <span className="text-red-400">*</span>
             </span>
-            <span className="text-[11px] font-normal text-slate-400">Bắt buộc chọn trước khi lập lá số</span>
+            <span className="text-xs sm:text-[11px] font-normal text-slate-400">Bắt buộc chọn trước khi lập lá số</span>
           </label>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {/* Gói Cơ Bản (Miễn Phí) */}
             <div
               onClick={() => setSelectedTier('free')}
-              className={`relative p-3.5 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+              className={`relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'free'
                   ? 'bg-slate-800/95 border-amber-400 ring-2 ring-amber-400 shadow-md shadow-amber-500/10'
                   : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 opacity-80 hover:opacity-100'
@@ -488,50 +488,50 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
             >
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm text-slate-100 flex items-center gap-1.5 font-serif">
+                  <span className="font-bold text-base text-slate-100 flex items-center gap-1.5 font-serif">
                     <span>📜 Bản Miễn Phí</span>
                   </span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                     0 VNĐ
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-sm sm:text-xs text-slate-300 leading-relaxed">
                   Pháp môn Khởi Nguyên Căn Bản. Luận giải chuẩn mực, súc tích (~800 - 1000 từ), bao quát Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận &amp; Tiểu Vận năm xem.
                 </p>
               </div>
-              <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-slate-400 flex items-center justify-between">
+              <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-slate-400 flex items-center justify-between">
                 <span>Hỏi đáp trực tiếp:</span>
-                <span className="font-medium text-slate-300">49.000đ / 2 câu</span>
+                <span className="font-semibold text-slate-300">49.000đ / 2 câu</span>
               </div>
             </div>
 
             {/* Gói Chuyên Sâu (Bản Pro) */}
             <div
               onClick={() => setSelectedTier('pro')}
-              className={`relative p-3.5 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+              className={`relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'pro'
                   ? 'bg-gradient-to-b from-amber-950/40 to-slate-900 border-amber-400 ring-2 ring-amber-400 shadow-lg shadow-amber-500/20'
                   : 'bg-slate-950/60 border-slate-800 hover:border-amber-500/40 opacity-80 hover:opacity-100'
               }`}
             >
-              <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
+              <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-red-600 to-amber-600 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
                 Khuyên Dùng
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm text-amber-300 flex items-center gap-1.5 font-serif">
+                  <span className="font-bold text-base text-amber-300 flex items-center gap-1.5 font-serif">
                     <Crown className="w-4 h-4 text-amber-400" />
                     <span>Bản Chuyên Sâu Pro</span>
                   </span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
                     119.000 VNĐ
                   </span>
                 </div>
-                <p className="text-xs text-slate-200 leading-relaxed">
+                <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
                   Đại Pháp Bí Truyền Chuyên Sâu. Luận giải chi tiết gấp 2 lần (~1800 - 2500 từ). Khảo sát sâu 14 Chính tinh, phối hợp Tướng Pháp (mặt/chỉ tay), Đại Vận 10 năm &amp; Hóa Giải 4 Mùa.
                 </p>
               </div>
-              <div className="mt-3 pt-2 border-t border-slate-800/80 text-[11px] text-amber-400 flex items-center justify-between">
+              <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-amber-400 flex items-center justify-between">
                 <span>Ưu đãi hỏi đáp VIP:</span>
                 <span className="font-bold text-amber-300">Tặng 2 câu (Thêm: 99.000đ/2 câu)</span>
               </div>
@@ -543,7 +543,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className={`w-full mt-6 py-3.5 px-6 font-bold rounded-xl tracking-wider uppercase text-sm sm:text-base shadow-lg transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 ${
+          className={`w-full mt-6 py-4 sm:py-3.5 px-6 font-bold rounded-xl tracking-wider uppercase text-base sm:text-lg shadow-lg transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer ${
             selectedTier === 'pro'
               ? 'bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-slate-950 shadow-amber-950/50'
               : 'bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white shadow-red-950/50'
@@ -568,7 +568,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
         </button>
 
         {/* Đặt lịch xem trực tiếp Online & Offline */}
-        <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap text-xs text-slate-400">
+        <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap text-sm sm:text-xs text-slate-400">
           <span className="text-slate-300 font-medium">
             Tư vấn CSKH hoặc Đặt lịch xem Online &amp; Offline:
           </span>
@@ -578,7 +578,7 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
               className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300 transition"
               title="Gọi điện đặt lịch xem Online &amp; Offline"
             >
-              <PhoneCall className="w-3.5 h-3.5" />
+              <PhoneCall className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
               <strong className="font-bold">0935.058.688</strong>
             </a>
             <span className="text-slate-600">•</span>

@@ -120,22 +120,22 @@ export default function ChatThayTon({
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
           <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-blue-400" />
+            <MessageSquare className="w-5 h-5 text-blue-400 shrink-0" />
             <div>
-              <h3 className="font-bold text-base sm:text-lg text-blue-400 font-serif flex items-center gap-2">
+              <h3 className="font-bold text-lg sm:text-xl text-blue-400 font-serif flex items-center gap-2 flex-wrap">
                 <span>Hỏi Đáp Luận Giải Cùng AI Thầy Tôn</span>
                 {isPro ? (
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans font-semibold flex items-center gap-1">
-                    <Crown className="w-3 h-3 text-amber-400" />
+                  <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans font-semibold flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
                     <span>Khách VIP Pro</span>
                   </span>
                 ) : (
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-sans">
+                  <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-sans">
                     📜 Bản Cơ Bản
                   </span>
                 )}
               </h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
                 Trí tuệ nhân tạo kế thừa tri thức &amp; pháp số Tử Vi Đẩu Số bí truyền từ Thầy Tôn
               </p>
             </div>
@@ -144,12 +144,12 @@ export default function ChatThayTon({
           <div className="flex items-center gap-2 flex-wrap">
             {/* Huy hiệu hiển thị chi tiết số lượt theo từng loại */}
             {flowStep === 'unpaid' ? (
-              <div className="text-xs px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-amber-400 font-semibold flex items-center gap-1.5">
+              <div className="text-xs sm:text-sm px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-amber-400 font-semibold flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5" />
                 <span>Chưa mở khóa</span>
               </div>
             ) : flowStep === 'exhausted' ? (
-              <div className="text-xs px-3 py-1 rounded-full bg-amber-950/40 border border-amber-500/40 text-amber-400 font-semibold flex items-center gap-1.5">
+              <div className="text-xs sm:text-sm px-3 py-1 rounded-full bg-amber-950/40 border border-amber-500/40 text-amber-400 font-semibold flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5" />
                 <span>Đã dùng hết ({totalAllowed}/{totalAllowed} lượt)</span>
               </div>
@@ -157,20 +157,20 @@ export default function ChatThayTon({
               <div className="flex items-center gap-1.5 flex-wrap">
                 {/* Lượt Chuyên Sâu */}
                 {proAllowed > 0 && (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold flex items-center gap-1">
-                    <Crown className="w-3 h-3 text-amber-400" />
+                  <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
                     <span>Chuyên Sâu: {proRemaining}/{proAllowed}</span>
                   </span>
                 )}
                 {/* Lượt Cơ Bản */}
                 {basicAllowed > 0 && (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-medium flex items-center gap-1">
-                    <BookOpen className="w-3 h-3 text-blue-400" />
+                  <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-medium flex items-center gap-1">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-400" />
                     <span>Cơ Bản: {basicRemaining}/{basicAllowed}</span>
                   </span>
                 )}
                 {/* Tổng lượt */}
-                <span className="text-xs px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200 font-medium">
+                <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200 font-medium">
                   Tổng: <b className="text-emerald-400 font-bold">{totalRemaining}</b> lượt
                 </span>
               </div>
@@ -181,11 +181,11 @@ export default function ChatThayTon({
         {/* Lịch sử tin nhắn */}
         <div className="space-y-4 mb-5 max-h-[500px] overflow-y-auto pr-1">
           {chatHistory.length === 0 && flowStep === 'chatting' && (
-            <div className="text-center py-6 space-y-1">
-              <p className="text-sm text-slate-300 font-medium">
-                Quý khách đang có <b className="text-emerald-400">{totalRemaining}</b> lượt thỉnh giáo cùng AI Thầy Tôn.
+            <div className="text-center py-6 space-y-1.5">
+              <p className="text-base text-slate-200 font-medium">
+                Quý khách đang có <b className="text-emerald-400 font-bold">{totalRemaining}</b> lượt thỉnh giáo cùng AI Thầy Tôn.
               </p>
-              <p className="text-xs text-slate-400 italic max-w-md mx-auto">
+              <p className="text-sm text-slate-300 italic max-w-md mx-auto leading-relaxed">
                 Hãy nhập câu hỏi chi tiết về công danh, sự nghiệp, tài lộc, tình duyên hoặc hạn vận để Thầy Tôn soi chiếu lá số.
               </p>
             </div>
@@ -195,15 +195,15 @@ export default function ChatThayTon({
             <div key={idx} className="space-y-3">
               {/* Khách hỏi */}
               <div className="flex justify-end">
-                <div className="max-w-[85%] sm:max-w-[75%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 py-2.5 text-sm shadow-md">
-                  <div className="text-[11px] font-semibold text-blue-200 mb-0.5 flex items-center justify-between gap-2">
+                <div className="max-w-[90%] sm:max-w-[75%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 py-3 text-base sm:text-base shadow-md">
+                  <div className="text-xs sm:text-sm font-semibold text-blue-200 mb-1 flex items-center justify-between gap-2">
                     <span>Khách hỏi:</span>
                     {item.type === 'vip' ? (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 font-semibold border border-amber-400/40">
+                      <span className="text-xs px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 font-semibold border border-amber-400/40">
                         ⭐ Chuyên Sâu
                       </span>
                     ) : (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-400/20 text-blue-200 font-medium border border-blue-400/30">
+                      <span className="text-xs px-2 py-0.5 rounded bg-blue-400/20 text-blue-200 font-medium border border-blue-400/30">
                         📜 Cơ Bản
                       </span>
                     )}
@@ -215,7 +215,7 @@ export default function ChatThayTon({
               {/* Thầy Tôn trả lời */}
               <div className="flex justify-start">
                 <div
-                  className={`max-w-[90%] sm:max-w-[85%] rounded-2xl rounded-tl-none px-5 py-3 text-sm leading-relaxed shadow-md ${
+                  className={`max-w-[95%] sm:max-w-[85%] rounded-2xl rounded-tl-none px-5 py-4 text-base sm:text-base leading-relaxed sm:leading-loose shadow-md ${
                     item.isError
                       ? 'bg-red-950/80 border border-red-500/50 text-red-200'
                       : item.type === 'vip'
@@ -223,17 +223,17 @@ export default function ChatThayTon({
                       : 'bg-slate-100 text-slate-900 border border-slate-200'
                   }`}
                 >
-                  <div className="text-[11px] font-bold text-amber-950 uppercase tracking-wider mb-1.5 flex items-center justify-between gap-2 border-b border-slate-200/80 pb-1">
+                  <div className="text-xs sm:text-sm font-bold text-amber-950 uppercase tracking-wider mb-2 flex items-center justify-between gap-2 border-b border-slate-200/80 pb-1.5">
                     <span className="flex items-center gap-1 text-amber-800">
                       <span>🧙‍♂️ AI Thầy Tôn:</span>
                     </span>
                     {item.type === 'vip' ? (
-                      <span className="text-[10px] normal-case font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
-                        <Crown className="w-2.5 h-2.5 text-amber-700" />
+                      <span className="text-xs normal-case font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                        <Crown className="w-3 h-3 text-amber-700" />
                         <span>Chuyên Sâu</span>
                       </span>
                     ) : (
-                      <span className="text-[10px] normal-case font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                      <span className="text-xs normal-case font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
                         Cơ Bản
                       </span>
                     )}
@@ -249,8 +249,8 @@ export default function ChatThayTon({
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-slate-800 text-slate-300 rounded-2xl rounded-tl-none px-4 py-3 text-sm flex items-center gap-2 border border-slate-700 shadow-lg">
-                <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+              <div className="bg-slate-800 text-slate-300 rounded-2xl rounded-tl-none px-4 py-3 text-sm sm:text-base flex items-center gap-2.5 border border-slate-700 shadow-lg">
+                <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin shrink-0" />
                 <span>AI Thầy Tôn đang xem thiên cơ và biên lời giải đáp...</span>
               </div>
             </div>
@@ -268,10 +268,10 @@ export default function ChatThayTon({
               <Lock className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-bold text-base sm:text-lg text-amber-300 font-serif">
+              <h4 className="font-bold text-lg sm:text-xl text-amber-300 font-serif">
                 Thỉnh Giáo Luận Giải Cùng AI Thầy Tôn
               </h4>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
                 Hệ thống AI soi chiếu lá số giúp giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn (gồm 02 câu hỏi).
               </p>
             </div>
@@ -280,7 +280,7 @@ export default function ChatThayTon({
               <button
                 type="button"
                 onClick={onUnlockQuestions}
-                className="px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+                className="px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 fill-slate-950" />
                 <span>⚡ Quét Mã Thanh Toán ({isPro ? '99.000đ' : '49.000đ'} / 2 câu hỏi)</span>
@@ -296,10 +296,10 @@ export default function ChatThayTon({
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-bold text-base sm:text-lg text-emerald-300 font-serif">
+              <h4 className="font-bold text-lg sm:text-xl text-emerald-300 font-serif">
                 {proAllowed > 0 && isPro ? 'Khai Mở Đàm Đạo Cùng Thầy Tôn!' : 'Chuyển Khoản Thành Công!'}
               </h4>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
                 {proRemaining > 0 && basicRemaining > 0 ? (
                   <>
                     Hệ thống đã kích hoạt tổng cộng <b className="text-emerald-400 font-bold">{totalRemaining} lượt đàm đạo</b>: gồm{' '}
@@ -322,7 +322,7 @@ export default function ChatThayTon({
               <button
                 type="button"
                 onClick={handleOpenChat}
-                className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+                className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 fill-slate-950" />
                 <span>✅ Bấm Vào Đây Để Mở Ô Hỏi ({totalRemaining} câu còn lại)</span>
@@ -333,22 +333,22 @@ export default function ChatThayTon({
 
         {/* 3. ĐANG HỎI: Ô NHẬP CÂU HỎI ĐÃ MỞ RA (CÓ BỘ CHUYỂN MODE NẾU CÓ CẢ 2 LOẠI) */}
         {flowStep === 'chatting' && (
-          <div className="space-y-2.5 animate-fade-in">
+          <div className="space-y-3 animate-fade-in">
             {/* BỘ CHUYỂN ĐỔI CHẾ ĐỘ CÂU HỎI (LUÔN HIỂN THỊ TRỰC QUAN ĐẦY ĐỦ CẢ 2 NÚT) */}
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-slate-950/80 border border-slate-800 rounded-xl">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium">Chế độ hỏi:</span>
+                <span className="text-sm sm:text-xs text-slate-300 font-medium">Chế độ hỏi:</span>
                 <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
                   {/* Nút Chuyên Sâu */}
                   <button
                     type="button"
                     onClick={() => proRemaining > 0 && setSelectedMode('vip')}
                     disabled={proRemaining <= 0}
-                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
+                    className={`px-3.5 py-2 rounded-md text-sm sm:text-xs font-semibold transition flex items-center gap-1.5 ${
                       selectedMode === 'vip' && proRemaining > 0
                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20 cursor-pointer'
                         : proRemaining > 0
-                        ? 'text-slate-400 hover:text-slate-200 cursor-pointer'
+                        ? 'text-slate-300 hover:text-slate-100 cursor-pointer'
                         : 'text-slate-600 cursor-not-allowed opacity-40'
                     }`}
                   >
@@ -361,11 +361,11 @@ export default function ChatThayTon({
                     type="button"
                     onClick={() => basicRemaining > 0 && setSelectedMode('basic')}
                     disabled={basicRemaining <= 0}
-                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 ${
+                    className={`px-3.5 py-2 rounded-md text-sm sm:text-xs font-semibold transition flex items-center gap-1.5 ${
                       selectedMode === 'basic' && basicRemaining > 0
                         ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 cursor-pointer'
                         : basicRemaining > 0
-                        ? 'text-slate-400 hover:text-slate-200 cursor-pointer'
+                        ? 'text-slate-300 hover:text-slate-100 cursor-pointer'
                         : 'text-slate-600 cursor-not-allowed opacity-40'
                     }`}
                   >
@@ -376,11 +376,11 @@ export default function ChatThayTon({
               </div>
 
               {/* Nhãn trạng thái bên phải */}
-              <div className="text-[11px] text-slate-400 px-1 flex items-center gap-1.5">
+              <div className="text-xs sm:text-[11px] text-slate-300 px-1 flex items-center gap-1.5">
                 {selectedMode === 'vip' ? (
-                  <span className="text-amber-300/90 font-medium">Đang chọn: <b>Chuyên Sâu</b></span>
+                  <span className="text-amber-300 font-medium">Đang chọn: <b>Chuyên Sâu</b></span>
                 ) : (
-                  <span className="text-blue-300/90 font-medium">Đang chọn: <b>Cơ Bản</b></span>
+                  <span className="text-blue-300 font-medium">Đang chọn: <b>Cơ Bản</b></span>
                 )}
                 {basicRemaining === 0 && proRemaining > 0 && (
                   <span className="text-slate-500">(Cơ bản: 0 câu)</span>
@@ -403,12 +403,12 @@ export default function ChatThayTon({
                     ? 'Nhập câu hỏi chuyên sâu...'
                     : 'Nhập câu hỏi cơ bản...'
                 }
-                className="flex-grow px-4 py-3 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
+                className="flex-grow px-4 py-3.5 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-base sm:text-base focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={isLoading || !question.trim()}
-                className={`px-5 py-3 font-semibold rounded-xl text-sm transition disabled:opacity-50 disabled:pointer-events-none flex items-center gap-1.5 shadow-lg shrink-0 cursor-pointer ${
+                className={`px-5 py-3.5 font-bold rounded-xl text-base sm:text-base transition disabled:opacity-50 disabled:pointer-events-none flex items-center gap-1.5 shadow-lg shrink-0 cursor-pointer ${
                   selectedMode === 'vip'
                     ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20'
                     : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30'
@@ -428,10 +428,10 @@ export default function ChatThayTon({
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-bold text-base sm:text-lg text-amber-300 font-serif">
+              <h4 className="font-bold text-lg sm:text-xl text-amber-300 font-serif">
                 Quý khách có muốn thỉnh giáo thêm câu hỏi không?
               </h4>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
+              <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
                 {isPro
                   ? `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể gia hạn thêm 02 câu hỏi chuyên sâu.`
                   : `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro.`}
@@ -442,7 +442,7 @@ export default function ChatThayTon({
                 <button
                   type="button"
                   onClick={onUnlockQuestions}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
                 >
                   <Crown className="w-4 h-4" />
                   <span>⚡ Thanh Toán Tiếp (99.000đ / 2 câu chuyên sâu)</span>
@@ -452,7 +452,7 @@ export default function ChatThayTon({
                   <button
                     type="button"
                     onClick={onUnlockQuestions}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs sm:text-sm border border-slate-600 transition cursor-pointer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-sm sm:text-base border border-slate-600 transition cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-amber-400" />
                     <span>⚡ Mua Thêm 2 Câu Cơ Bản (49.000đ)</span>
@@ -462,7 +462,7 @@ export default function ChatThayTon({
                     <button
                       type="button"
                       onClick={onUpgradeToPro}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
                     >
                       <Crown className="w-4 h-4" />
                       <span>👑 Nâng Cấp Luận Giải Pro (119.000đ - Tặng 2 câu chuyên sâu)</span>

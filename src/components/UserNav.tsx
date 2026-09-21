@@ -52,20 +52,20 @@ export default function UserNav({
         <img
           src="/icon.svg"
           alt="Tử Vi Thầy Tôn"
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
+          className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
         />
         <div>
-          <h1 className="text-sm sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight">
+          <h1 className="text-base sm:text-lg md:text-xl font-bold font-serif text-amber-400 tracking-wide leading-tight">
             TỬ VI THẦY TÔN
           </h1>
-          <p className="text-[10px] sm:text-[11px] text-slate-400 font-sans hidden sm:block">
+          <p className="text-xs text-slate-400 font-sans hidden sm:block">
             Bát Bộ Thần Sát &amp; Tướng Pháp Bí Truyền
           </p>
         </div>
       </div>
 
       {/* Account actions */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5 flex-nowrap">
+      <div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap">
         {/* Link Về Thầy Tôn trên màn hình lớn */}
         <a
           href="#gioi-thieu-thay-ton"
@@ -80,9 +80,9 @@ export default function UserNav({
           <button
             type="button"
             onClick={onOpenAuthModal}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
           >
-            <LogIn className="w-3.5 h-3.5" />
+            <LogIn className="w-4 h-4" />
             <span>Đăng Nhập</span>
           </button>
         ) : (
@@ -91,16 +91,16 @@ export default function UserNav({
             <button
               type="button"
               onClick={onOpenSavedCharts}
-              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs sm:text-sm font-bold rounded-xl transition shadow-sm whitespace-nowrap cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-sm font-bold rounded-xl transition shadow-sm whitespace-nowrap cursor-pointer"
               title="Xem danh sách các lá số đã lưu"
             >
-              <BookOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
               <span className="hidden xs:inline sm:inline">Sổ Tay</span>
             </button>
 
             {/* Tên First Name (ví dụ: Tôn) */}
-            <div className="flex items-center gap-1 text-xs sm:text-sm text-slate-200 font-semibold px-2 py-1 bg-slate-800/80 border border-slate-700/80 rounded-xl whitespace-nowrap">
-              <User className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <div className="flex items-center gap-1.5 text-sm text-slate-200 font-semibold px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/80 rounded-xl whitespace-nowrap">
+              <User className="w-4 h-4 text-amber-400 shrink-0" />
               <span>{displayName}</span>
             </div>
 
@@ -108,10 +108,10 @@ export default function UserNav({
             <button
               type="button"
               onClick={handleSignOut}
-              className="inline-flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 bg-slate-800/60 hover:bg-red-950/40 text-slate-400 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/60 hover:bg-red-950/40 text-slate-300 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 rounded-xl text-sm font-medium transition whitespace-nowrap cursor-pointer"
               title="Đăng xuất tài khoản"
             >
-              <LogOut className="w-3.5 h-3.5 shrink-0" />
+              <LogOut className="w-4 h-4 shrink-0" />
               <span>Log out</span>
             </button>
           </div>

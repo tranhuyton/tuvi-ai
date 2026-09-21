@@ -253,19 +253,19 @@ export default function PaymentModal({
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-950/50 via-slate-900 to-slate-900">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400">
+            <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold font-serif text-amber-400 flex items-center gap-1.5">
+              <h3 className="text-lg sm:text-xl font-bold font-serif text-amber-400 flex items-center gap-1.5">
                 {title}
               </h3>
-              <p className="text-xs text-slate-400">{subtitle}</p>
+              <p className="text-sm sm:text-xs text-slate-300">{subtitle}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition"
+            className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -283,24 +283,24 @@ export default function PaymentModal({
                 <h4 className="text-lg sm:text-xl font-bold font-serif text-emerald-400">
                   Thanh Toán Thành Công!
                 </h4>
-                <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-md">
+                <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-md">
                   Giao dịch <span className="text-amber-400 font-mono font-bold">{orderCode}</span> đã được xác nhận tự động. Đang kích hoạt quyền lợi và gửi email thông báo...
                 </p>
               </div>
-              <div className="flex items-center gap-2 text-xs text-amber-300 bg-amber-950/50 px-3 py-1.5 rounded-full border border-amber-500/30">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <div className="flex items-center gap-2 text-sm text-amber-300 bg-amber-950/50 px-3.5 py-2 rounded-full border border-amber-500/30">
+                <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Đang chuyển hướng tới nội dung của bạn...</span>
               </div>
             </div>
           ) : (
             <>
               {/* Đặc quyền gói */}
-              <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-3 sm:p-4 text-xs sm:text-sm text-amber-200 space-y-1.5">
-                <div className="font-bold text-amber-300 flex items-center gap-1.5">
+              <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-3.5 sm:p-4 text-sm sm:text-sm text-amber-200 space-y-2">
+                <div className="font-bold text-amber-300 flex items-center gap-1.5 text-base sm:text-sm">
                   <CheckCircle className="w-4 h-4 text-amber-400 shrink-0" />
                   Đặc quyền ({finalPrice.toLocaleString('vi-VN')} đ):
                 </div>
-                <ul className="list-disc list-inside space-y-1 pl-1 text-slate-300 text-xs">
+                <ul className="list-disc list-inside space-y-1.5 pl-1 text-slate-200 text-sm sm:text-xs leading-relaxed">
                   {benefits.map((b, idx) => (
                     <li key={idx}>{b}</li>
                   ))}
@@ -308,15 +308,15 @@ export default function PaymentModal({
               </div>
 
               {/* Email Nhận Thông Báo & Kích Hoạt */}
-              <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs space-y-1.5">
+              <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 text-sm sm:text-xs space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-slate-300 font-medium flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-amber-400" />
+                    <Mail className="w-4 h-4 text-amber-400" />
                     <span>Email nhận xác nhận &amp; biên lai kích hoạt:</span>
                   </label>
                   {emailSaved && (
-                    <span className="text-[11px] text-emerald-400 font-medium animate-fade-in flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Đã lưu
+                    <span className="text-xs text-emerald-400 font-medium animate-fade-in flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> Đã lưu
                     </span>
                   )}
                 </div>
@@ -325,20 +325,20 @@ export default function PaymentModal({
                   value={customerEmail}
                   onChange={(e) => handleUpdateEmail(e.target.value)}
                   placeholder="Ví dụ: hoten@gmail.com (để nhận email khi hoàn tất)"
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-amber-400 placeholder:text-slate-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 placeholder:text-slate-500"
                 />
               </div>
 
               {/* QR Code Chuyển Khoản Tự Động */}
               <div className="bg-white rounded-xl p-4 flex flex-col items-center justify-center text-slate-900 shadow-inner">
-                <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-slate-700">
-                  <QrCode className="w-4 h-4 text-slate-700" />
-                  Quét mã VietQR (Tự động điền STK + Số tiền + Nội dung):
+                <div className="flex items-center gap-2 mb-2 text-sm sm:text-xs font-semibold text-slate-700 text-center">
+                  <QrCode className="w-4 h-4 text-slate-700 shrink-0" />
+                  <span>Quét mã VietQR (Tự động điền STK + Số tiền + Nội dung):</span>
                 </div>
 
-                <div className="w-52 h-52 bg-slate-100 rounded-lg overflow-hidden border border-slate-300 flex items-center justify-center relative">
+                <div className="w-56 h-56 bg-slate-100 rounded-lg overflow-hidden border border-slate-300 flex items-center justify-center relative">
                   {isCreatingOrder || !qrUrl ? (
-                    <div className="flex flex-col items-center gap-2 text-slate-500 text-xs">
+                    <div className="flex flex-col items-center gap-2 text-slate-500 text-sm sm:text-xs">
                       <Loader2 className="w-7 h-7 animate-spin text-amber-600" />
                       <span>Đang tạo mã thanh toán...</span>
                     </div>
@@ -357,8 +357,8 @@ export default function PaymentModal({
                 </div>
 
                 {/* Radar quét tự động */}
-                <div className="mt-2.5 flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-200 text-[11px] text-amber-800">
-                  <span className="relative flex h-2 w-2">
+                <div className="mt-2.5 flex items-center gap-2 px-3.5 py-1.5 bg-amber-50 rounded-full border border-amber-200 text-xs sm:text-[11px] text-amber-900">
+                  <span className="relative flex h-2 w-2 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
@@ -367,63 +367,63 @@ export default function PaymentModal({
               </div>
 
               {/* Thông tin tài khoản thủ công */}
-              <div className="space-y-2 text-xs bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
-                <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
+              <div className="space-y-2.5 text-sm sm:text-xs bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-800/80">
                   <span className="text-slate-400">Ngân hàng:</span>
                   <span className="font-semibold text-slate-200">{bankName}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-800/80">
                   <span className="text-slate-400">Chủ tài khoản:</span>
                   <span className="font-semibold text-amber-300">{chuTk}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-800/80">
                   <span className="text-slate-400">Số tài khoản:</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-amber-400 text-sm">{stk}</span>
+                    <span className="font-mono font-bold text-amber-400 text-base sm:text-sm">{stk}</span>
                     <button
                       type="button"
                       onClick={handleCopyStk}
-                      className="p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition"
+                      className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
                       title="Sao chép số tài khoản"
                     >
-                      {copiedStk ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      {copiedStk ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-800/80">
                   <span className="text-slate-400">Số tiền:</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-emerald-400 text-sm">
+                    <span className="font-bold text-emerald-400 text-base sm:text-sm">
                       {finalPrice.toLocaleString('vi-VN')} VNĐ
                     </span>
                     <button
                       type="button"
                       onClick={handleCopyAmount}
-                      className="p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition"
+                      className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
                       title="Sao chép số tiền"
                     >
-                      {copiedAmount ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      {copiedAmount ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-400">Nội dung chuyển khoản (Bắt buộc):</span>
+                <div className="flex justify-between items-center py-1.5">
+                  <span className="text-slate-400">Nội dung CK:</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/40">
+                    <span className="font-mono font-bold text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded border border-amber-500/40 text-base sm:text-sm">
                       {orderCode || 'Đang tạo...'}
                     </span>
                     <button
                       type="button"
                       onClick={handleCopyContent}
-                      className="p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition"
+                      className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
                       title="Sao chép nội dung"
                     >
-                      {copiedContent ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      {copiedContent ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
 
-                <div className="pt-2 text-center text-[11px] text-slate-400">
+                <div className="pt-2 text-center text-xs text-slate-400">
                   Cần hỗ trợ hoặc kiểm tra trực tiếp? Hotline / Zalo Thầy Tôn:{' '}
                   <a href="tel:0935058688" className="text-amber-400 font-bold hover:underline">
                     0935.058.688
@@ -447,14 +447,14 @@ export default function PaymentModal({
         {/* Footer Actions */}
         {orderStatus !== 'PAID' && (
           <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 text-xs text-slate-300">
+            <div className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-300">
               <Loader2 className="w-4 h-4 animate-spin text-amber-400 shrink-0" />
               <span>Đang chờ chuyển khoản... Hệ thống tự động kích hoạt ngay khi nhận tiền</span>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer"
+              className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-sm font-medium transition shrink-0 cursor-pointer"
             >
               Đóng
             </button>
