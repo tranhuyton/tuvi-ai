@@ -22,6 +22,7 @@ import {
   updateChartReading,
   saveChatMessage,
 } from '@/lib/tuviService';
+import { supabase } from '@/lib/supabase';
 import { Sparkles, Crown, PhoneCall, MapPin, Mail } from 'lucide-react';
 
 export default function HomePage() {
@@ -582,12 +583,33 @@ export default function HomePage() {
         return;
       }
 
-      const detectedTier: ServiceTier =
+      let detectedTier: ServiceTier =
         chart.duong_so_data?.tier ||
         chart.laso_data?.tier ||
         (chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO')
           ? 'pro'
           : 'free');
+
+      // Tự động kiểm tra hóa đơn thanh toán trong tuvi_orders (Cơ chế Self-Healing)
+      let isPaidPro = detectedTier === 'pro';
+      if (!isPaidPro) {
+        try {
+          const { data: paidOrders } = await supabase
+            .from('tuvi_orders')
+            .select('id, payment_type, status')
+            .or(`chart_id.eq.${chartId},user_id.eq.${chart.user_id || user?.id}`)
+            .eq('status', 'PAID')
+            .eq('payment_type', 'reading_vip')
+            .limit(1);
+
+          if (paidOrders && paidOrders.length > 0) {
+            isPaidPro = true;
+            detectedTier = 'pro';
+          }
+        } catch (err) {
+          // ignore
+        }
+      }
 
       setCurrentTier(detectedTier);
       setLaSo(chart.laso_data);
@@ -643,7 +665,38 @@ export default function HomePage() {
         if (chart.id) localStorage.setItem(`tuvi_quota_${chart.id}`, JSON.stringify(loadedQuota));
         if (chart.duong_so_data) localStorage.setItem(`tuvi_quota_${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}`, JSON.stringify(loadedQuota));
       }
+      if (detectedTier === 'pro') {
+        loadedQuota.proAllowed = Math.max(2, loadedQuota.proAllowed);
+      }
       setQuestionsQuota(loadedQuota);
+
+      // Tự động nâng cấp lên Pro nếu phát hiện có đơn PAID nhưng database chưa lưu Pro hoặc chưa có bài luận
+      if (detectedTier === 'pro' && (chart.duong_so_data?.tier !== 'pro' || !chart.reading_html)) {
+        const cleanDuongSo: DuLieuDuongSo = {
+          ...chart.duong_so_data,
+          tier: 'pro',
+          anhMat: undefined,
+          anhTay: undefined,
+        };
+        const updatedLaSo = { ...chart.laso_data, tier: 'pro' as ServiceTier, quota: loadedQuota };
+        
+        generateReading(updatedLaSo, chart.duong_so_data, 'pro')
+          .then(async (readingResult) => {
+            if (readingResult) {
+              setReadingHtml(readingResult);
+              await updateChartReading(chart.id, readingResult);
+              await saveOrUpdateChart({
+                id: chart.id,
+                title: chart.title,
+                duongSoData: cleanDuongSo,
+                lasoData: updatedLaSo,
+                readingHtml: readingResult,
+              });
+            }
+          })
+          .catch(console.error);
+      }
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
       alert('Lỗi tải dữ liệu lá số: ' + e.message);
@@ -716,17 +769,62 @@ export default function HomePage() {
             // Nếu có chartId và user đã đăng nhập, ngầm làm mới từ database để luôn cập nhật
             if (session.chartId && user) {
               getChartDetails(session.chartId)
-                .then(({ chart, chatMessages }) => {
+                .then(async ({ chart, chatMessages }) => {
                   if (chart) {
                     if (chart.reading_html) setReadingHtml(chart.reading_html);
                     if (chatMessages && chatMessages.length > 0) setChatHistory(chatMessages);
-                    const detectedTier: ServiceTier =
+                    let detectedTier: ServiceTier =
                       chart.duong_so_data?.tier ||
                       chart.laso_data?.tier ||
                       (chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO')
                         ? 'pro'
                         : session.tier || 'free');
+
+                    // Kiểm tra Self-Healing từ tuvi_orders
+                    if (detectedTier !== 'pro') {
+                      try {
+                        const { data: paidOrders } = await supabase
+                          .from('tuvi_orders')
+                          .select('id, payment_type, status')
+                          .or(`chart_id.eq.${session.chartId},user_id.eq.${user.id}`)
+                          .eq('status', 'PAID')
+                          .eq('payment_type', 'reading_vip')
+                          .limit(1);
+
+                        if (paidOrders && paidOrders.length > 0) {
+                          detectedTier = 'pro';
+                        }
+                      } catch (err) {}
+                    }
+
                     setCurrentTier(detectedTier);
+
+                    // Tự động nâng cấp nếu phát hiện đơn hàng đã thanh toán
+                    if (detectedTier === 'pro' && (chart.duong_so_data?.tier !== 'pro' || !chart.reading_html)) {
+                      const cleanDuongSo: DuLieuDuongSo = {
+                        ...chart.duong_so_data,
+                        tier: 'pro',
+                        anhMat: undefined,
+                        anhTay: undefined,
+                      };
+                      const updatedLaSo = { ...chart.laso_data, tier: 'pro' as ServiceTier, quota: { basicAllowed: 0, proAllowed: 2 } };
+
+                      generateReading(updatedLaSo, chart.duong_so_data, 'pro')
+                        .then(async (readingResult) => {
+                          if (readingResult) {
+                            setReadingHtml(readingResult);
+                            await updateChartReading(chart.id, readingResult);
+                            await saveOrUpdateChart({
+                              id: chart.id,
+                              title: chart.title,
+                              duongSoData: cleanDuongSo,
+                              lasoData: updatedLaSo,
+                              readingHtml: readingResult,
+                            });
+                          }
+                        })
+                        .catch(console.error);
+                    }
                   }
                 })
                 .catch(() => {});
