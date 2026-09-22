@@ -437,17 +437,19 @@ export default function HomePage() {
   };
 
   // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp)
-  const handleUnlockQuestions = () => {
+  const handleUnlockQuestions = (mode?: 'basic' | 'vip') => {
+    const targetMode = mode || (currentTier === 'pro' ? 'vip' : 'basic');
     const proceedToPayment = () => {
-      if (currentTier === 'pro') {
+      if (targetMode === 'vip') {
         setPaymentModalConfig({
           isOpen: true,
           type: 'chat_vip',
           price: 99000,
           onConfirm: () => {
+            const validVipAsked = chatHistory.filter((c) => !c.isError && c.type === 'vip').length;
             updateQuestionsQuota((prev) => ({
               ...prev,
-              proAllowed: prev.proAllowed + 2,
+              proAllowed: Math.max(prev.proAllowed, validVipAsked) + 2,
             }));
           },
         });
@@ -457,9 +459,10 @@ export default function HomePage() {
           type: 'chat_free',
           price: 49000,
           onConfirm: () => {
+            const validBasicAsked = chatHistory.filter((c) => !c.isError && (c.type === 'basic' || !c.type)).length;
             updateQuestionsQuota((prev) => ({
               ...prev,
-              basicAllowed: prev.basicAllowed + 2,
+              basicAllowed: Math.max(prev.basicAllowed, validBasicAsked) + 2,
             }));
           },
         });
@@ -469,7 +472,7 @@ export default function HomePage() {
     if (!user) {
       pendingPostAuthActionRef.current = proceedToPayment;
       setAuthModalNotice(
-        currentTier === 'pro'
+        targetMode === 'vip'
           ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi Chuyên Sâu.'
           : 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi cùng Thầy Tôn.'
       );
@@ -813,11 +816,15 @@ export default function HomePage() {
               onOpenSavedCharts={handleOpenSavedCharts}
             />
 
-            {/* Mục Giới thiệu về Thầy Tôn */}
-            <AboutThayTon />
+            {!user && (
+              <>
+                {/* Mục Giới thiệu về Thầy Tôn */}
+                <AboutThayTon />
 
-            {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
-            <Testimonials />
+                {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
+                <Testimonials />
+              </>
+            )}
 
             {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */}
             <BookingBanner />
@@ -871,11 +878,15 @@ export default function HomePage() {
               onUpgradeToPro={openUpgradeModal}
             />
 
-            {/* Mục Giới thiệu về Thầy Tôn */}
-            <AboutThayTon />
+            {!user && (
+              <>
+                {/* Mục Giới thiệu về Thầy Tôn */}
+                <AboutThayTon />
 
-            {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
-            <Testimonials />
+                {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
+                <Testimonials />
+              </>
+            )}
 
             {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
             <BookingBanner />
@@ -929,14 +940,18 @@ export default function HomePage() {
 
       <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-6 text-xs text-slate-400 font-medium flex-wrap">
-          <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
-            Về Thầy Tôn
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="#cam-nhan-chuyen-gia" className="hover:text-amber-400 transition">
-            Đánh Giá &amp; Cảm Nhận
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
+          {!user && (
+            <>
+              <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
+                Về Thầy Tôn
+              </a>
+              <span className="text-slate-600 hidden sm:inline">•</span>
+              <a href="#cam-nhan-chuyen-gia" className="hover:text-amber-400 transition">
+                Đánh Giá &amp; Cảm Nhận
+              </a>
+              <span className="text-slate-600 hidden sm:inline">•</span>
+            </>
+          )}
           <a
             href="https://tonyenglish.vn"
             target="_blank"

@@ -11,7 +11,7 @@ interface ChatThayTonProps {
   tier?: ServiceTier;
   quota?: QuestionsQuota;
   questionsAllowed?: number; // fallback backward compatible
-  onUnlockQuestions: () => void;
+  onUnlockQuestions: (mode?: 'basic' | 'vip') => void;
   onUpgradeToPro?: () => void;
 }
 
@@ -54,11 +54,9 @@ export default function ChatThayTon({
     return 'basic';
   });
 
-  // Tự động chuyển mode nếu loại hiện tại hết lượt
+  // Tự động chuyển mode nếu loại hiện tại hết lượt và loại kia còn lượt
   useEffect(() => {
-    if (proRemaining > 0 && selectedMode === 'basic' && basicRemaining === 0) {
-      setSelectedMode('vip');
-    } else if (basicRemaining > 0 && selectedMode === 'vip' && proRemaining === 0) {
+    if (basicRemaining > 0 && selectedMode === 'vip' && proRemaining === 0) {
       setSelectedMode('basic');
     }
   }, [proRemaining, basicRemaining, selectedMode]);
@@ -151,22 +149,22 @@ export default function ChatThayTon({
             ) : flowStep === 'exhausted' ? (
               <div className="text-xs sm:text-sm px-3 py-1 rounded-full bg-amber-950/40 border border-amber-500/40 text-amber-400 font-semibold flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5" />
-                <span>Đã dùng hết ({totalAllowed}/{totalAllowed} lượt)</span>
+                <span>Đã dùng hết ({totalAllowed} lượt)</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 flex-wrap">
                 {/* Lượt Chuyên Sâu */}
-                {proAllowed > 0 && (
+                {proRemaining > 0 && (
                   <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold flex items-center gap-1">
                     <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Chuyên Sâu: {proRemaining}/{proAllowed}</span>
+                    <span>Chuyên Sâu: Còn {proRemaining} câu</span>
                   </span>
                 )}
-                {/* Lượt Cơ Bản */}
-                {basicAllowed > 0 && (
+                {/* Lượt Cơ Bản: CHỈ HIỆN KHI CÒN CÂU CƠ BẢN > 0 (KHÔNG HIỆN 0/3 KHI ĐÃ HẾT) */}
+                {basicRemaining > 0 && (
                   <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-medium flex items-center gap-1">
                     <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Cơ Bản: {basicRemaining}/{basicAllowed}</span>
+                    <span>Cơ Bản: Còn {basicRemaining} câu</span>
                   </span>
                 )}
                 {/* Tổng lượt */}
@@ -279,7 +277,7 @@ export default function ChatThayTon({
             <div className="pt-2 flex flex-col items-center">
               <button
                 type="button"
-                onClick={onUnlockQuestions}
+                onClick={() => onUnlockQuestions()}
                 className="px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 fill-slate-950" />
@@ -336,58 +334,79 @@ export default function ChatThayTon({
           <div className="space-y-3 animate-fade-in">
             {/* BỘ CHUYỂN ĐỔI CHẾ ĐỘ CÂU HỎI (LUÔN HIỂN THỊ TRỰC QUAN ĐẦY ĐỦ CẢ 2 NÚT) */}
             <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm sm:text-xs text-slate-300 font-medium">Chế độ hỏi:</span>
                 <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
                   {/* Nút Chuyên Sâu */}
                   <button
                     type="button"
-                    onClick={() => proRemaining > 0 && setSelectedMode('vip')}
-                    disabled={proRemaining <= 0}
-                    className={`px-3.5 py-2 rounded-md text-sm sm:text-xs font-semibold transition flex items-center gap-1.5 ${
-                      selectedMode === 'vip' && proRemaining > 0
-                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20 cursor-pointer'
+                    onClick={() => {
+                      if (proRemaining > 0) {
+                        setSelectedMode('vip');
+                      } else {
+                        onUnlockQuestions('vip');
+                      }
+                    }}
+                    className={`px-3.5 py-2 rounded-md text-sm sm:text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+                      selectedMode === 'vip'
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20'
                         : proRemaining > 0
-                        ? 'text-slate-300 hover:text-slate-100 cursor-pointer'
-                        : 'text-slate-600 cursor-not-allowed opacity-40'
+                        ? 'text-slate-300 hover:text-slate-100'
+                        : 'text-amber-400/80 hover:text-amber-300'
                     }`}
                   >
-                    <Crown className="w-3.5 h-3.5" />
-                    <span>Chuyên Sâu ({proRemaining} câu)</span>
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>
+                      Chuyên Sâu {proRemaining > 0 ? `(${proRemaining} câu)` : '(Hết - Mua 99k)'}
+                    </span>
                   </button>
 
                   {/* Nút Cơ Bản */}
                   <button
                     type="button"
-                    onClick={() => basicRemaining > 0 && setSelectedMode('basic')}
-                    disabled={basicRemaining <= 0}
-                    className={`px-3.5 py-2 rounded-md text-sm sm:text-xs font-semibold transition flex items-center gap-1.5 ${
-                      selectedMode === 'basic' && basicRemaining > 0
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 cursor-pointer'
+                    onClick={() => {
+                      setSelectedMode('basic');
+                    }}
+                    className={`px-3.5 py-2 rounded-md text-sm sm:text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+                      selectedMode === 'basic'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                         : basicRemaining > 0
-                        ? 'text-slate-300 hover:text-slate-100 cursor-pointer'
-                        : 'text-slate-600 cursor-not-allowed opacity-40'
+                        ? 'text-slate-300 hover:text-slate-100'
+                        : 'text-blue-300/80 hover:text-blue-200'
                     }`}
                   >
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>Cơ Bản ({basicRemaining} câu)</span>
+                    <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                    <span>
+                      Cơ Bản {basicRemaining > 0 ? `(${basicRemaining} câu)` : proRemaining > 0 ? `(Dùng lượt VIP)` : '(Hết - Mua 49k)'}
+                    </span>
                   </button>
                 </div>
               </div>
 
-              {/* Nhãn trạng thái bên phải */}
-              <div className="text-xs sm:text-[11px] text-slate-300 px-1 flex items-center gap-1.5">
-                {selectedMode === 'vip' ? (
-                  <span className="text-amber-300 font-medium">Đang chọn: <b>Chuyên Sâu</b></span>
-                ) : (
-                  <span className="text-blue-300 font-medium">Đang chọn: <b>Cơ Bản</b></span>
-                )}
-                {basicRemaining === 0 && proRemaining > 0 && (
-                  <span className="text-slate-500">(Cơ bản: 0 câu)</span>
-                )}
-                {proRemaining === 0 && basicRemaining > 0 && (
-                  <span className="text-slate-500">(Chuyên sâu: 0 câu)</span>
-                )}
+              {/* Nhãn trạng thái bên phải & Nút mua thêm câu hỏi */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="text-xs sm:text-[11px] text-slate-300 px-1 flex items-center gap-1.5">
+                  {selectedMode === 'vip' ? (
+                    <span className="text-amber-300 font-medium">Đang chọn: <b>Chuyên Sâu</b></span>
+                  ) : (
+                    <span className="text-blue-300 font-medium flex items-center gap-1">
+                      <span>Đang chọn: <b>Cơ Bản</b></span>
+                      {basicRemaining === 0 && proRemaining > 0 && (
+                        <span className="text-amber-300 font-normal text-[11px]">(Trừ 1 câu VIP Pro)</span>
+                      )}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onUnlockQuestions('basic')}
+                  className="text-xs px-2.5 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 transition flex items-center gap-1 cursor-pointer font-medium"
+                  title="Mua thêm 02 câu Cơ Bản với giá 49.000đ"
+                >
+                  <Sparkles className="w-3 h-3 text-blue-400" />
+                  <span>+ Mua 2 câu Cơ Bản (49k)</span>
+                </button>
               </div>
             </div>
 
@@ -433,25 +452,35 @@ export default function ChatThayTon({
               </h4>
               <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
                 {isPro
-                  ? `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể gia hạn thêm 02 câu hỏi chuyên sâu.`
+                  ? `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể gia hạn thêm câu hỏi chuyên sâu hoặc câu hỏi cơ bản.`
                   : `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro.`}
               </p>
             </div>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               {isPro ? (
-                <button
-                  type="button"
-                  onClick={onUnlockQuestions}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
-                >
-                  <Crown className="w-4 h-4" />
-                  <span>⚡ Thanh Toán Tiếp (99.000đ / 2 câu chuyên sâu)</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('vip')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span>⚡ Nạp Tiếp (99.000đ / 2 câu chuyên sâu)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('basic')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-sm sm:text-base border border-slate-600 transition cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-blue-400" />
+                    <span>⚡ Mua 2 Câu Cơ Bản (49.000đ)</span>
+                  </button>
+                </>
               ) : (
                 <>
                   <button
                     type="button"
-                    onClick={onUnlockQuestions}
+                    onClick={() => onUnlockQuestions('basic')}
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-sm sm:text-base border border-slate-600 transition cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-amber-400" />
