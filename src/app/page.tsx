@@ -824,32 +824,24 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Thanh trạng thái gói dịch vụ khi đang xem lá số */}
-            <div className="flex items-center justify-end max-w-[1060px] mx-auto">
-              {/* Huy hiệu gói dịch vụ & Nút Nâng cấp Pro */}
-              <div className="flex items-center gap-2">
-                {currentTier === 'pro' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-500/20 border border-amber-500/50 text-amber-300 shadow-sm">
-                    <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Bản Chuyên Sâu Pro</span>
+            {/* Thanh trạng thái gói dịch vụ khi đang xem lá số (chỉ hiện khi đang ở Bản Miễn Phí) */}
+            {currentTier !== 'pro' && (
+              <div className="flex items-center justify-end max-w-[1060px] mx-auto">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-900/90 border border-slate-700 text-slate-300">
+                    <span>📜 Bản Miễn Phí</span>
                   </span>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-900/90 border border-slate-700 text-slate-300">
-                      <span>📜 Bản Miễn Phí</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={openUpgradeModal}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 cursor-pointer"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                      <span>⚡ Nâng Cấp Pro (119.000đ)</span>
-                    </button>
-                  </div>
-                )}
+                  <button
+                    type="button"
+                    onClick={openUpgradeModal}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+                    <span>⚡ Nâng Cấp Pro (119.000đ)</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Bàn Cờ Lá Số Tử Vi */}
             <LaSoBanCo
