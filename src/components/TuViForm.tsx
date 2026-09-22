@@ -3,12 +3,13 @@
 import React, { useState, ChangeEvent } from 'react';
 import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, PhoneCall } from 'lucide-react';
+import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, PhoneCall, BookOpen } from 'lucide-react';
 import PaymentModal from './PaymentModal';
 
 interface TuViFormProps {
   onSubmit: (data: DuLieuDuongSo, tier: ServiceTier) => void;
   isLoading: boolean;
+  onOpenSavedCharts?: () => void;
 }
 
 function isHeicFile(file: File): boolean {
@@ -61,7 +62,7 @@ function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<stri
   });
 }
 
-export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
+export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts }: TuViFormProps) {
   const [hoTen, setHoTen] = useState('');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>('Nam');
   const [ngayDuong, setNgayDuong] = useState(15);
@@ -209,9 +210,21 @@ export default function TuViForm({ onSubmit, isLoading }: TuViFormProps) {
           <h2 className="text-2xl sm:text-3xl font-bold tracking-wide text-amber-400 font-serif">
             LẬP LÁ SỐ TỬ VI
           </h2>
-          <span className="text-sm sm:text-base text-amber-400/80 font-serif italic tracking-wide">
-            ✦ Khai mở thiên cơ
-          </span>
+          {onOpenSavedCharts ? (
+            <button
+              type="button"
+              onClick={onOpenSavedCharts}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs sm:text-sm font-bold transition cursor-pointer shadow-sm"
+              title="Xem danh sách các lá số đã lưu"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              <span>Sổ Tay Số Mệnh</span>
+            </button>
+          ) : (
+            <span className="text-sm sm:text-base text-amber-400/80 font-serif italic tracking-wide">
+              ✦ Khai mở thiên cơ
+            </span>
+          )}
         </div>
         <p className="text-sm sm:text-base text-slate-300 mt-1">
           An sao chính xác theo giờ sinh • Bình giải chuyên sâu đa phương thức

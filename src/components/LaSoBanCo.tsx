@@ -4,11 +4,12 @@ import React, { useRef, useState, useEffect } from 'react';
 import { LaSoData } from '@/types/tuvi';
 import CungView from './CungView';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { Download, RefreshCw, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, RefreshCw, ZoomIn, ZoomOut, BookOpen } from 'lucide-react';
 
 interface LaSoBanCoProps {
   laSo: LaSoData;
   onReset: () => void;
+  onOpenSavedCharts?: () => void;
 }
 
 const GRID_STYLES: Record<number, { gridColumn: number; gridRow: number }> = {
@@ -51,7 +52,7 @@ const TT_COORDS: Record<number, { l: string; t: string }> = {
   10: { l: '87.5%', t: '75%' },
 };
 
-export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
+export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanCoProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -194,14 +195,28 @@ export default function LaSoBanCo({ laSo, onReset }: LaSoBanCoProps) {
     <div className="w-full max-w-[1060px] mx-auto">
       {/* Thanh công cụ thao tác */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3 print:hidden px-1">
-        <button
-          type="button"
-          onClick={onReset}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-sm font-semibold transition cursor-pointer"
-        >
-          <RefreshCw className="w-4 h-4 text-amber-400" />
-          <span>Lập Lá Số Mới</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-sm font-semibold transition cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4 text-amber-400" />
+            <span>Lập Lá Số Mới</span>
+          </button>
+
+          {onOpenSavedCharts && (
+            <button
+              type="button"
+              onClick={onOpenSavedCharts}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 rounded-xl border border-amber-500/40 text-sm font-bold transition cursor-pointer shadow-sm"
+              title="Xem danh sách các lá số đã lưu"
+            >
+              <BookOpen className="w-4 h-4 text-amber-400" />
+              <span>Sổ Tay Số Mệnh</span>
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {/* Nút bật/tắt phóng to trên mobile nếu chiều rộng màn hình nhỏ */}

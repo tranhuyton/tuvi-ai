@@ -480,6 +480,19 @@ export default function HomePage() {
     proceedToPayment();
   };
 
+  // Mở modal Sổ tay số mệnh (danh sách lá số đã lưu)
+  const handleOpenSavedCharts = () => {
+    if (!user) {
+      setAuthModalNotice('Quý khách vui lòng đăng nhập hoặc tạo tài khoản để xem Sổ tay danh sách lá số đã lưu.');
+      pendingPostAuthActionRef.current = () => {
+        setIsSavedChartsModalOpen(true);
+      };
+      setIsAuthModalOpen(true);
+    } else {
+      setIsSavedChartsModalOpen(true);
+    }
+  };
+
   // Xử lý gửi tin nhắn hỏi đáp với Thầy Tôn
   const handleSendMessage = async (userQuestion: string, mode: 'basic' | 'vip' = 'vip') => {
     if (!laSo) return;
@@ -782,17 +795,7 @@ export default function HomePage() {
             pendingPostAuthActionRef.current = null;
             setIsAuthModalOpen(true);
           }}
-          onOpenSavedCharts={() => {
-            if (!user) {
-              setAuthModalNotice('Quý khách vui lòng đăng nhập hoặc tạo tài khoản để xem Sổ tay danh sách lá số đã lưu.');
-              pendingPostAuthActionRef.current = () => {
-                setIsSavedChartsModalOpen(true);
-              };
-              setIsAuthModalOpen(true);
-            } else {
-              setIsSavedChartsModalOpen(true);
-            }
-          }}
+          onOpenSavedCharts={handleOpenSavedCharts}
           onNewChart={handleReset}
           onSignOut={handleReset}
         />
@@ -807,6 +810,7 @@ export default function HomePage() {
             <TuViForm
               onSubmit={handleFormSubmit}
               isLoading={isLoadingReading}
+              onOpenSavedCharts={handleOpenSavedCharts}
             />
 
             {/* Mục Giới thiệu về Thầy Tôn */}
@@ -848,7 +852,11 @@ export default function HomePage() {
             </div>
 
             {/* Bàn Cờ Lá Số Tử Vi */}
-            <LaSoBanCo laSo={laSo} onReset={handleReset} />
+            <LaSoBanCo
+              laSo={laSo}
+              onReset={handleReset}
+              onOpenSavedCharts={handleOpenSavedCharts}
+            />
 
             {/* Bài Bình Giải Chuyên Sâu */}
             <LuanGiaiAI

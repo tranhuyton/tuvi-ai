@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, BookOpen, LogOut, PlusCircle, LogIn, Sparkles } from 'lucide-react';
+import { User, LogOut, LogIn } from 'lucide-react';
 
 interface UserNavProps {
   onOpenAuthModal: () => void;
@@ -87,17 +87,6 @@ export default function UserNav({
           </button>
         ) : (
           <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
-            {/* Nút Sổ tay lá số */}
-            <button
-              type="button"
-              onClick={onOpenSavedCharts}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-sm font-bold rounded-xl transition shadow-sm whitespace-nowrap cursor-pointer"
-              title="Xem danh sách các lá số đã lưu"
-            >
-              <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="hidden xs:inline sm:inline">Sổ Tay</span>
-            </button>
-
             {/* Tên First Name (ví dụ: Tôn) */}
             <div className="flex items-center gap-1.5 text-sm text-slate-200 font-semibold px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/80 rounded-xl whitespace-nowrap">
               <User className="w-4 h-4 text-amber-400 shrink-0" />
