@@ -103,15 +103,15 @@ export default function AdminTestStudio() {
   const [testTier, setTestTier] = useState<ServiceTier>('pro');
   const [testModel, setTestModel] = useState<string>('gemini-3.1-pro-preview');
 
-  // Kho lá số khách offline & mẫu
+  // Sổ tay khách offline
   const [offlineCharts, setOfflineCharts] = useState<OfflineChartItem[]>([]);
   const [isLoadingOffline, setIsLoadingOffline] = useState(false);
   const [activeChartId, setActiveChartId] = useState<string | null>(null);
   const [offlineSearch, setOfflineSearch] = useState('');
-  const [offlineFilterTag, setOfflineFilterTag] = useState<'all' | 'offline' | 'sample'>('all');
   const [clientNotes, setClientNotes] = useState('');
   const [chartTag, setChartTag] = useState<OfflineChartTag>('offline');
   const [isSavingChart, setIsSavingChart] = useState(false);
+  const [autoSavedNotice, setAutoSavedNotice] = useState(false);
 
   // Upload ảnh
   const [isConvertingMat, setIsConvertingMat] = useState(false);
@@ -143,14 +143,19 @@ export default function AdminTestStudio() {
       });
       if (res.ok) {
         const data = await res.json();
-        let list: OfflineChartItem[] = data.charts || [];
+        // Lọc bỏ triệt để các mẫu sample cũ nếu có
+        let list: OfflineChartItem[] = (data.charts || []).filter(
+          (c: OfflineChartItem) => c.tag !== 'sample' && !c.id.startsWith('preset-')
+        );
 
         // Đồng bộ với localStorage trên trình duyệt của Thầy Tôn
         try {
           const localSaved = localStorage.getItem('tuvi_offline_charts_local');
           if (localSaved) {
-            const localList: OfflineChartItem[] = JSON.parse(localSaved);
-            if (Array.isArray(localList) && localList.length > 0) {
+            let localList: OfflineChartItem[] = JSON.parse(localSaved);
+            if (Array.isArray(localList)) {
+              // Dọn sạch các mẫu cũ khỏi localStorage
+              localList = localList.filter((c) => c.tag !== 'sample' && !c.id.startsWith('preset-'));
               const serverIdSet = new Set(list.map((c) => c.id));
               const missingOnServer = localList.filter((c) => !serverIdSet.has(c.id));
               if (missingOnServer.length > 0) {
@@ -172,7 +177,7 @@ export default function AdminTestStudio() {
         }
 
         setOfflineCharts(list);
-        // Nếu form chưa có tên và có mẫu đầu tiên, nạp mẫu đầu tiên
+        // Nếu form chưa có tên và có hồ sơ khách, nạp hồ sơ đầu tiên
         if (!formData.hoTen && list.length > 0) {
           loadChartItem(list[0]);
         }
@@ -184,8 +189,8 @@ export default function AdminTestStudio() {
         const localSaved = localStorage.getItem('tuvi_offline_charts_local');
         if (localSaved) {
           const localList: OfflineChartItem[] = JSON.parse(localSaved);
-          if (Array.isArray(localList) && localList.length > 0) {
-            setOfflineCharts(localList);
+          if (Array.isArray(localList)) {
+            setOfflineCharts(localList.filter((c) => c.tag !== 'sample' && !c.id.startsWith('preset-')));
           }
         }
       } catch (e) {}
@@ -446,6 +451,38 @@ export default function AdminTestStudio() {
       `12 CUNG DỮ LIỆU:\n${cungDataStr}`
     );
 
+    // TỰ ĐỘNG LƯU VÀO SỔ TAY KHÁCH OFFLINE NGAY KHI AN SAO (Tránh quên bấm)
+    const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+    let savedChartId = activeChartId;
+    try {
+      const payload: Partial<OfflineChartItem> & { hoTen: string; duongSoData: DuLieuDuongSo } = {
+        id: activeChartId || undefined,
+        hoTen: cleanData.hoTen.trim(),
+        tag: chartTag === 'vip_offline' ? 'vip_offline' : 'offline',
+        notes: clientNotes.trim() || undefined,
+        duongSoData: cleanData,
+        lasoData: calculated,
+      };
+
+      const saveRes = await fetch('/api/admin/offline-charts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        body: JSON.stringify(payload),
+      });
+      if (saveRes.ok) {
+        const data = await saveRes.json();
+        if (data.chart) {
+          savedChartId = data.chart.id;
+          setActiveChartId(data.chart.id);
+          setAutoSavedNotice(true);
+          setTimeout(() => setAutoSavedNotice(false), 3000);
+          fetchOfflineCharts();
+        }
+      }
+    } catch (e) {
+      console.warn('Lỗi tự động lưu lá số offline:', e);
+    }
+
     const startTime = Date.now();
 
     try {
@@ -474,6 +511,27 @@ export default function AdminTestStudio() {
           const textOnly = json.reading.replace(/<[^>]*>/g, ' ');
           const words = textOnly.trim().split(/\s+/).filter(Boolean).length;
           setWordCount(words);
+
+          // Tự động cập nhật bài bình giải AI vào Sổ tay khách offline
+          try {
+            const updatePayload = {
+              id: savedChartId || activeChartId || undefined,
+              hoTen: cleanData.hoTen.trim(),
+              tag: chartTag === 'vip_offline' ? 'vip_offline' : 'offline',
+              notes: clientNotes.trim() || undefined,
+              duongSoData: cleanData,
+              lasoData: calculated,
+              readingHtml: json.reading,
+            };
+            await fetch('/api/admin/offline-charts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+              body: JSON.stringify(updatePayload),
+            });
+            fetchOfflineCharts();
+          } catch (e) {
+            console.warn('Lỗi tự động cập nhật bài bình giải vào Sổ tay:', e);
+          }
         } else {
           setReadingError(json.error || 'Không nhận được bài luận giải.');
         }
@@ -510,10 +568,26 @@ export default function AdminTestStudio() {
 
       if (res.ok) {
         const json = await res.json();
-        setChatHistory((prev) => [
-          ...prev,
+        const updatedChat = [
+          ...chatHistory,
           { q: userQuestion, a: json.answer || 'Không nhận được câu trả lời.' },
-        ]);
+        ];
+        setChatHistory(updatedChat);
+
+        // Tự động lưu lịch sử hỏi đáp vào Sổ tay
+        if (activeChartId) {
+          const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+          fetch('/api/admin/offline-charts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+            body: JSON.stringify({
+              id: activeChartId,
+              hoTen: formData.hoTen.trim(),
+              duongSoData: formData,
+              chatHistory: updatedChat,
+            }),
+          }).catch(() => {});
+        }
       } else {
         const errJson = await res.json().catch(() => ({}));
         setChatHistory((prev) => [
@@ -531,12 +605,8 @@ export default function AdminTestStudio() {
     }
   };
 
-  // Lọc danh sách kho lá số
+  // Lọc danh sách kho lá số khách offline
   const filteredOfflineCharts = offlineCharts.filter((c) => {
-    if (offlineFilterTag !== 'all') {
-      if (offlineFilterTag === 'sample' && c.tag !== 'sample') return false;
-      if (offlineFilterTag === 'offline' && c.tag === 'sample') return false;
-    }
     const term = offlineSearch.toLowerCase().trim();
     if (!term) return true;
     return (
@@ -547,9 +617,6 @@ export default function AdminTestStudio() {
     );
   });
 
-  const offlineCount = offlineCharts.filter((c) => c.tag !== 'sample').length;
-  const sampleCount = offlineCharts.filter((c) => c.tag === 'sample').length;
-
   return (
     <div className="space-y-6">
       {/* KHỐI 1: KHO LÁ SỐ KHÁCH OFFLINE & SỔ TAY SỐ MỆNH */}
@@ -558,13 +625,18 @@ export default function AdminTestStudio() {
           <div>
             <h3 className="font-bold text-base sm:text-lg text-amber-400 font-serif flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-amber-400" />
-              <span>Sổ Tay Khách Offline &amp; Kho Lá Số Mẫu Của Thầy Tôn</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono border border-amber-500/40">
-                {offlineCharts.length} hồ sơ
+              <span>Sổ Tay Khách Offline Của Thầy Tôn</span>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono border border-amber-500/40">
+                {offlineCharts.length} khách
               </span>
+              {autoSavedNotice && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-fade-in flex items-center gap-1 font-sans">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Đã tự động lưu
+                </span>
+              )}
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Lưu trữ hồ sơ khách hẹn offline, ảnh tướng mạo &amp; nhờ AI phân tích chuyên sâu trước khi xem trực tiếp.
+              Lưu trữ hồ sơ khách hẹn offline, ảnh tướng mạo &amp; AI phân tích chuyên sâu trước khi xem trực tiếp.
             </p>
           </div>
 
@@ -590,7 +662,7 @@ export default function AdminTestStudio() {
           </div>
         </div>
 
-        {/* Thanh tìm kiếm & bộ lọc tag */}
+        {/* Thanh tìm kiếm & Trạng thái tự động lưu */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -603,54 +675,22 @@ export default function AdminTestStudio() {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-950/70 p-1 rounded-xl border border-slate-800 text-xs">
-            <button
-              type="button"
-              onClick={() => setOfflineFilterTag('all')}
-              className={`px-2.5 py-1 rounded-lg transition ${
-                offlineFilterTag === 'all'
-                  ? 'bg-amber-500 text-slate-950 font-bold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Tất cả ({offlineCharts.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setOfflineFilterTag('offline')}
-              className={`px-2.5 py-1 rounded-lg transition ${
-                offlineFilterTag === 'offline'
-                  ? 'bg-emerald-500 text-slate-950 font-bold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Khách Offline ({offlineCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setOfflineFilterTag('sample')}
-              className={`px-2.5 py-1 rounded-lg transition ${
-                offlineFilterTag === 'sample'
-                  ? 'bg-sky-500 text-slate-950 font-bold'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Lá Số Mẫu ({sampleCount})
-            </button>
+          <div className="text-xs text-emerald-400/90 flex items-center gap-1.5 bg-emerald-950/30 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Tự động lưu vào sổ tay khi chạy An sao &amp; Luận giải</span>
           </div>
         </div>
 
         {/* Danh sách thẻ lá số trong kho */}
         {filteredOfflineCharts.length === 0 ? (
           <div className="p-6 text-center text-slate-500 text-xs italic bg-slate-950/40 rounded-xl border border-slate-800">
-            {offlineSearch ? 'Không tìm thấy hồ sơ phù hợp từ khóa.' : 'Chưa có hồ sơ nào trong sổ tay.'}
+            {offlineSearch ? 'Không tìm thấy hồ sơ phù hợp từ khóa.' : 'Chưa có hồ sơ khách nào trong sổ tay. Bấm "+ Khách Offline Mới" hoặc điền thông tin bên dưới để tạo lá số.'}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
             {filteredOfflineCharts.map((item) => {
               const isSelected = activeChartId === item.id;
               const ds = item.duongSoData || ({} as any);
-              const isSample = item.tag === 'sample';
 
               return (
                 <div
@@ -670,25 +710,23 @@ export default function AdminTestStudio() {
                         </span>
                         <span
                           className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
-                            isSample
-                              ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                            item.tag === 'vip_offline'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                               : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                           }`}
                         >
-                          {isSample ? 'Lá số mẫu' : 'Khách Offline'}
+                          {item.tag === 'vip_offline' ? '⭐ VIP Offline' : 'Khách Offline'}
                         </span>
                       </div>
 
-                      {!isSample && (
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteChart(item.id, item.hoTen, e)}
-                          className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition"
-                          title="Xóa hồ sơ này"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteChart(item.id, item.hoTen, e)}
+                        className="text-slate-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/15 transition border border-transparent hover:border-red-500/30 shrink-0"
+                        title="Xóa hồ sơ này khỏi sổ tay"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
                     <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
@@ -964,7 +1002,6 @@ export default function AdminTestStudio() {
             >
               <option value="offline">Khách Hẹn Offline</option>
               <option value="vip_offline">Khách VIP Offline</option>
-              <option value="sample">Lá Số Mẫu Nghiên Cứu</option>
             </select>
           </div>
         </div>
@@ -1047,34 +1084,35 @@ export default function AdminTestStudio() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Nút lưu vào Sổ Tay */}
+            {/* Nút cập nhật sổ tay thủ công */}
             <button
               type="button"
               onClick={handleSaveToOfflineCharts}
               disabled={isSavingChart || !formData.hoTen}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 hover:text-amber-300 text-slate-200 font-bold text-xs sm:text-sm rounded-xl border border-slate-700 transition disabled:opacity-50"
-              title="Lưu hồ sơ và kết quả vào sổ tay khách offline"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-800/80 hover:bg-slate-700 hover:text-amber-300 text-slate-300 font-semibold text-xs sm:text-sm rounded-xl border border-slate-700 transition disabled:opacity-50"
+              title="Hệ thống tự động lưu khi an sao, bấm nút này nếu muốn cập nhật lại ghi chú hoặc hồ sơ"
             >
               <Save className={`w-4 h-4 text-amber-400 ${isSavingChart ? 'animate-spin' : ''}`} />
-              <span>{isSavingChart ? 'Đang lưu...' : 'Lưu Vào Sổ Tay Khách'}</span>
+              <span>{isSavingChart ? 'Đang lưu...' : 'Lưu Thay Đổi'}</span>
             </button>
 
-            {/* Nút Chạy An Sao & Luận Giải */}
+            {/* Nút Chạy An Sao & Luận Giải (Tự Động Lưu) */}
             <button
               type="button"
               onClick={handleExecuteTest}
               disabled={isLoadingReading}
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-amber-500/20 transition transform hover:-translate-y-0.5 disabled:opacity-50"
+              title="Tự động lưu vào sổ tay khách offline và gọi AI bình giải"
             >
               {isLoadingReading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Đang Phân Tích Đa Phương Thức...</span>
+                  <span>Đang Phân Tích &amp; Tự Động Lưu...</span>
                 </>
               ) : (
                 <>
                   <Play className="w-4 h-4 fill-slate-950" />
-                  <span>Chạy An Sao &amp; Bình Giải Ngay</span>
+                  <span>An Sao, Bình Giải &amp; Tự Động Lưu</span>
                 </>
               )}
             </button>

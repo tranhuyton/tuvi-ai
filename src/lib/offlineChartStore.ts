@@ -42,105 +42,25 @@ function getDataFilePath(): string {
   }
 }
 
-const DEFAULT_PRESETS: OfflineChartItem[] = [
-  {
-    id: 'preset-thay-ton-1985',
-    hoTen: 'Trần Huy Tôn',
-    tag: 'sample',
-    notes: 'Lá số mẫu Thầy Tôn (Ất Sửu 1985). Nghiên cứu dịch lý & chiến lược kinh doanh.',
-    duongSoData: {
-      hoTen: 'Trần Huy Tôn',
-      gioiTinh: 'Nam',
-      ngayDuong: 15,
-      thangDuong: 8,
-      namDuong: 1985,
-      gioSinhVal: '4', // Thìn (07h-09h)
-      thongTinThem: 'Nghiên cứu dịch học, kinh doanh tư vấn chiến lược.',
-      chieuCao: 172,
-      canNang: 68,
-      tier: 'pro',
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'preset-nam-kim-1995',
-    hoTen: 'Nguyễn Văn An',
-    tag: 'sample',
-    notes: 'Mẫu Nam Mệnh Kim (Ất Hợi 1995). Quan tâm công danh khởi nghiệp công nghệ.',
-    duongSoData: {
-      hoTen: 'Nguyễn Văn An',
-      gioiTinh: 'Nam',
-      ngayDuong: 10,
-      thangDuong: 4,
-      namDuong: 1995,
-      gioSinhVal: '2', // Dần (03h-05h)
-      thongTinThem: 'Kỹ sư phần mềm, đang chuẩn bị khởi nghiệp công nghệ.',
-      chieuCao: 170,
-      canNang: 65,
-      tier: 'free',
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'preset-nu-thuy-1998',
-    hoTen: 'Lê Thùy Dương',
-    tag: 'sample',
-    notes: 'Mẫu Nữ Mệnh Thủy (Mậu Dần 1998). Quan tâm tài lộc ngành tài chính & gia đạo.',
-    duongSoData: {
-      hoTen: 'Lê Thùy Dương',
-      gioiTinh: 'Nữ',
-      ngayDuong: 22,
-      thangDuong: 11,
-      namDuong: 1998,
-      gioSinhVal: '6', // Ngọ (11h-13h)
-      thongTinThem: 'Làm việc trong lĩnh vực tài chính ngân hàng, quan tâm gia đạo.',
-      chieuCao: 160,
-      canNang: 48,
-      tier: 'pro',
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
-// Khởi tạo trước các mẫu mặc định vào cache để không bao giờ bị rỗng
-for (const item of DEFAULT_PRESETS) {
-  if (!chartsMap.has(item.id)) {
-    chartsMap.set(item.id, item);
-  }
-}
-
 function loadFromFile() {
   try {
     const dataFile = getDataFilePath();
     if (fs.existsSync(dataFile)) {
       const content = fs.readFileSync(dataFile, 'utf-8');
       const list: OfflineChartItem[] = JSON.parse(content);
-      if (Array.isArray(list) && list.length > 0) {
-        chartsMap.clear();
+      chartsMap.clear();
+      if (Array.isArray(list)) {
         for (const item of list) {
-          chartsMap.set(item.id, item);
+          // Lọc bỏ các mẫu sample cũ nếu có tồn tại
+          if (item.tag !== 'sample' && !item.id.startsWith('preset-')) {
+            chartsMap.set(item.id, item);
+          }
         }
-        return;
       }
+      return;
     }
-
-    // Nếu file chưa có hoặc rỗng, bảo đảm có các mẫu mặc định
-    for (const item of DEFAULT_PRESETS) {
-      if (!chartsMap.has(item.id)) {
-        chartsMap.set(item.id, item);
-      }
-    }
-    saveToFile();
   } catch (err) {
     console.warn('[OFFLINE CHARTS] Ngoại lệ loadFromFile (vẫn duy trì bộ nhớ):', err);
-    for (const item of DEFAULT_PRESETS) {
-      if (!chartsMap.has(item.id)) {
-        chartsMap.set(item.id, item);
-      }
-    }
   }
 }
 
@@ -162,19 +82,15 @@ function saveToFile() {
 loadFromFile();
 
 /**
- * Lấy danh sách toàn bộ lá số trong kho
+ * Lấy danh sách toàn bộ lá số trong kho khách offline
  */
 export async function getAllOfflineCharts(): Promise<OfflineChartItem[]> {
   if (chartsMap.size === 0) {
     loadFromFile();
   }
-  // Bảo đảm luôn có ít nhất các mẫu mặc định
-  if (chartsMap.size === 0) {
-    for (const item of DEFAULT_PRESETS) {
-      chartsMap.set(item.id, item);
-    }
-  }
-  const list = Array.from(chartsMap.values());
+  const list = Array.from(chartsMap.values()).filter(
+    (c) => c.tag !== 'sample' && !c.id.startsWith('preset-')
+  );
   list.sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
   return list;
 }
