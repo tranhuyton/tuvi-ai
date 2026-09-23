@@ -44,12 +44,12 @@ const THIEN_BAN_POINTS: Record<number, [number, number]> = {
 };
 
 const TT_COORDS: Record<number, { l: string; t: string }> = {
-  0: { l: '50%', t: '87.5%' },
-  2: { l: '12.5%', t: '75%' },
-  4: { l: '12.5%', t: '25%' },
-  6: { l: '50%', t: '12.5%' },
-  8: { l: '87.5%', t: '25%' },
-  10: { l: '87.5%', t: '75%' },
+  0: { l: '50%', t: '73%' },     // Tý - Sửu (đường ranh giới dọc giữa Sửu col 2 và Tý col 3 tại đỉnh row 4)
+  2: { l: '14.25%', t: '73%' },  // Dần - Mão (đường ranh giới ngang giữa Mão row 3 và Dần row 4)
+  4: { l: '14.25%', t: '27%' },  // Thìn - Tỵ (đường ranh giới ngang giữa Tỵ row 1 và Thìn row 2)
+  6: { l: '50%', t: '27%' },     // Ngọ - Mùi (đường ranh giới dọc giữa Ngọ col 2 và Mùi col 3 tại đáy row 1)
+  8: { l: '85.75%', t: '27%' },  // Thân - Dậu (đường ranh giới ngang giữa Thân row 1 và Dậu row 2)
+  10: { l: '85.75%', t: '73%' }, // Tuất - Hợi (đường ranh giới ngang giữa Tuất row 3 và Hợi row 4)
 };
 
 export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanCoProps) {
@@ -271,39 +271,14 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
             transformOrigin: 'top left',
           }}
         >
-          {/* Huy hiệu TUẦN và TRIỆT */}
-          {tuanGoc === trietGoc ? (
-            <div
-              className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-bold px-2 py-0.5 rounded-[2px] shadow-sm select-none text-center leading-tight pointer-events-none"
-              style={{ left: TT_COORDS[tuanGoc]?.l, top: TT_COORDS[tuanGoc]?.t }}
-            >
-              Triệt
-              <br />
-              Tuần
-            </div>
-          ) : (
-            <>
-              {TT_COORDS[tuanGoc] && (
-                <div
-                  className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-bold px-2 py-0.5 rounded-[2px] shadow-sm select-none text-center leading-tight pointer-events-none"
-                  style={{ left: TT_COORDS[tuanGoc]?.l, top: TT_COORDS[tuanGoc]?.t }}
-                >
-                  Tuần
-                </div>
-              )}
-              {TT_COORDS[trietGoc] && (
-                <div
-                  className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-bold px-2 py-0.5 rounded-[2px] shadow-sm select-none text-center leading-tight pointer-events-none"
-                  style={{ left: TT_COORDS[trietGoc]?.l, top: TT_COORDS[trietGoc]?.t }}
-                >
-                  Triệt
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Grid 4x4 */}
-          <div className="grid grid-cols-4 grid-rows-4 bg-black gap-[1px] border border-black relative z-0">
+          {/* Grid 4x4 với tỷ lệ mở rộng các cột xung quanh và thu gọn Thiên Bàn */}
+          <div
+            className="grid bg-black gap-[1px] border border-black relative z-0"
+            style={{
+              gridTemplateColumns: '1.14fr 0.86fr 0.86fr 1.14fr',
+              gridTemplateRows: '1.08fr 0.92fr 0.92fr 1.08fr',
+            }}
+          >
             {/* 12 Cung */}
             {cungs.map((cung) => {
               const pos = GRID_STYLES[cung.cungId];
@@ -322,7 +297,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
 
             {/* Thiên Bàn (Trung tâm 2x2) */}
             <div
-              className="bg-white flex relative z-0 p-3 sm:p-5 select-none font-sans text-black overflow-hidden"
+              className="bg-white flex relative z-0 p-2 sm:p-3.5 select-none font-sans text-black overflow-hidden"
               style={{
                 gridColumn: '2 / 4',
                 gridRow: '2 / 4',
@@ -363,11 +338,11 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
               </svg>
 
               {/* Cột thông tin đương số (Nằm đè lên trên đường kẻ: relative z-10) */}
-              <div className="relative z-10 w-full max-w-[340px] sm:max-w-[370px] text-xs sm:text-[13px] leading-relaxed text-black">
+              <div className="relative z-10 w-full text-[11px] sm:text-[12px] leading-snug text-black">
                 {/* Họ tên */}
-                <div className="flex items-baseline mb-2">
-                  <span className="w-20 text-black">Họ tên:</span>
-                  <span className="text-[#003399] font-bold text-sm sm:text-base tracking-wide">
+                <div className="flex items-baseline mb-1.5 sm:mb-2">
+                  <span className="w-16 sm:w-18 text-black">Họ tên:</span>
+                  <span className="text-[#003399] font-bold text-sm sm:text-[15px] tracking-wide">
                     {duongSo.hoTen}
                   </span>
                 </div>
@@ -376,17 +351,17 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
                 <div className="space-y-0.5">
                   {/* Năm */}
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Năm:</span>
-                    <span className="w-14 font-medium">{duongSo.namDuong}</span>
-                    <span className="w-10"></span>
+                    <span className="w-16 sm:w-18 text-black">Năm:</span>
+                    <span className="w-12 sm:w-14 font-medium">{duongSo.namDuong}</span>
+                    <span className="w-8 sm:w-10"></span>
                     <span className="text-[#003399] font-bold">{namCanChi}</span>
                   </div>
 
                   {/* Tháng */}
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Tháng:</span>
-                    <span className="w-14 font-medium">{duongSo.thangDuong}</span>
-                    <span className="w-10 text-black">
+                    <span className="w-16 sm:w-18 text-black">Tháng:</span>
+                    <span className="w-12 sm:w-14 font-medium">{duongSo.thangDuong}</span>
+                    <span className="w-8 sm:w-10 text-black">
                       {amLich.thangAmGoc}
                       {amLich.isLeap ? ' (N)' : ''}
                     </span>
@@ -395,82 +370,113 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
 
                   {/* Ngày */}
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Ngày:</span>
-                    <span className="w-14 font-medium">{duongSo.ngayDuong}</span>
-                    <span className="w-10 text-black">{amLich.ngayAm}</span>
+                    <span className="w-16 sm:w-18 text-black">Ngày:</span>
+                    <span className="w-12 sm:w-14 font-medium">{duongSo.ngayDuong}</span>
+                    <span className="w-8 sm:w-10 text-black">{amLich.ngayAm}</span>
                     <span className="text-[#003399] font-bold">{ngayCanChi}</span>
                   </div>
 
                   {/* Giờ */}
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Giờ:</span>
-                    <span className="w-24 font-medium truncate pr-1">{gioText}</span>
+                    <span className="w-16 sm:w-18 text-black">Giờ:</span>
+                    <span className="w-20 sm:w-22 font-medium truncate pr-1">{gioText}</span>
                     <span className="text-[#003399] font-bold">{gioCanChi}</span>
                   </div>
                 </div>
 
                 {/* Năm xem & Tuổi */}
-                <div className="mt-3 space-y-0.5">
+                <div className="mt-2 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Năm xem:</span>
-                    <span className="w-24 font-medium">{namXem}</span>
+                    <span className="w-16 sm:w-18 text-black">Năm xem:</span>
+                    <span className="w-20 sm:w-22 font-medium">{namXem}</span>
                     <span className="text-[#003399] font-bold">{namXemCanChi}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-20"></span>
-                    <span className="w-24"></span>
+                    <span className="w-16 sm:w-18"></span>
+                    <span className="w-20 sm:w-22"></span>
                     <span className="text-[#003399] font-bold">{tuoiAmXem} tuổi</span>
                   </div>
                 </div>
 
                 {/* Âm Dương */}
-                <div className="mt-3 space-y-0.5">
+                <div className="mt-2 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Âm Dương:</span>
+                    <span className="w-16 sm:w-18 text-black">Âm Dương:</span>
                     <span className="text-[#003399] font-bold">{amDuongTxt}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-20"></span>
+                    <span className="w-16 sm:w-18"></span>
                     <span className="text-[#003399] font-bold">{thuanNghichLy}</span>
                   </div>
                 </div>
 
                 {/* Mệnh & Cục */}
-                <div className="mt-2 space-y-0.5">
+                <div className="mt-1.5 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Mệnh:</span>
+                    <span className="w-16 sm:w-18 text-black">Mệnh:</span>
                     <span className="text-[#003399] font-bold">{napAmMenh || banMenh}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Cục:</span>
+                    <span className="w-16 sm:w-18 text-black">Cục:</span>
                     <span className="text-[#003399] font-bold">{tenCuc}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-20"></span>
+                    <span className="w-16 sm:w-18"></span>
                     <span className="text-[#003399] font-bold">{sinhKhac}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-20"></span>
+                    <span className="w-16 sm:w-18"></span>
                     <span className="text-[#003399] font-bold">{thanCuName}</span>
                   </div>
                 </div>
 
                 {/* Mệnh chủ & Thân chủ */}
-                <div className="mt-3 space-y-0.5">
+                <div className="mt-2 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Mệnh chủ:</span>
+                    <span className="w-16 sm:w-18 text-black">Mệnh chủ:</span>
                     <span className="text-[#003399] font-bold">{menhChu}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-20 text-black">Thân chủ:</span>
+                    <span className="w-16 sm:w-18 text-black">Thân chủ:</span>
                     <span className="text-[#003399] font-bold">{thanChu}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Không gian bên phải mở rộng (Tam hợp đi qua đây, không có QR/chữ đỏ quảng cáo) */}
+              {/* Không gian bên phải mở rộng */}
               <div className="flex-1" />
             </div>
+
+            {/* Huy hiệu TUẦN và TRIỆT đặt chuẩn xác trên các đường ranh giới của Grid */}
+            {tuanGoc === trietGoc ? (
+              <div
+                className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex items-center bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none gap-1 pointer-events-none tracking-wider"
+                style={{ left: TT_COORDS[tuanGoc]?.l, top: TT_COORDS[tuanGoc]?.t }}
+              >
+                <span>Triệt</span>
+                <span className="opacity-40">/</span>
+                <span>Tuần</span>
+              </div>
+            ) : (
+              <>
+                {TT_COORDS[tuanGoc] && (
+                  <div
+                    className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none text-center leading-none pointer-events-none tracking-wider"
+                    style={{ left: TT_COORDS[tuanGoc]?.l, top: TT_COORDS[tuanGoc]?.t }}
+                  >
+                    Tuần
+                  </div>
+                )}
+                {TT_COORDS[trietGoc] && (
+                  <div
+                    className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none text-center leading-none pointer-events-none tracking-wider"
+                    style={{ left: TT_COORDS[trietGoc]?.l, top: TT_COORDS[trietGoc]?.t }}
+                  >
+                    Triệt
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>

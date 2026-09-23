@@ -24,7 +24,7 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       style={style}
     >
       {/* 1. Header Cung: Can Chi - Tên Cung - Đại Vận */}
-      <div className="flex justify-between items-baseline pt-0.5 pb-1 px-0.5 text-xs">
+      <div className="flex justify-between items-baseline pt-2 pb-0.5 px-1 text-xs">
         {/* Can Chi viết tắt (VD: Q. Tị, G. Ngọ, Ấ. Mùi...) */}
         <span className="font-bold text-[#003399] text-[11px] sm:text-xs">
           {cung.canChi}
@@ -60,23 +60,23 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       </div>
 
       {/* 3. Phụ Tinh (Cột Tốt bên trái, Cột Xấu bên phải) */}
-      <div className="flex justify-between text-[10px] sm:text-[11px] leading-tight flex-grow px-0.5 my-1">
+      <div className="flex justify-between text-[9.5px] sm:text-[10px] leading-tight flex-grow px-1 my-0.5 gap-1">
         {/* Cột Trái: Sao tốt / Cát tinh */}
-        <div className="w-[50%] text-left space-y-0.5 pr-0.5">
+        <div className="w-[50%] text-left space-y-0.5 pr-0.5 min-w-0">
           {cung.phuTinhTot.map((sao, idx) => {
             const isBold = BOLD_STARS.has(sao.ten) || sao.ten.startsWith('Hóa');
             return (
               <div
                 key={idx}
-                className="truncate"
+                className="flex items-baseline whitespace-nowrap overflow-hidden text-ellipsis"
                 style={{ color: sao.color || '#000000' }}
-                title={sao.ten}
+                title={`${sao.ten}${sao.dacHam ? ` (${sao.dacHam})` : ''}`}
               >
                 <span className={isBold ? 'font-bold' : ''}>
                   {sao.ten}
                 </span>
                 {sao.dacHam && (
-                  <span className="text-[9.5px] ml-0.5 opacity-90 font-normal">
+                  <span className="text-[8.5px] sm:text-[9px] ml-0.5 opacity-90 font-normal">
                     ({sao.dacHam})
                   </span>
                 )}
@@ -86,21 +86,21 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
         </div>
 
         {/* Cột Phải: Sát tinh / Bại tinh */}
-        <div className="w-[50%] text-left space-y-0.5 pl-1">
+        <div className="w-[50%] text-left space-y-0.5 pl-0.5 min-w-0">
           {cung.phuTinhXau.map((sao, idx) => {
             const isBold = BOLD_STARS.has(sao.ten) || sao.ten === 'Hóa Kỵ';
             return (
               <div
                 key={idx}
-                className="truncate"
+                className="flex items-baseline whitespace-nowrap overflow-hidden text-ellipsis"
                 style={{ color: sao.color || '#cc0000' }}
-                title={sao.ten}
+                title={`${sao.ten}${sao.dacHam ? ` (${sao.dacHam})` : ''}`}
               >
                 <span className={isBold ? 'font-bold' : ''}>
                   {sao.ten}
                 </span>
                 {sao.dacHam && (
-                  <span className="text-[9.5px] ml-0.5 opacity-90 font-normal">
+                  <span className="text-[8.5px] sm:text-[9px] ml-0.5 opacity-90 font-normal">
                     ({sao.dacHam})
                   </span>
                 )}
@@ -111,14 +111,14 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       </div>
 
       {/* 4. Footer: Tiểu Vận - Vòng Trường Sinh - Nguyệt Vận */}
-      <div className="flex justify-between items-baseline text-[9.5px] sm:text-[10.5px] pt-1 border-t border-slate-300 mt-auto text-black px-0.5">
-        <span className="w-[32%] truncate text-left">
+      <div className="flex justify-between items-baseline text-[9px] sm:text-[10px] pt-1 pb-1.5 border-t border-slate-300 mt-auto text-black px-1 gap-0.5">
+        <span className="truncate text-left flex-1 min-w-0 text-slate-800">
           {cung.tieuVan.startsWith('năm') ? cung.tieuVan : `năm ${cung.tieuVan}`}
         </span>
-        <span className="w-[36%] text-center font-bold text-black truncate">
+        <span className="font-bold text-black whitespace-nowrap px-1 text-center flex-shrink-0">
           {cung.truongSinh}
         </span>
-        <span className="w-[32%] text-right truncate">
+        <span className="truncate text-right flex-1 min-w-0 text-slate-800">
           {cung.nguyetVan.startsWith('tháng') ? cung.nguyetVan : `tháng ${cung.nguyetVan}`}
         </span>
       </div>
