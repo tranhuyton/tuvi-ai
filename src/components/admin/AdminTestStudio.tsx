@@ -143,16 +143,52 @@ export default function AdminTestStudio() {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.charts) {
-          setOfflineCharts(data.charts);
-          // Nếu form chưa có tên và có mẫu đầu tiên, nạp mẫu đầu tiên
-          if (!formData.hoTen && data.charts.length > 0) {
-            loadChartItem(data.charts[0]);
+        let list: OfflineChartItem[] = data.charts || [];
+
+        // Đồng bộ với localStorage trên trình duyệt của Thầy Tôn
+        try {
+          const localSaved = localStorage.getItem('tuvi_offline_charts_local');
+          if (localSaved) {
+            const localList: OfflineChartItem[] = JSON.parse(localSaved);
+            if (Array.isArray(localList) && localList.length > 0) {
+              const serverIdSet = new Set(list.map((c) => c.id));
+              const missingOnServer = localList.filter((c) => !serverIdSet.has(c.id));
+              if (missingOnServer.length > 0) {
+                // Tự động đẩy bù các hồ sơ từ local lên server ngầm
+                missingOnServer.forEach((item) => {
+                  fetch('/api/admin/offline-charts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+                    body: JSON.stringify(item),
+                  }).catch(() => {});
+                });
+                list = [...list, ...missingOnServer];
+              }
+            }
           }
+          localStorage.setItem('tuvi_offline_charts_local', JSON.stringify(list));
+        } catch (e) {
+          // ignore localStorage error
+        }
+
+        setOfflineCharts(list);
+        // Nếu form chưa có tên và có mẫu đầu tiên, nạp mẫu đầu tiên
+        if (!formData.hoTen && list.length > 0) {
+          loadChartItem(list[0]);
         }
       }
     } catch (err) {
       console.warn('Không thể tải kho lá số offline:', err);
+      // Fallback từ localStorage nếu mạng lỗi
+      try {
+        const localSaved = localStorage.getItem('tuvi_offline_charts_local');
+        if (localSaved) {
+          const localList: OfflineChartItem[] = JSON.parse(localSaved);
+          if (Array.isArray(localList) && localList.length > 0) {
+            setOfflineCharts(localList);
+          }
+        }
+      } catch (e) {}
     } finally {
       setIsLoadingOffline(false);
     }
@@ -251,6 +287,19 @@ export default function AdminTestStudio() {
       const data = await res.json();
       if (res.ok && data.chart) {
         setActiveChartId(data.chart.id);
+        // Lưu ngay vào localStorage trên máy của Thầy Tôn
+        try {
+          const localSaved = localStorage.getItem('tuvi_offline_charts_local');
+          const localList: OfflineChartItem[] = localSaved ? JSON.parse(localSaved) : [];
+          const idx = localList.findIndex((c) => c.id === data.chart.id);
+          if (idx >= 0) {
+            localList[idx] = data.chart;
+          } else {
+            localList.unshift(data.chart);
+          }
+          localStorage.setItem('tuvi_offline_charts_local', JSON.stringify(localList));
+        } catch (e) {}
+
         alert(`✅ Đã lưu thành công hồ sơ của "${data.chart.hoTen}" vào Sổ Tay Số Mệnh của Thầy Tôn!`);
         fetchOfflineCharts();
       } else {
@@ -276,6 +325,16 @@ export default function AdminTestStudio() {
         headers: { 'x-admin-pin': pin },
       });
       if (res.ok) {
+        // Đồng bộ xóa khỏi localStorage
+        try {
+          const localSaved = localStorage.getItem('tuvi_offline_charts_local');
+          if (localSaved) {
+            const localList: OfflineChartItem[] = JSON.parse(localSaved);
+            const filtered = localList.filter((c) => c.id !== id);
+            localStorage.setItem('tuvi_offline_charts_local', JSON.stringify(filtered));
+          }
+        } catch (e) {}
+
         if (activeChartId === id) {
           handleNewCustomer();
         }

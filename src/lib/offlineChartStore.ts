@@ -26,8 +26,21 @@ const chartsMap: Map<string, OfflineChartItem> =
   globalThis.__tuviOfflineChartsCache || new Map<string, OfflineChartItem>();
 globalThis.__tuviOfflineChartsCache = chartsMap;
 
-const DATA_DIR = path.join(process.cwd(), '.data');
-const DATA_FILE = path.join(DATA_DIR, 'offline_charts.json');
+// Đường dẫn file lưu trữ an toàn: ưu tiên /tmp trên Vercel / serverless để tránh lỗi read-only filesystem
+function getDataFilePath(): string {
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join('/tmp', 'offline_charts.json');
+  }
+  const localDir = path.join(process.cwd(), '.data');
+  try {
+    if (!fs.existsSync(localDir)) {
+      fs.mkdirSync(localDir, { recursive: true });
+    }
+    return path.join(localDir, 'offline_charts.json');
+  } catch {
+    return path.join('/tmp', 'offline_charts.json');
+  }
+}
 
 const DEFAULT_PRESETS: OfflineChartItem[] = [
   {
@@ -92,48 +105,61 @@ const DEFAULT_PRESETS: OfflineChartItem[] = [
   },
 ];
 
+// Khởi tạo trước các mẫu mặc định vào cache để không bao giờ bị rỗng
+for (const item of DEFAULT_PRESETS) {
+  if (!chartsMap.has(item.id)) {
+    chartsMap.set(item.id, item);
+  }
+}
+
 function loadFromFile() {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    const dataFile = getDataFilePath();
+    if (fs.existsSync(dataFile)) {
+      const content = fs.readFileSync(dataFile, 'utf-8');
+      const list: OfflineChartItem[] = JSON.parse(content);
+      if (Array.isArray(list) && list.length > 0) {
+        chartsMap.clear();
+        for (const item of list) {
+          chartsMap.set(item.id, item);
+        }
+        return;
+      }
     }
 
-    if (fs.existsSync(DATA_FILE)) {
-      const content = fs.readFileSync(DATA_FILE, 'utf-8');
-      const list: OfflineChartItem[] = JSON.parse(content);
-      chartsMap.clear();
-      for (const item of list) {
+    // Nếu file chưa có hoặc rỗng, bảo đảm có các mẫu mặc định
+    for (const item of DEFAULT_PRESETS) {
+      if (!chartsMap.has(item.id)) {
         chartsMap.set(item.id, item);
       }
-    } else {
-      // Khởi tạo các mẫu ban đầu
-      chartsMap.clear();
-      for (const item of DEFAULT_PRESETS) {
-        chartsMap.set(item.id, item);
-      }
-      saveToFile();
     }
+    saveToFile();
   } catch (err) {
-    console.warn('[OFFLINE CHARTS] Không thể đọc file offline_charts.json:', err);
+    console.warn('[OFFLINE CHARTS] Ngoại lệ loadFromFile (vẫn duy trì bộ nhớ):', err);
+    for (const item of DEFAULT_PRESETS) {
+      if (!chartsMap.has(item.id)) {
+        chartsMap.set(item.id, item);
+      }
+    }
   }
 }
 
 function saveToFile() {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    const dataFile = getDataFilePath();
+    const dir = path.dirname(dataFile);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
     const list = Array.from(chartsMap.values());
-    fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), 'utf-8');
+    fs.writeFileSync(dataFile, JSON.stringify(list, null, 2), 'utf-8');
   } catch (err) {
-    console.warn('[OFFLINE CHARTS] Không thể ghi file offline_charts.json:', err);
+    console.warn('[OFFLINE CHARTS] Không thể ghi file:', err);
   }
 }
 
 // Khởi chạy khi module nạp
-if (chartsMap.size === 0) {
-  loadFromFile();
-}
+loadFromFile();
 
 /**
  * Lấy danh sách toàn bộ lá số trong kho
@@ -141,6 +167,12 @@ if (chartsMap.size === 0) {
 export async function getAllOfflineCharts(): Promise<OfflineChartItem[]> {
   if (chartsMap.size === 0) {
     loadFromFile();
+  }
+  // Bảo đảm luôn có ít nhất các mẫu mặc định
+  if (chartsMap.size === 0) {
+    for (const item of DEFAULT_PRESETS) {
+      chartsMap.set(item.id, item);
+    }
   }
   const list = Array.from(chartsMap.values());
   list.sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
