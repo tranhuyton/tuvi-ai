@@ -1,75 +1,121 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DuLieuDuongSo, LaSoData, ChatMessage, ServiceTier } from '@/types/tuvi';
 import { lapLaSoTuVi, buildCungDataPrompt } from '@/lib/tuvi/anSao';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
-import { Sparkles, Crown, Play, RefreshCw, Code2, Clock, FileText, User, Zap, ChevronRight, AlertCircle } from 'lucide-react';
+import {
+  Sparkles,
+  Crown,
+  Play,
+  RefreshCw,
+  Code2,
+  Clock,
+  FileText,
+  User,
+  Zap,
+  ChevronRight,
+  AlertCircle,
+  Image as ImageIcon,
+  X,
+  Save,
+  Trash2,
+  UserPlus,
+  BookOpen,
+  Search,
+  CheckCircle2,
+  Calendar,
+  MessageSquare,
+  Bookmark,
+} from 'lucide-react';
 import { GIO_ARR } from '@/lib/tuvi/constants';
+import { OfflineChartItem, OfflineChartTag } from '@/lib/offlineChartStore';
 
-interface PresetOption {
-  label: string;
-  desc: string;
-  data: DuLieuDuongSo;
+function isHeicFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
+  return (
+    name.endsWith('.heic') ||
+    name.endsWith('.heif') ||
+    type === 'image/heic' ||
+    type === 'image/heif' ||
+    type === 'image/heic-sequence' ||
+    type === 'image/heif-sequence'
+  );
 }
 
-const PRESETS: PresetOption[] = [
-  {
-    label: '👑 Lá Số Mẫu Thầy Tôn (1985)',
-    desc: 'Nam Mệnh Ất Sửu, xem vận hạn năm Bính Ngọ 2026',
-    data: {
-      hoTen: 'Trần Huy Tôn',
-      gioiTinh: 'Nam',
-      ngayDuong: 15,
-      thangDuong: 8,
-      namDuong: 1985,
-      gioSinhVal: '4', // Thìn (07h-09h)
-      thongTinThem: 'Nghiên cứu dịch học, kinh doanh tư vấn chiến lược.',
-      chieuCao: 172,
-      canNang: 68,
-      tier: 'pro',
-    },
-  },
-  {
-    label: '📜 Mẫu Nam Mệnh Kim (1995)',
-    desc: 'Ất Hợi, Sinh giờ Dần, muốn hỏi về công danh khởi nghiệp',
-    data: {
-      hoTen: 'Nguyễn Văn An',
-      gioiTinh: 'Nam',
-      ngayDuong: 10,
-      thangDuong: 4,
-      namDuong: 1995,
-      gioSinhVal: '2', // Dần (03h-05h)
-      thongTinThem: 'Kỹ sư phần mềm, đang chuẩn bị khởi nghiệp công nghệ.',
-      chieuCao: 170,
-      canNang: 65,
-      tier: 'free',
-    },
-  },
-  {
-    label: '✨ Mẫu Nữ Mệnh Thủy (1998)',
-    desc: 'Mậu Dần, Sinh giờ Ngọ, xem tình duyên và tài lộc',
-    data: {
-      hoTen: 'Lê Thùy Dương',
-      gioiTinh: 'Nữ',
-      ngayDuong: 22,
-      thangDuong: 11,
-      namDuong: 1998,
-      gioSinhVal: '6', // Ngọ (11h-13h)
-      thongTinThem: 'Làm việc trong lĩnh vực tài chính ngân hàng, quan tâm gia đạo.',
-      chieuCao: 160,
-      canNang: 48,
-      tier: 'pro',
-    },
-  },
-];
+function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth || height > maxWidth) {
+        if (width > height) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        } else {
+          width = Math.round((width * maxWidth) / height);
+          height = maxWidth;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas context không khả dụng'));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve(dataUrl);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Không thể tải hình ảnh để nén'));
+    };
+    img.src = objectUrl;
+  });
+}
+
+const EMPTY_FORM: DuLieuDuongSo = {
+  hoTen: '',
+  gioiTinh: 'Nam',
+  ngayDuong: 1,
+  thangDuong: 1,
+  namDuong: 1990,
+  gioSinhVal: '4', // Thìn
+  thongTinThem: '',
+  chieuCao: undefined,
+  canNang: undefined,
+  anhMat: undefined,
+  anhTay: undefined,
+  tier: 'pro',
+};
 
 export default function AdminTestStudio() {
-  const [formData, setFormData] = useState<DuLieuDuongSo>(PRESETS[0].data);
+  const [formData, setFormData] = useState<DuLieuDuongSo>(EMPTY_FORM);
   const [testTier, setTestTier] = useState<ServiceTier>('pro');
   const [testModel, setTestModel] = useState<string>('gemini-3.1-pro-preview');
+
+  // Kho lá số khách offline & mẫu
+  const [offlineCharts, setOfflineCharts] = useState<OfflineChartItem[]>([]);
+  const [isLoadingOffline, setIsLoadingOffline] = useState(false);
+  const [activeChartId, setActiveChartId] = useState<string | null>(null);
+  const [offlineSearch, setOfflineSearch] = useState('');
+  const [offlineFilterTag, setOfflineFilterTag] = useState<'all' | 'offline' | 'sample'>('all');
+  const [clientNotes, setClientNotes] = useState('');
+  const [chartTag, setChartTag] = useState<OfflineChartTag>('offline');
+  const [isSavingChart, setIsSavingChart] = useState(false);
+
+  // Upload ảnh
+  const [isConvertingMat, setIsConvertingMat] = useState(false);
+  const [isConvertingTay, setIsConvertingTay] = useState(false);
 
   // Lá số và kết quả
   const [laSo, setLaSo] = useState<LaSoData | null>(null);
@@ -87,15 +133,231 @@ export default function AdminTestStudio() {
   const [showPromptDebug, setShowPromptDebug] = useState(false);
   const [rawPromptText, setRawPromptText] = useState<string>('');
 
-  // Hàm chọn preset
-  const handleSelectPreset = (preset: PresetOption) => {
-    setFormData(preset.data);
-    setTestTier(preset.data.tier || 'pro');
-    setTestModel(preset.data.tier === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash');
+  // Tải danh sách lá số khách offline khi vào trang
+  const fetchOfflineCharts = async () => {
+    setIsLoadingOffline(true);
+    try {
+      const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+      const res = await fetch(`/api/admin/offline-charts?pin=${encodeURIComponent(pin)}`, {
+        headers: { 'x-admin-pin': pin },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.charts) {
+          setOfflineCharts(data.charts);
+          // Nếu form chưa có tên và có mẫu đầu tiên, nạp mẫu đầu tiên
+          if (!formData.hoTen && data.charts.length > 0) {
+            loadChartItem(data.charts[0]);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Không thể tải kho lá số offline:', err);
+    } finally {
+      setIsLoadingOffline(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOfflineCharts();
+  }, []);
+
+  // Xử lý nạp lá số từ kho vào Studio
+  const loadChartItem = (item: OfflineChartItem) => {
+    setActiveChartId(item.id);
+    setFormData({
+      ...item.duongSoData,
+      tier: item.duongSoData.tier || 'pro',
+    });
+    setClientNotes(item.notes || '');
+    setChartTag(item.tag || 'offline');
+    setTestTier(item.duongSoData.tier || 'pro');
+
+    if (item.readingHtml) {
+      setReadingHtml(item.readingHtml);
+      const textOnly = item.readingHtml.replace(/<[^>]*>/g, ' ');
+      const words = textOnly.trim().split(/\s+/).filter(Boolean).length;
+      setWordCount(words);
+    } else {
+      setReadingHtml(undefined);
+      setWordCount(null);
+    }
+
+    if (item.chatHistory && item.chatHistory.length > 0) {
+      setChatHistory(item.chatHistory);
+    } else {
+      setChatHistory([]);
+    }
+
+    // Tự động tính toán lá số
+    const cleanData: DuLieuDuongSo = {
+      ...item.duongSoData,
+      tier: item.duongSoData.tier || 'pro',
+    };
+    const calculated = lapLaSoTuVi(cleanData, 2026);
+    calculated.tier = item.duongSoData.tier || 'pro';
+    setLaSo(calculated);
+  };
+
+  // Tạo mới hồ sơ khách offline
+  const handleNewCustomer = () => {
+    setActiveChartId(null);
+    setFormData({
+      ...EMPTY_FORM,
+      namDuong: 1990,
+      ngayDuong: 15,
+      thangDuong: 6,
+    });
+    setClientNotes('');
+    setChartTag('offline');
+    setLaSo(null);
+    setReadingHtml(undefined);
+    setReadingError(undefined);
+    setChatHistory([]);
+    setGenerationTimeMs(null);
+    setWordCount(null);
+  };
+
+  // Lưu hoặc cập nhật lá số vào Sổ Tay Khách Offline
+  const handleSaveToOfflineCharts = async () => {
+    if (!formData.hoTen.trim()) {
+      alert('Vui lòng nhập Họ tên đương số trước khi lưu vào sổ tay!');
+      return;
+    }
+
+    setIsSavingChart(true);
+    try {
+      const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+      const payload: Partial<OfflineChartItem> & { hoTen: string; duongSoData: DuLieuDuongSo } = {
+        id: activeChartId || undefined,
+        hoTen: formData.hoTen.trim(),
+        tag: chartTag,
+        notes: clientNotes.trim() || undefined,
+        duongSoData: formData,
+        lasoData: laSo || undefined,
+        readingHtml: readingHtml || undefined,
+        chatHistory: chatHistory.length > 0 ? chatHistory : undefined,
+      };
+
+      const res = await fetch('/api/admin/offline-charts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pin': pin,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.chart) {
+        setActiveChartId(data.chart.id);
+        alert(`✅ Đã lưu thành công hồ sơ của "${data.chart.hoTen}" vào Sổ Tay Số Mệnh của Thầy Tôn!`);
+        fetchOfflineCharts();
+      } else {
+        alert(`Lỗi lưu lá số: ${data.error || 'Không xác định'}`);
+      }
+    } catch (err: any) {
+      alert(`Lỗi kết nối: ${err.message || err}`);
+    } finally {
+      setIsSavingChart(false);
+    }
+  };
+
+  // Xóa lá số khỏi kho
+  const handleDeleteChart = async (id: string, name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const confirmed = window.confirm(`Bạn có chắc chắn muốn xóa hồ sơ lá số của "${name}" khỏi sổ tay không?`);
+    if (!confirmed) return;
+
+    try {
+      const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+      const res = await fetch(`/api/admin/offline-charts?id=${encodeURIComponent(id)}&pin=${encodeURIComponent(pin)}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-pin': pin },
+      });
+      if (res.ok) {
+        if (activeChartId === id) {
+          handleNewCustomer();
+        }
+        fetchOfflineCharts();
+      } else {
+        const data = await res.json();
+        alert(`Lỗi: ${data.error || 'Không thể xóa'}`);
+      }
+    } catch (err: any) {
+      alert(`Lỗi: ${err.message || err}`);
+    }
+  };
+
+  // Xử lý upload ảnh (Hỗ trợ HEIC iPhone & nén)
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: 'anhMat' | 'anhTay',
+    setConverting: (val: boolean) => void
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setConverting(true);
+    try {
+      let targetBlob: Blob = file;
+      let isHeicFormat = isHeicFile(file);
+
+      if (!isHeicFormat) {
+        try {
+          const { isHeic } = await import('heic-to');
+          isHeicFormat = await isHeic(file);
+        } catch {
+          isHeicFormat = false;
+        }
+      }
+
+      if (isHeicFormat) {
+        let decodedNatively = false;
+        try {
+          const testImg = new Image();
+          const testUrl = URL.createObjectURL(file);
+          await new Promise<void>((resolve, reject) => {
+            testImg.onload = () => resolve();
+            testImg.onerror = () => reject();
+            testImg.src = testUrl;
+          });
+          URL.revokeObjectURL(testUrl);
+          decodedNatively = true;
+        } catch {
+          decodedNatively = false;
+        }
+
+        if (!decodedNatively) {
+          const { heicTo } = await import('heic-to');
+          const converted = await heicTo({
+            blob: file,
+            type: 'image/jpeg',
+            quality: 0.85,
+          });
+          targetBlob = converted;
+        }
+      }
+
+      const compressed = await compressImage(targetBlob, 800, 0.65);
+      setFormData((prev) => ({ ...prev, [field]: compressed }));
+    } catch (err: unknown) {
+      console.error('Lỗi xử lý ảnh:', err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      alert(`Không thể xử lý ảnh này (${errMsg}). Vui lòng thử lại hoặc chụp ảnh khác nhé!`);
+    } finally {
+      setConverting(false);
+      e.target.value = '';
+    }
   };
 
   // Hàm An sao & Luận giải
   const handleExecuteTest = async () => {
+    if (!formData.hoTen.trim()) {
+      alert('Vui lòng nhập Họ tên đương số trước khi an sao!');
+      return;
+    }
+
     setIsLoadingReading(true);
     setReadingHtml(undefined);
     setReadingError(undefined);
@@ -115,7 +377,14 @@ export default function AdminTestStudio() {
     // Chuẩn bị raw prompt để debug
     const cungDataStr = buildCungDataPrompt(calculated);
     setRawPromptText(
-      `[MODEL TEST]: ${testModel} | [TIER]: ${testTier}\nĐương số: ${calculated.duongSo.hoTen} (${calculated.duongSo.gioiTinh} - ${calculated.namCanChi})\nMệnh: ${calculated.banMenh} | Cục: ${calculated.tenCuc}\n12 CUNG DỮ LIỆU:\n${cungDataStr}`
+      `[MODEL TEST]: ${testModel} | [TIER]: ${testTier}\n` +
+      `Đương số: ${calculated.duongSo.hoTen} (${calculated.duongSo.gioiTinh} - ${calculated.namCanChi})\n` +
+      `Mệnh: ${calculated.banMenh} | Cục: ${calculated.tenCuc}\n` +
+      `Ảnh diện tướng: ${formData.anhMat ? 'Có kèm ảnh Base64' : 'Không có'}\n` +
+      `Ảnh chỉ tay: ${formData.anhTay ? 'Có kèm ảnh Base64' : 'Không có'}\n` +
+      `Chiều cao: ${formData.chieuCao || 'Chưa nhập'} cm | Cân nặng: ${formData.canNang || 'Chưa nhập'} kg\n` +
+      `Hoàn cảnh/Ghi chú: ${formData.thongTinThem || 'Không có'}\n` +
+      `12 CUNG DỮ LIỆU:\n${cungDataStr}`
     );
 
     const startTime = Date.now();
@@ -130,6 +399,8 @@ export default function AdminTestStudio() {
           thongTinThem: cleanData.thongTinThem,
           chieuCao: cleanData.chieuCao,
           canNang: cleanData.canNang,
+          anhMat: cleanData.anhMat,
+          anhTay: cleanData.anhTay,
           model: testModel,
         }),
       });
@@ -141,7 +412,6 @@ export default function AdminTestStudio() {
         const json = await res.json();
         if (json.reading) {
           setReadingHtml(json.reading);
-          // Đếm số từ
           const textOnly = json.reading.replace(/<[^>]*>/g, ' ');
           const words = textOnly.trim().split(/\s+/).filter(Boolean).length;
           setWordCount(words);
@@ -202,18 +472,225 @@ export default function AdminTestStudio() {
     }
   };
 
+  // Lọc danh sách kho lá số
+  const filteredOfflineCharts = offlineCharts.filter((c) => {
+    if (offlineFilterTag !== 'all') {
+      if (offlineFilterTag === 'sample' && c.tag !== 'sample') return false;
+      if (offlineFilterTag === 'offline' && c.tag === 'sample') return false;
+    }
+    const term = offlineSearch.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      c.hoTen.toLowerCase().includes(term) ||
+      (c.notes && c.notes.toLowerCase().includes(term)) ||
+      (c.duongSoData?.thongTinThem && c.duongSoData.thongTinThem.toLowerCase().includes(term)) ||
+      String(c.duongSoData?.namDuong || '').includes(term)
+    );
+  });
+
+  const offlineCount = offlineCharts.filter((c) => c.tag !== 'sample').length;
+  const sampleCount = offlineCharts.filter((c) => c.tag === 'sample').length;
+
   return (
     <div className="space-y-6">
-      {/* Bảng chọn Preset & Cấu hình Test */}
+      {/* KHỐI 1: KHO LÁ SỐ KHÁCH OFFLINE & SỔ TAY SỐ MỆNH */}
+      <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-md space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div>
+            <h3 className="font-bold text-base sm:text-lg text-amber-400 font-serif flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-amber-400" />
+              <span>Sổ Tay Khách Offline &amp; Kho Lá Số Mẫu Của Thầy Tôn</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono border border-amber-500/40">
+                {offlineCharts.length} hồ sơ
+              </span>
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Lưu trữ hồ sơ khách hẹn offline, ảnh tướng mạo &amp; nhờ AI phân tích chuyên sâu trước khi xem trực tiếp.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={handleNewCustomer}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>+ Khách Offline Mới</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={fetchOfflineCharts}
+              disabled={isLoadingOffline}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+              title="Làm mới danh sách"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOffline ? 'animate-spin text-amber-400' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Thanh tìm kiếm & bộ lọc tag */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={offlineSearch}
+              onChange={(e) => setOfflineSearch(e.target.value)}
+              placeholder="Tìm theo tên khách, năm sinh, ghi chú..."
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-950/70 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-950/70 p-1 rounded-xl border border-slate-800 text-xs">
+            <button
+              type="button"
+              onClick={() => setOfflineFilterTag('all')}
+              className={`px-2.5 py-1 rounded-lg transition ${
+                offlineFilterTag === 'all'
+                  ? 'bg-amber-500 text-slate-950 font-bold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Tất cả ({offlineCharts.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setOfflineFilterTag('offline')}
+              className={`px-2.5 py-1 rounded-lg transition ${
+                offlineFilterTag === 'offline'
+                  ? 'bg-emerald-500 text-slate-950 font-bold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Khách Offline ({offlineCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setOfflineFilterTag('sample')}
+              className={`px-2.5 py-1 rounded-lg transition ${
+                offlineFilterTag === 'sample'
+                  ? 'bg-sky-500 text-slate-950 font-bold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Lá Số Mẫu ({sampleCount})
+            </button>
+          </div>
+        </div>
+
+        {/* Danh sách thẻ lá số trong kho */}
+        {filteredOfflineCharts.length === 0 ? (
+          <div className="p-6 text-center text-slate-500 text-xs italic bg-slate-950/40 rounded-xl border border-slate-800">
+            {offlineSearch ? 'Không tìm thấy hồ sơ phù hợp từ khóa.' : 'Chưa có hồ sơ nào trong sổ tay.'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
+            {filteredOfflineCharts.map((item) => {
+              const isSelected = activeChartId === item.id;
+              const ds = item.duongSoData || ({} as any);
+              const isSample = item.tag === 'sample';
+
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => loadChartItem(item)}
+                  className={`p-3 rounded-xl border transition cursor-pointer relative group flex flex-col justify-between ${
+                    isSelected
+                      ? 'bg-amber-500/15 border-amber-500/70 shadow-md shadow-amber-500/10'
+                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-xs sm:text-sm text-slate-100 group-hover:text-amber-300 transition">
+                          {item.hoTen}
+                        </span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                            isSample
+                              ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          }`}
+                        >
+                          {isSample ? 'Lá số mẫu' : 'Khách Offline'}
+                        </span>
+                      </div>
+
+                      {!isSample && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteChart(item.id, item.hoTen, e)}
+                          className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition"
+                          title="Xóa hồ sơ này"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
+                      <span>{ds.gioiTinh}</span>
+                      <span>•</span>
+                      <span>
+                        Sinh {ds.ngayDuong}/{ds.thangDuong}/{ds.namDuong} (
+                        {GIO_ARR[ds.gioSinhVal]?.label || ds.gioSinhVal || '—'})
+                      </span>
+                    </div>
+
+                    {item.notes && (
+                      <p className="text-[11px] text-slate-400 mt-1.5 line-clamp-1 italic bg-slate-900/50 px-2 py-0.5 rounded border border-slate-800/80">
+                        📌 {item.notes}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Huy hiệu tính năng */}
+                  <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-slate-800/60 flex-wrap">
+                    {ds.anhMat && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
+                        <ImageIcon className="w-2.5 h-2.5" />
+                        <span>Diện tướng</span>
+                      </span>
+                    )}
+                    {ds.anhTay && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
+                        <ImageIcon className="w-2.5 h-2.5" />
+                        <span>Chỉ tay</span>
+                      </span>
+                    )}
+                    {item.readingHtml ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
+                        <CheckCircle2 className="w-2.5 h-2.5" />
+                        <span>Đã có bài luận</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-500">Chưa luận giải</span>
+                    )}
+                    <span className="text-[10px] text-amber-400 ml-auto font-medium">
+                      {isSelected ? 'Đang mở ▾' : 'Bấm để mở'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* KHỐI 2: FORM NHẬP LIỆU, TẢI ẢNH VÀ AN SAO */}
       <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md">
         <div className="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-slate-800 flex-wrap">
           <div>
             <h3 className="font-bold text-base sm:text-lg text-amber-400 font-serif flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-amber-400" />
-              <span>Studio An Sao &amp; Kiểm Thử Luận Giải (Admin Bypass)</span>
+              <span>Studio An Sao &amp; Kiểm Thử Luận Giải Đa Phương Thức</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Toàn quyền thử nghiệm cả 2 bản Free &amp; Pro, tự do đổi mô hình AI và kiểm tra hỏi đáp không giới hạn.
+              Hỗ trợ tải ảnh Diện tướng, Chỉ tay và kết hợp cùng mô hình Gemini 3.1 Pro (Bypass thanh toán).
             </p>
           </div>
 
@@ -229,42 +706,19 @@ export default function AdminTestStudio() {
           </div>
         </div>
 
-        {/* Nút chọn nhanh lá số mẫu */}
-        <div className="mb-5">
-          <label className="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2">
-            Chọn nhanh lá số mẫu:
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-            {PRESETS.map((p, idx) => {
-              const isSelected = formData.hoTen === p.data.hoTen && formData.namDuong === p.data.namDuong;
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSelectPreset(p)}
-                  className={`text-left p-3 rounded-xl border transition flex flex-col justify-between ${
-                    isSelected
-                      ? 'bg-amber-500/20 border-amber-500/60 text-amber-200'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300'
-                  }`}
-                >
-                  <div className="font-bold text-xs sm:text-sm">{p.label}</div>
-                  <div className="text-[11px] text-slate-400 mt-1">{p.desc}</div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Form nhập thông tin kiểm thử */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        {/* 1. Hàng thông tin cơ bản: Tên, Giới tính, Ngày sinh, Giờ sinh */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
-            <label className="block text-xs text-slate-400 font-medium mb-1">Họ tên đương số:</label>
+            <label className="block text-xs text-slate-400 font-medium mb-1">
+              Họ tên đương số: <span className="text-red-400">*</span>
+            </label>
             <input
               type="text"
+              required
               value={formData.hoTen}
               onChange={(e) => setFormData({ ...formData, hoTen: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-100"
+              placeholder="VD: Trần Văn Bình"
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-amber-400 transition"
             />
           </div>
 
@@ -273,7 +727,7 @@ export default function AdminTestStudio() {
             <select
               value={formData.gioiTinh}
               onChange={(e) => setFormData({ ...formData, gioiTinh: e.target.value as any })}
-              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-100"
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-amber-400 transition"
             >
               <option value="Nam">Nam</option>
               <option value="Nữ">Nữ</option>
@@ -281,7 +735,7 @@ export default function AdminTestStudio() {
           </div>
 
           <div>
-            <label className="block text-xs text-slate-400 font-medium mb-1">Ngày / Tháng / Năm sinh:</label>
+            <label className="block text-xs text-slate-400 font-medium mb-1">Ngày / Tháng / Năm sinh (Dương lịch):</label>
             <div className="flex gap-1">
               <input
                 type="number"
@@ -312,7 +766,7 @@ export default function AdminTestStudio() {
             <select
               value={formData.gioSinhVal}
               onChange={(e) => setFormData({ ...formData, gioSinhVal: e.target.value })}
-              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-100"
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-amber-400 transition"
             >
               {Object.entries(GIO_ARR).map(([key, val]) => (
                 <option key={key} value={key}>
@@ -323,8 +777,170 @@ export default function AdminTestStudio() {
           </div>
         </div>
 
-        {/* Tùy chọn Gói & Model kiểm thử */}
-        <div className="flex flex-wrap items-center justify-between gap-4 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+        {/* 2. Upload Ảnh Diện Tướng & Chỉ Tay (Tính năng mới) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
+          {/* Upload Ảnh Khuôn Mặt */}
+          <div>
+            <label className="block text-xs text-slate-300 font-semibold mb-1.5 flex items-center justify-between">
+              <span>📸 Ảnh Khuôn Mặt (Diện Tướng)</span>
+              <span className="text-[10px] text-slate-400 font-normal">Hỗ trợ JPG, PNG, HEIC (iPhone)</span>
+            </label>
+
+            {isConvertingMat ? (
+              <div className="rounded-xl border border-amber-500/40 h-28 bg-slate-900/80 flex flex-col items-center justify-center p-2 text-center">
+                <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1" />
+                <span className="text-xs text-amber-300">Đang nén ảnh iPhone...</span>
+              </div>
+            ) : formData.anhMat ? (
+              <div className="relative rounded-xl overflow-hidden border border-amber-500/50 h-28 bg-slate-900 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={formData.anhMat}
+                  alt="Ảnh diện tướng"
+                  className="max-h-full max-w-full object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, anhMat: undefined })}
+                  className="absolute top-1.5 right-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition"
+                  title="Xóa ảnh này"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-28 border border-dashed border-slate-700 hover:border-amber-400 rounded-xl cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 transition group">
+                <ImageIcon className="w-6 h-6 text-slate-500 group-hover:text-amber-400 transition mb-1" />
+                <span className="text-xs text-slate-300 group-hover:text-slate-100 font-medium">
+                  Tải ảnh mặt đương số
+                </span>
+                <span className="text-[10px] text-slate-500">Chụp rõ ngũ quan, trán, cằm</span>
+                <input
+                  type="file"
+                  accept="image/*,.heic,.heif,image/heic,image/heif"
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e, 'anhMat', setIsConvertingMat)}
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Upload Ảnh Chỉ Tay */}
+          <div>
+            <label className="block text-xs text-slate-300 font-semibold mb-1.5 flex items-center justify-between">
+              <span>✋ Ảnh Bàn Tay (Thủ Tướng)</span>
+              <span className="text-[10px] text-amber-400 font-normal">Nam trái, Nữ phải</span>
+            </label>
+
+            {isConvertingTay ? (
+              <div className="rounded-xl border border-amber-500/40 h-28 bg-slate-900/80 flex flex-col items-center justify-center p-2 text-center">
+                <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1" />
+                <span className="text-xs text-amber-300">Đang nén ảnh iPhone...</span>
+              </div>
+            ) : formData.anhTay ? (
+              <div className="relative rounded-xl overflow-hidden border border-amber-500/50 h-28 bg-slate-900 flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={formData.anhTay}
+                  alt="Ảnh chỉ tay"
+                  className="max-h-full max-w-full object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, anhTay: undefined })}
+                  className="absolute top-1.5 right-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition"
+                  title="Xóa ảnh này"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-28 border border-dashed border-slate-700 hover:border-amber-400 rounded-xl cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 transition group">
+                <ImageIcon className="w-6 h-6 text-slate-500 group-hover:text-amber-400 transition mb-1" />
+                <span className="text-xs text-slate-300 group-hover:text-slate-100 font-medium">
+                  Tải ảnh lòng bàn tay
+                </span>
+                <span className="text-[10px] text-slate-500">Chụp rõ các đường chỉ chính</span>
+                <input
+                  type="file"
+                  accept="image/*,.heic,.heif,image/heic,image/heif"
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e, 'anhTay', setIsConvertingTay)}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* 3. Chiều cao, Cân nặng & Ghi chú của khách */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div>
+            <label className="block text-xs text-slate-400 font-medium mb-1">Chiều cao (cm):</label>
+            <input
+              type="number"
+              value={formData.chieuCao || ''}
+              onChange={(e) => setFormData({ ...formData, chieuCao: e.target.value ? Number(e.target.value) : undefined })}
+              placeholder="VD: 172"
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-slate-400 font-medium mb-1">Cân nặng (kg):</label>
+            <input
+              type="number"
+              value={formData.canNang || ''}
+              onChange={(e) => setFormData({ ...formData, canNang: e.target.value ? Number(e.target.value) : undefined })}
+              placeholder="VD: 68"
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-100"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-slate-400 font-medium mb-1">Phân loại hồ sơ:</label>
+            <select
+              value={chartTag}
+              onChange={(e) => setChartTag(e.target.value as OfflineChartTag)}
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-100"
+            >
+              <option value="offline">Khách Hẹn Offline</option>
+              <option value="vip_offline">Khách VIP Offline</option>
+              <option value="sample">Lá Số Mẫu Nghiên Cứu</option>
+            </select>
+          </div>
+        </div>
+
+        {/* 4. Thông tin hoàn cảnh khách & Ghi chú riêng của Thầy Tôn */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+          <div>
+            <label className="block text-xs text-slate-400 font-medium mb-1">
+              Bối cảnh đương số / Câu hỏi quan tâm (Gửi AI phân tích):
+            </label>
+            <textarea
+              rows={2}
+              value={formData.thongTinThem || ''}
+              onChange={(e) => setFormData({ ...formData, thongTinThem: e.target.value })}
+              placeholder="VD: Đang kinh doanh bất động sản, muốn hỏi thời điểm bán đất & định hướng mở rộng cuối năm..."
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-100 resize-none focus:outline-none focus:border-amber-400 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-amber-400 font-medium mb-1">
+              📌 Ghi chú riêng của Thầy Tôn (Lưu sổ tay cá nhân):
+            </label>
+            <textarea
+              rows={2}
+              value={clientNotes}
+              onChange={(e) => setClientNotes(e.target.value)}
+              placeholder="VD: Khách hẹn 15h thứ 7 tại Highland Cafe, tính cách thẳng thắn, cần lưu ý sao Hóa Kỵ cung Phu thê..."
+              className="w-full px-3 py-2 bg-slate-950/70 border border-amber-500/40 rounded-lg text-xs text-slate-100 resize-none focus:outline-none focus:border-amber-400 transition"
+            />
+          </div>
+        </div>
+
+        {/* 5. Tùy chọn Gói, Model & Nút Hành Động */}
+        <div className="flex flex-wrap items-center justify-between gap-4 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xs font-bold text-slate-300">Gói kiểm thử:</span>
             <div className="flex rounded-lg overflow-hidden border border-slate-700 p-0.5 bg-slate-900">
@@ -371,24 +987,39 @@ export default function AdminTestStudio() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleExecuteTest}
-            disabled={isLoadingReading}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-amber-500/20 transition transform hover:-translate-y-0.5 disabled:opacity-50"
-          >
-            {isLoadingReading ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Đang Bình Giải AI...</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 fill-slate-950" />
-                <span>Chạy An Sao &amp; Bình Giải Ngay</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Nút lưu vào Sổ Tay */}
+            <button
+              type="button"
+              onClick={handleSaveToOfflineCharts}
+              disabled={isSavingChart || !formData.hoTen}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 hover:text-amber-300 text-slate-200 font-bold text-xs sm:text-sm rounded-xl border border-slate-700 transition disabled:opacity-50"
+              title="Lưu hồ sơ và kết quả vào sổ tay khách offline"
+            >
+              <Save className={`w-4 h-4 text-amber-400 ${isSavingChart ? 'animate-spin' : ''}`} />
+              <span>{isSavingChart ? 'Đang lưu...' : 'Lưu Vào Sổ Tay Khách'}</span>
+            </button>
+
+            {/* Nút Chạy An Sao & Luận Giải */}
+            <button
+              type="button"
+              onClick={handleExecuteTest}
+              disabled={isLoadingReading}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-amber-500/20 transition transform hover:-translate-y-0.5 disabled:opacity-50"
+            >
+              {isLoadingReading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Đang Phân Tích Đa Phương Thức...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 fill-slate-950" />
+                  <span>Chạy An Sao &amp; Bình Giải Ngay</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Khung Raw Prompt Debug */}
@@ -426,6 +1057,28 @@ export default function AdminTestStudio() {
       {laSo && (
         <div className="space-y-6">
           <LaSoBanCo laSo={laSo} onReset={() => setLaSo(null)} />
+
+          {/* Thanh công cụ lưu nhanh khi đã có kết quả */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-amber-500/40 text-xs flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-slate-200">
+              <Bookmark className="w-4 h-4 text-amber-400" />
+              <span>
+                Đang xem lá số: <strong className="text-amber-300">{formData.hoTen}</strong>
+                {formData.anhMat && ' • Đã kèm ảnh diện tướng'}
+                {formData.anhTay && ' • Đã kèm ảnh chỉ tay'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveToOfflineCharts}
+              disabled={isSavingChart}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-lg transition"
+            >
+              <Save className="w-3.5 h-3.5 fill-slate-950" />
+              <span>{activeChartId ? 'Cập Nhật Vào Sổ Tay' : 'Lưu Vào Sổ Tay Khách'}</span>
+            </button>
+          </div>
 
           {/* Bài bình giải AI */}
           <LuanGiaiAI
