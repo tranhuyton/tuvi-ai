@@ -87,7 +87,7 @@ export const THAN_CHU: Record<number, string> = {
 export const DAC_HAM: Record<string, string[]> = {
   'TỬ VI': ['B', 'Đ', 'M', 'B', 'V', 'M', 'M', 'Đ', 'V', 'B', 'V', 'B'],
   'THIÊN CƠ': ['Đ', 'Đ', 'V', 'M', 'M', 'B', 'Đ', 'Đ', 'B', 'M', 'M', 'B'],
-  'THÁI DƯƠNG': ['H', 'Đ', 'V', 'V', 'V', 'M', 'M', 'Đ', 'B', 'H', 'H', 'H'],
+  'THÁI DƯƠNG': ['H', 'Đ', 'V', 'V', 'V', 'M', 'M', 'Đ', 'H', 'H', 'H', 'H'],
   'VŨ KHÚC': ['V', 'M', 'V', 'B', 'M', 'H', 'V', 'M', 'V', 'B', 'M', 'H'],
   'THIÊN ĐỒNG': ['V', 'H', 'B', 'Đ', 'H', 'Đ', 'H', 'H', 'M', 'H', 'H', 'Đ'],
   'LIÊM TRINH': ['B', 'Đ', 'V', 'H', 'M', 'H', 'B', 'Đ', 'V', 'H', 'M', 'H'],
@@ -96,8 +96,8 @@ export const DAC_HAM: Record<string, string[]> = {
   'THAM LANG': ['V', 'M', 'Đ', 'H', 'V', 'H', 'V', 'M', 'Đ', 'H', 'V', 'H'],
   'CỰ MÔN': ['V', 'H', 'M', 'M', 'H', 'B', 'V', 'H', 'Đ', 'M', 'H', 'V'],
   'THIÊN TƯỚNG': ['V', 'M', 'Đ', 'H', 'V', 'B', 'V', 'M', 'Đ', 'H', 'V', 'B'],
-  'THIÊN LƯƠNG': ['V', 'V', 'V', 'M', 'M', 'H', 'M', 'V', 'B', 'H', 'B', 'H'],
-  'THẤT SÁT': ['M', 'Đ', 'M', 'H', 'V', 'B', 'M', 'Đ', 'M', 'H', 'V', 'B'],
+  'THIÊN LƯƠNG': ['V', 'V', 'V', 'M', 'M', 'H', 'M', 'V', 'B', 'H', 'M', 'H'],
+  'THẤT SÁT': ['M', 'Đ', 'M', 'H', 'V', 'B', 'M', 'Đ', 'M', 'H', 'V', 'V'],
   'PHÁ QUÂN': ['M', 'V', 'H', 'H', 'M', 'H', 'M', 'V', 'H', 'H', 'M', 'H'],
 };
 
@@ -110,7 +110,7 @@ export const CHINH_TINH_COLORS: Record<string, string> = {
   'LIÊM TRINH': '#cc0000', // Hỏa - Đỏ tươi
   'THIÊN CƠ': '#008000',   // Mộc - Xanh lục
   'THAM LANG': '#008000',  // Mộc - Xanh lục
-  'VŨ KHÚC': '#555555',    // Kim - Xám kim
+  'VŨ KHÚC': '#b45309',    // Kim - Vàng đồng / Xám kim
   'THIÊN ĐỒNG': '#000000', // Thủy - Đen tuyền
   'THÁI ÂM': '#000000',    // Thủy - Đen tuyền
   'CỰ MÔN': '#000000',     // Thủy - Đen tuyền
@@ -119,11 +119,12 @@ export const CHINH_TINH_COLORS: Record<string, string> = {
 };
 
 export const BAD_STARS = [
-  'Tang Môn', 'Tuế Phá', 'Đại Hao', 'Tiểu Hao', 'Bệnh Phù', 'Quan Phủ', 'Phục Binh', 'Tử Phù',
-  'Thiếu Âm', 'Thiếu Dương', 'Quan Phù', 'Điếu Khách', 'Trực Phù', 'Kiếp Sát', 'Địa Võng',
-  'Thiên La', 'Thiên Thương', 'Thiên Sứ', 'Kình Dương', 'Đà La', 'Hỏa Tinh', 'Linh Tinh',
-  'Địa Không', 'Địa Kiếp', 'Cô Thần', 'Quả Tú', 'Thiên Khốc', 'Thiên Hư', 'Thiên Hình', 'Thiên Diêu',
-  'Đẩu Quân', 'Lưu Hà', 'Phi Liêm', 'Phá Toái', 'Thiên Không'
+  'Thái Tuế', 'Tang Môn', 'Bạch Hổ', 'Quan Phù', 'Quan Phủ', 'Tử Phù', 'Tuế Phá', 'Điếu Khách', 'Trực Phù',
+  'Kình Dương', 'Đà La', 'Hỏa Tinh', 'Linh Tinh', 'Địa Không', 'Địa Kiếp', 'Thiên Không',
+  'Hóa Kỵ', 'Thiên Hình', 'Thiên Diêu', 'Thiên Khốc', 'Thiên Hư', 'Kiếp Sát',
+  'Cô Thần', 'Quả Tú', 'Thiên La', 'Địa Võng', 'Thiên Thương', 'Thiên Sứ',
+  'Đại Hao', 'Tiểu Hao', 'Bệnh Phù', 'Phục Binh', 'Phi Liêm', 'Tướng Quân',
+  'Đẩu Quân', 'Lưu Hà', 'Phá Toái'
 ];
 
 export const HOA_LOC_MAP: Record<number, string> = {
@@ -180,13 +181,13 @@ export const NAP_AM_MAP: Record<string, string> = {
 };
 
 export const PHU_TINH_DAC_HAM: Record<string, Record<number, string>> = {
-  'Kình Dương': { 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ' },
-  'Đà La': { 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ' },
+  'Kình Dương': { 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ', 0: 'H', 2: 'H', 3: 'H', 5: 'H', 6: 'H', 8: 'H', 9: 'H', 11: 'H' },
+  'Đà La': { 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ', 0: 'H', 2: 'H', 3: 'H', 5: 'H', 6: 'H', 8: 'H', 9: 'H', 11: 'H' },
   'Hỏa Tinh': { 2: 'Đ', 3: 'Đ', 4: 'Đ', 5: 'Đ', 6: 'Đ', 0: 'H', 1: 'H', 7: 'H', 8: 'H', 9: 'H', 10: 'H', 11: 'H' },
   'Linh Tinh': { 2: 'Đ', 3: 'Đ', 4: 'Đ', 5: 'Đ', 6: 'Đ', 0: 'H', 1: 'H', 7: 'H', 8: 'H', 9: 'H', 10: 'H', 11: 'H' },
   'Địa Không': { 2: 'Đ', 5: 'Đ', 8: 'Đ', 11: 'Đ', 0: 'H', 1: 'H', 3: 'H', 4: 'H', 6: 'H', 7: 'H', 9: 'H', 10: 'H' },
   'Địa Kiếp': { 2: 'Đ', 5: 'Đ', 8: 'Đ', 11: 'Đ', 0: 'H', 1: 'H', 3: 'H', 4: 'H', 6: 'H', 7: 'H', 9: 'H', 10: 'H' },
-  'Thiên Hình': { 2: 'Đ', 3: 'Đ', 4: 'Đ', 9: 'Đ' },
+  'Thiên Hình': { 2: 'Đ', 3: 'Đ', 4: 'Đ', 9: 'Đ', 0: 'H', 1: 'H', 5: 'H', 6: 'H', 7: 'H', 8: 'H', 10: 'H', 11: 'H' },
   'Thiên Diêu': { 3: 'Đ', 9: 'Đ', 0: 'H', 1: 'H', 2: 'H', 4: 'H', 5: 'H', 6: 'H', 7: 'H', 8: 'H', 10: 'H', 11: 'H' },
   'Tang Môn': { 2: 'Đ', 3: 'Đ', 8: 'Đ', 9: 'Đ', 0: 'H', 1: 'H', 4: 'H', 5: 'H', 6: 'H', 7: 'H', 10: 'H', 11: 'H' },
   'Bạch Hổ': { 2: 'Đ', 3: 'Đ', 8: 'Đ', 9: 'Đ', 0: 'H', 1: 'H', 4: 'H', 5: 'H', 6: 'H', 7: 'H', 10: 'H', 11: 'H' },
@@ -197,5 +198,143 @@ export const PHU_TINH_DAC_HAM: Record<string, Record<number, string>> = {
   'Văn Xương': { 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ', 5: 'Đ', 11: 'Đ', 9: 'M', 0: 'M', 3: 'H', 6: 'H' },
   'Văn Khúc': { 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ', 5: 'Đ', 11: 'Đ', 9: 'M', 0: 'M', 3: 'H', 6: 'H' },
   'Thiên Mã': { 5: 'Đ', 8: 'Đ', 2: 'H', 11: 'H' },
-  'Lộc Tồn': { 2: 'B', 3: 'B', 5: 'B', 6: 'B', 8: 'B', 9: 'B', 11: 'B', 0: 'B' },
+  'Lộc Tồn': { 2: 'M', 3: 'M', 5: 'M', 6: 'M', 8: 'M', 9: 'M', 11: 'M', 0: 'M', 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ' },
+};
+
+export const THIEN_TRU_MAP: Record<number, number> = {
+  0: 5, // Giáp tại Tỵ
+  1: 6, // Ất tại Ngọ
+  2: 0, // Bính tại Tý
+  3: 5, // Đinh tại Tỵ
+  4: 6, // Mậu tại Ngọ
+  5: 8, // Kỷ tại Thân
+  6: 2, // Canh tại Dần
+  7: 3, // Tân tại Mão
+  8: 9, // Nhâm tại Dậu
+  9: 10, // Quý tại Tuất
+};
+
+export const LUU_HA_MAP: Record<number, number> = {
+  0: 9,  // Giáp tại Dậu
+  1: 10, // Ất tại Tuất
+  2: 7,  // Bính tại Mùi
+  3: 4,  // Đinh tại Thìn
+  4: 5,  // Mậu tại Tỵ
+  5: 6,  // Kỷ tại Ngọ
+  6: 8,  // Canh tại Thân
+  7: 3,  // Tân tại Mão
+  8: 11, // Nhâm tại Hợi
+  9: 2,  // Quý tại Dần
+};
+
+export const PHA_TOAI_MAP: Record<number, number> = {
+  0: 5, 6: 5, 3: 5, 9: 5,     // Tý Ngọ Mão Dậu tại Tỵ
+  2: 9, 8: 9, 5: 9, 11: 9,    // Dần Thân Tỵ Hợi tại Dậu
+  4: 1, 10: 1, 1: 1, 7: 1,    // Thìn Tuất Sửu Mùi tại Sửu
+};
+
+export const STAR_NGU_HANH_COLOR: Record<string, string> = {
+  // Hỏa - Đỏ tươi (#cc0000)
+  'THÁI DƯƠNG': '#cc0000',
+  'LIÊM TRINH': '#cc0000',
+  'Hỏa Tinh': '#cc0000',
+  'Linh Tinh': '#cc0000',
+  'Địa Không': '#cc0000',
+  'Địa Kiếp': '#cc0000',
+  'Thiên Không': '#cc0000',
+  'Thái Tuế': '#cc0000',
+  'Tang Môn': '#cc0000',
+  'Bạch Hổ': '#cc0000',
+  'Phục Binh': '#cc0000',
+  'Tuế Phá': '#cc0000',
+  'Tiểu Hao': '#cc0000',
+  'Đại Hao': '#cc0000',
+  'Điếu Khách': '#cc0000',
+  'Trực Phù': '#cc0000',
+  'Quan Phù': '#cc0000',
+  'Quan Phủ': '#cc0000',
+  'Tử Phù': '#cc0000',
+  'Hồng Loan': '#cc0000',
+  'Thiên Hỷ': '#cc0000',
+  'Thiên Khôi': '#cc0000',
+  'Thiên Việt': '#cc0000',
+  'Thiên Mã': '#cc0000',
+  'Thiên Đức': '#cc0000',
+  'Nguyệt Đức': '#cc0000',
+  'Phúc Đức': '#cc0000',
+  'Thiếu Dương': '#cc0000',
+  'Hỷ Thần': '#cc0000',
+  'Lực Sĩ': '#cc0000',
+  'Kiếp Sát': '#cc0000',
+  'Đẩu Quân': '#cc0000',
+  'Phá Toái': '#cc0000',
+  'Thiên Hình': '#cc0000',
+
+  // Mộc - Xanh Lá (#008000)
+  'THIÊN CƠ': '#008000',
+  'THAM LANG': '#008000',
+  'Hóa Lộc': '#008000',
+  'Hóa Quyền': '#008000',
+  'Hóa Khoa': '#008000',
+  'Long Trì': '#008000',
+  'Phượng Các': '#008000',
+  'Giải Thần': '#008000',
+  'Đào Hoa': '#008000',
+  'Thiên Y': '#008000',
+  'Tướng Quân': '#008000',
+  'Đường Phù': '#008000',
+  'Thanh Long': '#008000',
+
+  // Thổ & Kim - Vàng Hổ Phách / Vàng Nâu (#c28b00)
+  'TỬ VI': '#c28b00',
+  'THIÊN PHỦ': '#c28b00',
+  'THIÊN LƯƠNG': '#c28b00',
+  'THẤT SÁT': '#c28b00',
+  'VŨ KHÚC': '#b45309',
+  'Lộc Tồn': '#c28b00',
+  'Bác Sĩ': '#c28b00',
+  'Tả Phù': '#c28b00',
+  'Tam Thai': '#c28b00',
+  'Bát Tọa': '#c28b00',
+  'Ân Quang': '#c28b00',
+  'Thiên Quý': '#c28b00',
+  'Thiên Quan': '#c28b00',
+  'Thiên Phúc': '#c28b00',
+  'Thiên Tài': '#c28b00',
+  'Thiên Thọ': '#c28b00',
+  'Phong Cáo': '#c28b00',
+  'Thai Phụ': '#c28b00',
+  'Tấu Thư': '#c28b00',
+  'Quốc Ấn': '#c28b00',
+  'Thiên Trù': '#c28b00',
+  'Thiên Giải': '#c28b00',
+  'Địa Giải': '#c28b00',
+  'Cô Thần': '#c28b00',
+  'Quả Tú': '#c28b00',
+  'Thiên Thương': '#c28b00',
+  'Thiên Sứ': '#c28b00',
+  'Bệnh Phù': '#c28b00',
+
+  // Thủy & Kim - Đen Tuyền (#000000)
+  'THIÊN ĐỒNG': '#000000',
+  'THÁI ÂM': '#000000',
+  'CỰ MÔN': '#000000',
+  'THIÊN TƯỚNG': '#000000',
+  'PHÁ QUÂN': '#000000',
+  'Hóa Kỵ': '#000000',
+  'Văn Xương': '#000000',
+  'Văn Khúc': '#000000',
+  'Kình Dương': '#000000',
+  'Đà La': '#000000',
+  'Thiên Khốc': '#000000',
+  'Thiên Hư': '#000000',
+  'Thiên Diêu': '#000000',
+  'Thiên La': '#000000',
+  'Địa Võng': '#000000',
+  'Phi Liêm': '#000000',
+  'Lưu Hà': '#000000',
+  'Thiếu Âm': '#000000',
+  'Long Đức': '#000000',
+  'Hữu Bật': '#000000',
+  'Hoa Cái': '#000000',
 };

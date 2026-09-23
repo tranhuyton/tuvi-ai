@@ -18,6 +18,10 @@ import {
   NAP_AM_MAP,
   PHU_TINH_DAC_HAM,
   GIO_ARR,
+  THIEN_TRU_MAP,
+  LUU_HA_MAP,
+  PHA_TOAI_MAP,
+  STAR_NGU_HANH_COLOR,
 } from './constants';
 
 function mod12(n: number): number {
@@ -271,6 +275,13 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
     addPt(chiNamIdx + i, vTt[i]);
   }
 
+  // Thiên Không (đi cùng Thiếu Dương, đứng trước Thái Tuế 1 cung)
+  addPt(chiNamIdx + 1, 'Thiên Không');
+
+  // Thiên Đức & Nguyệt Đức (theo Chi năm sinh)
+  addPt(9 + chiNamIdx, 'Thiên Đức');
+  addPt(5 + chiNamIdx, 'Nguyệt Đức');
+
   // Lộc Tồn, Kình Dương, Đà La & Vòng Bác Sĩ
   const locMap: Record<number, number> = {
     0: 2, 1: 3, 2: 5, 3: 6, 4: 5, 5: 6, 6: 8, 7: 9, 8: 11, 9: 0
@@ -279,6 +290,10 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   addPt(loc, 'Lộc Tồn');
   addPt(loc + 1, 'Kình Dương');
   addPt(loc - 1, 'Đà La');
+
+  // Quốc Ấn & Đường Phù (khởi từ Lộc Tồn)
+  addPt(loc + 8, 'Quốc Ấn');
+  addPt(loc + 5, 'Đường Phù');
 
   const vBs = [
     'Bác Sĩ', 'Lực Sĩ', 'Thanh Long', 'Tiểu Hao', 'Tướng Quân', 'Tấu Thư',
@@ -325,6 +340,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   addPt(10 - chiNamIdx, 'Phượng Các');
   addPt(6 - chiNamIdx, 'Thiên Khốc');
   addPt(6 + chiNamIdx, 'Thiên Hư');
+  addPt(PHA_TOAI_MAP[chiNamIdx], 'Phá Toái');
 
   const maMap: Record<number, number> = { 2: 8, 6: 8, 10: 8, 8: 2, 0: 2, 4: 2, 5: 11, 9: 11, 1: 11, 11: 5, 3: 5, 7: 5 };
   addPt(maMap[chiNamIdx], 'Thiên Mã');
@@ -347,8 +363,8 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   addPt(9 + thangAm - 1, 'Thiên Hình');
   addPt(1 + thangAm - 1, 'Thiên Diêu');
   addPt(7 + thangAm - 1, 'Thiên Y');
-  addPt(8 - thangAm + 1, 'Thiên Giải');
-  addPt(7 - thangAm + 1, 'Địa Giải');
+  addPt(8 + thangAm - 1, 'Thiên Giải');
+  addPt(7 + thangAm - 1, 'Địa Giải');
   addPt(10 - chiNamIdx, 'Giải Thần');
 
   // Các sao theo Giờ & Ngày
@@ -374,6 +390,10 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   const phucMap: Record<number, number> = { 0: 9, 1: 8, 2: 0, 3: 11, 4: 3, 5: 2, 6: 6, 7: 5, 8: 6, 9: 5 };
   addPt(quanMap[canNamIdx], 'Thiên Quan');
   addPt(phucMap[canNamIdx], 'Thiên Phúc');
+
+  // Thiên Trù & Lưu Hà theo Can năm sinh
+  addPt(THIEN_TRU_MAP[canNamIdx], 'Thiên Trù');
+  addPt(LUU_HA_MAP[canNamIdx], 'Lưu Hà');
 
   addPt(mod12(chiNamIdx - thangAm + 1 + gioSinh), 'Đẩu Quân');
 
@@ -415,7 +435,10 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   const cungs: CungLaSo[] = [];
   for (let p = 0; p < 12; p++) {
     const cId = mod12(12 + menh - p);
-    const cName = CUNG_NAMES[cId];
+    let cName = CUNG_NAMES[cId];
+    if (cName === 'Phu Thê' && data.gioiTinh === 'Nữ') {
+      cName = 'Phu Quân';
+    }
     const can = CAN_ARR[canCungArr[p]];
     const chi = CHI_ARR[p];
     const canChi = `${CAN_ABBR[can]} ${chi}`;
@@ -436,16 +459,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
       else if (pt === 'Hóa Quyền') dacHamVal = 'B';
       else if (pt === 'Hóa Khoa') dacHamVal = 'Đ';
 
-      let color = '#000000';
-      if (/Hóa Lộc|Hóa Quyền|Hóa Khoa/.test(pt) || pt.startsWith('L.Hóa')) {
-        color = '#008000';
-      } else if (/Khôi|Việt|Hồng|Hỷ|Mã/.test(pt)) {
-        color = '#cc0000';
-      } else if (/Lộc Tồn|Bác S|Quốc Ấn|Phúc|Quan|Thọ|Đức|Tả Phù|Thai|Tọa|Quang|Quý|Trù|Tài/.test(pt)) {
-        color = '#c28b00';
-      } else if (/Đào|Long Trì|Phượng|Giải|Y/.test(pt)) {
-        color = '#008000';
-      }
+      const color = STAR_NGU_HANH_COLOR[pt] || '#000000';
 
       return {
         ten: pt,
@@ -457,12 +471,11 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
 
     const phuTinhXauList: SaoInfo[] = s[p].x.map((px) => {
       let dacHamVal = PHU_TINH_DAC_HAM[px]?.[p];
-      if (px === 'Hóa Kỵ') dacHamVal = 'H';
-
-      let color = '#cc0000';
-      if (/Cô Thần|Quả Tú/.test(px)) {
-        color = '#c28b00';
+      if (px === 'Hóa Kỵ') {
+        dacHamVal = [1, 7].includes(p) ? 'B' : 'H';
       }
+
+      const color = STAR_NGU_HANH_COLOR[px] || '#cc0000';
 
       return {
         ten: px,

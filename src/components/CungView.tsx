@@ -9,6 +9,14 @@ interface CungViewProps {
   style?: React.CSSProperties;
 }
 
+const BOLD_STARS = new Set([
+  'Hóa Lộc', 'Hóa Quyền', 'Hóa Khoa', 'Hóa Kỵ',
+  'Kình Dương', 'Đà La', 'Hỏa Tinh', 'Linh Tinh',
+  'Địa Không', 'Địa Kiếp', 'Thiên Không',
+  'Văn Xương', 'Văn Khúc', 'Thiên Khôi', 'Thiên Việt',
+  'Tả Phù', 'Hữu Bật', 'Lộc Tồn',
+]);
+
 export default function CungView({ cung, className = '', style }: CungViewProps) {
   return (
     <div
@@ -55,44 +63,50 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       <div className="flex justify-between text-[10px] sm:text-[11px] leading-tight flex-grow px-0.5 my-1">
         {/* Cột Trái: Sao tốt / Cát tinh */}
         <div className="w-[50%] text-left space-y-0.5 pr-0.5">
-          {cung.phuTinhTot.map((sao, idx) => (
-            <div
-              key={idx}
-              className="truncate"
-              style={{ color: sao.color || '#000000' }}
-              title={sao.ten}
-            >
-              <span className={sao.ten.startsWith('Hóa') ? 'font-bold' : ''}>
-                {sao.ten}
-              </span>
-              {sao.dacHam && (
-                <span className="text-[9.5px] ml-0.5 opacity-90 font-normal">
-                  ({sao.dacHam})
+          {cung.phuTinhTot.map((sao, idx) => {
+            const isBold = BOLD_STARS.has(sao.ten) || sao.ten.startsWith('Hóa');
+            return (
+              <div
+                key={idx}
+                className="truncate"
+                style={{ color: sao.color || '#000000' }}
+                title={sao.ten}
+              >
+                <span className={isBold ? 'font-bold' : ''}>
+                  {sao.ten}
                 </span>
-              )}
-            </div>
-          ))}
+                {sao.dacHam && (
+                  <span className="text-[9.5px] ml-0.5 opacity-90 font-normal">
+                    ({sao.dacHam})
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Cột Phải: Sát tinh / Bại tinh */}
         <div className="w-[50%] text-left space-y-0.5 pl-1">
-          {cung.phuTinhXau.map((sao, idx) => (
-            <div
-              key={idx}
-              className="truncate"
-              style={{ color: sao.color || '#cc0000' }}
-              title={sao.ten}
-            >
-              <span className={sao.ten === 'Hóa Kỵ' ? 'font-bold' : ''}>
-                {sao.ten}
-              </span>
-              {sao.dacHam && (
-                <span className="text-[9.5px] ml-0.5 opacity-90 font-normal">
-                  ({sao.dacHam})
+          {cung.phuTinhXau.map((sao, idx) => {
+            const isBold = BOLD_STARS.has(sao.ten) || sao.ten === 'Hóa Kỵ';
+            return (
+              <div
+                key={idx}
+                className="truncate"
+                style={{ color: sao.color || '#cc0000' }}
+                title={sao.ten}
+              >
+                <span className={isBold ? 'font-bold' : ''}>
+                  {sao.ten}
                 </span>
-              )}
-            </div>
-          ))}
+                {sao.dacHam && (
+                  <span className="text-[9.5px] ml-0.5 opacity-90 font-normal">
+                    ({sao.dacHam})
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
