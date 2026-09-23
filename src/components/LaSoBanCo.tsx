@@ -44,12 +44,12 @@ const THIEN_BAN_POINTS: Record<number, [number, number]> = {
 };
 
 const TT_COORDS: Record<number, { l: string; t: string }> = {
-  0: { l: '50%', t: '73%' },     // Tý - Sửu (đường ranh giới dọc giữa Sửu col 2 và Tý col 3 tại đỉnh row 4)
-  2: { l: '14.25%', t: '73%' },  // Dần - Mão (đường ranh giới ngang giữa Mão row 3 và Dần row 4)
-  4: { l: '14.25%', t: '27%' },  // Thìn - Tỵ (đường ranh giới ngang giữa Tỵ row 1 và Thìn row 2)
-  6: { l: '50%', t: '27%' },     // Ngọ - Mùi (đường ranh giới dọc giữa Ngọ col 2 và Mùi col 3 tại đáy row 1)
-  8: { l: '85.75%', t: '27%' },  // Thân - Dậu (đường ranh giới ngang giữa Thân row 1 và Dậu row 2)
-  10: { l: '85.75%', t: '73%' }, // Tuất - Hợi (đường ranh giới ngang giữa Tuất row 3 và Hợi row 4)
+  0: { l: '50%', t: '75%' },     // Tý - Sửu (đường ranh giới dọc giữa Sửu col 2 và Tý col 3 tại đỉnh row 4)
+  2: { l: '12.5%', t: '75%' },   // Dần - Mão (đường ranh giới ngang giữa Mão row 3 và Dần row 4)
+  4: { l: '12.5%', t: '25%' },   // Thìn - Tỵ (đường ranh giới ngang giữa Tỵ row 1 và Thìn row 2)
+  6: { l: '50%', t: '25%' },     // Ngọ - Mùi (đường ranh giới dọc giữa Ngọ col 2 và Mùi col 3 tại đáy row 1)
+  8: { l: '87.5%', t: '25%' },   // Thân - Dậu (đường ranh giới ngang giữa Thân row 1 và Dậu row 2)
+  10: { l: '87.5%', t: '75%' },  // Tuất - Hợi (đường ranh giới ngang giữa Tuất row 3 và Hợi row 4)
 };
 
 export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanCoProps) {
@@ -265,19 +265,15 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
       >
         <div
           ref={boardInnerRef}
-          className="w-[760px] mx-auto relative bg-white p-2 sm:p-4 select-none"
+          className="w-[760px] mx-auto relative bg-white p-1 sm:p-2 select-none"
           style={{
             transform: scale < 1 && isFitMode ? `scale(${scale})` : 'none',
             transformOrigin: 'top left',
           }}
         >
-          {/* Grid 4x4 với tỷ lệ mở rộng các cột xung quanh và thu gọn Thiên Bàn */}
+          {/* Grid 4x4 chuẩn xác với 4 cột và 4 hàng đồng đều 25% (1fr) theo chuẩn LySo */}
           <div
-            className="grid bg-black gap-[1px] border border-black relative z-0"
-            style={{
-              gridTemplateColumns: '1.14fr 0.86fr 0.86fr 1.14fr',
-              gridTemplateRows: '1.08fr 0.92fr 0.92fr 1.08fr',
-            }}
+            className="grid grid-cols-4 grid-rows-4 bg-black gap-[1px] border border-black relative z-0"
           >
             {/* 12 Cung */}
             {cungs.map((cung) => {
@@ -297,7 +293,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
 
             {/* Thiên Bàn (Trung tâm 2x2) */}
             <div
-              className="bg-white flex relative z-0 p-2 sm:p-3.5 select-none font-sans text-black overflow-hidden"
+              className="bg-white flex relative z-0 pt-6 sm:pt-7 pb-3 px-3 sm:px-4 select-none font-sans text-black overflow-hidden"
               style={{
                 gridColumn: '2 / 4',
                 gridRow: '2 / 4',
