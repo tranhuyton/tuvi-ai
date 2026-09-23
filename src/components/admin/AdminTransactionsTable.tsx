@@ -21,6 +21,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import LaSoBanCo from '@/components/LaSoBanCo';
+import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 
 export interface AdminChartItem {
@@ -773,8 +774,19 @@ export default function AdminTransactionsTable({
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
-              {previewChart.laso_data ? (
-                <LaSoBanCo laSo={previewChart.laso_data} onReset={() => setPreviewChart(null)} />
+              {previewChart.laso_data || previewChart.duong_so_data ? (
+                <LaSoBanCo
+                  laSo={
+                    previewChart.duong_so_data
+                      ? {
+                          ...lapLaSoTuVi(previewChart.duong_so_data, 2026),
+                          tier: previewChart.duong_so_data.tier || previewChart.laso_data?.tier,
+                          quota: previewChart.laso_data?.quota,
+                        }
+                      : previewChart.laso_data
+                  }
+                  onReset={() => setPreviewChart(null)}
+                />
               ) : (
                 <p className="text-slate-400 italic">Không có dữ liệu bàn cờ lá số.</p>
               )}

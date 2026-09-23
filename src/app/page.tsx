@@ -614,7 +614,18 @@ export default function HomePage() {
       }
 
       setCurrentTier(detectedTier);
-      setLaSo(chart.laso_data);
+      // Tự động an sao lại theo thuật toán mới nhất để đảm bảo định dạng chuẩn (Thê Thiếp cho Nam, đầy đủ sao, màu sắc chuẩn)
+      let activeLaSo = chart.laso_data;
+      if (chart.duong_so_data) {
+        try {
+          activeLaSo = lapLaSoTuVi(chart.duong_so_data, 2026);
+          activeLaSo.tier = detectedTier;
+          if (chart.laso_data?.quota) activeLaSo.quota = chart.laso_data.quota;
+        } catch (calcErr) {
+          console.warn('Lỗi tính toán lại lá số đã lưu:', calcErr);
+        }
+      }
+      setLaSo(activeLaSo);
       setCurrentDuongSo(chart.duong_so_data);
       setCurrentChartId(chart.id);
       setReadingHtml(chart.reading_html || undefined);
@@ -759,7 +770,24 @@ export default function HomePage() {
             localStorage.removeItem('tuvi_active_session');
             window.history.replaceState(null, '', '/');
           } else if (!urlChartId || urlChartId === session.chartId) {
-            setLaSo(session.laSo);
+            let activeLaSo = session.laSo;
+            if (session.duongSo) {
+              try {
+                activeLaSo = lapLaSoTuVi(session.duongSo, 2026);
+                activeLaSo.tier = session.tier || 'free';
+                if (session.quota) activeLaSo.quota = session.quota;
+                // Cập nhật lại session trong localStorage với lá số chuẩn mới nhất
+                try {
+                  localStorage.setItem(
+                    'tuvi_active_session',
+                    JSON.stringify({ ...session, laSo: activeLaSo })
+                  );
+                } catch {}
+              } catch (calcErr) {
+                console.warn('Lỗi tính toán lại phiên làm việc:', calcErr);
+              }
+            }
+            setLaSo(activeLaSo);
             setCurrentDuongSo(session.duongSo);
             setCurrentChartId(session.chartId || null);
             setCurrentTier(session.tier || 'free');
@@ -860,7 +888,13 @@ export default function HomePage() {
         .then((res) => res.json())
         .then(async (data) => {
           if (data.success && data.laSo && data.duongSo) {
-            setLaSo(data.laSo);
+            let activeLaSo = data.laSo;
+            try {
+              activeLaSo = lapLaSoTuVi(data.duongSo, 2026);
+              activeLaSo.tier = 'pro';
+              activeLaSo.quota = { basicAllowed: 0, proAllowed: 2 };
+            } catch {}
+            setLaSo(activeLaSo);
             setCurrentDuongSo(data.duongSo);
             setReadingHtml(data.readingHtml);
             setCurrentTier('pro');

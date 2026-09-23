@@ -24,22 +24,25 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       style={style}
     >
       {/* 1. Header Cung: Can Chi - Tên Cung - Đại Vận */}
-      <div className="flex justify-between items-baseline pt-2.5 sm:pt-3 pb-0.5 px-0.5 text-xs">
+      <div
+        className="flex justify-between items-baseline pb-0.5 px-1 text-xs gap-1"
+        style={{ paddingTop: '11px' }}
+      >
         {/* Can Chi viết tắt (VD: Q. Tị, G. Ngọ, Ấ. Mùi...) */}
-        <span className="font-bold text-[#003399] text-[11px] sm:text-xs whitespace-nowrap">
+        <span className="font-bold text-[#003399] text-[10.5px] sm:text-[11px] whitespace-nowrap shrink-0">
           {cung.canChi}
         </span>
 
         {/* Tên Cung (VD: MỆNH, PHỤ MẪU, PHÚC ĐỨC THÂN...) */}
-        <span className="font-bold uppercase tracking-wider text-center text-[#003399] text-[11px] sm:text-xs flex items-center justify-center whitespace-nowrap">
+        <span className="font-bold uppercase tracking-wide text-center text-[#003399] text-[10.5px] sm:text-[11.5px] flex items-center justify-center whitespace-nowrap min-w-0">
           <span>{cung.cungName}</span>
           {cung.isThan && (
-            <span className="text-red-600 font-bold ml-1 text-[11px] sm:text-xs">THÂN</span>
+            <span className="text-red-600 font-bold ml-1 text-[10.5px] sm:text-[11.5px]">THÂN</span>
           )}
         </span>
 
         {/* Đại Vận */}
-        <span className="font-bold text-black text-[11px] sm:text-xs text-right whitespace-nowrap">
+        <span className="font-bold text-black text-[10.5px] sm:text-[11px] text-right whitespace-nowrap shrink-0">
           {cung.daiVan}
         </span>
       </div>
@@ -111,14 +114,17 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       </div>
 
       {/* 4. Footer: Tiểu Vận - Vòng Trường Sinh - Nguyệt Vận */}
-      <div className="flex justify-between items-baseline text-[8.5px] sm:text-[9px] pt-1 pb-2 sm:pb-2.5 border-t border-slate-300 mt-auto text-black px-0.5 gap-0.5">
-        <span className="whitespace-nowrap text-left text-slate-800">
+      <div
+        className="flex justify-between items-baseline text-[8.5px] sm:text-[9px] border-t border-slate-300 mt-auto text-black px-1 gap-1"
+        style={{ paddingTop: '4px', paddingBottom: '10px' }}
+      >
+        <span className="whitespace-nowrap text-left text-slate-800 shrink-0">
           {cung.tieuVan.startsWith('năm') ? cung.tieuVan : `năm ${cung.tieuVan}`}
         </span>
-        <span className="font-bold text-black whitespace-nowrap px-0.5 text-center flex-shrink-0">
+        <span className="font-bold text-black whitespace-nowrap px-0.5 text-center shrink-0">
           {cung.truongSinh}
         </span>
-        <span className="whitespace-nowrap text-right text-slate-800">
+        <span className="whitespace-nowrap text-right text-slate-800 shrink-0">
           {cung.nguyetVan.startsWith('tháng') ? cung.nguyetVan : `tháng ${cung.nguyetVan}`}
         </span>
       </div>

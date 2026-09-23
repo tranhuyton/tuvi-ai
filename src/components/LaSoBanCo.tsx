@@ -293,10 +293,14 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
 
             {/* Thiên Bàn (Trung tâm 2x2) */}
             <div
-              className="bg-white flex relative z-0 pt-6 sm:pt-7 pb-3 px-3 sm:px-4 select-none font-sans text-black overflow-hidden"
+              className="bg-white flex relative z-0 select-none font-sans text-black overflow-hidden"
               style={{
                 gridColumn: '2 / 4',
                 gridRow: '2 / 4',
+                paddingTop: '28px',
+                paddingBottom: '16px',
+                paddingLeft: '16px',
+                paddingRight: '16px',
               }}
             >
               {/* SVG 3 đường kẻ xuất phát từ 1 điểm Cung Mệnh sang Tài Bạch, Quan Lộc và Thiên Di (Màu nhạt mờ ẩn dưới chữ: z-0) */}
