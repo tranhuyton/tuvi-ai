@@ -912,6 +912,11 @@ export default function HomePage() {
               onSubmit={handleFormSubmit}
               isLoading={isLoadingReading}
               onOpenSavedCharts={handleOpenSavedCharts}
+              onRequireAuth={(action, notice) => {
+                pendingPostAuthActionRef.current = action;
+                setAuthModalNotice(notice);
+                setIsAuthModalOpen(true);
+              }}
             />
 
             {!user && (

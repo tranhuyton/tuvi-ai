@@ -5,11 +5,13 @@ import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, PhoneCall, BookOpen } from 'lucide-react';
 import PaymentModal from './PaymentModal';
+import { useAuth } from '@/context/AuthContext';
 
 interface TuViFormProps {
   onSubmit: (data: DuLieuDuongSo, tier: ServiceTier) => void;
   isLoading: boolean;
   onOpenSavedCharts?: () => void;
+  onRequireAuth?: (action: () => void, notice: string) => void;
 }
 
 function isHeicFile(file: File): boolean {
@@ -62,7 +64,8 @@ function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<stri
   });
 }
 
-export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts }: TuViFormProps) {
+export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onRequireAuth }: TuViFormProps) {
+  const { user } = useAuth();
   const [hoTen, setHoTen] = useState('');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>('Nam');
   const [ngayDuong, setNgayDuong] = useState(15);
@@ -174,6 +177,16 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts }: TuV
 
     if (selectedTier === 'pro') {
       setPendingPayload(payload);
+      if (!user) {
+        if (onRequireAuth) {
+          onRequireAuth(() => {
+            setIsPaymentOpen(true);
+          }, 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản để hệ thống lưu giữ lá số vào Sổ Tay Số Mệnh và mở mã QR thanh toán Bản Pro (119.000đ).');
+        } else {
+          alert('Quý khách vui lòng đăng nhập hoặc tạo tài khoản trước khi thanh toán Bản Pro!');
+        }
+        return;
+      }
       setIsPaymentOpen(true);
     } else {
       onSubmit(payload, 'free');

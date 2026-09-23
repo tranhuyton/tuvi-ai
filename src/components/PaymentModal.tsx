@@ -338,6 +338,12 @@ export default function PaymentModal({
                   placeholder="Ví dụ: hoten@gmail.com (để nhận email khi hoàn tất)"
                   className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 placeholder:text-slate-500"
                 />
+                {user?.email && (
+                  <p className="text-xs text-emerald-400 font-medium flex items-center gap-1.5 pt-1">
+                    <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                    Đã liên kết tài khoản: <span className="font-mono text-amber-300 font-bold">{user.email}</span>
+                  </p>
+                )}
               </div>
 
               {/* QR Code Chuyển Khoản Tự Động */}
