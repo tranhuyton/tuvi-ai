@@ -282,7 +282,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
                 <CungView
                   key={cung.cungId}
                   cung={cung}
-                  className="min-h-[195px] sm:min-h-[220px]"
+                  className="min-h-[200px] sm:min-h-[225px]"
                   style={{
                     gridColumn: pos.gridColumn,
                     gridRow: pos.gridRow,

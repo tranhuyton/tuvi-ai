@@ -60,7 +60,7 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       </div>
 
       {/* 3. Phụ Tinh (Cột Tốt bên trái, Cột Xấu bên phải) */}
-      <div className="flex justify-between text-[9px] sm:text-[9.5px] leading-tight flex-grow px-0.5 my-0.5 gap-0.5">
+      <div className="flex justify-between text-[10px] sm:text-[11px] leading-tight flex-grow px-0.5 my-0.5 gap-0.5">
         {/* Cột Trái: Sao tốt / Cát tinh */}
         <div className="w-[50%] text-left space-y-0.5 pr-0.5 min-w-0">
           {cung.phuTinhTot.map((sao, idx) => {
@@ -72,11 +72,11 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
                 style={{ color: sao.color || '#000000' }}
                 title={`${sao.ten}${sao.dacHam ? ` (${sao.dacHam})` : ''}`}
               >
-                <span className={isBold ? 'font-bold' : ''}>
+                <span className={isBold ? 'font-bold' : 'font-medium'}>
                   {sao.ten}
                 </span>
                 {sao.dacHam && (
-                  <span className="text-[8px] sm:text-[8.5px] ml-0.5 opacity-90 font-normal">
+                  <span className="text-[8.5px] sm:text-[9.5px] ml-0.5 opacity-90 font-normal">
                     ({sao.dacHam})
                   </span>
                 )}
@@ -96,11 +96,11 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
                 style={{ color: sao.color || '#cc0000' }}
                 title={`${sao.ten}${sao.dacHam ? ` (${sao.dacHam})` : ''}`}
               >
-                <span className={isBold ? 'font-bold' : ''}>
+                <span className={isBold ? 'font-bold' : 'font-medium'}>
                   {sao.ten}
                 </span>
                 {sao.dacHam && (
-                  <span className="text-[8px] sm:text-[8.5px] ml-0.5 opacity-90 font-normal">
+                  <span className="text-[8.5px] sm:text-[9.5px] ml-0.5 opacity-90 font-normal">
                     ({sao.dacHam})
                   </span>
                 )}
