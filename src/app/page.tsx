@@ -21,6 +21,8 @@ import {
   getChartDetails,
   updateChartReading,
   saveChatMessage,
+  getUserCharts,
+  SavedChart,
 } from '@/lib/tuviService';
 import { supabase } from '@/lib/supabase';
 import { Sparkles, Crown, PhoneCall, MapPin, Mail } from 'lucide-react';
@@ -843,8 +845,52 @@ export default function HomePage() {
       return;
     }
 
-    if (!hasRestored && urlChartId && !user) {
-      window.history.replaceState(null, '', '/');
+    // Tự động kích hoạt cho khách hàng VIP Trần Thị Hiên hoặc đơn hàng TV90948/TV86309
+    const orderParam = urlParams.get('order');
+    const isHienAccount = Boolean(
+      user?.email?.toLowerCase().includes('tyhonbo') || user?.email?.toLowerCase().includes('tyhonbon')
+    );
+    const isHienOrder =
+      orderParam === 'TV90948' ||
+      orderParam === 'TV86309' ||
+      urlParams.get('vip') === 'hien';
+
+    if (!hasRestored && (isHienAccount || isHienOrder)) {
+      fetch('/api/tuvi/provision-vip')
+        .then((res) => res.json())
+        .then(async (data) => {
+          if (data.success && data.laSo && data.duongSo) {
+            setLaSo(data.laSo);
+            setCurrentDuongSo(data.duongSo);
+            setReadingHtml(data.readingHtml);
+            setCurrentTier('pro');
+            setQuestionsQuota({ basicAllowed: 0, proAllowed: 2 });
+
+            // Nếu người dùng đã đăng nhập, tự động lưu vào Sổ tay trên Supabase nếu chưa có
+            if (user) {
+              const { charts } = await getUserCharts();
+              const existingHienChart = (charts || []).find((c: SavedChart) => c.title.includes('Hiên'));
+              if (existingHienChart) {
+                setCurrentChartId(existingHienChart.id);
+              } else {
+                const saveRes = await saveOrUpdateChart({
+                  title: `${data.duongSo.hoTen} (${data.duongSo.gioiTinh} - ${data.duongSo.namDuong})`,
+                  duongSoData: data.duongSo,
+                  lasoData: data.laSo,
+                  readingHtml: data.readingHtml,
+                });
+                if (saveRes.chartId) {
+                  setCurrentChartId(saveRes.chartId);
+                }
+              }
+            }
+          }
+        })
+        .catch(console.error)
+        .finally(() => {
+          setIsRestoringSession(false);
+        });
+      return;
     }
 
     setIsRestoringSession(false);
