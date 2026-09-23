@@ -436,8 +436,8 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   for (let p = 0; p < 12; p++) {
     const cId = mod12(12 + menh - p);
     let cName = CUNG_NAMES[cId];
-    if (cName === 'Phu Thê' && data.gioiTinh === 'Nữ') {
-      cName = 'Phu Quân';
+    if (cName === 'Phu Thê') {
+      cName = data.gioiTinh === 'Nữ' ? 'Phu Quân' : 'Thê Thiếp';
     }
     const can = CAN_ARR[canCungArr[p]];
     const chi = CHI_ARR[p];
