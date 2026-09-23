@@ -249,7 +249,7 @@ export default function AdminTransactionsTable({
           <div className="text-xl sm:text-2xl font-bold text-amber-300 mt-2">
             {stats.total_pro}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">Gói Luận giải chuyên sâu</div>
+          <div className="text-[11px] text-slate-400 mt-1">Đơn thanh toán gói 119k</div>
         </div>
 
         {/* Tin nhắn hỏi đáp */}
@@ -263,7 +263,7 @@ export default function AdminTransactionsTable({
           <div className="text-xl sm:text-2xl font-bold text-slate-100 mt-2">
             {stats.total_messages}
           </div>
-          <div className="text-[11px] text-slate-400 mt-1">Tương tác cùng Thầy Tôn</div>
+          <div className="text-[11px] text-slate-400 mt-1">Câu hỏi đã lưu vào hệ thống</div>
         </div>
       </div>
 

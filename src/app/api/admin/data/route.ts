@@ -23,12 +23,14 @@ export async function GET(req: NextRequest) {
         const { getAllOrders } = await import('@/lib/orderStore');
         const orders = await getAllOrders(100);
         const paidOrders = orders.filter((o) => o.status === 'PAID');
+        const paidProOrders = paidOrders.filter((o) => o.paymentType === 'reading_vip').length;
         const actualRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
 
         const updatedStats = {
           ...(rpcData.stats || {}),
           total_orders: orders.length,
           paid_orders: paidOrders.length,
+          total_pro: paidProOrders > 0 ? paidProOrders : (rpcData.stats?.total_pro || 0),
           estimated_revenue: actualRevenue > 0 ? actualRevenue : (rpcData.stats?.estimated_revenue || 0),
         };
 
@@ -89,6 +91,7 @@ export async function GET(req: NextRequest) {
     const { getAllOrders } = await import('@/lib/orderStore');
     const orders = await getAllOrders(100);
     const paidOrders = orders.filter((o) => o.status === 'PAID');
+    const paidProOrders = paidOrders.filter((o) => o.paymentType === 'reading_vip').length;
     const actualRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
 
     return NextResponse.json({
@@ -99,7 +102,7 @@ export async function GET(req: NextRequest) {
       stats: {
         total_users: totalUsers,
         total_charts: totalCharts,
-        total_pro: totalPro,
+        total_pro: paidProOrders > 0 ? paidProOrders : totalPro,
         total_free: totalFree,
         total_messages: totalMessages,
         total_orders: orders.length,
