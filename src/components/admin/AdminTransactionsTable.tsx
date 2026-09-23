@@ -81,7 +81,7 @@ export default function AdminTransactionsTable({
   const [subTab, setSubTab] = useState<'orders' | 'charts'>('orders');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTier, setFilterTier] = useState<'all' | 'free' | 'pro'>('all');
-  const [filterOrderStatus, setFilterOrderStatus] = useState<'all' | 'PENDING' | 'PAID'>('all');
+  const [filterOrderStatus, setFilterOrderStatus] = useState<'all' | 'PAID' | 'PENDING' | 'CANCELLED'>('all');
   const [previewChart, setPreviewChart] = useState<AdminChartItem | null>(null);
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
 
@@ -101,15 +101,27 @@ export default function AdminTransactionsTable({
     );
   });
 
-  // Lọc danh sách đơn hàng VietQR
+  // Lọc danh sách đơn hàng VietQR (Tìm thông minh theo mã đơn, số tiền, tên, email, txId)
   const filteredOrders = orders.filter((o) => {
     if (filterOrderStatus !== 'all' && o.status !== filterOrderStatus) return false;
     const term = searchTerm.toLowerCase().trim();
     if (!term) return true;
+
+    // Chuẩn hóa tìm kiếm: tìm theo mã TVxxxxx, tìm số không có chữ TV, tên, email, txId, số tiền
+    const normalizedTerm = term.replace(/[\s\-_]/g, '');
+    const normalizedCode = (o.orderCode || '').toLowerCase().replace(/[\s\-_]/g, '');
+
     return (
+      normalizedCode.includes(normalizedTerm) ||
       o.orderCode.toLowerCase().includes(term) ||
       o.hoTen.toLowerCase().includes(term) ||
-      (o.email && o.email.toLowerCase().includes(term))
+      (o.email && o.email.toLowerCase().includes(term)) ||
+      (o.transactionId && o.transactionId.toLowerCase().includes(term)) ||
+      String(o.amount).includes(term) ||
+      (term === '119k' && o.amount === 119000) ||
+      (term === '49k' && o.amount === 49000) ||
+      (term === '99k' && o.amount === 99000) ||
+      (term.includes('vip') && (o.paymentType.includes('vip') || o.paymentType === 'reading_vip'))
     );
   });
 
@@ -141,8 +153,35 @@ export default function AdminTransactionsTable({
     }
   };
 
+  // Xử lý đổi trạng thái đơn hàng (Hủy đơn / Khôi phục) từ Admin
+  const handleUpdateOrderStatus = async (orderCode: string, newStatus: 'PENDING' | 'CANCELLED') => {
+    const isCancel = newStatus === 'CANCELLED';
+    const msg = isCancel
+      ? `Xác nhận HỦY ĐƠN / ĐÁNH DẤU TRÙNG LẶP cho đơn hàng ${orderCode}?`
+      : `Xác nhận KHÔI PHỤC đơn hàng ${orderCode} về trạng thái Chờ quét QR?`;
+    if (!window.confirm(msg)) return;
+
+    try {
+      const res = await fetch('/api/payment/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderCode, status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Đã cập nhật trạng thái đơn ${orderCode} thành công!`);
+        onRefresh();
+      } else {
+        alert(`Lỗi: ${data.error || 'Không thể cập nhật'}`);
+      }
+    } catch (err: any) {
+      alert(`Lỗi: ${err?.message || err}`);
+    }
+  };
+
   const paidOrdersCount = orders.filter((o) => o.status === 'PAID').length;
   const pendingOrdersCount = orders.filter((o) => o.status === 'PENDING').length;
+  const cancelledOrdersCount = orders.filter((o) => o.status === 'CANCELLED').length;
   const actualOrdersRevenue = orders
     .filter((o) => o.status === 'PAID')
     .reduce((sum, o) => sum + (o.amount || 0), 0);
@@ -304,22 +343,32 @@ export default function AdminTransactionsTable({
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={
               subTab === 'orders'
-                ? 'Tìm theo mã đơn TVxxxxx, tên khách, email...'
+                ? 'Tìm mã đơn TVxxxxx, tên khách, email, số tiền...'
                 : 'Tìm theo họ tên đương số, email, tiêu đề...'
             }
-            className="w-full pl-9 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
+            className="w-full pl-9 pr-8 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-200 transition"
+              title="Xóa từ khóa tìm kiếm"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {subTab === 'orders' ? (
-          <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs flex-wrap">
             <button
               type="button"
               onClick={() => setFilterOrderStatus('all')}
-              className={`px-3 py-1 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition font-medium ${
                 filterOrderStatus === 'all'
-                  ? 'bg-amber-500 text-slate-950 font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
               Tất cả ({orders.length})
@@ -327,25 +376,38 @@ export default function AdminTransactionsTable({
             <button
               type="button"
               onClick={() => setFilterOrderStatus('PAID')}
-              className={`px-3 py-1 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1 ${
                 filterOrderStatus === 'PAID'
-                  ? 'bg-emerald-500 text-slate-950 font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm'
+                  : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/30'
               }`}
             >
-              Đã thanh toán ({paidOrdersCount})
+              <span>Đã thanh toán ({paidOrdersCount})</span>
             </button>
             <button
               type="button"
               onClick={() => setFilterOrderStatus('PENDING')}
-              className={`px-3 py-1 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1 ${
                 filterOrderStatus === 'PENDING'
-                  ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/50 shadow-sm'
+                  : 'text-amber-400/80 hover:text-amber-300 hover:bg-amber-950/30'
               }`}
             >
-              Chờ quét QR ({pendingOrdersCount})
+              <span>Chờ quét QR ({pendingOrdersCount})</span>
             </button>
+            {cancelledOrdersCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilterOrderStatus('CANCELLED')}
+                className={`px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1 ${
+                  filterOrderStatus === 'CANCELLED'
+                    ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/50 shadow-sm'
+                    : 'text-slate-400 hover:text-rose-300 hover:bg-rose-950/20'
+                }`}
+              >
+                <span>Đã hủy / Trùng ({cancelledOrdersCount})</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
@@ -476,14 +538,19 @@ export default function AdminTransactionsTable({
                           </td>
 
                           <td className="py-3 px-4 text-center">
-                            {isPaid ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold">
+                            {ord.status === 'PAID' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold shadow-sm">
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                                 <span>Đã thanh toán</span>
                               </span>
+                            ) : ord.status === 'CANCELLED' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs font-medium">
+                                <X className="w-3.5 h-3.5 text-rose-400" />
+                                <span>Đã hủy / Bị trùng</span>
+                              </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/60 text-xs font-medium">
-                                <Clock className="w-3.5 h-3.5 text-amber-400/80" />
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-medium">
+                                <Clock className="w-3.5 h-3.5 text-amber-400" />
                                 <span>Chờ quét QR</span>
                               </span>
                             )}
@@ -497,25 +564,57 @@ export default function AdminTransactionsTable({
                           </td>
 
                           <td className="py-3 px-4 text-right">
-                            {!isPaid ? (
-                              <button
-                                type="button"
-                                onClick={() => handleApproveOrder(ord.orderCode)}
-                                disabled={approvingCode === ord.orderCode}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 hover:text-amber-300 text-slate-300 text-xs font-medium rounded-lg border border-slate-700/60 shadow-sm transition disabled:opacity-50"
-                                title="Duyệt tay thủ công nếu khách đã chuyển khoản mà webhook bị trễ"
-                              >
-                                <Zap className="w-3 h-3 text-amber-400" />
-                                <span>
-                                  {approvingCode === ord.orderCode ? 'Đang duyệt...' : 'Duyệt tay'}
-                                </span>
-                              </button>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Tự động xong</span>
-                              </span>
-                            )}
+                            <div className="flex items-center justify-end gap-1.5">
+                              {ord.status === 'PAID' ? (
+                                <>
+                                  <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Tự động xong</span>
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateOrderStatus(ord.orderCode, 'CANCELLED')}
+                                    className="p-1 text-slate-500 hover:text-rose-400 transition rounded"
+                                    title="Hủy / Đánh dấu trùng lặp đơn này"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </>
+                              ) : ord.status === 'CANCELLED' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateOrderStatus(ord.orderCode, 'PENDING')}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-300 text-xs font-medium rounded-lg border border-slate-700/60 transition"
+                                  title="Khôi phục lại đơn hàng này về trạng thái Chờ quét QR"
+                                >
+                                  <RefreshCw className="w-3 h-3 text-amber-400" />
+                                  <span>Khôi phục</span>
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApproveOrder(ord.orderCode)}
+                                    disabled={approvingCode === ord.orderCode}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 hover:text-amber-300 text-slate-300 text-xs font-medium rounded-lg border border-slate-700/60 shadow-sm transition disabled:opacity-50"
+                                    title="Duyệt tay thủ công nếu khách đã chuyển khoản mà webhook bị trễ"
+                                  >
+                                    <Zap className="w-3 h-3 text-amber-400" />
+                                    <span>
+                                      {approvingCode === ord.orderCode ? 'Đang duyệt...' : 'Duyệt tay'}
+                                    </span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateOrderStatus(ord.orderCode, 'CANCELLED')}
+                                    className="p-1 text-slate-500 hover:text-rose-400 transition rounded"
+                                    title="Hủy đơn hoặc đánh dấu trùng lặp"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );

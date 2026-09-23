@@ -241,6 +241,32 @@ export async function markOrderPaid(
 }
 
 /**
+ * Cập nhật trạng thái đơn hàng (PAID, PENDING, CANCELLED)
+ */
+export async function updateOrderStatus(
+  code: string,
+  status: 'PENDING' | 'PAID' | 'CANCELLED'
+): Promise<OrderItem | null> {
+  const order = await getOrderByCode(code);
+  if (!order) return null;
+
+  order.status = status;
+  ordersMap.set(order.orderCode, order);
+  saveOrdersToFile();
+
+  try {
+    await supabase
+      .from('tuvi_orders')
+      .update({ status })
+      .eq('order_code', order.orderCode);
+  } catch (err) {
+    // ignore
+  }
+
+  return order;
+}
+
+/**
  * Lấy danh sách toàn bộ đơn hàng (Dùng cho Admin)
  */
 export async function getAllOrders(limit: number = 50): Promise<OrderItem[]> {
