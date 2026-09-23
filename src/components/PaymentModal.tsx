@@ -56,8 +56,9 @@ export default function PaymentModal({
   const [copiedContent, setCopiedContent] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
 
-  // Polling ref
+  // Polling ref & Active Order Key ref
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const activeOrderKeyRef = useRef<string | null>(null);
 
   const bankName = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
   const stk = 'AGBSPVUONG2026';
@@ -103,27 +104,37 @@ export default function PaymentModal({
   useEffect(() => {
     if (isOpen) {
       const email =
+        customerEmail ||
         user?.email ||
         profile?.email ||
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
-      if (email) setCustomerEmail(email);
+      if (email && !customerEmail) setCustomerEmail(email);
     }
-  }, [isOpen, user, profile]);
+  }, [isOpen, user, profile, customerEmail]);
 
-  // Tạo đơn hàng khi modal mở ra
+  // Tạo đơn hàng khi modal mở ra (đảm bảo chỉ tạo duy nhất 1 lần cho mỗi phiên mở modal)
   useEffect(() => {
     if (!isOpen) {
       if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
       setOrderStatus('IDLE');
+      activeOrderKeyRef.current = null;
       return;
     }
 
+    const targetKey = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
+    // Nếu modal đang mở và đã tạo đơn cho gói này rồi thì không tạo lại để tránh sinh mã rác
+    if (activeOrderKeyRef.current === targetKey && orderCode) {
+      return;
+    }
+
+    activeOrderKeyRef.current = targetKey;
     let isMounted = true;
 
     async function initOrder() {
       setIsCreatingOrder(true);
       try {
         const initialEmail =
+          customerEmail ||
           user?.email ||
           profile?.email ||
           (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
@@ -160,7 +171,7 @@ export default function PaymentModal({
       isMounted = false;
       if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
     };
-  }, [isOpen, paymentType, finalPrice, hoTen, chartId, user, profile]);
+  }, [isOpen, paymentType, finalPrice, hoTen, chartId]);
 
   // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s)
   useEffect(() => {

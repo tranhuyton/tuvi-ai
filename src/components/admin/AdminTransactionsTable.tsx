@@ -115,6 +115,11 @@ export default function AdminTransactionsTable({
 
   // Xử lý duyệt thanh toán thủ công từ Admin
   const handleApproveOrder = async (orderCode: string) => {
+    const confirmApprove = window.confirm(
+      `Xác nhận DUYỆT THỦ CÔNG cho đơn hàng ${orderCode}?\n\nLưu ý: Chỉ duyệt khi bạn đã kiểm tra tài khoản ngân hàng và thấy khách đã chuyển tiền thực tế.`
+    );
+    if (!confirmApprove) return;
+
     setApprovingCode(orderCode);
     try {
       const res = await fetch('/api/payment/simulate', {
@@ -257,9 +262,9 @@ export default function AdminTransactionsTable({
           >
             <QrCode className="w-3.5 h-3.5" />
             <span>Đơn Hàng VietQR ({orders.length})</span>
-            {pendingOrdersCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[10px] font-mono">
-                {pendingOrdersCount} mới
+            {paidOrdersCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-bold">
+                {paidOrdersCount} đã thanh toán
               </span>
             )}
           </button>
@@ -339,7 +344,7 @@ export default function AdminTransactionsTable({
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Chờ quét ({pendingOrdersCount})
+              Chờ quét QR ({pendingOrdersCount})
             </button>
           </div>
         ) : (
@@ -383,125 +388,143 @@ export default function AdminTransactionsTable({
 
       {/* BẢNG 1: DANH SÁCH ĐƠN HÀNG VIETQR */}
       {subTab === 'orders' && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-          {isLoading ? (
-            <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
-              <RefreshCw className="w-6 h-6 animate-spin text-amber-400" />
-              <span className="text-sm">Đang tải danh sách đơn hàng...</span>
+        <div className="space-y-3">
+          {/* Hướng dẫn cơ chế đơn hàng cho Admin */}
+          <div className="p-3 bg-slate-900/80 border border-slate-800/80 rounded-xl text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-amber-300">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Cơ chế thanh toán &amp; duyệt đơn tự động:</span>
             </div>
-          ) : filteredOrders.length === 0 ? (
-            <div className="py-12 text-center text-slate-500 text-sm italic">
-              {searchTerm ? 'Không tìm thấy đơn hàng phù hợp.' : 'Chưa có đơn hàng nào được tạo.'}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs sm:text-sm text-slate-300">
-                <thead className="bg-slate-950/60 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-800">
-                  <tr>
-                    <th className="py-3 px-4">Mã Đơn / Nội dung</th>
-                    <th className="py-3 px-4">Khách Hàng / Email</th>
-                    <th className="py-3 px-4">Gói Dịch Vụ</th>
-                    <th className="py-3 px-4 text-right">Số Tiền</th>
-                    <th className="py-3 px-4 text-center">Trạng Thái</th>
-                    <th className="py-3 px-4">Thời Gian</th>
-                    <th className="py-3 px-4 text-right">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {filteredOrders.map((ord) => {
-                    const isPaid = ord.status === 'PAID';
-                    const dateStr = ord.createdAt
-                      ? new Date(ord.createdAt).toLocaleDateString('vi-VN', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : '—';
+            <p className="text-slate-400 leading-relaxed text-[11px] sm:text-xs">
+              <span className="text-emerald-400 font-semibold">• Đã thanh toán:</span> Tiền đã vào tài khoản ngân hàng thực tế, hệ thống SePay tự động khớp mã đơn <code className="text-amber-300 font-mono">TVxxxxx</code>, mở khóa gói dịch vụ và gửi email biên lai tự động 100%. Admin <strong>không cần làm gì</strong>.<br />
+              <span className="text-amber-300/80 font-semibold">• Chờ quét QR:</span> Khách vừa bấm nút thanh toán để mở mã QR nhưng chưa chuyển khoản hoặc đã hủy bỏ. Khách <strong>chưa bị trừ tiền</strong> và đơn ở trạng thái chờ.<br />
+              <span className="text-sky-400 font-semibold">• Nút [Duyệt tay]:</span> Chỉ dùng để dự phòng khi khách báo đã chuyển khoản thành công nhưng ngân hàng bị trễ webhook. Admin sau khi kiểm tra tài khoản thực tế mới bấm nút này.
+            </p>
+          </div>
 
-                    let serviceLabel = 'Luận Giải VIP (119k)';
-                    if (ord.paymentType === 'chat_vip') serviceLabel = 'Hỏi Thầy VIP (99k)';
-                    else if (ord.paymentType === 'chat_free') serviceLabel = 'Hỏi Thầy Thường (49k)';
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+            {isLoading ? (
+              <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
+                <RefreshCw className="w-6 h-6 animate-spin text-amber-400" />
+                <span className="text-sm">Đang tải danh sách đơn hàng...</span>
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 text-sm italic">
+                {searchTerm ? 'Không tìm thấy đơn hàng phù hợp.' : 'Chưa có đơn hàng nào được tạo.'}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs sm:text-sm text-slate-300">
+                  <thead className="bg-slate-950/60 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-800">
+                    <tr>
+                      <th className="py-3 px-4">Mã Đơn / Nội dung</th>
+                      <th className="py-3 px-4">Khách Hàng / Email</th>
+                      <th className="py-3 px-4">Gói Dịch Vụ</th>
+                      <th className="py-3 px-4 text-right">Số Tiền</th>
+                      <th className="py-3 px-4 text-center">Trạng Thái</th>
+                      <th className="py-3 px-4">Thời Gian</th>
+                      <th className="py-3 px-4 text-right">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {filteredOrders.map((ord) => {
+                      const isPaid = ord.status === 'PAID';
+                      const dateStr = ord.createdAt
+                        ? new Date(ord.createdAt).toLocaleDateString('vi-VN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '—';
 
-                    return (
-                      <tr key={ord.id} className="hover:bg-slate-800/40 transition">
-                        <td className="py-3 px-4">
-                          <span className="font-mono font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded border border-amber-500/30 text-xs">
-                            {ord.orderCode}
-                          </span>
-                        </td>
+                      let serviceLabel = 'Luận Giải VIP (119k)';
+                      if (ord.paymentType === 'chat_vip') serviceLabel = 'Hỏi Thầy VIP (99k)';
+                      else if (ord.paymentType === 'chat_free') serviceLabel = 'Hỏi Thầy Thường (49k)';
 
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-200">{ord.hoTen}</div>
-                          {ord.email ? (
-                            <div className="text-[11px] text-emerald-400 font-mono flex items-center gap-1 mt-0.5">
-                              <Mail className="w-3 h-3 shrink-0" />
-                              <span>{ord.email}</span>
-                            </div>
-                          ) : (
-                            <div className="text-[11px] text-slate-500 italic">Chưa nhập email</div>
-                          )}
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span className="inline-flex items-center gap-1 text-slate-200 text-xs">
-                            {serviceLabel}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 text-right">
-                          <span className="font-bold text-emerald-400 font-mono">
-                            {ord.amount.toLocaleString('vi-VN')} đ
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 text-center">
-                          {isPaid ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>Đã thanh toán</span>
+                      return (
+                        <tr key={ord.id} className="hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-4">
+                            <span className="font-mono font-bold text-amber-400 bg-amber-950/50 px-2 py-0.5 rounded border border-amber-500/30 text-xs">
+                              {ord.orderCode}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-medium">
-                              <Clock className="w-3.5 h-3.5 text-amber-400" />
-                              <span>Chờ quét QR</span>
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <div className="font-semibold text-slate-200">{ord.hoTen}</div>
+                            {ord.email ? (
+                              <div className="text-[11px] text-emerald-400 font-mono flex items-center gap-1 mt-0.5">
+                                <Mail className="w-3 h-3 shrink-0" />
+                                <span>{ord.email}</span>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-500 italic">Chưa nhập email</div>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center gap-1 text-slate-200 text-xs">
+                              {serviceLabel}
                             </span>
-                          )}
-                        </td>
+                          </td>
 
-                        <td className="py-3 px-4 text-xs text-slate-400">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3 text-slate-500" />
-                            <span>{dateStr}</span>
-                          </div>
-                        </td>
+                          <td className="py-3 px-4 text-right">
+                            <span className="font-bold text-emerald-400 font-mono">
+                              {ord.amount.toLocaleString('vi-VN')} đ
+                            </span>
+                          </td>
 
-                        <td className="py-3 px-4 text-right">
-                          {!isPaid ? (
-                            <button
-                              type="button"
-                              onClick={() => handleApproveOrder(ord.orderCode)}
-                              disabled={approvingCode === ord.orderCode}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs shadow-md transition disabled:opacity-50"
-                              title="Duyệt thanh toán và kích hoạt email ngay lập tức"
-                            >
-                              <Zap className="w-3.5 h-3.5 fill-slate-950" />
-                              <span>
-                                {approvingCode === ord.orderCode ? 'Đang duyệt...' : 'Duyệt & Gửi Email'}
+                          <td className="py-3 px-4 text-center">
+                            {isPaid ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Đã thanh toán</span>
                               </span>
-                            </button>
-                          ) : (
-                            <span className="text-[11px] text-emerald-400 italic">✔ Đã kích hoạt</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/60 text-xs font-medium">
+                                <Clock className="w-3.5 h-3.5 text-amber-400/80" />
+                                <span>Chờ quét QR</span>
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-xs text-slate-400">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-slate-500" />
+                              <span>{dateStr}</span>
+                            </div>
+                          </td>
+
+                          <td className="py-3 px-4 text-right">
+                            {!isPaid ? (
+                              <button
+                                type="button"
+                                onClick={() => handleApproveOrder(ord.orderCode)}
+                                disabled={approvingCode === ord.orderCode}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 hover:text-amber-300 text-slate-300 text-xs font-medium rounded-lg border border-slate-700/60 shadow-sm transition disabled:opacity-50"
+                                title="Duyệt tay thủ công nếu khách đã chuyển khoản mà webhook bị trễ"
+                              >
+                                <Zap className="w-3 h-3 text-amber-400" />
+                                <span>
+                                  {approvingCode === ord.orderCode ? 'Đang duyệt...' : 'Duyệt tay'}
+                                </span>
+                              </button>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Tự động xong</span>
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
