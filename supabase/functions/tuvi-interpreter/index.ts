@@ -67,7 +67,7 @@ serve(async (req) => {
 
     const finalGenConfig = generationConfig || {
       temperature: 0.7,
-      maxOutputTokens: 3500,
+      maxOutputTokens: isProPreview ? 12000 : 6000,
       thinkingConfig: {
         thinkingBudget: defaultBudget,
       },

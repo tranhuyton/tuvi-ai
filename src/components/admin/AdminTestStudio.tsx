@@ -1059,7 +1059,7 @@ export default function AdminTestStudio() {
           <LaSoBanCo laSo={laSo} onReset={() => setLaSo(null)} />
 
           {/* Thanh công cụ lưu nhanh khi đã có kết quả */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-amber-500/40 text-xs flex-wrap gap-2">
+          <div className="max-w-[760px] mx-auto flex items-center justify-between p-3 rounded-xl bg-slate-900/80 border border-amber-500/40 text-xs flex-wrap gap-2">
             <div className="flex items-center gap-2 text-slate-200">
               <Bookmark className="w-4 h-4 text-amber-400" />
               <span>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { LaSoData } from '@/types/tuvi';
 import { callGeminiVision, buildReadingParts } from '@/lib/gemini';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {

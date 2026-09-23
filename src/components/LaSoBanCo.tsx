@@ -192,7 +192,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
   };
 
   return (
-    <div className="w-full max-w-[1060px] mx-auto">
+    <div className="w-full max-w-[760px] mx-auto">
       {/* Thanh công cụ thao tác */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3 print:hidden px-1">
         <div className="flex items-center gap-2 flex-wrap">
@@ -254,10 +254,10 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
         </div>
       </div>
 
-      {/* Khung chứa lá số - Tự động co giãn theo chiều rộng màn hình mobile */}
+      {/* Khung chứa lá số - Tự động co giãn theo chiều rộng màn hình mobile & căn giữa chuẩn xác */}
       <div
         ref={containerRef}
-        className="w-full relative bg-white rounded-xl shadow-xl overflow-hidden print:p-0 print:shadow-none"
+        className="w-full max-w-[760px] mx-auto relative bg-white rounded-xl shadow-xl overflow-hidden print:p-0 print:shadow-none"
         style={{
           height: scale < 1 && isFitMode ? `${boardHeight * scale}px` : 'auto',
           overflowX: scale < 1 && isFitMode ? 'hidden' : 'auto',
@@ -265,7 +265,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
       >
         <div
           ref={boardInnerRef}
-          className="w-[760px] relative bg-white p-2 sm:p-4 select-none"
+          className="w-[760px] mx-auto relative bg-white p-2 sm:p-4 select-none"
           style={{
             transform: scale < 1 && isFitMode ? `scale(${scale})` : 'none',
             transformOrigin: 'top left',

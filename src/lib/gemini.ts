@@ -135,7 +135,7 @@ Bài luận phải cực kỳ sâu sắc, phân tích đa tầng, giải nghĩa 
 - Phương pháp hóa giải triệt để các sát tinh và hung vận trong lá số bằng phong thủy, tâm thức, lối sống và thiện nghiệp.
 - Lời dặn tâm huyết của Thầy Tôn dành riêng cho đương số. (Nhắc nhở đương số có thể đàm đạo trực tiếp thêm với Thầy ở khung Chat bên dưới).
 
-Văn phong uyên bác, giàu chất văn hóa phương Đông, từ ngữ đắt giá, truyền cảm hứng mạnh mẽ. Trình bày bằng thẻ HTML tinh tế, rõ ràng.`;
+Văn phong uyên bác, giàu chất văn hóa phương Đông, từ ngữ đắt giá, truyền cảm hứng mạnh mẽ. Trình bày bằng thẻ HTML tinh tế, rõ ràng. Bắt buộc viết trọn vẹn đủ cả 5 phần lớn, có lời chúc và lời kết hoàn chỉnh, tuyệt đối không được dừng dở dang giữa câu.`;
   } else {
     // ==========================================
     // FREE TIER PROMPT: GEMINI 2.5 FLASH (800 - 1000 TỪ)
@@ -230,7 +230,7 @@ export async function callGeminiVision(
           contents: [{ role: 'user', parts }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: isPro ? 6000 : 3000,
+            maxOutputTokens: isPro ? 12000 : 5000,
             thinkingConfig: { thinkingBudget: targetBudget },
           },
         }),
@@ -262,7 +262,7 @@ export async function callGeminiVision(
         model: modelName,
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: isPro ? 6000 : 3000,
+          maxOutputTokens: isPro ? 12000 : 5000,
           thinkingConfig: { thinkingBudget: targetBudget },
         },
       },
