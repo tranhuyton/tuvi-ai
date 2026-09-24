@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CungLaSo } from '@/types/tuvi';
+import { CHINH_TINH_COLORS, STAR_NGU_HANH_COLOR } from '@/lib/tuvi/constants';
 
 interface CungViewProps {
   cung: CungLaSo;
@@ -50,16 +51,19 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       {/* 2. Chính Tinh (Nằm chính giữa trên) */}
       <div className="text-center font-bold text-xs sm:text-[13px] leading-tight my-0.5 min-h-[34px] flex flex-col justify-center gap-0.5">
         {cung.chinhTinh.length > 0 &&
-          cung.chinhTinh.map((ct, idx) => (
-            <div key={idx} style={{ color: ct.color || '#000000' }} className="whitespace-nowrap">
-              <span>{ct.ten}</span>
-              {ct.dacHam && (
-                <span className="text-[10px] sm:text-[11px] font-sans font-normal ml-0.5">
-                  ({ct.dacHam})
-                </span>
-              )}
-            </div>
-          ))}
+          cung.chinhTinh.map((ct, idx) => {
+            const starColor = CHINH_TINH_COLORS[ct.ten] || STAR_NGU_HANH_COLOR[ct.ten] || ct.color || '#000000';
+            return (
+              <div key={idx} style={{ color: starColor }} className="whitespace-nowrap">
+                <span>{ct.ten}</span>
+                {ct.dacHam && (
+                  <span className="text-[10px] sm:text-[11px] font-sans font-normal ml-0.5">
+                    ({ct.dacHam})
+                  </span>
+                )}
+              </div>
+            );
+          })}
       </div>
 
       {/* 3. Phụ Tinh (Cột Tốt bên trái, Cột Xấu bên phải) */}
@@ -68,11 +72,12 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
         <div className="w-[50%] text-left space-y-0.5 pr-0.5 min-w-0">
           {cung.phuTinhTot.map((sao, idx) => {
             const isBold = BOLD_STARS.has(sao.ten) || sao.ten.startsWith('Hóa');
+            const starColor = STAR_NGU_HANH_COLOR[sao.ten] || sao.color || '#000000';
             return (
               <div
                 key={idx}
                 className="flex items-baseline whitespace-nowrap tracking-tight"
-                style={{ color: sao.color || '#000000' }}
+                style={{ color: starColor }}
                 title={`${sao.ten}${sao.dacHam ? ` (${sao.dacHam})` : ''}`}
               >
                 <span className={isBold ? 'font-bold' : 'font-medium'}>
@@ -92,11 +97,12 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
         <div className="w-[50%] text-left space-y-0.5 pl-0.5 min-w-0">
           {cung.phuTinhXau.map((sao, idx) => {
             const isBold = BOLD_STARS.has(sao.ten) || sao.ten === 'Hóa Kỵ';
+            const starColor = STAR_NGU_HANH_COLOR[sao.ten] || sao.color || '#cc0000';
             return (
               <div
                 key={idx}
                 className="flex items-baseline whitespace-nowrap tracking-tight"
-                style={{ color: sao.color || '#cc0000' }}
+                style={{ color: starColor }}
                 title={`${sao.ten}${sao.dacHam ? ` (${sao.dacHam})` : ''}`}
               >
                 <span className={isBold ? 'font-bold' : 'font-medium'}>
