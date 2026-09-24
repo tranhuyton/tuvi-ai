@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getAllOfflineCharts,
   saveOfflineChart,
+  saveMultipleOfflineCharts,
   deleteOfflineChart,
   OfflineChartItem,
 } from '@/lib/offlineChartStore';
@@ -38,6 +39,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+
+    // Hỗ trợ đồng bộ hàng loạt (Batch Sync từ trình duyệt máy tính)
+    if (Array.isArray(body)) {
+      const savedList = await saveMultipleOfflineCharts(body);
+      return NextResponse.json({ success: true, count: savedList.length, charts: savedList });
+    }
+
     if (!body.hoTen || !body.duongSoData) {
       return NextResponse.json({ error: 'Thiếu thông tin họ tên hoặc dữ liệu đương số' }, { status: 400 });
     }

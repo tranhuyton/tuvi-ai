@@ -29,6 +29,7 @@ import {
   Calendar,
   MessageSquare,
   Bookmark,
+  Cloud,
 } from 'lucide-react';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 import { OfflineChartItem, OfflineChartTag } from '@/lib/offlineChartStore';
@@ -148,29 +149,32 @@ export default function AdminTestStudio() {
           (c: OfflineChartItem) => c.tag !== 'sample' && !c.id.startsWith('preset-')
         );
 
-        // Đồng bộ với localStorage trên trình duyệt của Thầy Tôn
+        // Đồng bộ 2 chiều giữa Supabase Cloud và localStorage trên thiết bị
         try {
           const localSaved = localStorage.getItem('tuvi_offline_charts_local');
           if (localSaved) {
             let localList: OfflineChartItem[] = JSON.parse(localSaved);
             if (Array.isArray(localList)) {
-              // Dọn sạch các mẫu cũ khỏi localStorage
+              // Dọn sạch các mẫu sample cũ nếu có
               localList = localList.filter((c) => c.tag !== 'sample' && !c.id.startsWith('preset-'));
               const serverIdSet = new Set(list.map((c) => c.id));
               const missingOnServer = localList.filter((c) => !serverIdSet.has(c.id));
               if (missingOnServer.length > 0) {
-                // Tự động đẩy bù các hồ sơ từ local lên server ngầm
-                missingOnServer.forEach((item) => {
-                  fetch('/api/admin/offline-charts', {
+                // Tự động đẩy bù các hồ sơ từ máy tính lên Supabase qua batch POST
+                try {
+                  await fetch('/api/admin/offline-charts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
-                    body: JSON.stringify(item),
-                  }).catch(() => {});
-                });
+                    body: JSON.stringify(missingOnServer),
+                  });
+                } catch (batchErr) {
+                  console.warn('Lỗi đẩy bù hồ sơ lên Supabase:', batchErr);
+                }
                 list = [...list, ...missingOnServer];
               }
             }
           }
+          // Lưu danh sách đầy đủ mới nhất từ Cloud vào thiết bị hiện tại
           localStorage.setItem('tuvi_offline_charts_local', JSON.stringify(list));
         } catch (e) {
           // ignore localStorage error
@@ -623,14 +627,17 @@ export default function AdminTestStudio() {
       <div className="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-md space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
           <div>
-            <h3 className="font-bold text-base sm:text-lg text-amber-400 font-serif flex items-center gap-2">
+            <h3 className="font-bold text-base sm:text-lg text-amber-400 font-serif flex items-center gap-2 flex-wrap">
               <BookOpen className="w-5 h-5 text-amber-400" />
               <span>Sổ Tay Khách Offline Của Thầy Tôn</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono border border-amber-500/40">
                 {offlineCharts.length} khách
               </span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30 flex items-center gap-1 font-sans font-normal">
+                <Cloud className="w-3 h-3 text-sky-400" /> Cloud Sync
+              </span>
               {autoSavedNotice && (
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-fade-in flex items-center gap-1 font-sans">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-fade-in flex items-center gap-1 font-sans font-normal">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Đã tự động lưu
                 </span>
               )}
@@ -654,10 +661,11 @@ export default function AdminTestStudio() {
               type="button"
               onClick={fetchOfflineCharts}
               disabled={isLoadingOffline}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
-              title="Làm mới danh sách"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+              title="Làm mới & Đồng bộ đám mây (Supabase)"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOffline ? 'animate-spin text-amber-400' : ''}`} />
+              <span className="hidden sm:inline">Đồng bộ</span>
             </button>
           </div>
         </div>
