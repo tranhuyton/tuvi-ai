@@ -17,6 +17,7 @@ import {
   User,
   Zap,
   ChevronRight,
+  ChevronLeft,
   AlertCircle,
   Image as ImageIcon,
   X,
@@ -621,6 +622,23 @@ export default function AdminTestStudio() {
     );
   });
 
+  // Phân trang danh sách khách offline (mỗi trang 6-9 lá tùy chọn)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+
+  // Tự động chuyển về trang 1 khi người dùng gõ từ khóa tìm kiếm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [offlineSearch]);
+
+  const totalItems = filteredOfflineCharts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedCharts = filteredOfflineCharts.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
+  );
+
   return (
     <div className="space-y-6">
       {/* KHỐI 1: KHO LÁ SỐ KHÁCH OFFLINE & SỔ TAY SỐ MỆNH */}
@@ -695,93 +713,171 @@ export default function AdminTestStudio() {
             {offlineSearch ? 'Không tìm thấy hồ sơ phù hợp từ khóa.' : 'Chưa có hồ sơ khách nào trong sổ tay. Bấm "+ Khách Offline Mới" hoặc điền thông tin bên dưới để tạo lá số.'}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
-            {filteredOfflineCharts.map((item) => {
-              const isSelected = activeChartId === item.id;
-              const ds = item.duongSoData || ({} as any);
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {paginatedCharts.map((item) => {
+                const isSelected = activeChartId === item.id;
+                const ds = item.duongSoData || ({} as any);
 
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => loadChartItem(item)}
-                  className={`p-3 rounded-xl border transition cursor-pointer relative group flex flex-col justify-between ${
-                    isSelected
-                      ? 'bg-amber-500/15 border-amber-500/70 shadow-md shadow-amber-500/10'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-xs sm:text-sm text-slate-100 group-hover:text-amber-300 transition">
-                          {item.hoTen}
-                        </span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
-                            item.tag === 'vip_offline'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                          }`}
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => loadChartItem(item)}
+                    className={`p-3.5 rounded-xl border transition cursor-pointer relative group flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-amber-500/15 border-amber-500/70 shadow-md shadow-amber-500/10'
+                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-xs sm:text-sm text-slate-100 group-hover:text-amber-300 transition">
+                            {item.hoTen}
+                          </span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                              item.tag === 'vip_offline'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            }`}
+                          >
+                            {item.tag === 'vip_offline' ? '⭐ VIP Offline' : 'Khách Offline'}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteChart(item.id, item.hoTen, e)}
+                          className="text-slate-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/15 transition border border-transparent hover:border-red-500/30 shrink-0"
+                          title="Xóa hồ sơ này khỏi sổ tay"
                         >
-                          {item.tag === 'vip_offline' ? '⭐ VIP Offline' : 'Khách Offline'}
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
+                        <span>{ds.gioiTinh}</span>
+                        <span>•</span>
+                        <span>
+                          Sinh {ds.ngayDuong}/{ds.thangDuong}/{ds.namDuong} (
+                          {GIO_ARR[ds.gioSinhVal]?.label || ds.gioSinhVal || '—'})
                         </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteChart(item.id, item.hoTen, e)}
-                        className="text-slate-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/15 transition border border-transparent hover:border-red-500/30 shrink-0"
-                        title="Xóa hồ sơ này khỏi sổ tay"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {item.notes && (
+                        <p className="text-[11px] text-slate-400 mt-1.5 line-clamp-2 italic bg-slate-900/50 px-2 py-0.5 rounded border border-slate-800/80">
+                          📌 {item.notes}
+                        </p>
+                      )}
                     </div>
 
-                    <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
-                      <span>{ds.gioiTinh}</span>
-                      <span>•</span>
-                      <span>
-                        Sinh {ds.ngayDuong}/{ds.thangDuong}/{ds.namDuong} (
-                        {GIO_ARR[ds.gioSinhVal]?.label || ds.gioSinhVal || '—'})
+                    {/* Huy hiệu tính năng */}
+                    <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-slate-800/60 flex-wrap">
+                      {ds.anhMat && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
+                          <ImageIcon className="w-2.5 h-2.5" />
+                          <span>Diện tướng</span>
+                        </span>
+                      )}
+                      {ds.anhTay && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
+                          <ImageIcon className="w-2.5 h-2.5" />
+                          <span>Chỉ tay</span>
+                        </span>
+                      )}
+                      {item.readingHtml ? (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                          <span>Đã có bài luận</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-500">Chưa luận giải</span>
+                      )}
+                      <span className="text-[10px] text-amber-400 ml-auto font-medium">
+                        {isSelected ? 'Đang mở ▾' : 'Bấm để mở'}
                       </span>
                     </div>
-
-                    {item.notes && (
-                      <p className="text-[11px] text-slate-400 mt-1.5 line-clamp-1 italic bg-slate-900/50 px-2 py-0.5 rounded border border-slate-800/80">
-                        📌 {item.notes}
-                      </p>
-                    )}
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Huy hiệu tính năng */}
-                  <div className="flex items-center gap-1.5 mt-2.5 pt-2 border-t border-slate-800/60 flex-wrap">
-                    {ds.anhMat && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
-                        <ImageIcon className="w-2.5 h-2.5" />
-                        <span>Diện tướng</span>
-                      </span>
-                    )}
-                    {ds.anhTay && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 flex items-center gap-1">
-                        <ImageIcon className="w-2.5 h-2.5" />
-                        <span>Chỉ tay</span>
-                      </span>
-                    )}
-                    {item.readingHtml ? (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 flex items-center gap-1">
-                        <CheckCircle2 className="w-2.5 h-2.5" />
-                        <span>Đã có bài luận</span>
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-500">Chưa luận giải</span>
-                    )}
-                    <span className="text-[10px] text-amber-400 ml-auto font-medium">
-                      {isSelected ? 'Đang mở ▾' : 'Bấm để mở'}
-                    </span>
+            {/* Thanh điều hướng phân trang (Pagination) */}
+            {totalItems > 0 && (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-800 text-xs">
+                {/* Thông tin số lượng & Chọn số lá / trang */}
+                <div className="flex items-center gap-3 text-slate-400 flex-wrap">
+                  <span>
+                    Hiển thị <b className="text-slate-200">{(safeCurrentPage - 1) * itemsPerPage + 1} - {Math.min(safeCurrentPage * itemsPerPage, totalItems)}</b> trong <b className="text-amber-400">{totalItems}</b> lá số
+                  </span>
+                  <div className="flex items-center gap-1.5 pl-3 border-l border-slate-800">
+                    <span className="text-[11px] text-slate-500">Mỗi trang:</span>
+                    {[6, 9, 12].map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => {
+                          setItemsPerPage(num);
+                          setCurrentPage(1);
+                        }}
+                        className={`px-2 py-0.5 rounded text-[11px] font-semibold transition ${
+                          itemsPerPage === num
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    ))}
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Các nút chuyển trang */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={safeCurrentPage === 1}
+                      className="px-2.5 py-1 rounded-lg text-slate-300 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 font-medium"
+                      title="Trang trước"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Trước</span>
+                    </button>
+
+                    <div className="flex items-center gap-1 px-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          type="button"
+                          onClick={() => setCurrentPage(page)}
+                          className={`min-w-7 h-7 rounded-lg text-xs font-bold transition flex items-center justify-center ${
+                            safeCurrentPage === page
+                              ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/30'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safeCurrentPage === totalPages}
+                      className="px-2.5 py-1 rounded-lg text-slate-300 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 font-medium"
+                      title="Trang sau"
+                    >
+                      <span className="hidden sm:inline">Sau</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
