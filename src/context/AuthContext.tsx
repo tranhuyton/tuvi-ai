@@ -111,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             full_name: fullName.trim(),
+            app: 'tuvi',
           },
         },
       });
