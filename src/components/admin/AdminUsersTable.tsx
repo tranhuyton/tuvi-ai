@@ -180,7 +180,7 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
       {/* Modal Xem Chi Tiết Câu Hỏi Của Khách Hàng */}
       {selectedUserForMessages && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl w-full max-w-3xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
             {/* Header */}
             <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
               <div className="flex items-center gap-3">
@@ -207,7 +207,7 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
             </div>
 
             {/* Danh sách câu hỏi */}
-            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1 bg-slate-950/40">
               {(() => {
                 const userMsgs = messages
                   .filter((m) => m.user_id === selectedUserForMessages.id)
@@ -227,9 +227,9 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
                 }
 
                 return userMsgs.map((msg, idx) => (
-                  <div key={msg.id || idx} className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-2">
-                      <span className="font-semibold text-amber-400">Câu hỏi #{idx + 1}</span>
+                  <div key={msg.id || idx} className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-lg">
+                    <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-2.5">
+                      <span className="font-bold text-amber-400 font-serif text-sm">Câu hỏi #{idx + 1}</span>
                       <span>
                         {msg.created_at
                           ? new Date(msg.created_at).toLocaleString('vi-VN', {
@@ -243,21 +243,26 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
                       </span>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="text-xs font-semibold text-blue-400 flex items-center gap-1">
+                    {/* Khách hỏi */}
+                    <div className="bg-blue-600 text-white rounded-xl p-3.5 shadow-sm text-sm">
+                      <div className="text-xs text-blue-200 font-semibold mb-1 flex items-center gap-1.5">
                         <span>👤 Khách hỏi:</span>
                       </div>
-                      <div className="text-sm text-slate-100 bg-slate-900/80 p-3 rounded-lg border border-slate-800/80">
-                        {msg.question}
-                      </div>
+                      <div className="leading-relaxed font-medium text-slate-50">{msg.question}</div>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="text-xs font-semibold text-amber-400 flex items-center gap-1">
-                        <span>🧙‍♂️ AI Thầy Tôn trả lời:</span>
+                    {/* AI Thầy Tôn trả lời (Chữ đen nền trắng chuẩn như bài luận giải ngoài trang) */}
+                    <div className="bg-white text-slate-900 rounded-xl p-4 sm:p-6 border-2 border-amber-400/80 shadow-md">
+                      <div className="text-xs sm:text-sm font-bold text-amber-950 uppercase tracking-wider mb-3 pb-2 border-b border-slate-200 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5 text-amber-800 font-serif">
+                          <span>🧙‍♂️ AI Thầy Tôn Luận Giải:</span>
+                        </span>
+                        <span className="text-xs normal-case font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                          👑 Chuyên Sâu
+                        </span>
                       </div>
                       <div
-                        className="text-xs sm:text-sm text-slate-200 bg-slate-900/60 p-4 rounded-lg border border-slate-800/60 leading-relaxed space-y-2 text-justify [&>p]:mb-2.5 [&>b]:text-amber-300 [&>strong]:text-amber-300"
+                        className="prose max-w-none text-justify text-sm sm:text-base text-slate-800 leading-relaxed sm:leading-loose space-y-3 font-sans [&>p]:mb-3 [&>b]:text-amber-950 [&>strong]:text-amber-950"
                         dangerouslySetInnerHTML={{ __html: msg.answer }}
                       />
                     </div>
