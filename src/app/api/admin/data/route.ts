@@ -58,7 +58,8 @@ export async function GET(req: NextRequest) {
 
     const { data: messages } = await supabase
       .from('tuvi_chat_messages')
-      .select('id, chart_id, user_id, created_at');
+      .select('id, chart_id, user_id, question, answer, created_at')
+      .order('created_at', { ascending: false });
 
     const totalCharts = charts?.length || 0;
     const totalUsers = profiles?.length || 0;
@@ -98,6 +99,7 @@ export async function GET(req: NextRequest) {
       source: 'direct',
       users: formattedUsers,
       charts: formattedCharts,
+      messages: messages || [],
       orders: orders,
       stats: {
         total_users: totalUsers,

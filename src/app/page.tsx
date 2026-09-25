@@ -502,6 +502,15 @@ export default function HomePage() {
   // Xử lý gửi tin nhắn hỏi đáp với Thầy Tôn
   const handleSendMessage = async (userQuestion: string, mode: 'basic' | 'vip' = 'vip') => {
     if (!laSo) return;
+
+    // Kiểm tra quota cứng: Nếu đã hỏi đủ hạn mức cho phép thì chặn
+    const validCount = chatHistory.filter((c) => !c.isError).length;
+    const totalAllowed = (questionsQuota?.proAllowed || 0) + (questionsQuota?.basicAllowed || 0);
+    if (totalAllowed > 0 && validCount >= totalAllowed) {
+      alert('Quý khách đã sử dụng hết số lượt câu hỏi của lá số này. Xin vui lòng nạp thêm lượt hỏi để tiếp tục đàm đạo cùng Thầy Tôn.');
+      return;
+    }
+
     setIsLoadingChat(true);
 
     try {

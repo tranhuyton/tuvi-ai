@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Search, Calendar, BookOpen, MessageSquare, Mail, RefreshCw } from 'lucide-react';
+import { User, Search, Calendar, BookOpen, MessageSquare, Mail, RefreshCw, X, MessageCircle } from 'lucide-react';
 
 export interface AdminUser {
   id: string;
@@ -12,14 +12,28 @@ export interface AdminUser {
   messages_count: number;
 }
 
+export interface AdminChatMessage {
+  id: string;
+  chart_id: string;
+  user_id: string;
+  question: string;
+  answer: string;
+  created_at: string;
+  user_name?: string;
+  user_email?: string;
+  chart_title?: string;
+}
+
 interface AdminUsersTableProps {
   users: AdminUser[];
+  messages?: AdminChatMessage[];
   isLoading: boolean;
   onRefresh: () => void;
 }
 
-export default function AdminUsersTable({ users, isLoading, onRefresh }: AdminUsersTableProps) {
+export default function AdminUsersTable({ users, messages = [], isLoading, onRefresh }: AdminUsersTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUserForMessages, setSelectedUserForMessages] = useState<AdminUser | null>(null);
 
   const filteredUsers = users.filter((u) => {
     const term = searchTerm.toLowerCase().trim();
@@ -132,10 +146,21 @@ export default function AdminUsersTable({ users, isLoading, onRefresh }: AdminUs
                     </td>
 
                     <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-semibold">
-                        <MessageSquare className="w-3 h-3" />
-                        {u.messages_count}
-                      </span>
+                      {u.messages_count > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUserForMessages(u)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-xs font-semibold border border-blue-500/30 transition cursor-pointer"
+                          title="Bấm để xem chi tiết các câu hỏi của khách hàng này"
+                        >
+                          <MessageSquare className="w-3 h-3 text-blue-400" />
+                          <span>{u.messages_count} câu</span>
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 text-slate-500 text-xs">
+                          0
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3 px-4 text-right text-xs text-slate-400">
@@ -149,6 +174,105 @@ export default function AdminUsersTable({ users, isLoading, onRefresh }: AdminUs
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Modal Xem Chi Tiết Câu Hỏi Của Khách Hàng */}
+      {selectedUserForMessages && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-base sm:text-lg text-amber-400 font-serif">
+                    Chi Tiết Lượt Hỏi: {selectedUserForMessages.full_name || selectedUserForMessages.email}
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {selectedUserForMessages.email} • Tổng số: <b className="text-amber-400">{selectedUserForMessages.messages_count} câu hỏi</b>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedUserForMessages(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Danh sách câu hỏi */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+              {(() => {
+                const userMsgs = messages.filter((m) => m.user_id === selectedUserForMessages.id);
+                if (userMsgs.length === 0) {
+                  return (
+                    <div className="text-center py-8 space-y-2">
+                      <p className="text-slate-300 font-semibold">
+                        Khách hàng đã hỏi {selectedUserForMessages.messages_count} câu trên hệ thống.
+                      </p>
+                      <p className="text-xs text-slate-400 max-w-md mx-auto">
+                        Để hiển thị trực tiếp nội dung từng câu hỏi và câu trả lời trong bảng này, xin vui lòng chạy lệnh cập nhật SQL <code className="text-amber-400 bg-slate-950 px-1 py-0.5 rounded">20260926020000_admin_recent_chat_messages.sql</code> trong Supabase SQL Editor.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return userMsgs.map((msg, idx) => (
+                  <div key={msg.id || idx} className="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 pb-2">
+                      <span className="font-semibold text-amber-400">Câu hỏi #{idx + 1}</span>
+                      <span>
+                        {msg.created_at
+                          ? new Date(msg.created_at).toLocaleString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })
+                          : ''}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-xs font-semibold text-blue-400 flex items-center gap-1">
+                        <span>👤 Khách hỏi:</span>
+                      </div>
+                      <div className="text-sm text-slate-100 bg-slate-900/80 p-3 rounded-lg border border-slate-800/80">
+                        {msg.question}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="text-xs font-semibold text-amber-400 flex items-center gap-1">
+                        <span>🧙‍♂️ AI Thầy Tôn trả lời:</span>
+                      </div>
+                      <div className="text-xs sm:text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg border border-slate-800/50 leading-relaxed whitespace-pre-wrap">
+                        {msg.answer}
+                      </div>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3 sm:p-4 border-t border-slate-800 bg-slate-950/80 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedUserForMessages(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold rounded-xl transition"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

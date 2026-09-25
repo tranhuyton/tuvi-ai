@@ -28,14 +28,24 @@ export default function ChatThayTon({
   const [question, setQuestion] = useState('');
   const isPro = tier === 'pro';
 
-  // 1. Phân loại lượt hỏi được cấp:
-  const rawBasicAllowed = quota !== undefined ? quota.basicAllowed : (!isPro ? questionsAllowed : 0);
+  // 1. Phân loại hạn mức câu hỏi được cấp theo gói:
+  const basicAllowed = quota !== undefined ? quota.basicAllowed : (!isPro ? questionsAllowed : 0);
   const proAllowed = quota !== undefined ? quota.proAllowed : (isPro ? (questionsAllowed > 0 ? questionsAllowed : 2) : 0);
+  const totalAllowed = basicAllowed + proAllowed;
 
-  // Hàm nhận diện tin nhắn Chuyên Sâu VIP Pro (hỗ trợ cả tin nhắn cũ chưa gắn nhãn)
+  // 2. Thống kê số lượng câu hỏi đã dùng:
+  const validMessages = chatHistory.filter((c) => !c.isError);
+  const totalAsked = validMessages.length;
+
+  // Tổng số câu còn lại TUYỆT ĐỐI không bao giờ vượt quá (totalAllowed - totalAsked):
+  const totalRemaining = Math.max(0, totalAllowed - totalAsked);
+
+  // Nhận diện câu hỏi Chuyên Sâu VIP Pro vs Cơ bản (hỗ trợ tin nhắn cũ)
   const isMessageVip = (c: ChatMessage) => {
     if (c.type === 'vip') return true;
     if (c.type === 'basic') return false;
+    // Nếu tin nhắn cũ chưa gắn nhãn: Trên lá số VIP Pro, mặc định là câu VIP của khách
+    if (isPro) return true;
     const a = c.a || '';
     return (
       a.includes('Chuyên Sâu') ||
@@ -45,16 +55,11 @@ export default function ChatThayTon({
     );
   };
 
-  // 2. Tính số lượng câu hỏi đã dùng theo từng loại:
-  const validMessages = chatHistory.filter((c) => !c.isError);
+  // Phân bổ số câu còn lại theo từng loại:
+  // Nếu đã dùng hết tổng số câu (totalRemaining === 0), cả pro và basic đều bằng 0
   const proAsked = validMessages.filter((c) => isMessageVip(c)).length;
-  const basicAsked = validMessages.filter((c) => !isMessageVip(c)).length;
-  const basicAllowed = Math.max(rawBasicAllowed, basicAsked);
-
-  const basicRemaining = Math.max(0, basicAllowed - basicAsked);
-  const proRemaining = Math.max(0, proAllowed - proAsked);
-  const totalRemaining = basicRemaining + proRemaining;
-  const totalAllowed = basicAllowed + proAllowed;
+  const proRemaining = totalRemaining === 0 ? 0 : Math.min(totalRemaining, Math.max(0, proAllowed - proAsked));
+  const basicRemaining = totalRemaining === 0 ? 0 : Math.max(0, totalRemaining - proRemaining);
 
   // 3. Chế độ câu hỏi đang chọn (mặc định ưu tiên VIP Pro nếu còn):
   const [selectedMode, setSelectedMode] = useState<'basic' | 'vip'>(() => {
@@ -66,6 +71,8 @@ export default function ChatThayTon({
   useEffect(() => {
     if (basicRemaining > 0 && selectedMode === 'vip' && proRemaining === 0) {
       setSelectedMode('basic');
+    } else if (proRemaining > 0 && selectedMode === 'basic' && basicRemaining === 0) {
+      setSelectedMode('vip');
     }
   }, [proRemaining, basicRemaining, selectedMode]);
 
@@ -80,7 +87,7 @@ export default function ChatThayTon({
   const prevRemainingRef = useRef(totalRemaining);
   const prevAllowedRef = useRef(totalAllowed);
 
-  // Lắng nghe khi được cộng thêm lượt hỏi mới
+  // Lắng nghe khi được cộng thêm lượt hỏi mới hoặc khi đã dùng hết câu hỏi
   useEffect(() => {
     if (totalAllowed > prevAllowedRef.current || totalRemaining > prevRemainingRef.current) {
       if (totalRemaining > 0) {
@@ -90,17 +97,17 @@ export default function ChatThayTon({
           setFlowStep('chatting');
         }
       }
-    } else if (totalRemaining === 0 && totalAllowed > 0 && flowStep === 'chatting') {
+    } else if (totalRemaining === 0 && totalAllowed > 0) {
       setFlowStep('exhausted');
     }
     prevRemainingRef.current = totalRemaining;
     prevAllowedRef.current = totalAllowed;
-  }, [totalAllowed, totalRemaining, validMessages.length, flowStep]);
+  }, [totalAllowed, totalRemaining, validMessages.length]);
 
   // Xử lý gửi câu hỏi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!question.trim() || isLoading || flowStep !== 'chatting') return;
+    if (!question.trim() || isLoading || flowStep !== 'chatting' || totalRemaining <= 0) return;
 
     // Chọn mode gửi: nếu mode đang chọn đã hết, dùng mode còn lại
     let modeToUse = selectedMode;

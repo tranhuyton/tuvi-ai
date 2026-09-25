@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import AdminTestStudio from '@/components/admin/AdminTestStudio';
-import AdminUsersTable, { AdminUser } from '@/components/admin/AdminUsersTable';
+import AdminUsersTable, { AdminUser, AdminChatMessage } from '@/components/admin/AdminUsersTable';
 import AdminTransactionsTable, { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
 import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw } from 'lucide-react';
 
@@ -21,6 +21,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [charts, setCharts] = useState<AdminChartItem[]>([]);
   const [orders, setOrders] = useState<AdminOrderItem[]>([]);
+  const [messages, setMessages] = useState<AdminChatMessage[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     total_users: 0,
     total_charts: 0,
@@ -79,6 +80,7 @@ export default function AdminPage() {
         const data = await res.json();
         setUsers(data.users || []);
         setCharts(data.charts || []);
+        if (data.messages) setMessages(data.messages);
         if (data.orders) setOrders(data.orders);
         if (data.stats) setStats(data.stats);
       }
@@ -260,6 +262,7 @@ export default function AdminPage() {
         {activeTab === 'users' && (
           <AdminUsersTable
             users={users}
+            messages={messages}
             isLoading={isLoadingData}
             onRefresh={() => fetchAdminData()}
           />

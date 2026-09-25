@@ -30,6 +30,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Thiếu thông tin lá số' }, { status: 400 });
     }
 
+    // Kiểm tra quota cứng từ phía máy chủ: Nếu lá số đã dùng hết câu hỏi cho phép thì từ chối xử lý
+    if (laSo && laSo.quota) {
+      const allowedPro = Number(laSo.quota.proAllowed || 0);
+      const allowedBasic = Number(laSo.quota.basicAllowed || 0);
+      const totalAllowed = allowedPro + allowedBasic;
+      const askedCount = (chatHistory || []).filter((c) => !c.isError).length;
+      if (totalAllowed > 0 && askedCount >= totalAllowed) {
+        return NextResponse.json(
+          { error: 'Lá số này đã sử dụng hết số lượt hỏi cho phép. Quý khách vui lòng nạp thêm lượt hỏi để tiếp tục đàm đạo cùng Thầy Tôn.' },
+          { status: 403 }
+        );
+      }
+    }
+
     const { banMenh, namXemCanChi, tuoiAmXem, cungs } = laSo;
     const cungDataStr = buildCungDataPrompt(laSo);
 
