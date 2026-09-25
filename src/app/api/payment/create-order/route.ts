@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, order: updated });
     }
 
-    const { paymentType = 'reading_vip', price, hoTen = 'Đương số', email, chartId, userId } = body;
+    const { paymentType = 'reading_vip', price, hoTen = 'Đương số', email, chartId, userId, affiliateCode } = body;
 
     let finalAmount = Number(price);
     if (!finalAmount || isNaN(finalAmount)) {
@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       email,
       chartId,
       userId,
+      affiliateCode: affiliateCode ? String(affiliateCode).trim().toLowerCase() : undefined,
     });
 
     // Tạo URL VietQR với mã đơn hàng TVxxxxx

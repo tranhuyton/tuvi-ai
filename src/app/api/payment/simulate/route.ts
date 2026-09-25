@@ -30,6 +30,16 @@ export async function POST(req: Request) {
 
     const paidOrder = await markOrderPaid(order.orderCode, `sim_${Date.now()}`);
 
+    // Ghi nhận hoa hồng cho CTV nếu đơn hàng có mã Affiliate
+    if (order.affiliateCode) {
+      try {
+        const { recordAffiliateCommission } = await import('@/lib/affiliateStore');
+        await recordAffiliateCommission(order.affiliateCode, order.amount, order.orderCode);
+      } catch (affErr) {
+        console.warn('[SIMULATE] Lỗi ghi nhận hoa hồng CTV:', affErr);
+      }
+    }
+
     // Nâng cấp chart nếu có
     if (order.chartId && order.paymentType === 'reading_vip') {
       try {

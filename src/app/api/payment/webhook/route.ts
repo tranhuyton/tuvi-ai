@@ -146,6 +146,17 @@ export async function POST(req: Request) {
       await markOrderPaid(order.orderCode, tx.txId);
       console.log(`[PAYMENT WEBHOOK] ĐÃ KÍCH HOẠT ĐƠN HÀNG THÀNH CÔNG: ${order.orderCode}`);
 
+      // Ghi nhận hoa hồng cho CTV nếu đơn hàng có mã Affiliate
+      if (order.affiliateCode) {
+        try {
+          const { recordAffiliateCommission } = await import('@/lib/affiliateStore');
+          const comm = await recordAffiliateCommission(order.affiliateCode, order.amount, order.orderCode);
+          console.log(`[PAYMENT WEBHOOK] Đã cộng hoa hồng ${comm.toLocaleString('vi-VN')}đ cho CTV ${order.affiliateCode}`);
+        } catch (affErr) {
+          console.warn('[PAYMENT WEBHOOK] Lỗi ghi nhận hoa hồng CTV:', affErr);
+        }
+      }
+
       // Nếu đơn hàng có chartId, cập nhật luôn sang tier 'pro' trong Supabase nếu là reading_vip
       if (order.chartId && order.paymentType === 'reading_vip') {
         try {

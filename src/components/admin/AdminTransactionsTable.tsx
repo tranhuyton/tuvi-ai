@@ -51,6 +51,8 @@ export interface AdminOrderItem {
   transactionId?: string;
   chartId?: string;
   userId?: string;
+  affiliateCode?: string;
+  commissionAmount?: number;
 }
 
 export interface AdminStats {

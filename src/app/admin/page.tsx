@@ -6,9 +6,11 @@ import { useAuth } from '@/context/AuthContext';
 import AdminTestStudio from '@/components/admin/AdminTestStudio';
 import AdminUsersTable, { AdminUser, AdminChatMessage } from '@/components/admin/AdminUsersTable';
 import AdminTransactionsTable, { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
-import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw } from 'lucide-react';
+import AdminAffiliatesTable from '@/components/admin/AdminAffiliatesTable';
+import { AffiliateItem } from '@/lib/affiliateStore';
+import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw, Share2 } from 'lucide-react';
 
-type AdminTab = 'studio' | 'users' | 'transactions';
+type AdminTab = 'studio' | 'users' | 'transactions' | 'affiliates';
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -22,6 +24,8 @@ export default function AdminPage() {
   const [charts, setCharts] = useState<AdminChartItem[]>([]);
   const [orders, setOrders] = useState<AdminOrderItem[]>([]);
   const [messages, setMessages] = useState<AdminChatMessage[]>([]);
+  const [affiliates, setAffiliates] = useState<AffiliateItem[]>([]);
+  const [affiliateOrders, setAffiliateOrders] = useState<AdminOrderItem[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     total_users: 0,
     total_charts: 0,
@@ -69,6 +73,22 @@ export default function AdminPage() {
     setPinInput('');
   };
 
+  const fetchAffiliatesData = async (pin?: string) => {
+    const activePin = pin || localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+    try {
+      const res = await fetch(`/api/admin/affiliates?pin=${encodeURIComponent(activePin)}`, {
+        headers: { 'x-admin-pin': activePin },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.affiliates) setAffiliates(data.affiliates);
+        if (data.orders) setAffiliateOrders(data.orders);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải dữ liệu affiliate:', err);
+    }
+  };
+
   const fetchAdminData = async (pin?: string) => {
     const activePin = pin || localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
     setIsLoadingData(true);
@@ -84,6 +104,7 @@ export default function AdminPage() {
         if (data.orders) setOrders(data.orders);
         if (data.stats) setStats(data.stats);
       }
+      fetchAffiliatesData(activePin);
     } catch (err) {
       console.warn('Lỗi tải dữ liệu admin:', err);
     } finally {
@@ -232,6 +253,22 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => {
+              setActiveTab('affiliates');
+              fetchAffiliatesData();
+            }}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+              activeTab === 'affiliates'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <Share2 className="w-4 h-4" />
+            <span>🤝 Cộng Tác Viên / Affiliate ({affiliates.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
               setActiveTab('users');
               fetchAdminData();
             }}
@@ -256,6 +293,15 @@ export default function AdminPage() {
             stats={stats}
             isLoading={isLoadingData}
             onRefresh={() => fetchAdminData()}
+          />
+        )}
+
+        {activeTab === 'affiliates' && (
+          <AdminAffiliatesTable
+            affiliates={affiliates}
+            orders={affiliateOrders.length > 0 ? affiliateOrders : orders.filter((o) => !!o.affiliateCode)}
+            onRefresh={() => fetchAffiliatesData()}
+            adminPin={localStorage.getItem('tuvi_admin_pin') || 'thayton2026'}
           />
         )}
 

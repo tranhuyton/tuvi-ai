@@ -139,6 +139,9 @@ export default function PaymentModal({
           profile?.email ||
           (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
 
+        const affiliateCode =
+          (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
+
         const res = await fetch('/api/payment/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -149,6 +152,7 @@ export default function PaymentModal({
             email: initialEmail,
             chartId,
             userId: user?.id,
+            affiliateCode: affiliateCode || undefined,
           }),
         });
 

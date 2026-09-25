@@ -51,6 +51,29 @@ export default function HomePage() {
   const getChartStorageKey = (duongSo?: DuLieuDuongSo | null, chartId?: string | null) =>
     chartId || (duongSo ? `${duongSo.hoTen}_${duongSo.namDuong}` : 'default');
 
+  // Bắt mã giới thiệu Affiliate (Ví dụ: tuvithayton.vn/?ref=diep93 hoặc ?aff=diep93)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const refCode = params.get('ref') || params.get('aff');
+      if (refCode && refCode.trim()) {
+        const cleanRef = refCode.trim().toLowerCase();
+        localStorage.setItem('tuvi_affiliate_ref', cleanRef);
+        localStorage.setItem('tuvi_affiliate_time', Date.now().toString());
+
+        // Ghi nhận lượt click
+        fetch('/api/affiliate/track-click', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ref: cleanRef }),
+        }).catch(() => {});
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Đồng bộ và lưu trữ số lượt hỏi vào localStorage để giữ nguyên khi F5 hoặc đổi lá số
   const updateQuestionsQuota = (
     val: QuestionsQuota | ((prev: QuestionsQuota) => QuestionsQuota)

@@ -15,6 +15,8 @@ export interface OrderItem {
   transactionId?: string;
   chartId?: string;
   userId?: string;
+  affiliateCode?: string;
+  commissionAmount?: number;
 }
 
 // Global cache trong runtime Node
@@ -93,6 +95,8 @@ export async function createOrder(data: {
   chartId?: string;
   userId?: string;
   customCode?: string;
+  affiliateCode?: string;
+  commissionAmount?: number;
 }): Promise<OrderItem> {
   loadOrdersFromFile();
 
@@ -111,6 +115,8 @@ export async function createOrder(data: {
     createdAt: now,
     chartId: data.chartId,
     userId: data.userId,
+    affiliateCode: data.affiliateCode?.trim() || undefined,
+    commissionAmount: data.commissionAmount || 0,
   };
 
   // Lưu vào cache Map & local file
@@ -130,6 +136,8 @@ export async function createOrder(data: {
       created_at: newOrder.createdAt,
       chart_id: newOrder.chartId || null,
       user_id: newOrder.userId || null,
+      affiliate_code: newOrder.affiliateCode || null,
+      commission_amount: newOrder.commissionAmount || 0,
     });
   } catch (err) {
     // Bỏ qua nếu bảng tuvi_orders chưa được tạo trong Supabase
@@ -166,6 +174,8 @@ export async function getOrderByCode(code: string): Promise<OrderItem | null> {
         transactionId: data.transaction_id,
         chartId: data.chart_id,
         userId: data.user_id,
+        affiliateCode: data.affiliate_code || undefined,
+        commissionAmount: Number(data.commission_amount || 0),
       };
       ordersMap.set(cleanCode, order);
       saveOrdersToFile();
@@ -296,6 +306,8 @@ export async function getAllOrders(limit: number = 50): Promise<OrderItem[]> {
           transactionId: row.transaction_id,
           chartId: row.chart_id,
           userId: row.user_id,
+          affiliateCode: row.affiliate_code || undefined,
+          commissionAmount: Number(row.commission_amount || 0),
         };
         ordersMap.set(item.orderCode, item);
       }
