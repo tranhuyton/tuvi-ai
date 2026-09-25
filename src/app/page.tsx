@@ -554,7 +554,7 @@ export default function HomePage() {
 
         // Nếu đã đăng nhập và có chartId, lưu tin nhắn vào database
         if (currentChartId) {
-          saveChatMessage(currentChartId, userQuestion, answer);
+          saveChatMessage(currentChartId, userQuestion, answer, mode);
         }
       }
     } catch (err: unknown) {

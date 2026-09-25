@@ -552,11 +552,12 @@ export default function AdminTestStudio() {
   };
 
   // Hỏi đáp trực tiếp không giới hạn lượt (Admin mode)
-  const handleAdminSendMessage = async (userQuestion: string) => {
+  const handleAdminSendMessage = async (userQuestion: string, mode: 'basic' | 'vip' = 'vip') => {
     if (!laSo) return;
     setIsLoadingChat(true);
 
     try {
+      const selectedModel = mode === 'vip' ? (testModel || 'gemini-3.1-pro-preview') : 'gemini-2.5-flash';
       const res = await fetch('/api/tuvi/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -567,15 +568,20 @@ export default function AdminTestStudio() {
           chieuCao: laSo.duongSo.chieuCao,
           canNang: laSo.duongSo.canNang,
           chatHistory,
-          model: testModel,
+          mode,
+          model: selectedModel,
         }),
       });
 
       if (res.ok) {
         const json = await res.json();
-        const updatedChat = [
+        const updatedChat: ChatMessage[] = [
           ...chatHistory,
-          { q: userQuestion, a: json.answer || 'Không nhận được câu trả lời.' },
+          {
+            q: userQuestion,
+            a: json.answer || 'Không nhận được câu trả lời.',
+            type: mode,
+          },
         ];
         setChatHistory(updatedChat);
 
@@ -597,13 +603,13 @@ export default function AdminTestStudio() {
         const errJson = await res.json().catch(() => ({}));
         setChatHistory((prev) => [
           ...prev,
-          { q: userQuestion, a: errJson.error || 'Lỗi kết nối Thầy Tôn', isError: true },
+          { q: userQuestion, a: errJson.error || 'Lỗi kết nối Thầy Tôn', isError: true, type: mode },
         ]);
       }
     } catch (err: any) {
       setChatHistory((prev) => [
         ...prev,
-        { q: userQuestion, a: `Lỗi: ${err.message}`, isError: true },
+        { q: userQuestion, a: `Lỗi: ${err.message}`, isError: true, type: mode },
       ]);
     } finally {
       setIsLoadingChat(false);

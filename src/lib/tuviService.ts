@@ -77,15 +77,16 @@ export async function getChartDetails(chartId: string): Promise<{
 
     const { data: messages, error: msgErr } = await supabase
       .from('tuvi_chat_messages')
-      .select('question, answer')
+      .select('question, answer, message_type')
       .eq('chart_id', chartId)
       .order('created_at', { ascending: true });
 
     if (msgErr) throw msgErr;
 
-    const chatMessages: ChatMessage[] = (messages || []).map((m) => ({
+    const chatMessages: ChatMessage[] = (messages || []).map((m: any) => ({
       q: m.question,
       a: m.answer,
+      type: (m.message_type as 'basic' | 'vip') || (m.answer?.includes('Chuyên Sâu') || m.answer?.includes('VIP Pro') ? 'vip' : 'basic'),
     }));
 
     return { chart, chatMessages };
@@ -176,7 +177,8 @@ export async function updateChartReading(
 export async function saveChatMessage(
   chartId: string,
   question: string,
-  answer: string
+  answer: string,
+  type?: 'basic' | 'vip'
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -187,6 +189,7 @@ export async function saveChatMessage(
       user_id: user.id,
       question,
       answer,
+      message_type: type || 'vip',
     });
 
     if (error) throw error;

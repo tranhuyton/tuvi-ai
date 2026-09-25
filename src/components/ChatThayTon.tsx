@@ -32,16 +32,24 @@ export default function ChatThayTon({
   const rawBasicAllowed = quota !== undefined ? quota.basicAllowed : (!isPro ? questionsAllowed : 0);
   const proAllowed = quota !== undefined ? quota.proAllowed : (isPro ? (questionsAllowed > 0 ? questionsAllowed : 2) : 0);
 
+  // Hàm nhận diện tin nhắn Chuyên Sâu VIP Pro (hỗ trợ cả tin nhắn cũ chưa gắn nhãn)
+  const isMessageVip = (c: ChatMessage) => {
+    if (c.type === 'vip') return true;
+    if (c.type === 'basic') return false;
+    const a = c.a || '';
+    return (
+      a.includes('Chuyên Sâu') ||
+      a.includes('VIP Pro') ||
+      a.includes('sách lược') ||
+      a.includes('Tứ Hóa')
+    );
+  };
+
   // 2. Tính số lượng câu hỏi đã dùng theo từng loại:
   const validMessages = chatHistory.filter((c) => !c.isError);
-  const explicitProAsked = validMessages.filter((c) => c.type === 'vip').length;
-  const explicitBasicAsked = validMessages.filter((c) => c.type === 'basic').length;
-  const untypedMessages = validMessages.filter((c) => !c.type).length;
-
-  // Tin nhắn cũ/chưa gắn nhãn (untyped) 100% thuộc lượt Cơ Bản, TUYỆT ĐỐI không trừ vào lượt Chuyên Sâu của khách!
-  const basicAsked = explicitBasicAsked + untypedMessages;
+  const proAsked = validMessages.filter((c) => isMessageVip(c)).length;
+  const basicAsked = validMessages.filter((c) => !isMessageVip(c)).length;
   const basicAllowed = Math.max(rawBasicAllowed, basicAsked);
-  const proAsked = explicitProAsked;
 
   const basicRemaining = Math.max(0, basicAllowed - basicAsked);
   const proRemaining = Math.max(0, proAllowed - proAsked);
@@ -196,7 +204,7 @@ export default function ChatThayTon({
                 <div className="max-w-[90%] sm:max-w-[75%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 py-3 text-base sm:text-base shadow-md">
                   <div className="text-xs sm:text-sm font-semibold text-blue-200 mb-1 flex items-center justify-between gap-2">
                     <span>Khách hỏi:</span>
-                    {item.type === 'vip' ? (
+                    {isMessageVip(item) ? (
                       <span className="text-xs px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 font-semibold border border-amber-400/40">
                         ⭐ Chuyên Sâu
                       </span>
@@ -216,7 +224,7 @@ export default function ChatThayTon({
                   className={`max-w-[95%] sm:max-w-[85%] rounded-2xl rounded-tl-none px-5 py-4 text-base sm:text-base leading-relaxed sm:leading-loose shadow-md ${
                     item.isError
                       ? 'bg-red-950/80 border border-red-500/50 text-red-200'
-                      : item.type === 'vip'
+                      : isMessageVip(item)
                       ? 'bg-slate-100 text-slate-900 border-2 border-amber-400/70 shadow-amber-500/10'
                       : 'bg-slate-100 text-slate-900 border border-slate-200'
                   }`}
@@ -225,7 +233,7 @@ export default function ChatThayTon({
                     <span className="flex items-center gap-1 text-amber-800">
                       <span>🧙‍♂️ AI Thầy Tôn:</span>
                     </span>
-                    {item.type === 'vip' ? (
+                    {isMessageVip(item) ? (
                       <span className="text-xs normal-case font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                         <Crown className="w-3 h-3 text-amber-700" />
                         <span>Chuyên Sâu</span>
