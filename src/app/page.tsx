@@ -7,7 +7,7 @@ import TuViForm from '@/components/TuViForm';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
-import AuthModal from '@/components/AuthModal';
+import AuthModal, { AuthModalTab } from '@/components/AuthModal';
 import SavedChartsModal from '@/components/SavedChartsModal';
 import PaymentModal, { PaymentPurpose } from '@/components/PaymentModal';
 import UserNav from '@/components/UserNav';
@@ -28,7 +28,7 @@ import { supabase } from '@/lib/supabase';
 import { Sparkles, Crown, PhoneCall, MapPin, Mail } from 'lucide-react';
 
 export default function HomePage() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isLoading: isAuthLoading, isPasswordRecovery } = useAuth();
 
   const [laSo, setLaSo] = useState<LaSoData | null>(null);
   const [currentDuongSo, setCurrentDuongSo] = useState<DuLieuDuongSo | null>(null);
@@ -135,8 +135,18 @@ export default function HomePage() {
 
   // Modals & Payment
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalTab, setAuthModalTab] = useState<AuthModalTab>('signin');
   const [authModalNotice, setAuthModalNotice] = useState('');
   const pendingPostAuthActionRef = useRef<(() => void) | null>(null);
+
+  // Lắng nghe khi người dùng bấm vào link khôi phục mật khẩu từ email
+  useEffect(() => {
+    if (isPasswordRecovery) {
+      setAuthModalTab('update_password');
+      setAuthModalNotice('Tài khoản của quý khách đang trong tiến trình khôi phục. Vui lòng nhập mật khẩu mới.');
+      setIsAuthModalOpen(true);
+    }
+  }, [isPasswordRecovery]);
   const [isSavedChartsModalOpen, setIsSavedChartsModalOpen] = useState(false);
   const [paymentModalConfig, setPaymentModalConfig] = useState<{
     isOpen: boolean;
@@ -981,8 +991,14 @@ export default function HomePage() {
         {/* Navigation Bar Header */}
         <UserNav
           onOpenAuthModal={() => {
+            setAuthModalTab('signin');
             setAuthModalNotice('');
             pendingPostAuthActionRef.current = null;
+            setIsAuthModalOpen(true);
+          }}
+          onOpenChangePassword={() => {
+            setAuthModalTab('update_password');
+            setAuthModalNotice('');
             setIsAuthModalOpen(true);
           }}
           onOpenSavedCharts={handleOpenSavedCharts}
@@ -1102,12 +1118,14 @@ export default function HomePage() {
         chartId={currentChartId || undefined}
       />
 
-      {/* Modal Đăng Nhập / Đăng Ký */}
+      {/* Modal Đăng Nhập / Đăng Ký / Quên MK */}
       <AuthModal
         isOpen={isAuthModalOpen}
+        defaultTab={authModalTab}
         onClose={() => {
           setIsAuthModalOpen(false);
           setAuthModalNotice('');
+          setAuthModalTab('signin');
           pendingPostAuthActionRef.current = null;
         }}
         customNotice={authModalNotice}

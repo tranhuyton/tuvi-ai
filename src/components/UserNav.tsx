@@ -2,13 +2,14 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, LogOut, LogIn } from 'lucide-react';
+import { User, LogOut, LogIn, KeyRound } from 'lucide-react';
 
 interface UserNavProps {
   onOpenAuthModal: () => void;
   onOpenSavedCharts: () => void;
   onNewChart: () => void;
   onSignOut?: () => void;
+  onOpenChangePassword?: () => void;
 }
 
 export default function UserNav({
@@ -16,6 +17,7 @@ export default function UserNav({
   onOpenSavedCharts,
   onNewChart,
   onSignOut,
+  onOpenChangePassword,
 }: UserNavProps) {
   const { user, profile, signOut, isLoading } = useAuth();
 
@@ -92,6 +94,19 @@ export default function UserNav({
               <User className="w-4 h-4 text-amber-400 shrink-0" />
               <span>{displayName}</span>
             </div>
+
+            {/* Nút Đổi mật khẩu */}
+            {onOpenChangePassword && (
+              <button
+                type="button"
+                onClick={onOpenChangePassword}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700/80 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer"
+                title="Thay đổi mật khẩu tài khoản"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="hidden sm:inline">Đổi MK</span>
+              </button>
+            )}
 
             {/* Nút Log out */}
             <button

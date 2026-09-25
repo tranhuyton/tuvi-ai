@@ -8,10 +8,14 @@ interface AuthContextType {
   user: User | null;
   profile: { full_name?: string; email?: string } | null;
   isLoading: boolean;
+  isPasswordRecovery: boolean;
+  setIsPasswordRecovery: (val: boolean) => void;
   signIn: (email: string, pass: string) => Promise<{ error?: string }>;
   signUp: (email: string, pass: string, fullName: string) => Promise<{ error?: string; message?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  resetPasswordForEmail: (email: string) => Promise<{ error?: string; message?: string }>;
+  updatePassword: (newPass: string) => Promise<{ error?: string; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<{ full_name?: string; email?: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   const fetchProfile = async (currentUser: User) => {
     try {
@@ -47,9 +52,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // 1. Kiểm tra session hiện tại
+    // 1. Kiểm tra session hiện tại và URL recovery token
     const initAuth = async () => {
       try {
+        if (typeof window !== 'undefined') {
+          const hash = window.location.hash || '';
+          const search = window.location.search || '';
+          if (hash.includes('type=recovery') || search.includes('reset_password=true')) {
+            setIsPasswordRecovery(true);
+          }
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
@@ -65,7 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     // 2. Lắng nghe thay đổi trạng thái đăng nhập
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+      }
+
       if (session?.user) {
         setUser(session.user);
         await fetchProfile(session.user);
@@ -160,16 +177,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPasswordForEmail = async (emailToReset: string) => {
+    try {
+      const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.tuvithayton.vn';
+      const { error } = await supabase.auth.resetPasswordForEmail(emailToReset.trim(), {
+        redirectTo: `${siteUrl}/?reset_password=true`,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+      return { message: 'Đã gửi hướng dẫn khôi phục mật khẩu vào hòm thư email của bạn.' };
+    } catch (err: any) {
+      return { error: err.message || 'Lỗi gửi yêu cầu khôi phục mật khẩu' };
+    }
+  };
+
+  const updatePassword = async (newPass: string) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPass,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      if (data.user) {
+        setUser(data.user);
+        await fetchProfile(data.user);
+      }
+      setIsPasswordRecovery(false);
+      return { message: 'Mật khẩu đã được cập nhật thành công!' };
+    } catch (err: any) {
+      return { error: err.message || 'Lỗi cập nhật mật khẩu' };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         profile,
         isLoading,
+        isPasswordRecovery,
+        setIsPasswordRecovery,
         signIn,
         signUp,
         signOut,
         refreshProfile,
+        resetPasswordForEmail,
+        updatePassword,
       }}
     >
       {children}
