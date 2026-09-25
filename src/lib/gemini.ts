@@ -125,11 +125,11 @@ Bài luận phải cực kỳ sâu sắc, phân tích đa tầng, giải nghĩa 
 
 <h3>IV. TIỂU VẬN NĂM ${namXem} &amp; BẢN ĐỒ 4 MÙA VẬN KHÍ</h3>
 - Tọa độ cung Lưu Niên năm ${namXem} (${namXemCanChi}) và tác động của các Lưu Tinh (Lưu Thái Tuế, Lưu Lộc Tồn, Lưu Kình Đà...).
-- Khảo sát biến động qua 4 mùa:
-  + Mùa Xuân (Tháng 1, 2, 3 Âm): Khởi sắc hay trì trệ, việc nên mở màn.
-  + Mùa Hạ (Tháng 4, 5, 6 Âm): Đỉnh cao tài lộc hay thử thách quan hệ.
-  + Mùa Thu (Tháng 7, 8, 9 Âm): Biến động công việc, gia đạo, sức khỏe.
-  + Mùa Đông (Tháng 10, 11, 12 Âm): Thu vén thành quả, tích lũy phòng thủ.
+- Khảo sát biến động qua 4 mùa (QUY TẮC BẮT BUỘC: Tra cứu chính xác tọa độ các cung cho từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo đúng 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên, tuyệt đối không đoán mò hay nhầm cung vị):
+  + Mùa Xuân (Tháng 1, 2, 3 Âm): Khởi sắc hay trì trệ, việc nên mở màn (đối chiếu đúng các cung của Tháng 1, 2, 3 theo Bảng tra cứu Nguyệt Vận).
+  + Mùa Hạ (Tháng 4, 5, 6 Âm): Đỉnh cao tài lộc hay thử thách quan hệ (đối chiếu đúng các cung của Tháng 4, 5, 6 theo Bảng tra cứu Nguyệt Vận).
+  + Mùa Thu (Tháng 7, 8, 9 Âm): Biến động công việc, gia đạo, sức khỏe (đối chiếu đúng các cung của Tháng 7, 8, 9 theo Bảng tra cứu Nguyệt Vận).
+  + Mùa Đông (Tháng 10, 11, 12 Âm): Thu vén thành quả, tích lũy phòng thủ (đối chiếu đúng các cung của Tháng 10, 11, 12 theo Bảng tra cứu Nguyệt Vận).
 
 <h3>V. BÍ PHÁP TU DƯỠNG &amp; CHIẾN LƯỢC CẢI VẬN TOÀN DIỆN</h3>
 - Phương pháp hóa giải triệt để các sát tinh và hung vận trong lá số bằng phong thủy, tâm thức, lối sống và thiện nghiệp.

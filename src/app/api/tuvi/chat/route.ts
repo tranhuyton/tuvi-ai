@@ -67,8 +67,11 @@ export async function POST(req: NextRequest) {
 
     const chatPrompt = `${historyText}Khách hỏi câu mới (${activeMode === 'vip' ? 'Gói Chuyên Sâu VIP Pro' : 'Gói Cơ Bản'}): '${userQuestion.trim()}'
 Mệnh ${banMenh}. Năm nay ${namXemCanChi}, ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
-12 CUNG:
+12 CUNG & NGUYỆT VẬN:
 ${cungDataStr}
+
+QUY TẮC BẮT BUỘC VỀ NGUYỆT VẬN (LƯU NGUYỆT / THÁNG ÂM LỊCH):
+- Nếu câu hỏi của khách có nhắc đến tháng nào trong năm (ví dụ tháng 8, tháng 9...), bạn BẮT BUỘC phải tra cứu chính xác theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên để biết tháng đó rơi vào cung nào. Tuyệt đối KHÔNG được tự suy đoán hay nói nhầm sang cung khác.
 ${requirementText}`;
 
     const modelToUse = activeMode === 'vip' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash';

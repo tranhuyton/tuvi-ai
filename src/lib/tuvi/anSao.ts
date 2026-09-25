@@ -541,8 +541,8 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
  * Hàm xuất dữ liệu text 12 cung để gửi vào AI Prompt
  */
 export function buildCungDataPrompt(laSo: LaSoData): string {
-  let res = '';
-  const { cungs, menhCungIdx, thanCungIdx, tuanGoc, trietGoc } = laSo;
+  let res = '--- CHI TIẾT 12 CUNG TRÊN LÁ SỐ BÀN CỜ ---\n';
+  const { cungs, tuanGoc, trietGoc, namXemCanChi, namXem } = laSo;
 
   for (let i = 0; i < 12; i++) {
     const cung = cungs[i];
@@ -560,7 +560,30 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
     const saoStr = saoAll.length > 0 ? saoAll.join(', ') : 'Vô Chính Diệu';
     const cName = cung.cungName + (cung.isThan ? ' (Thân)' : '');
 
-    res += `- Cung ${cung.chi} (${cName}), Đại vận ${cung.daiVan}: ${saoStr}.\n`;
+    const tieuVanStr = cung.tieuVan ? (cung.tieuVan.startsWith('năm') ? cung.tieuVan : `năm ${cung.tieuVan}`) : '';
+    const nguyetVanStr = cung.nguyetVan ? (cung.nguyetVan.startsWith('tháng') ? cung.nguyetVan : `tháng ${cung.nguyetVan}`) : '';
+
+    res += `- Cung ${cung.chi} (${cName}) [Đại vận: ${cung.daiVan} | Tiểu vận: ${tieuVanStr} | Lưu nguyệt: ${nguyetVanStr}]: ${saoStr}.\n`;
   }
+
+  // Bảng tra cứu Nguyệt Vận (Lưu nguyệt) 12 tháng Âm lịch trong năm xem
+  const namStr = namXemCanChi || (namXem ? `năm ${namXem}` : '');
+  res += `\n--- BẢNG TRA CỨU NGUYỆT VẬN (LƯU NGUYỆT 12 THÁNG ÂM LỊCH ${namStr}) ---\n`;
+  res += `(QUY TẮC BẮT BUỘC: Khi luận giải vận hạn từng tháng Âm lịch trong năm xem, BẮT BUỘC tra cứu đúng cung theo bảng dưới đây, TUYỆT ĐỐI KHÔNG TỰ SUY ĐOÁN NHẦM CUNG VỊ):\n`;
+
+  for (let m = 1; m <= 12; m++) {
+    const mStr = `tháng ${m}`;
+    const cungThang = cungs.find((c) => {
+      const nv = (c.nguyetVan || '').trim().toLowerCase();
+      return nv === mStr || nv === `${m}`;
+    });
+    if (cungThang) {
+      const cName = cungThang.cungName + (cungThang.isThan ? ' (Thân)' : '');
+      const ctStr = cungThang.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Vô Chính Diệu';
+      res += `* Tháng ${m} Âm: Tọa tại Cung ${cungThang.chi} (${cName}) - Chính tinh: ${ctStr}\n`;
+    }
+  }
+
   return res;
 }
+
