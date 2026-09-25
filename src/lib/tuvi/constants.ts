@@ -124,8 +124,23 @@ export const BAD_STARS = [
   'Hóa Kỵ', 'Thiên Hình', 'Thiên Diêu', 'Thiên Khốc', 'Thiên Hư', 'Kiếp Sát',
   'Cô Thần', 'Quả Tú', 'Thiên La', 'Địa Võng', 'Thiên Thương', 'Thiên Sứ',
   'Đại Hao', 'Tiểu Hao', 'Bệnh Phù', 'Phục Binh', 'Phi Liêm', 'Tướng Quân',
-  'Đẩu Quân', 'Lưu Hà', 'Phá Toái'
+  'Đẩu Quân', 'Lưu Hà', 'Phá Toái',
+  'L.Thái Tuế', 'L.Tang Môn', 'L.Bạch Hổ', 'L.Kình Dương', 'L.Đà La',
+  'L.Thiên Khốc', 'L.Thiên Hư', 'L.Hóa Kỵ', 'L.Hóa Kị', 'L.Đẩu Quân'
 ];
+
+export const VAN_TINH_MAP: Record<number, number> = {
+  0: 5, // Giáp tại Tỵ
+  1: 6, // Ất tại Ngọ
+  2: 8, // Bính tại Thân
+  3: 9, // Đinh tại Dậu
+  4: 8, // Mậu tại Thân
+  5: 9, // Kỷ tại Dậu
+  6: 11,// Canh tại Hợi
+  7: 0, // Tân tại Tý
+  8: 2, // Nhâm tại Dần
+  9: 3, // Quý tại Mão
+};
 
 export const HOA_LOC_MAP: Record<number, string> = {
   0: 'LIÊM TRINH', 1: 'THIÊN CƠ', 2: 'THIÊN ĐỒNG', 3: 'THÁI ÂM', 4: 'THAM LANG',
@@ -247,9 +262,6 @@ export const STAR_NGU_HANH_COLOR: Record<string, string> = {
   'Địa Võng': '#555555',
   'Hoa Cái': '#555555',
   'Tấu Thư': '#555555',
-  'L.Kình Dương': '#555555',
-  'L.Đà La': '#555555',
-  'L.Bạch Hổ': '#555555',
 
   // 2. THỦY - Đen tuyền (#000000)
   'THIÊN ĐỒNG': '#000000',
@@ -269,10 +281,12 @@ export const STAR_NGU_HANH_COLOR: Record<string, string> = {
   'Bác Sỹ': '#000000',
   'Tam Thai': '#000000',
   'Thiên Y': '#000000',
+  'LN.Văn Tinh': '#000000',
   'L.Hóa Kỵ': '#000000',
+  'L.Hóa Kị': '#000000',
   'L.Thiên Hư': '#000000',
 
-  // 3. HỎA - Đỏ tươi (#cc0000)
+  // 3. HỎA - Đỏ tươi (#cc0000) (Chuẩn LySo: các sát/hung tinh lưu hiển thị màu đỏ)
   'THÁI DƯƠNG': '#cc0000',
   'LIÊM TRINH': '#cc0000',
   'Hỏa Tinh': '#cc0000',
@@ -310,7 +324,12 @@ export const STAR_NGU_HANH_COLOR: Record<string, string> = {
   'Địa Giải': '#cc0000',
   'L.Thiên Mã': '#cc0000',
   'L.Thái Tuế': '#cc0000',
+  'L.Tang Môn': '#cc0000',
+  'L.Bạch Hổ': '#cc0000',
+  'L.Kình Dương': '#cc0000',
+  'L.Đà La': '#cc0000',
   'L.Thiên Khốc': '#cc0000',
+  'L.Đẩu Quân': '#cc0000',
 
   // 4. MỘC - Xanh Lá (#008000)
   'THIÊN CƠ': '#008000',
@@ -330,7 +349,6 @@ export const STAR_NGU_HANH_COLOR: Record<string, string> = {
   'L.Hóa Lộc': '#008000',
   'L.Hóa Quyền': '#008000',
   'L.Hóa Khoa': '#008000',
-  'L.Tang Môn': '#008000',
 
   // 5. THỔ - Vàng Hổ Phách (#c28b00)
   'TỬ VI': '#c28b00',

@@ -31,8 +31,9 @@ export interface AmLichResult {
 export interface SaoInfo {
   ten: string;
   dacHam?: string; // B, Đ, M, V, H
-  loai: 'chinh' | 'tot' | 'xau';
+  loai: 'chinh' | 'tot' | 'xau' | 'luu';
   color?: string;
+  isLuu?: boolean;
 }
 
 export interface CungLaSo {
@@ -49,6 +50,7 @@ export interface CungLaSo {
   chinhTinh: SaoInfo[];
   phuTinhTot: SaoInfo[];
   phuTinhXau: SaoInfo[];
+  saoLuu?: SaoInfo[];
 }
 
 export interface LaSoData {

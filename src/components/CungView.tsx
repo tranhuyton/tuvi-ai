@@ -71,7 +71,12 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
         {/* Cột Trái: Sao tốt / Cát tinh */}
         <div className="w-[50%] text-left space-y-0.5 pr-0.5 min-w-0">
           {cung.phuTinhTot.map((sao, idx) => {
-            const isBold = BOLD_STARS.has(sao.ten) || sao.ten.startsWith('Hóa');
+            const isBold =
+              BOLD_STARS.has(sao.ten) ||
+              sao.ten.startsWith('Hóa') ||
+              sao.isLuu ||
+              sao.ten.startsWith('L.') ||
+              sao.ten.startsWith('LN.');
             const starColor = STAR_NGU_HANH_COLOR[sao.ten] || sao.color || '#000000';
             return (
               <div
@@ -96,7 +101,13 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
         {/* Cột Phải: Sát tinh / Bại tinh */}
         <div className="w-[50%] text-left space-y-0.5 pl-0.5 min-w-0">
           {cung.phuTinhXau.map((sao, idx) => {
-            const isBold = BOLD_STARS.has(sao.ten) || sao.ten === 'Hóa Kỵ';
+            const isBold =
+              BOLD_STARS.has(sao.ten) ||
+              sao.ten === 'Hóa Kỵ' ||
+              sao.ten === 'Hóa Kị' ||
+              sao.isLuu ||
+              sao.ten.startsWith('L.') ||
+              sao.ten.startsWith('LN.');
             const starColor = STAR_NGU_HANH_COLOR[sao.ten] || sao.color || '#cc0000';
             return (
               <div

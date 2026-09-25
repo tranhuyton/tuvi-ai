@@ -22,6 +22,7 @@ import {
   LUU_HA_MAP,
   PHA_TOAI_MAP,
   STAR_NGU_HANH_COLOR,
+  VAN_TINH_MAP,
 } from './constants';
 
 function mod12(n: number): number {
@@ -421,6 +422,83 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   addHoaStar(hoaKhoaStar, 'Hóa Khoa', 't');
   addHoaStar(hoaKyStar, 'Hóa Kỵ', 'x');
 
+  // LN.Văn Tinh theo Can năm sinh (sao gốc hiển thị chuẩn LySo)
+  addPt(VAN_TINH_MAP[canNamIdx], 'LN.Văn Tinh');
+
+  // ========================================================
+  // AN HỆ THỐNG SAO LƯU (LƯU NIÊN TINH ĐẨU THEO NĂM XEM namXem)
+  // Chuẩn theo Lý Số Hội Quán: 14 Sao Lưu chủ chốt
+  // ========================================================
+  const saoLuuMap: Record<number, SaoInfo[]> = {};
+  for (let i = 0; i < 12; i++) saoLuuMap[i] = [];
+
+  const addSaoLuu = (cungIdx: number, ten: string, loai: 'tot' | 'xau', color?: string) => {
+    const p = mod12(cungIdx);
+    const starColor = color || STAR_NGU_HANH_COLOR[ten] || (loai === 'tot' ? '#008000' : '#cc0000');
+    const saoObj: SaoInfo = {
+      ten,
+      loai,
+      color: starColor,
+      isLuu: true,
+    };
+    saoLuuMap[p].push(saoObj);
+    // Đưa vào s[p].t hoặc s[p].x để hiển thị chuẩn trong 2 cột bàn cờ
+    s[p][loai === 'tot' ? 't' : 'x'].push(ten);
+  };
+
+  // 1. L.Thái Tuế (theo Chi năm xem)
+  addSaoLuu(chiNamXemIdx, 'L.Thái Tuế', 'xau', '#cc0000');
+
+  // 2. L.Tang Môn (cách Thái Tuế 2 cung thuận)
+  addSaoLuu(chiNamXemIdx + 2, 'L.Tang Môn', 'xau', '#cc0000');
+
+  // 3. L.Bạch Hổ (xung chiếu Tang Môn, cách Thái Tuế 8 cung thuận)
+  addSaoLuu(chiNamXemIdx + 8, 'L.Bạch Hổ', 'xau', '#cc0000');
+
+  // 4. L.Thiên Khốc & L.Thiên Hư (khởi từ Ngọ đếm nghịch/thuận tới Chi năm xem)
+  addSaoLuu(6 - chiNamXemIdx, 'L.Thiên Khốc', 'xau', '#cc0000');
+  addSaoLuu(6 + chiNamXemIdx, 'L.Thiên Hư', 'xau', '#cc0000');
+
+  // 5. L.Lộc Tồn (theo Can năm xem)
+  const locLuu = locMap[canNamXemIdx];
+  addSaoLuu(locLuu, 'L.Lộc Tồn', 'tot', '#c28b00');
+
+  // 6. L.Kình Dương & L.Đà La (tiền Kình hậu Đà từ Lộc Tồn lưu)
+  addSaoLuu(locLuu + 1, 'L.Kình Dương', 'xau', '#cc0000');
+  addSaoLuu(locLuu - 1, 'L.Đà La', 'xau', '#cc0000');
+
+  // 7. L.Thiên Mã (tam hợp Chi năm xem)
+  const maLuu = maMap[chiNamXemIdx];
+  addSaoLuu(maLuu, 'L.Thiên Mã', 'tot', '#cc0000');
+
+  // 8. L.Đẩu Quân (khởi Thái Tuế năm xem coi là tháng 1, đếm nghịch tới tháng sinh âm, đếm thuận tới giờ sinh)
+  const douQuanLuu = mod12(chiNamXemIdx - (thangAmGoc - 1) + gioSinh);
+  addSaoLuu(douQuanLuu, 'L.Đẩu Quân', 'xau', '#cc0000');
+
+  // 9. Lưu Tứ Hóa (L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị) theo Can năm xem
+  const hoaLocLuuStar = HOA_LOC_MAP[canNamXemIdx];
+  const hoaQuyenLuuStar = HOA_QUYEN_MAP[canNamXemIdx];
+  const hoaKhoaLuuStar = HOA_KHOA_MAP[canNamXemIdx];
+  const hoaKyLuuStar = HOA_KY_MAP[canNamXemIdx];
+
+  const addHoaLuuStar = (baseStar: string, name: string, loai: 'tot' | 'xau', color?: string) => {
+    for (let i = 0; i < 12; i++) {
+      for (const cat of ['c', 't', 'x'] as const) {
+        for (const star of s[i][cat]) {
+          if (star.includes(baseStar)) {
+            addSaoLuu(i, name, loai, color);
+            return;
+          }
+        }
+      }
+    }
+  };
+
+  addHoaLuuStar(hoaLocLuuStar, 'L.Hóa Lộc', 'tot', '#008000');
+  addHoaLuuStar(hoaQuyenLuuStar, 'L.Hóa Quyền', 'tot', '#008000');
+  addHoaLuuStar(hoaKhoaLuuStar, 'L.Hóa Khoa', 'tot', '#008000');
+  addHoaLuuStar(hoaKyLuuStar, 'L.Hóa Kị', 'xau', '#000000');
+
   // Tuần & Triệt
   const trietMap: Record<number, number> = {
     0: 8, 5: 8, 1: 6, 6: 6, 2: 4, 7: 4, 3: 2, 8: 2, 4: 0, 9: 0
@@ -466,12 +544,13 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
         dacHam: dacHamVal,
         loai: 'tot',
         color,
+        isLuu: pt.startsWith('L.') || pt.startsWith('LN.'),
       };
     });
 
     const phuTinhXauList: SaoInfo[] = s[p].x.map((px) => {
       let dacHamVal = PHU_TINH_DAC_HAM[px]?.[p];
-      if (px === 'Hóa Kỵ') {
+      if (px === 'Hóa Kỵ' || px === 'Hóa Kị' || px === 'L.Hóa Kị' || px === 'L.Hóa Kỵ') {
         dacHamVal = [1, 7].includes(p) ? 'B' : 'H';
       }
 
@@ -482,6 +561,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
         dacHam: dacHamVal,
         loai: 'xau',
         color,
+        isLuu: px.startsWith('L.') || px.startsWith('LN.'),
       };
     });
 
@@ -499,6 +579,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
       chinhTinh: chinhTinhList,
       phuTinhTot: phuTinhTotList,
       phuTinhXau: phuTinhXauList,
+      saoLuu: saoLuuMap[p],
     });
   }
 
@@ -539,37 +620,57 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
 
 /**
  * Hàm xuất dữ liệu text 12 cung để gửi vào AI Prompt
+ * Kèm hệ thống Sao Lưu và Bảng Tra Cứu Nguyệt Vận 12 tháng chuẩn LySo
  */
 export function buildCungDataPrompt(laSo: LaSoData): string {
-  let res = '--- CHI TIẾT 12 CUNG TRÊN LÁ SỐ BÀN CỜ ---\n';
-  const { cungs, tuanGoc, trietGoc, namXemCanChi, namXem } = laSo;
+  let res = '--- CHI TIẾT 12 CUNG TRÊN LÁ SỐ BÀN CỜ (KÈM SAO LƯU NĂM XEM) ---\n';
+  const { cungs, tuanGoc, trietGoc, namXemCanChi, namXem, tuoiAmXem } = laSo;
 
   for (let i = 0; i < 12; i++) {
     const cung = cungs[i];
-    const saoAll: string[] = [];
-
+    const chinhStars: string[] = [];
     cung.chinhTinh.forEach((s) => {
-      saoAll.push(s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten);
+      chinhStars.push(s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten);
     });
-    cung.phuTinhTot.forEach((s) => saoAll.push(s.ten));
-    cung.phuTinhXau.forEach((s) => saoAll.push(s.ten));
 
-    if (i === tuanGoc || i === (tuanGoc + 1) % 12) saoAll.push('Tuần Không');
-    if (i === trietGoc || i === (trietGoc + 1) % 12) saoAll.push('Triệt Không');
+    const phuTot: string[] = [];
+    cung.phuTinhTot.filter((s) => !s.isLuu).forEach((s) => phuTot.push(s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten));
 
-    const saoStr = saoAll.length > 0 ? saoAll.join(', ') : 'Vô Chính Diệu';
-    const cName = cung.cungName + (cung.isThan ? ' (Thân)' : '');
+    const phuXau: string[] = [];
+    cung.phuTinhXau.filter((s) => !s.isLuu).forEach((s) => phuXau.push(s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten));
+
+    const saoLuuList: string[] = (cung.saoLuu || []).map((s) => s.ten);
+
+    if (i === tuanGoc || i === (tuanGoc + 1) % 12) phuXau.push('Tuần Không');
+    if (i === trietGoc || i === (trietGoc + 1) % 12) phuXau.push('Triệt Không');
+
+    const chinhStr = chinhStars.length > 0 ? chinhStars.join(', ') : 'Vô Chính Diệu';
+    const cName = cung.cungName + (cung.isThan ? ' (Thân Cư)' : '');
 
     const tieuVanStr = cung.tieuVan ? (cung.tieuVan.startsWith('năm') ? cung.tieuVan : `năm ${cung.tieuVan}`) : '';
     const nguyetVanStr = cung.nguyetVan ? (cung.nguyetVan.startsWith('tháng') ? cung.nguyetVan : `tháng ${cung.nguyetVan}`) : '';
 
-    res += `- Cung ${cung.chi} (${cName}) [Đại vận: ${cung.daiVan} | Tiểu vận: ${tieuVanStr} | Lưu nguyệt: ${nguyetVanStr}]: ${saoStr}.\n`;
+    res += `- Cung ${cung.chi} (${cName}) [Đại vận: ${cung.daiVan} | Tiểu vận: ${tieuVanStr} | Nguyệt hạn: ${nguyetVanStr}]:\n`;
+    res += `  + Chính tinh: ${chinhStr}\n`;
+    res += `  + Cát tinh cố định: ${phuTot.length > 0 ? phuTot.join(', ') : 'Không có'}\n`;
+    res += `  + Hung sát tinh cố định: ${phuXau.length > 0 ? phuXau.join(', ') : 'Không có'}\n`;
+    res += `  + SAO LƯU NĂM ${namXemCanChi} (${namXem}): ${saoLuuList.length > 0 ? saoLuuList.join(', ') : 'Không có'}\n`;
   }
+
+  // Bảng tổng hợp Sao Lưu năm xem
+  res += `\n--- TỔNG HỢP CÁC SAO LƯU NĂM ${namXemCanChi} (${namXem}) ---\n`;
+  const allLuuStarsList: string[] = [];
+  cungs.forEach((c) => {
+    if (c.saoLuu && c.saoLuu.length > 0) {
+      allLuuStarsList.push(`${c.saoLuu.map((s) => s.ten).join(', ')} tại Cung ${c.chi} (${c.cungName})`);
+    }
+  });
+  res += (allLuuStarsList.length > 0 ? allLuuStarsList.join('; ') : 'Không có sao lưu') + '.\n';
 
   // Bảng tra cứu Nguyệt Vận (Lưu nguyệt) 12 tháng Âm lịch trong năm xem
   const namStr = namXemCanChi || (namXem ? `năm ${namXem}` : '');
   res += `\n--- BẢNG TRA CỨU NGUYỆT VẬN (LƯU NGUYỆT 12 THÁNG ÂM LỊCH ${namStr}) ---\n`;
-  res += `(QUY TẮC BẮT BUỘC: Khi luận giải vận hạn từng tháng Âm lịch trong năm xem, BẮT BUỘC tra cứu đúng cung theo bảng dưới đây, TUYỆT ĐỐI KHÔNG TỰ SUY ĐOÁN NHẦM CUNG VỊ):\n`;
+  res += `(QUY TẮC BẮT BUỘC: Khi luận giải vận hạn từng tháng Âm lịch trong năm xem, BẮT BUỘC tra cứu đúng cung và các Sao Lưu thủ/chiếu theo bảng dưới đây, TUYỆT ĐỐI KHÔNG TỰ SUY ĐOÁN NHẦM CUNG VỊ):\n`;
 
   for (let m = 1; m <= 12; m++) {
     const mStr = `tháng ${m}`;
@@ -577,10 +678,29 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
       const nv = (c.nguyetVan || '').trim().toLowerCase();
       return nv === mStr || nv === `${m}`;
     });
+
     if (cungThang) {
-      const cName = cungThang.cungName + (cungThang.isThan ? ' (Thân)' : '');
+      const cName = cungThang.cungName + (cungThang.isThan ? ' (Thân Cư)' : '');
       const ctStr = cungThang.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Vô Chính Diệu';
-      res += `* Tháng ${m} Âm: Tọa tại Cung ${cungThang.chi} (${cName}) - Chính tinh: ${ctStr}\n`;
+      const saoLuuTaiCung = (cungThang.saoLuu || []).map((s) => s.ten).join(', ') || 'Không có';
+
+      // Cung xung chiếu và tam hợp
+      const doiCung = cungs[(cungThang.cungId + 6) % 12];
+      const tamHop1 = cungs[(cungThang.cungId + 4) % 12];
+      const tamHop2 = cungs[(cungThang.cungId + 8) % 12];
+
+      const saoLuuChieu: string[] = [];
+      [doiCung, tamHop1, tamHop2].forEach((related) => {
+        (related.saoLuu || []).forEach((sl) => {
+          saoLuuChieu.push(`${sl.ten} (từ ${related.chi})`);
+        });
+      });
+      const saoLuuChieuStr = saoLuuChieu.length > 0 ? saoLuuChieu.join(', ') : 'Không có';
+
+      res += `* THÁNG ${m} ÂM LỊCH: Tọa tại Cung ${cungThang.chi} (${cName}) | Tiểu vận: ${cungThang.tieuVan}\n`;
+      res += `  - Chính tinh: ${ctStr}\n`;
+      res += `  - Sao Lưu thủ cung: ${saoLuuTaiCung}\n`;
+      res += `  - Sao Lưu tam phương tứ chính hội chiếu: ${saoLuuChieuStr}\n`;
     }
   }
 
