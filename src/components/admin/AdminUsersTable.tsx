@@ -209,7 +209,10 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
             {/* Danh sách câu hỏi */}
             <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
               {(() => {
-                const userMsgs = messages.filter((m) => m.user_id === selectedUserForMessages.id);
+                const userMsgs = messages
+                  .filter((m) => m.user_id === selectedUserForMessages.id)
+                  .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
                 if (userMsgs.length === 0) {
                   return (
                     <div className="text-center py-8 space-y-2">
@@ -253,9 +256,10 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
                       <div className="text-xs font-semibold text-amber-400 flex items-center gap-1">
                         <span>🧙‍♂️ AI Thầy Tôn trả lời:</span>
                       </div>
-                      <div className="text-xs sm:text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg border border-slate-800/50 leading-relaxed whitespace-pre-wrap">
-                        {msg.answer}
-                      </div>
+                      <div
+                        className="text-xs sm:text-sm text-slate-200 bg-slate-900/60 p-4 rounded-lg border border-slate-800/60 leading-relaxed space-y-2 text-justify [&>p]:mb-2.5 [&>b]:text-amber-300 [&>strong]:text-amber-300"
+                        dangerouslySetInnerHTML={{ __html: msg.answer }}
+                      />
                     </div>
                   </div>
                 ));
