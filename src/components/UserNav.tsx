@@ -68,25 +68,27 @@ export default function UserNav({
 
       {/* Account actions */}
       <div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap">
-        {/* Link Về Thầy Tôn trên màn hình lớn */}
-        <a
-          href="#gioi-thieu-thay-ton"
-          className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-amber-300 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/70 transition"
-          title="Xem thông tin &amp; tiểu sử Thầy Tôn"
-        >
-          <span>Về Thầy Tôn</span>
-        </a>
         {isLoading ? (
           <div className="w-20 h-7 bg-slate-800 animate-pulse rounded-xl" />
         ) : !user ? (
-          <button
-            type="button"
-            onClick={onOpenAuthModal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
-          >
-            <LogIn className="w-4 h-4" />
-            <span>Đăng Nhập</span>
-          </button>
+          <>
+            {/* Link Về Thầy Tôn trên màn hình lớn (chỉ hiện khi chưa đăng nhập) */}
+            <a
+              href="#gioi-thieu-thay-ton"
+              className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-amber-300 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/70 transition"
+              title="Xem thông tin &amp; tiểu sử Thầy Tôn"
+            >
+              <span>Về Thầy Tôn</span>
+            </a>
+            <button
+              type="button"
+              onClick={onOpenAuthModal}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Đăng Nhập</span>
+            </button>
+          </>
         ) : (
           <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
             {/* Tên First Name (ví dụ: Tôn) */}
