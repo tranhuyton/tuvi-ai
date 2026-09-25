@@ -2,27 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { supabase } from './supabase';
 
-export interface AffiliateItem {
-  id: string;
-  code: string; // Mã ref (ví dụ: diep93, nam88, thayton...), viết thường không dấu
-  name: string; // Tên CTV
-  phone?: string;
-  email?: string;
-  bankName?: string;
-  bankAccountNumber?: string;
-  bankAccountName?: string;
-  commissionRate: number; // % hoa hồng (mặc định 25 - 30%)
-  commissionFixed?: number; // Hoặc số tiền cố định VND/đơn
-  status: 'ACTIVE' | 'INACTIVE';
-  totalClicks: number;
-  totalOrders: number;
-  totalRevenue: number;
-  totalCommission: number;
-  paidCommission: number;
-  createdAt: string;
-  updatedAt: string;
-  notes?: string;
-}
+import { AffiliateItem, inferBankCode } from '@/types/affiliate';
+export type { AffiliateItem };
+export { inferBankCode };
 
 // Global cache trong runtime Node
 declare global {
@@ -82,13 +64,17 @@ function saveToFile() {
 loadFromFile();
 
 function rowToAffiliateItem(row: any): AffiliateItem {
+  const bName = row.bank_name || undefined;
+  const bCode = row.bank_code || inferBankCode(bName);
+
   return {
     id: row.id,
     code: String(row.code || '').toLowerCase().trim(),
     name: row.name || 'Cộng Tác Viên',
     phone: row.phone || undefined,
     email: row.email || undefined,
-    bankName: row.bank_name || undefined,
+    bankName: bName,
+    bankCode: bCode,
     bankAccountNumber: row.bank_account_number || undefined,
     bankAccountName: row.bank_account_name || undefined,
     commissionRate: Number(row.commission_rate ?? 25),
@@ -99,6 +85,7 @@ function rowToAffiliateItem(row: any): AffiliateItem {
     totalRevenue: Number(row.total_revenue || 0),
     totalCommission: Number(row.total_commission || 0),
     paidCommission: Number(row.paid_commission || 0),
+    pendingWithdrawal: Number(row.pending_withdrawal || 0),
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || row.created_at || new Date().toISOString(),
     notes: row.notes || undefined,
@@ -404,6 +391,8 @@ export async function payoutAffiliate(
   if (!aff) return null;
 
   aff.paidCommission = (aff.paidCommission || 0) + amount;
+  aff.pendingWithdrawal = Math.max(0, (aff.pendingWithdrawal || 0) - amount);
+
   if (note) {
     const timeStr = new Date().toLocaleDateString('vi-VN');
     aff.notes = (aff.notes ? `${aff.notes}\n` : '') + `[${timeStr}] Đã thanh toán: ${amount.toLocaleString('vi-VN')}đ (${note})`;
@@ -418,6 +407,7 @@ export async function payoutAffiliate(
       .from('tuvi_affiliates')
       .update({
         paid_commission: aff.paidCommission,
+        pending_withdrawal: aff.pendingWithdrawal,
         notes: aff.notes || null,
         updated_at: aff.updatedAt,
       })
@@ -428,3 +418,92 @@ export async function payoutAffiliate(
 
   return aff;
 }
+
+/**
+ * CTV tự cập nhật tài khoản ngân hàng từ trang /ctv
+ */
+export async function updateAffiliateBank(
+  codeOrPhone: string,
+  bankData: {
+    bankCode?: string;
+    bankName: string;
+    bankAccountNumber: string;
+    bankAccountName: string;
+  }
+): Promise<AffiliateItem | null> {
+  const aff = await getAffiliateByPhoneOrCode(codeOrPhone);
+  if (!aff) return null;
+
+  const bCode = bankData.bankCode || inferBankCode(bankData.bankName);
+
+  aff.bankName = bankData.bankName.trim();
+  aff.bankCode = bCode;
+  aff.bankAccountNumber = bankData.bankAccountNumber.trim();
+  aff.bankAccountName = bankData.bankAccountName.trim().toUpperCase();
+  aff.updatedAt = new Date().toISOString();
+
+  affiliatesMap.set(aff.code, aff);
+  saveToFile();
+
+  try {
+    await supabase
+      .from('tuvi_affiliates')
+      .update({
+        bank_name: aff.bankName,
+        bank_account_number: aff.bankAccountNumber,
+        bank_account_name: aff.bankAccountName,
+        updated_at: aff.updatedAt,
+      })
+      .eq('id', aff.id);
+  } catch (err) {
+    console.warn('[AFFILIATE STORE] Lỗi update bank Supabase:', err);
+  }
+
+  return aff;
+}
+
+/**
+ * CTV gửi yêu cầu rút tiền từ trang /ctv
+ */
+export async function requestWithdrawal(
+  codeOrPhone: string,
+  amount: number
+): Promise<{ success: boolean; message?: string; affiliate?: AffiliateItem }> {
+  const aff = await getAffiliateByPhoneOrCode(codeOrPhone);
+  if (!aff) {
+    return { success: false, message: 'Không tìm thấy thông tin CTV' };
+  }
+
+  if (!aff.bankAccountNumber || !aff.bankName) {
+    return { success: false, message: 'Vui lòng cập nhật thông tin tài khoản ngân hàng trước khi rút tiền' };
+  }
+
+  const remaining = aff.totalCommission - aff.paidCommission;
+  if (amount > remaining) {
+    return { success: false, message: `Số dư hoa hồng khả dụng chỉ còn ${remaining.toLocaleString('vi-VN')}đ` };
+  }
+
+  if (amount < 50000) {
+    return { success: false, message: 'Số tiền rút tối thiểu là 50.000đ' };
+  }
+
+  aff.pendingWithdrawal = (aff.pendingWithdrawal || 0) + amount;
+  aff.updatedAt = new Date().toISOString();
+  affiliatesMap.set(aff.code, aff);
+  saveToFile();
+
+  try {
+    await supabase
+      .from('tuvi_affiliates')
+      .update({
+        pending_withdrawal: aff.pendingWithdrawal,
+        updated_at: aff.updatedAt,
+      })
+      .eq('id', aff.id);
+  } catch (err) {
+    console.warn('[AFFILIATE STORE] Lỗi request withdrawal Supabase:', err);
+  }
+
+  return { success: true, affiliate: aff };
+}
+

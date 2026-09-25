@@ -20,8 +20,11 @@ import {
   Clock,
   X,
   RefreshCw,
+  QrCode,
+  Landmark,
+  AlertCircle,
 } from 'lucide-react';
-import { AffiliateItem } from '@/lib/affiliateStore';
+import { AffiliateItem, inferBankCode, VIETNAMESE_BANKS } from '@/types/affiliate';
 import { AdminOrderItem } from './AdminTransactionsTable';
 
 interface AdminAffiliatesTableProps {
@@ -245,8 +248,32 @@ export default function AdminAffiliatesTable({
     }
   };
 
+  const pendingRequests = affiliates.filter((a) => (a.pendingWithdrawal || 0) > 0);
+
   return (
     <div className="space-y-6">
+      {/* 0. THÔNG BÁO YÊU CẦU RÚT TIỀN TỪ CTV (NẾU CÓ) */}
+      {pendingRequests.length > 0 && (
+        <div className="bg-amber-50 border border-amber-300 p-4 rounded-xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0 animate-pulse" />
+            <div className="text-sm">
+              <span className="font-bold text-amber-900">
+                Có {pendingRequests.length} yêu cầu rút tiền từ CTV:
+              </span>{' '}
+              <span className="text-amber-800">
+                {pendingRequests
+                  .map((a) => `${a.name} (${(a.pendingWithdrawal || 0).toLocaleString('vi-VN')}đ)`)
+                  .join(', ')}
+              </span>
+            </div>
+          </div>
+          <span className="text-xs text-amber-700 bg-amber-100/80 px-2.5 py-1 rounded-lg font-medium shrink-0">
+            👉 Bấm nút <b>"Chi Trả"</b> ở dòng CTV để quét mã VietQR tự động
+          </span>
+        </div>
+      )}
+
       {/* 1. THẺ THỐNG KÊ TỔNG QUAN AFFILIATE */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -480,6 +507,14 @@ export default function AdminAffiliatesTable({
                               {remaining.toLocaleString('vi-VN')}đ
                             </b>
                           </div>
+                          {aff.pendingWithdrawal && aff.pendingWithdrawal > 0 ? (
+                            <div className="pt-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-300 animate-pulse">
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                Y/C rút: {aff.pendingWithdrawal.toLocaleString('vi-VN')}đ
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
                       </td>
 
@@ -490,14 +525,14 @@ export default function AdminAffiliatesTable({
                             <button
                               onClick={() => {
                                 setPayoutModalAff(aff);
-                                setPayoutAmount(String(remaining));
-                                setPayoutNote('Chuyển khoản đối soát');
+                                setPayoutAmount(String(aff.pendingWithdrawal || remaining));
+                                setPayoutNote(aff.pendingWithdrawal ? 'Chuyển khoản theo yêu cầu rút tiền' : 'Chuyển khoản đối soát');
                               }}
                               className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold flex items-center gap-1 shadow-sm transition-all"
                               title="Đối soát & Đánh dấu đã thanh toán hoa hồng"
                             >
                               <CreditCard className="w-3.5 h-3.5" />
-                              <span>Chi Trả</span>
+                              <span>{aff.pendingWithdrawal ? 'Duyệt Rút' : 'Chi Trả'}</span>
                             </button>
                           )}
 
@@ -820,6 +855,31 @@ export default function AdminAffiliatesTable({
                   <b className="text-slate-800 uppercase">{payoutModalAff.bankAccountName || 'Chưa có'}</b>
                 </div>
               </div>
+
+              {/* TỰ ĐỘNG SINH MÃ VIETQR ĐỂ QUÉT BẰNG APP NGÂN HÀNG */}
+              {payoutModalAff.bankAccountNumber ? (
+                <div className="bg-amber-50/80 p-3.5 rounded-xl border border-amber-200 text-center space-y-2">
+                  <div className="text-xs font-bold text-amber-900 flex items-center justify-center gap-1.5">
+                    <QrCode className="w-4 h-4 text-amber-700" />
+                    <span>MÃ VIETQR TỰ ĐỘNG - QUÉT ĐỂ CHUYỂN KHOẢN TRONG 3 GIÂY</span>
+                  </div>
+                  <div className="flex justify-center py-1">
+                    <img
+                      src={`https://img.vietqr.io/image/${payoutModalAff.bankCode || inferBankCode(payoutModalAff.bankName)}-${payoutModalAff.bankAccountNumber}-compact2.png?amount=${Number(payoutAmount || 0)}&addInfo=${encodeURIComponent(`HOA HONG ${payoutModalAff.code.toUpperCase()}`)}&accountName=${encodeURIComponent(payoutModalAff.bankAccountName || payoutModalAff.name)}`}
+                      alt="VietQR Payout"
+                      className="max-w-[210px] h-auto rounded-xl shadow-md border border-amber-200 bg-white p-2"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    Mở App ngân hàng trên điện thoại quét mã trên: Hệ thống <b>tự điền đúng STK, đúng Tên và đúng {Number(payoutAmount || 0).toLocaleString('vi-VN')}đ</b>.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>CTV này chưa cung cấp số tài khoản ngân hàng.</span>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Số Tiền Đã Chuyển Khoản (VND)</label>

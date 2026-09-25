@@ -7,7 +7,7 @@ import AdminTestStudio from '@/components/admin/AdminTestStudio';
 import AdminUsersTable, { AdminUser, AdminChatMessage } from '@/components/admin/AdminUsersTable';
 import AdminTransactionsTable, { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
 import AdminAffiliatesTable from '@/components/admin/AdminAffiliatesTable';
-import { AffiliateItem } from '@/lib/affiliateStore';
+import { AffiliateItem } from '@/types/affiliate';
 import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw, Share2 } from 'lucide-react';
 
 type AdminTab = 'studio' | 'users' | 'transactions' | 'affiliates';

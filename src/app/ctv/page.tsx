@@ -18,24 +18,12 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  Edit2,
+  X,
+  Clock,
+  Landmark,
 } from 'lucide-react';
-
-interface AffiliateInfo {
-  code: string;
-  name: string;
-  commissionRate: number;
-  commissionFixed?: number;
-  totalClicks: number;
-  totalOrders: number;
-  totalRevenue: number;
-  totalCommission: number;
-  paidCommission: number;
-  remainingCommission: number;
-  bankName?: string;
-  bankAccountNumber?: string;
-  bankAccountName?: string;
-  createdAt: string;
-}
+import { VIETNAMESE_BANKS, AffiliateItem as AffiliateInfo } from '@/types/affiliate';
 
 interface RecentOrder {
   orderCode: string;
@@ -55,15 +43,31 @@ export default function CTVPortalPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchInput.trim()) return;
+  // Modal cập nhật tài khoản ngân hàng
+  const [isBankModalOpen, setIsBankModalOpen] = useState(false);
+  const [bankFormData, setBankFormData] = useState({
+    bankCode: 'MB',
+    bankName: 'MBBank (Quân Đội)',
+    bankAccountNumber: '',
+    bankAccountName: '',
+  });
+  const [isSavingBank, setIsSavingBank] = useState(false);
 
+  // Modal yêu cầu rút tiền
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [isRequestingWithdraw, setIsRequestingWithdraw] = useState(false);
+
+  const remainingCommission = affInfo
+    ? (affInfo.remainingCommission ?? (affInfo.totalCommission - affInfo.paidCommission))
+    : 0;
+
+  const fetchAffiliateDetails = async (identifier: string) => {
     setIsLoading(true);
     setErrorMsg('');
 
     try {
-      const res = await fetch(`/api/affiliate/info?q=${encodeURIComponent(searchInput.trim())}`);
+      const res = await fetch(`/api/affiliate/info?q=${encodeURIComponent(identifier.trim())}`);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
@@ -73,12 +77,30 @@ export default function CTVPortalPage() {
       } else {
         setAffInfo(data.affiliate);
         setRecentOrders(data.recentOrders || []);
+        // Đồng bộ form ngân hàng
+        if (data.affiliate.bankName) {
+          const matched = VIETNAMESE_BANKS.find(
+            (b) => b.code === data.affiliate.bankCode || b.name === data.affiliate.bankName
+          );
+          setBankFormData({
+            bankCode: data.affiliate.bankCode || matched?.code || 'MB',
+            bankName: data.affiliate.bankName || matched?.name || 'MBBank (Quân Đội)',
+            bankAccountNumber: data.affiliate.bankAccountNumber || '',
+            bankAccountName: data.affiliate.bankAccountName || '',
+          });
+        }
       }
     } catch (err: any) {
       setErrorMsg('Lỗi kết nối máy chủ: ' + err.message);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchInput.trim()) return;
+    await fetchAffiliateDetails(searchInput.trim());
   };
 
   const handleCopyLink = () => {
@@ -88,6 +110,89 @@ export default function CTVPortalPage() {
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  // Lưu thông tin ngân hàng
+  const handleSaveBank = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!affInfo) return;
+
+    if (!bankFormData.bankAccountNumber.trim() || !bankFormData.bankAccountName.trim()) {
+      alert('Vui lòng nhập Số tài khoản và Tên chủ tài khoản');
+      return;
+    }
+
+    setIsSavingBank(true);
+    try {
+      const res = await fetch('/api/affiliate/update-bank', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: affInfo.code,
+          bankCode: bankFormData.bankCode,
+          bankName: bankFormData.bankName,
+          bankAccountNumber: bankFormData.bankAccountNumber.trim(),
+          bankAccountName: bankFormData.bankAccountName.trim().toUpperCase(),
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsBankModalOpen(false);
+        await fetchAffiliateDetails(affInfo.code);
+        alert('Cập nhật tài khoản ngân hàng thành công!');
+      } else {
+        alert(data.error || 'Lỗi cập nhật');
+      }
+    } catch (err: any) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setIsSavingBank(false);
+    }
+  };
+
+  // Gửi yêu cầu rút tiền
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!affInfo) return;
+
+    const amount = Number(withdrawAmount);
+    if (!amount || amount < 50000) {
+      alert('Số tiền rút tối thiểu là 50.000đ');
+      return;
+    }
+
+    const remaining = affInfo.remainingCommission ?? (affInfo.totalCommission - affInfo.paidCommission);
+    if (amount > remaining) {
+      alert(`Số dư khả dụng của bạn chỉ còn ${remaining.toLocaleString('vi-VN')}đ`);
+      return;
+    }
+
+    setIsRequestingWithdraw(true);
+    try {
+      const res = await fetch('/api/affiliate/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: affInfo.code,
+          amount,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsWithdrawModalOpen(false);
+        setWithdrawAmount('');
+        await fetchAffiliateDetails(affInfo.code);
+        alert('Đã gửi yêu cầu rút tiền thành công! Thầy Tôn sẽ quét mã VietQR và chuyển tiền cho bạn trong thời gian sớm nhất.');
+      } else {
+        alert(data.error || 'Lỗi gửi yêu cầu rút tiền');
+      }
+    } catch (err: any) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setIsRequestingWithdraw(false);
+    }
   };
 
   return (
@@ -116,10 +221,10 @@ export default function CTVPortalPage() {
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-100 font-serif">
-            Tra Cứu Doanh Thu &amp; Hoa Hồng CTV
+            Tra Cứu Doanh Thu &amp; Rút Hoa Hồng
           </h1>
           <p className="text-slate-400 text-sm">
-            Nhập Mã giới thiệu hoặc Số điện thoại của bạn để xem số lượt click, số đơn hàng thành công và số dư hoa hồng tích lũy.
+            Nhập Mã giới thiệu hoặc Số điện thoại để theo dõi đơn hàng, cập nhật tài khoản ngân hàng nhận tiền và yêu cầu rút hoa hồng.
           </p>
 
           <form onSubmit={handleSearch} className="pt-2 flex gap-2 max-w-md mx-auto">
@@ -248,11 +353,71 @@ export default function CTVPortalPage() {
               <div className="bg-amber-950/40 border border-amber-500/40 p-4 rounded-xl">
                 <div className="flex items-center gap-1.5 text-amber-300 text-xs font-bold uppercase mb-1">
                   <CreditCard className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Chờ Thanh Toán</span>
+                  <span>Số Dư Khả Dụng</span>
                 </div>
                 <div className="text-2xl font-bold text-amber-400">
-                  {affInfo.remainingCommission.toLocaleString('vi-VN')}đ
+                  {remainingCommission.toLocaleString('vi-VN')}đ
                 </div>
+              </div>
+            </div>
+
+            {/* THÔNG TIN TÀI KHOẢN NGÂN HÀNG & NÚT RÚT TIỀN */}
+            <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Landmark className="w-4 h-4 text-blue-400" />
+                  <span className="font-bold text-sm text-white">Tài Khoản Nhận Hoa Hồng (VietQR)</span>
+                </div>
+                {affInfo.bankAccountNumber ? (
+                  <div className="text-xs text-slate-300 space-x-2">
+                    <span>Ngân hàng: <b className="text-white">{affInfo.bankName}</b></span>
+                    <span>•</span>
+                    <span>STK: <b className="font-mono text-amber-300 text-sm">{affInfo.bankAccountNumber}</b></span>
+                    <span>•</span>
+                    <span>Chủ TK: <b className="text-white uppercase">{affInfo.bankAccountName}</b></span>
+                  </div>
+                ) : (
+                  <div className="text-xs text-amber-300 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>Bạn chưa cập nhật tài khoản ngân hàng. Hãy bấm nút bên cạnh để thêm STK nhận tiền.</span>
+                  </div>
+                )}
+
+                {affInfo.pendingWithdrawal && affInfo.pendingWithdrawal > 0 ? (
+                  <div className="pt-1 flex items-center gap-1.5 text-xs text-amber-400 font-semibold">
+                    <Clock className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang có yêu cầu rút {affInfo.pendingWithdrawal.toLocaleString('vi-VN')}đ đang chờ Thầy Tôn chuyển khoản.</span>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
+                <button
+                  onClick={() => setIsBankModalOpen(true)}
+                  className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>{affInfo.bankAccountNumber ? 'Đổi STK' : 'Thêm STK Ngân Hàng'}</span>
+                </button>
+
+                <button
+                  disabled={remainingCommission < 50000 || !affInfo.bankAccountNumber}
+                  onClick={() => {
+                    setWithdrawAmount(String(remainingCommission));
+                    setIsWithdrawModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow disabled:opacity-40 disabled:cursor-not-allowed"
+                  title={
+                    !affInfo.bankAccountNumber
+                      ? 'Vui lòng thêm STK ngân hàng trước'
+                      : remainingCommission < 50000
+                      ? 'Số dư tối thiểu để rút là 50.000đ'
+                      : 'Bấm để yêu cầu rút hoa hồng'
+                  }
+                >
+                  <CreditCard className="w-4 h-4" />
+                  <span>Yêu Cầu Rút Tiền</span>
+                </button>
               </div>
             </div>
 
@@ -351,12 +516,179 @@ export default function CTVPortalPage() {
             <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-1">
               <b className="text-white text-sm">3. Nhận Tiền Nhanh Chóng</b>
               <p className="text-slate-400">
-                Hoa hồng được thống kê tự động ngay khi khách chuyển khoản qua ngân hàng. Thầy Tôn sẽ đối soát và chuyển khoản trực tiếp về STK của bạn.
+                Hoa hồng từ 50.000đ trở lên có thể bấm rút ngay. Thầy Tôn quét mã VietQR tự động để bắn tiền về tài khoản ngân hàng của bạn.
               </p>
             </div>
           </div>
         </div>
       </main>
+
+      {/* MODAL CẬP NHẬT TÀI KHOẢN NGÂN HÀNG */}
+      {isBankModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-slate-850 bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setIsBankModalOpen(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white p-1 rounded-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+              <Landmark className="w-5 h-5 text-amber-400" />
+              <span>Cập Nhật Tài Khoản Nhận Hoa Hồng</span>
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">
+              Hệ thống sẽ tự động tạo mã VietQR chuyển khoản chính xác tới tài khoản này khi bạn rút tiền.
+            </p>
+
+            <form onSubmit={handleSaveBank} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Chọn Ngân Hàng</label>
+                <select
+                  value={bankFormData.bankCode}
+                  onChange={(e) => {
+                    const sel = VIETNAMESE_BANKS.find((b) => b.code === e.target.value);
+                    setBankFormData({
+                      ...bankFormData,
+                      bankCode: e.target.value,
+                      bankName: sel ? sel.name : e.target.value,
+                    });
+                  }}
+                  className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                >
+                  {VIETNAMESE_BANKS.map((b) => (
+                    <option key={b.code} value={b.code}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Số Tài Khoản (STK)</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Nhập số tài khoản..."
+                  value={bankFormData.bankAccountNumber}
+                  onChange={(e) => setBankFormData({ ...bankFormData, bankAccountNumber: e.target.value.replace(/\s/g, '') })}
+                  className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Tên Chủ Tài Khoản</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="NGUYEN VAN A (viết hoa không dấu)"
+                  value={bankFormData.bankAccountName}
+                  onChange={(e) => setBankFormData({ ...bankFormData, bankAccountName: e.target.value.toUpperCase() })}
+                  className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm uppercase focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsBankModalOpen(false)}
+                  className="px-4 py-2 border border-slate-700 rounded-xl text-sm text-slate-300 hover:bg-slate-800"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingBank}
+                  className="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-sm font-bold shadow transition-all disabled:opacity-50"
+                >
+                  {isSavingBank ? 'Đang lưu...' : 'Lưu Thông Tin'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL YÊU CẦU RÚT TIỀN */}
+      {isWithdrawModalOpen && affInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setIsWithdrawModalOpen(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-white p-1 rounded-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-emerald-400" />
+              <span>Yêu Cầu Rút Tiền Hoa Hồng</span>
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">
+              Số dư hoa hồng khả dụng: <b className="text-emerald-400">{remainingCommission.toLocaleString('vi-VN')}đ</b>
+            </p>
+
+            <form onSubmit={handleWithdrawSubmit} className="space-y-4">
+              <div className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Ngân hàng thụ hưởng:</span>
+                  <b className="text-white">{affInfo.bankName}</b>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Số tài khoản:</span>
+                  <b className="text-amber-300 font-mono text-sm">{affInfo.bankAccountNumber}</b>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Chủ tài khoản:</span>
+                  <b className="text-white uppercase">{affInfo.bankAccountName}</b>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Số Tiền Muốn Rút (VND)</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="50000"
+                    max={remainingCommission}
+                    required
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-emerald-400 text-lg font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setWithdrawAmount(String(remainingCommission))}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 px-2 py-1 rounded"
+                  >
+                    Rút Hết
+                  </button>
+                </div>
+                <span className="text-[10px] text-slate-500">Tối thiểu 50.000đ</span>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsWithdrawModalOpen(false)}
+                  className="px-4 py-2 border border-slate-700 rounded-xl text-sm text-slate-300 hover:bg-slate-800"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRequestingWithdraw}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow transition-all disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isRequestingWithdraw ? 'Đang gửi...' : 'Xác Nhận Rút Tiền'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
