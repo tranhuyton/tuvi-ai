@@ -90,36 +90,38 @@ export default function UserNav({
             </button>
           </>
         ) : (
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
-            {/* Tên First Name (ví dụ: Tôn) */}
-            <div className="flex items-center gap-1.5 text-sm text-slate-200 font-semibold px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/80 rounded-xl whitespace-nowrap">
-              <User className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>{displayName}</span>
+          <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+            {/* Tên First Name (ví dụ: Tôn hoặc tonhuytran) */}
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-200 font-semibold px-2.5 py-1 sm:py-1.5 bg-slate-800/80 border border-slate-700/80 rounded-xl whitespace-nowrap max-w-[140px] sm:max-w-[200px] md:max-w-none">
+              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+              <span className="truncate">{displayName}</span>
             </div>
 
-            {/* Nút Đổi mật khẩu */}
-            {onOpenChangePassword && (
+            {/* Hàng nút Đổi mật khẩu & Logout: trên điện thoại xuống dòng dưới */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
+              {onOpenChangePassword && (
+                <button
+                  type="button"
+                  onClick={onOpenChangePassword}
+                  className="inline-flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700/80 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer"
+                  title="Thay đổi mật khẩu tài khoản"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Đổi MK</span>
+                </button>
+              )}
+
+              {/* Nút Log out */}
               <button
                 type="button"
-                onClick={onOpenChangePassword}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700/80 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer"
-                title="Thay đổi mật khẩu tài khoản"
+                onClick={handleSignOut}
+                className="inline-flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 bg-slate-800/60 hover:bg-red-950/40 text-slate-300 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap cursor-pointer"
+                title="Đăng xuất tài khoản"
               >
-                <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="hidden sm:inline">Đổi MK</span>
+                <LogOut className="w-3.5 h-3.5 shrink-0" />
+                <span>Log out</span>
               </button>
-            )}
-
-            {/* Nút Log out */}
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/60 hover:bg-red-950/40 text-slate-300 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 rounded-xl text-sm font-medium transition whitespace-nowrap cursor-pointer"
-              title="Đăng xuất tài khoản"
-            >
-              <LogOut className="w-4 h-4 shrink-0" />
-              <span>Log out</span>
-            </button>
+            </div>
           </div>
         )}
       </div>
