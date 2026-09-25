@@ -1,4 +1,9 @@
+-- ==============================================================================
 -- BẢNG QUẢN LÝ CỘNG TÁC VIÊN / AFFILIATE CHO WEBSITE TỬ VI THẦY TÔN
+-- Chạy đoạn script này trong mục SQL Editor trên Dashboard Supabase của bạn
+-- ==============================================================================
+
+-- 1. TẠO BẢNG TUVI_AFFILIATES (Nếu chưa có)
 CREATE TABLE IF NOT EXISTS public.tuvi_affiliates (
   id TEXT PRIMARY KEY,
   code TEXT UNIQUE NOT NULL,
@@ -21,11 +26,11 @@ CREATE TABLE IF NOT EXISTS public.tuvi_affiliates (
   notes TEXT
 );
 
--- TẠO CHỈ MỤC TÌM KIẾM
+-- 2. TẠO CHỈ MỤC TỐC ĐỘ TÌM KIẾM
 CREATE INDEX IF NOT EXISTS idx_tuvi_affiliates_code ON public.tuvi_affiliates(code);
 CREATE INDEX IF NOT EXISTS idx_tuvi_affiliates_phone ON public.tuvi_affiliates(phone);
 
--- BỔ SUNG CỘT AFFILIATE VÀO BẢNG TUVI_ORDERS NẾU BẢNG ĐÃ TỒN TẠI
+-- 3. BỔ SUNG CỘT AFFILIATE VÀO BẢNG TUVI_ORDERS (Nếu bảng đã tồn tại)
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tuvi_orders') THEN
@@ -38,11 +43,14 @@ BEGIN
   END IF;
 END $$;
 
--- BẬT ROW LEVEL SECURITY VÀ CHO PHÉP ĐỌC / GHI HỢP LỆ
+-- 4. BẬT BẢO MẬT ROW LEVEL SECURITY (RLS) VÀ CẤP QUYỀN
 ALTER TABLE public.tuvi_affiliates ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow public read affiliates" ON public.tuvi_affiliates
-  FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public all affiliates" ON public.tuvi_affiliates;
+DROP POLICY IF EXISTS "Allow public read affiliates" ON public.tuvi_affiliates;
+DROP POLICY IF EXISTS "Allow public insert/update affiliates" ON public.tuvi_affiliates;
 
-CREATE POLICY "Allow public insert/update affiliates" ON public.tuvi_affiliates
-  FOR ALL USING (true);
+CREATE POLICY "Allow public all affiliates" ON public.tuvi_affiliates
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
