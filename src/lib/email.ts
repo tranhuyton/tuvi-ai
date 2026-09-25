@@ -41,8 +41,12 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
   error?: string;
 }> {
   const { to, subject, html } = options;
-  const toList = Array.isArray(to) ? to : [to];
-  const validToList = toList.filter((e) => e && e.includes('@'));
+  const rawList = Array.isArray(to)
+    ? to.flatMap((item) => String(item).split(/[,;]/))
+    : String(to).split(/[,;]/);
+  const validToList = rawList
+    .map((e) => e.trim())
+    .filter((e) => e && e.includes('@'));
 
   if (validToList.length === 0) {
     console.warn('[EMAIL] Không có địa chỉ email hợp lệ để gửi:', to);
