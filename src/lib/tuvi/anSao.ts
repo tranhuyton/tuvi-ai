@@ -432,9 +432,9 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   const saoLuuMap: Record<number, SaoInfo[]> = {};
   for (let i = 0; i < 12; i++) saoLuuMap[i] = [];
 
-  const addSaoLuu = (cungIdx: number, ten: string, loai: 'tot' | 'xau', color?: string) => {
+  const addSaoLuu = (cungIdx: number, ten: string, loai: 'tot' | 'xau') => {
     const p = mod12(cungIdx);
-    const starColor = color || STAR_NGU_HANH_COLOR[ten] || (loai === 'tot' ? '#008000' : '#cc0000');
+    const starColor = STAR_NGU_HANH_COLOR[ten] || (loai === 'tot' ? '#008000' : '#cc0000');
     const saoObj: SaoInfo = {
       ten,
       loai,
@@ -446,34 +446,34 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
     s[p][loai === 'tot' ? 't' : 'x'].push(ten);
   };
 
-  // 1. L.Thái Tuế (theo Chi năm xem)
-  addSaoLuu(chiNamXemIdx, 'L.Thái Tuế', 'xau', '#cc0000');
+  // 1. L.Thái Tuế (Hỏa - Đỏ)
+  addSaoLuu(chiNamXemIdx, 'L.Thái Tuế', 'xau');
 
-  // 2. L.Tang Môn (cách Thái Tuế 2 cung thuận)
-  addSaoLuu(chiNamXemIdx + 2, 'L.Tang Môn', 'xau', '#cc0000');
+  // 2. L.Tang Môn (Mộc - Xanh lá)
+  addSaoLuu(chiNamXemIdx + 2, 'L.Tang Môn', 'xau');
 
-  // 3. L.Bạch Hổ (xung chiếu Tang Môn, cách Thái Tuế 8 cung thuận)
-  addSaoLuu(chiNamXemIdx + 8, 'L.Bạch Hổ', 'xau', '#cc0000');
+  // 3. L.Bạch Hổ (Kim - Xám)
+  addSaoLuu(chiNamXemIdx + 8, 'L.Bạch Hổ', 'xau');
 
-  // 4. L.Thiên Khốc & L.Thiên Hư (khởi từ Ngọ đếm nghịch/thuận tới Chi năm xem)
-  addSaoLuu(6 - chiNamXemIdx, 'L.Thiên Khốc', 'xau', '#cc0000');
-  addSaoLuu(6 + chiNamXemIdx, 'L.Thiên Hư', 'xau', '#cc0000');
+  // 4. L.Thiên Khốc & L.Thiên Hư (Thủy - Đen)
+  addSaoLuu(6 - chiNamXemIdx, 'L.Thiên Khốc', 'xau');
+  addSaoLuu(6 + chiNamXemIdx, 'L.Thiên Hư', 'xau');
 
-  // 5. L.Lộc Tồn (theo Can năm xem)
+  // 5. L.Lộc Tồn (Thổ - Vàng)
   const locLuu = locMap[canNamXemIdx];
-  addSaoLuu(locLuu, 'L.Lộc Tồn', 'tot', '#c28b00');
+  addSaoLuu(locLuu, 'L.Lộc Tồn', 'tot');
 
-  // 6. L.Kình Dương & L.Đà La (tiền Kình hậu Đà từ Lộc Tồn lưu)
-  addSaoLuu(locLuu + 1, 'L.Kình Dương', 'xau', '#cc0000');
-  addSaoLuu(locLuu - 1, 'L.Đà La', 'xau', '#cc0000');
+  // 6. L.Kình Dương & L.Đà La (Kim - Xám)
+  addSaoLuu(locLuu + 1, 'L.Kình Dương', 'xau');
+  addSaoLuu(locLuu - 1, 'L.Đà La', 'xau');
 
-  // 7. L.Thiên Mã (tam hợp Chi năm xem)
+  // 7. L.Thiên Mã (Hỏa - Đỏ)
   const maLuu = maMap[chiNamXemIdx];
-  addSaoLuu(maLuu, 'L.Thiên Mã', 'tot', '#cc0000');
+  addSaoLuu(maLuu, 'L.Thiên Mã', 'tot');
 
-  // 8. L.Đẩu Quân (khởi Thái Tuế năm xem coi là tháng 1, đếm nghịch tới tháng sinh âm, đếm thuận tới giờ sinh)
+  // 8. L.Đẩu Quân (Hỏa - Đỏ)
   const douQuanLuu = mod12(chiNamXemIdx - (thangAmGoc - 1) + gioSinh);
-  addSaoLuu(douQuanLuu, 'L.Đẩu Quân', 'xau', '#cc0000');
+  addSaoLuu(douQuanLuu, 'L.Đẩu Quân', 'xau');
 
   // 9. Lưu Tứ Hóa (L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị) theo Can năm xem
   const hoaLocLuuStar = HOA_LOC_MAP[canNamXemIdx];
@@ -481,12 +481,12 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
   const hoaKhoaLuuStar = HOA_KHOA_MAP[canNamXemIdx];
   const hoaKyLuuStar = HOA_KY_MAP[canNamXemIdx];
 
-  const addHoaLuuStar = (baseStar: string, name: string, loai: 'tot' | 'xau', color?: string) => {
+  const addHoaLuuStar = (baseStar: string, name: string, loai: 'tot' | 'xau') => {
     for (let i = 0; i < 12; i++) {
       for (const cat of ['c', 't', 'x'] as const) {
         for (const star of s[i][cat]) {
           if (star.includes(baseStar)) {
-            addSaoLuu(i, name, loai, color);
+            addSaoLuu(i, name, loai);
             return;
           }
         }
@@ -494,10 +494,10 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
     }
   };
 
-  addHoaLuuStar(hoaLocLuuStar, 'L.Hóa Lộc', 'tot', '#008000');
-  addHoaLuuStar(hoaQuyenLuuStar, 'L.Hóa Quyền', 'tot', '#008000');
-  addHoaLuuStar(hoaKhoaLuuStar, 'L.Hóa Khoa', 'tot', '#008000');
-  addHoaLuuStar(hoaKyLuuStar, 'L.Hóa Kị', 'xau', '#000000');
+  addHoaLuuStar(hoaLocLuuStar, 'L.Hóa Lộc', 'tot');
+  addHoaLuuStar(hoaQuyenLuuStar, 'L.Hóa Quyền', 'tot');
+  addHoaLuuStar(hoaKhoaLuuStar, 'L.Hóa Khoa', 'tot');
+  addHoaLuuStar(hoaKyLuuStar, 'L.Hóa Kị', 'xau');
 
   // Tuần & Triệt
   const trietMap: Record<number, number> = {
