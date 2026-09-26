@@ -10,7 +10,7 @@ interface UserNavProps {
   onOpenAuthModal: () => void;
   onOpenSavedCharts: () => void;
   onNewChart: () => void;
-  onSignOut?: () => void;
+  onSignOut?: () => void | Promise<void>;
   onOpenChangePassword?: () => void;
 }
 
@@ -26,11 +26,13 @@ export default function UserNav({
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-    } finally {
       if (onSignOut) {
-        onSignOut();
+        await onSignOut();
+      } else {
+        await signOut();
       }
+    } catch (err) {
+      console.error('Lỗi khi đăng xuất:', err);
     }
   };
 
