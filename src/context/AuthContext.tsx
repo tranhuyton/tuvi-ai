@@ -179,8 +179,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPasswordForEmail = async (emailToReset: string) => {
     try {
+      const trimmedEmail = emailToReset.trim().toLowerCase();
+      if (!trimmedEmail || !trimmedEmail.includes('@')) {
+        return { error: 'Vui lòng nhập địa chỉ email hợp lệ.' };
+      }
+
+      // 1. Kiểm tra tài khoản có tồn tại trong hệ thống Tử Vi Thầy Tôn hay không
+      try {
+        const { data: exists, error: checkError } = await supabase.rpc('check_tuvi_user_exists', {
+          p_email: trimmedEmail,
+        });
+
+        if (!checkError && exists === false) {
+          return {
+            error: 'Email này chưa được đăng ký trong hệ thống Tử Vi Thầy Tôn. Quý khách vui lòng kiểm tra lại địa chỉ email hoặc bấm Đăng Ký tài khoản mới.',
+          };
+        }
+      } catch (checkErr) {
+        console.warn('Không thể kiểm tra tồn tại email qua RPC:', checkErr);
+      }
+
+      // 2. Gửi link đặt lại mật khẩu qua Supabase Auth
       const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.tuvithayton.vn';
-      const { error } = await supabase.auth.resetPasswordForEmail(emailToReset.trim(), {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: `${siteUrl}/?reset_password=true`,
       });
 

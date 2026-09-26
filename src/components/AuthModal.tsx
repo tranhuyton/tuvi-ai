@@ -241,9 +241,25 @@ export default function AuthModal({
 
         {/* Thông báo lỗi / thành công */}
         {errorMsg && (
-          <div className="mb-4 p-3.5 bg-red-950/80 border border-red-500/40 rounded-xl text-red-200 text-sm sm:text-xs flex items-start gap-2">
+          <div className="mb-4 p-3.5 bg-red-950/80 border border-red-500/40 rounded-xl text-red-200 text-sm sm:text-xs flex items-start gap-2.5 leading-relaxed text-left">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
+            <div className="flex-1">
+              <span>{errorMsg}</span>
+              {tab === 'forgot' && errorMsg.includes('chưa được đăng ký') && (
+                <div className="mt-2 pt-2 border-t border-red-500/20">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab('signup');
+                      setErrorMsg('');
+                    }}
+                    className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer text-xs"
+                  >
+                    👉 Bấm vào đây để Đăng Ký tài khoản mới
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
