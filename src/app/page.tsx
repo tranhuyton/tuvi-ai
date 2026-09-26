@@ -25,12 +25,13 @@ import {
   SavedChart,
 } from '@/lib/tuviService';
 import { supabase } from '@/lib/supabase';
-import { Sparkles, Crown, PhoneCall, MapPin, Mail } from 'lucide-react';
+import { Sparkles, Crown, PhoneCall, MapPin, Mail, FlaskConical } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function HomePage() {
-  const { user, isLoading: isAuthLoading, isPasswordRecovery } = useAuth();
+  const { user, profile, testerInfo, refreshTesterInfo, isLoading: isAuthLoading, isPasswordRecovery } = useAuth();
   const { language, t } = useLanguage();
+  const [testerChartsCount, setTesterChartsCount] = useState(0);
 
   const [laSo, setLaSo] = useState<LaSoData | null>(null);
   const [currentDuongSo, setCurrentDuongSo] = useState<DuLieuDuongSo | null>(null);
@@ -75,6 +76,15 @@ export default function HomePage() {
       // ignore
     }
   }, []);
+
+  // Đồng bộ số lượng lá số tester đã tạo
+  useEffect(() => {
+    if (user && testerInfo?.isTester) {
+      getUserCharts().then(({ charts }) => {
+        if (charts) setTesterChartsCount(charts.length);
+      });
+    }
+  }, [user, testerInfo]);
 
   // Đồng bộ và lưu trữ số lượt hỏi vào localStorage để giữ nguyên khi F5 hoặc đổi lá số
   const updateQuestionsQuota = (
@@ -315,30 +325,50 @@ export default function HomePage() {
 
   // Xử lý khi nộp form lập lá số mới (chọn Free hoặc Pro)
   const handleFormSubmit = async (data: DuLieuDuongSo, tier: ServiceTier) => {
-    setCurrentTier(tier);
+    let effectiveTier = tier;
+
+    // Kiểm tra đặc quyền và hạn mức tài khoản Tester
+    if (testerInfo?.isTester) {
+      effectiveTier = 'pro';
+
+      if (user) {
+        try {
+          const { charts } = await getUserCharts();
+          const count = charts?.length || 0;
+          setTesterChartsCount(count);
+          if (count >= testerInfo.maxCharts) {
+            alert(
+              `⚠️ Tài khoản Tester của bạn đã đạt giới hạn tối đa ${testerInfo.maxCharts} lá số được cấp phép.\n\nQuý khách có thể mở mục "Sổ tay" trên thanh điều hướng để xem lại các lá số đã lưu và tiếp tục hỏi đáp chi tiết cùng Thầy Tôn.`
+            );
+            return;
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    setCurrentTier(effectiveTier);
 
     // Tách riêng dữ liệu cơ bản của đương số (loại bỏ base64 ảnh khỏi lá số lưu trữ)
     const cleanDuongSo: DuLieuDuongSo = {
       ...data,
-      tier,
+      tier: effectiveTier,
       anhMat: undefined,
       anhTay: undefined,
     };
 
-    const calculatedLaSo = lapLaSoTuVi(cleanDuongSo, 2026);
-    calculatedLaSo.tier = tier;
-
-    setLaSo(calculatedLaSo);
-    setCurrentDuongSo(data);
-    setCurrentChartId(null);
-    setReadingHtml(undefined);
-    setReadingError(undefined);
-    setChatHistory([]);
     let initialQuota: QuestionsQuota = {
       basicAllowed: 0,
-      proAllowed: tier === 'pro' ? 2 : 0,
+      proAllowed: effectiveTier === 'pro' ? 2 : 0,
     };
-    if (typeof window !== 'undefined') {
+
+    if (testerInfo?.isTester) {
+      initialQuota = {
+        basicAllowed: 0,
+        proAllowed: testerInfo.maxQuestionsPerChart,
+      };
+    } else if (typeof window !== 'undefined') {
       const key = `${data.hoTen}_${data.namDuong}`;
       const storedQuotaStr = localStorage.getItem(`tuvi_quota_${key}`);
       if (storedQuotaStr) {
@@ -346,7 +376,7 @@ export default function HomePage() {
           const parsed = JSON.parse(storedQuotaStr);
           initialQuota = {
             basicAllowed: Number(parsed.basicAllowed || 0),
-            proAllowed: tier === 'pro' ? Math.max(2, Number(parsed.proAllowed || 0)) : Number(parsed.proAllowed || 0),
+            proAllowed: effectiveTier === 'pro' ? Math.max(2, Number(parsed.proAllowed || 0)) : Number(parsed.proAllowed || 0),
           };
         } catch {}
       } else {
@@ -355,11 +385,22 @@ export default function HomePage() {
           const total = Number(storedQ);
           initialQuota = {
             basicAllowed: total,
-            proAllowed: tier === 'pro' ? 2 : 0,
+            proAllowed: effectiveTier === 'pro' ? 2 : 0,
           };
         }
       }
     }
+
+    const calculatedLaSo = lapLaSoTuVi(cleanDuongSo, 2026);
+    calculatedLaSo.tier = effectiveTier;
+    calculatedLaSo.quota = initialQuota;
+
+    setLaSo(calculatedLaSo);
+    setCurrentDuongSo(data);
+    setCurrentChartId(null);
+    setReadingHtml(undefined);
+    setReadingError(undefined);
+    setChatHistory([]);
     setQuestionsQuota(initialQuota);
     setIsLoadingReading(true);
 
@@ -378,6 +419,10 @@ export default function HomePage() {
         if (saveRes.chartId) {
           createdChartId = saveRes.chartId;
           setCurrentChartId(saveRes.chartId);
+          if (testerInfo?.isTester) {
+            setTesterChartsCount((prev) => prev + 1);
+            refreshTesterInfo();
+          }
         }
       } catch (e) {
         console.warn('Lỗi tự động lưu lá số:', e);
@@ -453,6 +498,11 @@ export default function HomePage() {
 
   // Mở modal thanh toán nâng cấp Bản Pro
   const openUpgradeModal = () => {
+    if (testerInfo?.isTester) {
+      alert('Tài khoản Tester của bạn đã được mở khóa toàn bộ quyền lợi VIP Pro!');
+      return;
+    }
+
     const proceedToPayment = () => {
       setPaymentModalConfig({
         isOpen: true,
@@ -478,6 +528,13 @@ export default function HomePage() {
 
   // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp)
   const handleUnlockQuestions = (mode?: 'basic' | 'vip') => {
+    if (testerInfo?.isTester) {
+      alert(
+        `Tài khoản Tester của bạn đã sử dụng hết ${testerInfo.maxQuestionsPerChart} câu hỏi cho lá số này.\n\nBạn có thể mở một lá số khác để tiếp tục kiểm thử hoặc liên hệ Admin nếu cần tăng thêm hạn mức câu hỏi.`
+      );
+      return;
+    }
+
     const targetMode = mode || (currentTier === 'pro' ? 'vip' : 'basic');
     const proceedToPayment = () => {
       if (targetMode === 'vip') {
@@ -633,11 +690,13 @@ export default function HomePage() {
       }
 
       let detectedTier: ServiceTier =
-        chart.duong_so_data?.tier ||
-        chart.laso_data?.tier ||
-        (chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO')
+        testerInfo?.isTester
           ? 'pro'
-          : 'free');
+          : (chart.duong_so_data?.tier ||
+             chart.laso_data?.tier ||
+             (chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO')
+               ? 'pro'
+               : 'free'));
 
       // Tự động kiểm tra hóa đơn thanh toán trong tuvi_orders (Cơ chế Self-Healing)
       let isPaidPro = detectedTier === 'pro';
@@ -680,7 +739,9 @@ export default function HomePage() {
       setChatHistory(chatMessages || []);
       let loadedQuota: QuestionsQuota = {
         basicAllowed: 0,
-        proAllowed: detectedTier === 'pro' ? 2 : 0,
+        proAllowed: testerInfo?.isTester
+          ? testerInfo.maxQuestionsPerChart
+          : (detectedTier === 'pro' ? 2 : 0),
       };
       if (typeof window !== 'undefined') {
         const storedQuotaStr =
@@ -1014,8 +1075,8 @@ export default function HomePage() {
   }, [laSo, currentDuongSo, currentChartId, currentTier, readingHtml, chatHistory, questionsQuota, isRestoringSession, user]);
 
   return (
-    <main className="min-h-screen cosmic-bg py-6 px-3 sm:px-6 md:px-8 flex flex-col justify-between relative">
-      <div className="flex-1">
+    <main className="min-h-screen cosmic-bg py-4 sm:py-6 px-2.5 sm:px-6 md:px-8 flex flex-col justify-between relative w-full max-w-full overflow-x-hidden">
+      <div className="flex-1 w-full max-w-full">
         {/* Navigation Bar Header */}
         <UserNav
           onOpenAuthModal={() => {
@@ -1033,6 +1094,37 @@ export default function HomePage() {
           onNewChart={handleReset}
           onSignOut={handleReset}
         />
+
+        {/* Banner dành riêng cho Tài Khoản Tester */}
+        {testerInfo?.isTester && (
+          <div className="max-w-[1060px] mx-auto mb-5 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-950/90 via-slate-900/95 to-purple-950/90 border border-purple-500/40 shadow-xl backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-200 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center shrink-0">
+                <FlaskConical className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="font-bold text-sm sm:text-base text-purple-300 flex items-center gap-2">
+                  <span>TÀI KHOẢN TRẢI NGHIỆM TESTER (VIP PRO)</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 uppercase font-mono">
+                    VIP TESTER
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Hạn mức: Đã lập <b>{testerChartsCount}/{testerInfo.maxCharts >= 999 ? 'Không giới hạn' : `${testerInfo.maxCharts} lá`}</b> • Mỗi lá số được hỏi tối đa <b>{testerInfo.maxQuestionsPerChart >= 999 ? 'Không giới hạn' : `${testerInfo.maxQuestionsPerChart} câu VIP`}</b> cùng Thầy Tôn.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleOpenSavedCharts}
+                className="px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-200 text-xs font-semibold transition cursor-pointer"
+              >
+                Mở Sổ Tay ({testerChartsCount} lá)
+              </button>
+            </div>
+          </div>
+        )}
 
         {isRestoringSession ? (
           <div className="py-24 flex flex-col items-center justify-center text-center">

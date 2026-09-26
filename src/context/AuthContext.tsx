@@ -3,10 +3,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { TesterConfig } from '@/types/tester';
 
 interface AuthContextType {
   user: User | null;
   profile: { full_name?: string; email?: string } | null;
+  testerInfo: TesterConfig | null;
   isLoading: boolean;
   isPasswordRecovery: boolean;
   setIsPasswordRecovery: (val: boolean) => void;
@@ -14,6 +16,7 @@ interface AuthContextType {
   signUp: (email: string, pass: string, fullName: string) => Promise<{ error?: string; message?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshTesterInfo: () => Promise<void>;
   resetPasswordForEmail: (email: string) => Promise<{ error?: string; message?: string }>;
   updatePassword: (newPass: string) => Promise<{ error?: string; message?: string }>;
 }
@@ -23,8 +26,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<{ full_name?: string; email?: string } | null>(null);
+  const [testerInfo, setTesterInfo] = useState<TesterConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+
+  const fetchTesterInfo = async (email?: string) => {
+    if (!email) {
+      setTesterInfo(null);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/tester/me?email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.isTester) {
+          setTesterInfo(data);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    setTesterInfo(null);
+  };
 
   const fetchProfile = async (currentUser: User) => {
     try {
@@ -49,6 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: currentUser.email,
       });
     }
+
+    // Tự động kiểm tra quyền hạn Tester
+    await fetchTesterInfo(currentUser.email);
   };
 
   useEffect(() => {
@@ -166,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
       setUser(null);
       setProfile(null);
+      setTesterInfo(null);
     } catch (err) {
       console.error('Lỗi đăng xuất:', err);
     }
@@ -174,6 +202,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshProfile = async () => {
     if (user) {
       await fetchProfile(user);
+    }
+  };
+
+  const refreshTesterInfo = async () => {
+    if (user?.email) {
+      await fetchTesterInfo(user.email);
     }
   };
 
@@ -240,6 +274,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         profile,
+        testerInfo,
         isLoading,
         isPasswordRecovery,
         setIsPasswordRecovery,
@@ -247,6 +282,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         refreshProfile,
+        refreshTesterInfo,
         resetPasswordForEmail,
         updatePassword,
       }}
