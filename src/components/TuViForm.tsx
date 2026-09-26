@@ -4,7 +4,6 @@ import React, { useState, ChangeEvent } from 'react';
 import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, PhoneCall, BookOpen } from 'lucide-react';
-import PaymentModal from './PaymentModal';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -85,8 +84,6 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
 
   // Lựa chọn gói dịch vụ
   const [selectedTier, setSelectedTier] = useState<ServiceTier>('free');
-  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-  const [pendingPayload, setPendingPayload] = useState<DuLieuDuongSo | null>(null);
 
   const handleImageUpload = async (
     e: ChangeEvent<HTMLInputElement>,
@@ -178,43 +175,19 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
     };
 
     if (selectedTier === 'pro') {
-      setPendingPayload(payload);
       if (!user) {
         if (onRequireAuth) {
           onRequireAuth(() => {
-            setIsPaymentOpen(true);
-          }, 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản để hệ thống lưu giữ lá số vào Sổ Tay Số Mệnh và mở mã QR thanh toán Bản Pro (119.000đ).');
+            onSubmit(payload, 'pro');
+          }, 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản để hệ thống lưu giữ lá số vào Sổ Tay Số Mệnh và thanh toán Bản Pro (119.000đ).');
         } else {
-          alert('Quý khách vui lòng đăng nhập hoặc tạo tài khoản trước khi thanh toán Bản Pro!');
+          alert('Quý khách vui lòng đăng nhập hoặc tạo tài khoản trước khi chọn Bản Pro!');
         }
         return;
       }
-      setIsPaymentOpen(true);
+      onSubmit(payload, 'pro');
     } else {
       onSubmit(payload, 'free');
-    }
-  };
-
-  const handleConfirmProPayment = () => {
-    if (pendingPayload) {
-      onSubmit(pendingPayload, 'pro');
-    } else {
-      // Fallback
-      const payload: DuLieuDuongSo = {
-        hoTen: hoTen.trim() || 'Đương số',
-        gioiTinh,
-        ngayDuong: Number(ngayDuong),
-        thangDuong: Number(thangDuong),
-        namDuong: Number(namDuong),
-        gioSinhVal,
-        thongTinThem: thongTinThem.trim() || undefined,
-        chieuCao: chieuCao ? Number(chieuCao) : undefined,
-        canNang: canNang ? Number(canNang) : undefined,
-        anhMat: anhMatBase64,
-        anhTay: anhTayBase64,
-        tier: 'pro',
-      };
-      onSubmit(payload, 'pro');
     }
   };
 
@@ -646,16 +619,6 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           </div>
         </div>
       </form>
-
-      {/* Modal thanh toán khi người dùng chọn Bản Pro */}
-      <PaymentModal
-        isOpen={isPaymentOpen}
-        onClose={() => setIsPaymentOpen(false)}
-        onConfirm={handleConfirmProPayment}
-        hoTen={hoTen.trim() || 'Đương số'}
-        paymentType="reading_vip"
-        price={119000}
-      />
     </div>
   );
 }

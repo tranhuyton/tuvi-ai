@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  AlertTriangle,
 } from 'lucide-react';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
@@ -570,10 +571,20 @@ export default function AdminTransactionsTable({
                             <div className="flex items-center justify-end gap-1.5">
                               {ord.status === 'PAID' ? (
                                 <>
-                                  <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>Tự động xong</span>
-                                  </span>
+                                  {!ord.chartId && ord.paymentType === 'reading_vip' ? (
+                                    <span
+                                      className="inline-flex items-center gap-1 text-[11px] text-amber-300 font-medium bg-amber-950/70 px-2 py-0.5 rounded border border-amber-500/40"
+                                      title="Khách đã thanh toán nhưng chưa có lá số trong hệ thống (chưa nhập ngày giờ sinh trên web)"
+                                    >
+                                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                      <span>Chưa có lá số</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Tự động xong</span>
+                                    </span>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => handleUpdateOrderStatus(ord.orderCode, 'CANCELLED')}

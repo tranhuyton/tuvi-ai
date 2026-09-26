@@ -41,21 +41,42 @@ export async function POST(req: Request) {
     }
 
     // Nâng cấp chart nếu có
-    if (order.chartId && order.paymentType === 'reading_vip') {
+    if (order.paymentType === 'reading_vip') {
       try {
-        const { data: chartData } = await supabase
-          .from('tuvi_charts')
-          .select('duong_so_data, laso_data')
-          .eq('id', order.chartId)
-          .maybeSingle();
+        let targetChartId = order.chartId;
 
-        if (chartData) {
-          const updatedDuongSo = { ...chartData.duong_so_data, tier: 'pro' };
-          const updatedLaSo = { ...chartData.laso_data, tier: 'pro' };
-          await supabase
+        // Nếu order chưa có chartId, thử tìm lá số trùng tên của user để liên kết tự động
+        if (!targetChartId && (order.userId || order.email)) {
+          let query = supabase.from('tuvi_charts').select('id, duong_so_data, laso_data');
+          if (order.userId) {
+            query = query.eq('user_id', order.userId);
+          }
+          const { data: userCharts } = await query;
+          const matched = (userCharts || []).find(
+            (c: any) => c.duong_so_data?.hoTen?.trim().toLowerCase() === order.hoTen?.trim().toLowerCase()
+          );
+          if (matched) {
+            targetChartId = matched.id;
+            order.chartId = matched.id;
+            await supabase.from('tuvi_orders').update({ chart_id: matched.id }).eq('order_code', order.orderCode);
+          }
+        }
+
+        if (targetChartId) {
+          const { data: chartData } = await supabase
             .from('tuvi_charts')
-            .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
-            .eq('id', order.chartId);
+            .select('duong_so_data, laso_data')
+            .eq('id', targetChartId)
+            .maybeSingle();
+
+          if (chartData) {
+            const updatedDuongSo = { ...chartData.duong_so_data, tier: 'pro' };
+            const updatedLaSo = { ...chartData.laso_data, tier: 'pro' };
+            await supabase
+              .from('tuvi_charts')
+              .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
+              .eq('id', targetChartId);
+          }
         }
       } catch (e) {
         console.warn('[SIMULATE] Không thể cập nhật chart:', e);

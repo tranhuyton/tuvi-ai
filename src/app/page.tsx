@@ -327,7 +327,34 @@ export default function HomePage() {
   const handleFormSubmit = async (data: DuLieuDuongSo, tier: ServiceTier) => {
     let effectiveTier = tier;
 
-    // Kiểm tra đặc quyền và hạn mức tài khoản Tester
+    // 1. Kiểm tra xem người dùng đã có đơn hàng nào đã thanh toán trước đó chưa (ví dụ: chuyển khoản trước, duyệt tay trước mà chưa có lá số)
+    let autoUnlockedFromPaidOrder = false;
+    let matchedPaidOrderCode: string | null = null;
+
+    if (user) {
+      try {
+        const { data: unlinkedPaidOrders } = await supabase
+          .from('tuvi_orders')
+          .select('id, order_code, payment_type, status, chart_id')
+          .eq('user_id', user.id)
+          .eq('status', 'PAID')
+          .eq('payment_type', 'reading_vip')
+          .is('chart_id', null)
+          .ilike('ho_ten', data.hoTen.trim())
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (unlinkedPaidOrders && unlinkedPaidOrders.length > 0) {
+          autoUnlockedFromPaidOrder = true;
+          matchedPaidOrderCode = unlinkedPaidOrders[0].order_code;
+          effectiveTier = 'pro';
+        }
+      } catch (err) {
+        console.warn('Lỗi kiểm tra đơn đã thanh toán trước:', err);
+      }
+    }
+
+    // 2. Kiểm tra đặc quyền và hạn mức tài khoản Tester
     if (testerInfo?.isTester) {
       effectiveTier = 'pro';
 
@@ -346,6 +373,12 @@ export default function HomePage() {
           // ignore
         }
       }
+    }
+
+    // Nếu người dùng chọn gói Pro nhưng chưa thanh toán và không phải Tester, tạm lập bản Free và mở modal thanh toán kèm chartId
+    const requiresPayment = tier === 'pro' && !testerInfo?.isTester && !autoUnlockedFromPaidOrder;
+    if (requiresPayment) {
+      effectiveTier = 'free';
     }
 
     setCurrentTier(effectiveTier);
@@ -408,7 +441,7 @@ export default function HomePage() {
 
     let createdChartId: string | null = null;
 
-    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database
+    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database ngay lập tức để không bao giờ bị mất
     if (user) {
       try {
         const saveRes = await saveOrUpdateChart({
@@ -423,15 +456,34 @@ export default function HomePage() {
             setTesterChartsCount((prev) => prev + 1);
             refreshTesterInfo();
           }
+
+          // Nếu có đơn hàng đã thanh toán trước đó (ví dụ TV96213), tự động gắn chartId vào đơn hàng đó
+          if (autoUnlockedFromPaidOrder && matchedPaidOrderCode) {
+            try {
+              await supabase
+                .from('tuvi_orders')
+                .update({ chart_id: saveRes.chartId })
+                .eq('order_code', matchedPaidOrderCode);
+            } catch (err) {
+              console.warn('Lỗi gán chart_id vào đơn đã thanh toán:', err);
+            }
+          }
         }
       } catch (e) {
         console.warn('Lỗi tự động lưu lá số:', e);
       }
     }
 
+    // Nếu cần thanh toán Bản Pro (khách chủ động bấm chọn Pro trên form): Mở ngay modal thanh toán có gắn chartId
+    if (requiresPayment) {
+      setIsLoadingReading(false);
+      openUpgradeModal();
+      return;
+    }
+
     // Gọi AI Thầy Tôn bình giải
     try {
-      const readingResult = await generateReading(calculatedLaSo, data, tier);
+      const readingResult = await generateReading(calculatedLaSo, data, effectiveTier);
       if (readingResult) {
         setReadingHtml(readingResult);
         if (createdChartId) {

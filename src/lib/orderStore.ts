@@ -277,6 +277,32 @@ export async function updateOrderStatus(
 }
 
 /**
+ * Cập nhật chartId cho đơn hàng (khi lá số được tạo sau khi thanh toán)
+ */
+export async function linkOrderToChart(
+  code: string,
+  chartId: string
+): Promise<OrderItem | null> {
+  const order = await getOrderByCode(code);
+  if (!order) return null;
+
+  order.chartId = chartId;
+  ordersMap.set(order.orderCode, order);
+  saveOrdersToFile();
+
+  try {
+    await supabase
+      .from('tuvi_orders')
+      .update({ chart_id: chartId })
+      .eq('order_code', order.orderCode);
+  } catch (err) {
+    // ignore
+  }
+
+  return order;
+}
+
+/**
  * Lấy danh sách toàn bộ đơn hàng (Dùng cho Admin)
  */
 export async function getAllOrders(limit: number = 50): Promise<OrderItem[]> {
