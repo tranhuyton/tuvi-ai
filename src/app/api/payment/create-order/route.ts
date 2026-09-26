@@ -55,11 +55,17 @@ export async function POST(req: Request) {
       order.orderCode
     )}&accountName=${encodeURIComponent(CHU_TK)}`;
 
+    // 3. SePay QR CDN fallback tốc độ cao
+    const sepayQrUrl = `https://qr.sepay.vn/img?bank=VPBank&acc=${STK}&template=compact&amount=${order.amount}&des=${encodeURIComponent(
+      order.orderCode
+    )}`;
+
     return NextResponse.json({
       success: true,
       order,
       qrUrl,
       qrDataUrl,
+      sepayQrUrl,
       syntax: order.orderCode,
       bankInfo: {
         bankName: BANK_NAME,

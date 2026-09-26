@@ -1,21 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   X,
   Sparkles,
   CheckCircle,
   Copy,
   Check,
-  QrCode,
   Loader2,
   Mail,
   CheckCircle2,
   Download,
   Smartphone,
   RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { generateVietQrDataUrl, buildVietQrString } from '@/lib/vietqr';
+import QRCode from 'qrcode';
 
 export type PaymentPurpose = 'reading_vip' | 'chat_free' | 'chat_vip';
 
@@ -48,12 +53,24 @@ export default function PaymentModal({
   const [orderCode, setOrderCode] = useState<string>('');
   const [qrUrl, setQrUrl] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [sepayQrUrl, setSepayQrUrl] = useState<string>('');
   const [isCreatingOrder, setIsCreatingOrder] = useState<boolean>(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [orderStatus, setOrderStatus] = useState<'PENDING' | 'PAID' | 'IDLE'>('IDLE');
+
+  // Đa tầng dự phòng QR:
+  // 0: Local Base64 DataURL (cực nhanh 0ms, không phụ thuộc mạng)
+  // 1: SePay CDN (https://qr.sepay.vn/img?...)
+  // 2: VietQR CDN (https://img.vietqr.io/image/...)
+  // 3: Canvas HTML5 vẽ trực tiếp bằng thư viện qrcode (miễn nhiễm 100% lỗi mạng/CDN)
+  const [qrFallbackStage, setQrFallbackStage] = useState<number>(0);
 
   // Email nhận thông báo
   const [customerEmail, setCustomerEmail] = useState<string>('');
   const [emailSaved, setEmailSaved] = useState<boolean>(false);
+
+  // Toggle xem đặc quyền gói (thu gọn để nhường chỗ cho mã QR xuất hiện đầu tiên trên mobile)
+  const [showBenefits, setShowBenefits] = useState<boolean>(false);
 
   // Trạng thái copy
   const [copiedStk, setCopiedStk] = useState(false);
@@ -61,7 +78,9 @@ export default function PaymentModal({
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
 
-  // Polling ref & Active Order Key ref
+  // Refs
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const modalBodyRef = useRef<HTMLDivElement | null>(null);
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeOrderKeyRef = useRef<string | null>(null);
 
@@ -114,8 +133,86 @@ export default function PaymentModal({
         profile?.email ||
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
       if (email && !customerEmail) setCustomerEmail(email);
+
+      // Đảm bảo cuộn lên đầu để thấy ngay mã QR mà không bị đẩy xuống dưới
+      setTimeout(() => {
+        if (modalBodyRef.current) {
+          modalBodyRef.current.scrollTop = 0;
+        }
+      }, 50);
     }
   }, [isOpen, user, profile, customerEmail]);
+
+  // Hàm tạo hoặc lấy lại đơn hàng
+  const createOrFetchOrder = useCallback(async (isRefresh = false) => {
+    setIsCreatingOrder(true);
+    setOrderError(null);
+    setQrFallbackStage(0);
+
+    try {
+      const initialEmail =
+        customerEmail ||
+        user?.email ||
+        profile?.email ||
+        (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
+
+      const affiliateCode =
+        (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
+
+      const res = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentType,
+          price: finalPrice,
+          hoTen,
+          email: initialEmail,
+          chartId,
+          userId: user?.id,
+          affiliateCode: affiliateCode || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Máy chủ phản hồi mã lỗi ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.success && data.order) {
+        const code = data.order.orderCode;
+        activeOrderKeyRef.current = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
+        setOrderCode(code);
+        setQrUrl(data.qrUrl || `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${finalPrice}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(chuTk)}`);
+        setSepayQrUrl(data.sepayQrUrl || `https://qr.sepay.vn/img?bank=VPBank&acc=${stk}&template=compact&amount=${finalPrice}&des=${encodeURIComponent(code)}`);
+
+        // Ưu tiên dữ liệu QR DataURL do server sinh hoặc client sinh ngay tức thì
+        if (data.qrDataUrl) {
+          setQrDataUrl(data.qrDataUrl);
+        } else {
+          try {
+            const clientDataUrl = await generateVietQrDataUrl({
+              bankBinOrCode: 'VPB',
+              accountNumber: stk,
+              amount: finalPrice,
+              memo: code,
+              accountName: chuTk,
+            });
+            setQrDataUrl(clientDataUrl);
+          } catch (qrErr) {
+            console.warn('[PaymentModal] Lỗi sinh client QR DataURL:', qrErr);
+          }
+        }
+        setOrderStatus('PENDING');
+      } else {
+        throw new Error(data.error || 'Không thể tạo đơn hàng');
+      }
+    } catch (err: any) {
+      console.error('[PaymentModal] Lỗi tạo đơn thanh toán:', err);
+      setOrderError(err?.message || 'Không thể tạo mã giao dịch. Vui lòng bấm thử lại.');
+    } finally {
+      setIsCreatingOrder(false);
+    }
+  }, [customerEmail, user, profile, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
 
   // Tạo đơn hàng khi modal mở ra (tái sử dụng đơn pending nếu cùng gói để không sinh mã rác và hiện QR tức thì)
   useEffect(() => {
@@ -134,56 +231,12 @@ export default function PaymentModal({
       return;
     }
 
-    activeOrderKeyRef.current = targetKey;
-    let isMounted = true;
-
-    async function initOrder() {
-      setIsCreatingOrder(true);
-      try {
-        const initialEmail =
-          customerEmail ||
-          user?.email ||
-          profile?.email ||
-          (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
-
-        const affiliateCode =
-          (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
-
-        const res = await fetch('/api/payment/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentType,
-            price: finalPrice,
-            hoTen,
-            email: initialEmail,
-            chartId,
-            userId: user?.id,
-            affiliateCode: affiliateCode || undefined,
-          }),
-        });
-
-        const data = await res.json();
-        if (isMounted && data.success && data.order) {
-          setOrderCode(data.order.orderCode);
-          setQrUrl(data.qrUrl || '');
-          setQrDataUrl(data.qrDataUrl || '');
-          setOrderStatus('PENDING');
-        }
-      } catch (err) {
-        console.error('Lỗi khởi tạo đơn thanh toán:', err);
-      } finally {
-        if (isMounted) setIsCreatingOrder(false);
-      }
-    }
-
-    initOrder();
+    createOrFetchOrder();
 
     return () => {
-      isMounted = false;
       if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
     };
-  }, [isOpen, paymentType, finalPrice, hoTen, chartId, orderCode, orderStatus]);
+  }, [isOpen, paymentType, finalPrice, hoTen, chartId, orderCode, orderStatus, createOrFetchOrder]);
 
   // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s)
   useEffect(() => {
@@ -228,6 +281,58 @@ export default function PaymentModal({
       onClose();
     }, 1800);
   };
+
+  // Vẽ Canvas dự phòng (khi stage === 3 hoặc khi canvas mount)
+  useEffect(() => {
+    if (orderCode && canvasRef.current && (qrFallbackStage === 3 || !qrDataUrl)) {
+      try {
+        const qrString = buildVietQrString({
+          bankBinOrCode: 'VPB',
+          accountNumber: stk,
+          amount: finalPrice,
+          memo: orderCode,
+          accountName: chuTk,
+        });
+
+        QRCode.toCanvas(canvasRef.current, qrString, {
+          width: 240,
+          margin: 1,
+          errorCorrectionLevel: 'M',
+          color: {
+            dark: '#000000',
+            light: '#ffffff',
+          },
+        }).catch((err) => {
+          console.warn('[PaymentModal] Lỗi render Canvas QR:', err);
+        });
+      } catch (err) {
+        console.warn('[PaymentModal] Lỗi tạo chuỗi VietQR cho Canvas:', err);
+      }
+    }
+  }, [orderCode, qrFallbackStage, qrDataUrl, finalPrice, stk, chuTk]);
+
+  // Xử lý chuyển đổi tầng QR dự phòng khi ảnh bị lỗi (onError)
+  const handleImgError = () => {
+    setQrFallbackStage((prev) => {
+      const nextStage = prev + 1;
+      console.warn(`[PaymentModal] QR ảnh tầng ${prev} không tải được, tự động chuyển tầng ${nextStage}`);
+      return nextStage <= 3 ? nextStage : 3;
+    });
+  };
+
+  // Nguồn ảnh QR hiện tại dựa theo tầng fallback
+  const currentQrSrc = useMemo(() => {
+    if (qrFallbackStage === 0) {
+      return qrDataUrl || sepayQrUrl || qrUrl;
+    }
+    if (qrFallbackStage === 1) {
+      return sepayQrUrl || qrUrl || qrDataUrl;
+    }
+    if (qrFallbackStage === 2) {
+      return qrUrl || sepayQrUrl || qrDataUrl;
+    }
+    return '';
+  }, [qrFallbackStage, qrDataUrl, sepayQrUrl, qrUrl]);
 
   // Cập nhật email cho đơn hàng
   const handleUpdateEmail = async (newEmail: string) => {
@@ -277,92 +382,91 @@ export default function PaymentModal({
     setTimeout(() => setCopiedAll(false), 2000);
   };
 
-  // Tải ảnh mã QR về máy (hỗ trợ đặc biệt khách dùng điện thoại quét từ thư viện ảnh)
+  // Tải ảnh mã QR về máy (hỗ trợ lưu ảnh quét trong App Ngân Hàng)
   const handleDownloadQr = () => {
-    const src = qrDataUrl || qrUrl;
-    if (!src) return;
-    const link = document.createElement('a');
-    link.href = src;
-    link.download = `VietQR_${orderCode || 'ThanhToan'}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      let downloadSrc = '';
+      if (qrFallbackStage === 3 && canvasRef.current) {
+        downloadSrc = canvasRef.current.toDataURL('image/png');
+      } else {
+        downloadSrc = currentQrSrc;
+      }
+
+      if (!downloadSrc) return;
+
+      if (downloadSrc.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = downloadSrc;
+        link.download = `VietQR_${orderCode || 'ThanhToan'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Ảnh từ CDN ngoài (SePay / VietQR)
+        fetch(downloadSrc)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `VietQR_${orderCode || 'ThanhToan'}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+          })
+          .catch(() => {
+            window.open(downloadSrc, '_blank');
+          });
+      }
+    } catch (err) {
+      console.error('Lỗi tải mã QR:', err);
+    }
   };
 
-  // Làm mới / Tạo mã đơn hàng mới nếu khách muốn
-  const handleRefreshOrder = async () => {
+  // Làm mới / Tạo mã đơn hàng mới
+  const handleRefreshOrder = () => {
     activeOrderKeyRef.current = null;
     setOrderCode('');
     setQrUrl('');
     setQrDataUrl('');
-    setIsCreatingOrder(true);
-    try {
-      const initialEmail =
-        customerEmail ||
-        user?.email ||
-        profile?.email ||
-        (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
-
-      const affiliateCode =
-        (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
-
-      const res = await fetch('/api/payment/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentType,
-          price: finalPrice,
-          hoTen,
-          email: initialEmail,
-          chartId,
-          userId: user?.id,
-          affiliateCode: affiliateCode || undefined,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success && data.order) {
-        activeOrderKeyRef.current = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
-        setOrderCode(data.order.orderCode);
-        setQrUrl(data.qrUrl || '');
-        setQrDataUrl(data.qrDataUrl || '');
-        setOrderStatus('PENDING');
-      }
-    } catch (err) {
-      console.error('Lỗi tạo mã mới:', err);
-    } finally {
-      setIsCreatingOrder(false);
-    }
+    setSepayQrUrl('');
+    setOrderError(null);
+    createOrFetchOrder(true);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl flex flex-col text-slate-100 overflow-hidden">
+      <div className="relative w-full max-w-lg bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl flex flex-col text-slate-100 overflow-hidden max-h-[92vh]">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-950/50 via-slate-900 to-slate-900">
-          <div className="flex items-center gap-3">
+        <div className="p-3.5 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-950/50 via-slate-900 to-slate-900 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 shrink-0">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-bold font-serif text-amber-400 flex items-center gap-1.5">
+              <h3 className="text-base sm:text-lg font-bold font-serif text-amber-400 leading-snug">
                 {title}
               </h3>
-              <p className="text-sm sm:text-xs text-slate-300">{subtitle}</p>
+              <p className="text-xs text-slate-300 line-clamp-1">{subtitle}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+            aria-label="Đóng"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Nội dung thanh toán */}
-        <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        {/* Nội dung thanh toán (Cuộn mượt mà, ưu tiên hiển thị mã QR ngay trên cùng) */}
+        <div
+          ref={modalBodyRef}
+          className="p-3.5 sm:p-5 space-y-3.5 overflow-y-auto flex-1 overscroll-contain"
+        >
           {/* Màn hình Chúc Mừng nếu ĐÃ THANH TOÁN (Auto-Unlocked) */}
           {orderStatus === 'PAID' ? (
             <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-4 animate-scale-up">
@@ -384,51 +488,24 @@ export default function PaymentModal({
             </div>
           ) : (
             <>
-              {/* Đặc quyền gói */}
-              <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-3.5 sm:p-4 text-sm sm:text-sm text-amber-200 space-y-2">
-                <div className="font-bold text-amber-300 flex items-center gap-1.5 text-base sm:text-sm">
-                  <CheckCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                  Đặc quyền ({finalPrice.toLocaleString('vi-VN')} đ):
+              {/* Dải thông tin tóm tắt số tiền & bảo mật */}
+              <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs sm:text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-300 font-medium">Số tiền thanh toán:</span>
+                  <span className="font-bold text-amber-400 text-base sm:text-lg font-mono">
+                    {finalPrice.toLocaleString('vi-VN')} đ
+                  </span>
                 </div>
-                <ul className="list-disc list-inside space-y-1.5 pl-1 text-slate-200 text-sm sm:text-xs leading-relaxed">
-                  {benefits.map((b, idx) => (
-                    <li key={idx}>{b}</li>
-                  ))}
-                </ul>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Tự động duyệt 24/7
+                </span>
               </div>
 
-              {/* Email Nhận Thông Báo & Kích Hoạt */}
-              <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 text-sm sm:text-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-slate-300 font-medium flex items-center gap-1.5">
-                    <Mail className="w-4 h-4 text-amber-400" />
-                    <span>Email nhận xác nhận &amp; biên lai kích hoạt:</span>
-                  </label>
-                  {emailSaved && (
-                    <span className="text-xs text-emerald-400 font-medium animate-fade-in flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> Đã lưu
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => handleUpdateEmail(e.target.value)}
-                  placeholder="Ví dụ: hoten@gmail.com (để nhận email khi hoàn tất)"
-                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 placeholder:text-slate-500"
-                />
-                {user?.email && (
-                  <p className="text-xs text-emerald-400 font-medium flex items-center gap-1.5 pt-1">
-                    <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                    Đã liên kết tài khoản: <span className="font-mono text-amber-300 font-bold">{user.email}</span>
-                  </p>
-                )}
-              </div>
-
-              {/* QR Code Chuyển Khoản Tự Động */}
-              <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center text-slate-900 shadow-xl border border-slate-200">
+              {/* KHUNG MÃ QR VIETQR - ƯU TIÊN HÀNG ĐẦU, HIỂN THỊ NGAY LẬP TỨC */}
+              <div className="bg-white rounded-2xl p-3.5 sm:p-4 flex flex-col items-center justify-center text-slate-900 shadow-xl border border-slate-200">
                 {/* Header VietQR & NAPAS */}
-                <div className="w-full flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200 px-1">
+                <div className="w-full flex items-center justify-between pb-2 mb-2 border-b border-slate-200 px-1">
                   <div className="flex items-center gap-2">
                     <span className="font-extrabold text-blue-700 tracking-wider text-xs sm:text-sm">
                       VIET<span className="text-red-500">QR</span>
@@ -436,29 +513,44 @@ export default function PaymentModal({
                     <span className="text-slate-300">|</span>
                     <span className="font-bold text-slate-700 text-xs tracking-wide">NAPAS 247</span>
                   </div>
-                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                    ⚡ Chuyển Nhanh 24/7
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                    ⚡ Quét là nhận diện ngay
                   </span>
                 </div>
 
-                {/* Khung hiển thị QR */}
-                <div className="w-56 h-56 sm:w-60 sm:h-60 bg-white rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center relative p-1 shadow-inner">
-                  {isCreatingOrder || (!qrDataUrl && !qrUrl) ? (
-                    <div className="flex flex-col items-center gap-2 text-slate-500 text-xs sm:text-sm">
+                {/* Khung hiển thị QR - Đa tầng dự phòng đảm bảo luôn hiện */}
+                <div className="w-52 h-52 sm:w-60 sm:h-60 bg-white rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center relative p-1 shadow-inner">
+                  {isCreatingOrder ? (
+                    <div className="flex flex-col items-center gap-2 text-slate-500 text-xs sm:text-sm p-4 text-center">
                       <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
                       <span className="font-medium">Đang tạo mã QR thanh toán...</span>
                     </div>
+                  ) : orderError ? (
+                    <div className="flex flex-col items-center gap-2 text-rose-600 text-xs sm:text-sm p-4 text-center">
+                      <AlertCircle className="w-8 h-8 text-rose-500" />
+                      <span className="font-medium text-slate-700">{orderError}</span>
+                      <button
+                        type="button"
+                        onClick={handleRefreshOrder}
+                        className="mt-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition shadow cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Thử lại</span>
+                      </button>
+                    </div>
+                  ) : qrFallbackStage === 3 ? (
+                    <canvas
+                      ref={canvasRef}
+                      className="w-full h-full object-contain"
+                      title={`VietQR Canvas ${orderCode}`}
+                    />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={qrDataUrl || qrUrl}
+                      src={currentQrSrc}
                       alt={`VietQR ${orderCode}`}
                       className="w-full h-full object-contain select-none"
-                      onError={(e) => {
-                        if (qrDataUrl) {
-                          (e.target as HTMLImageElement).src = qrDataUrl;
-                        }
-                      }}
+                      onError={handleImgError}
                     />
                   )}
                 </div>
@@ -468,7 +560,7 @@ export default function PaymentModal({
                   <button
                     type="button"
                     onClick={handleDownloadQr}
-                    disabled={!qrDataUrl && !qrUrl}
+                    disabled={isCreatingOrder || !orderCode}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs sm:text-sm font-semibold border border-slate-300 transition cursor-pointer disabled:opacity-50"
                     title="Tải ảnh mã QR về máy để mở trong App Ngân Hàng"
                   >
@@ -497,67 +589,53 @@ export default function PaymentModal({
                   </button>
                 </div>
 
-                {/* Gợi ý cho khách dùng điện thoại */}
-                <div className="mt-2.5 flex items-center gap-1.5 text-xs text-slate-600 text-center leading-normal px-1">
-                  <Smartphone className="w-4 h-4 text-amber-600 shrink-0 hidden sm:inline" />
-                  <span>
-                    Dùng điện thoại: Bấm <strong>&quot;Lưu ảnh QR&quot;</strong> rồi vào App Ngân Hàng quét từ ảnh, hoặc sao chép thông tin bên dưới.
-                  </span>
-                </div>
-
-                {/* Radar quét tự động */}
-                <div className="mt-2.5 w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900">
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  <span className="font-medium text-xs">
-                    Hệ thống SePay tự động mở khóa ngay sau khi tiền vào tài khoản
-                  </span>
+                {/* Hướng dẫn ngắn gọn */}
+                <div className="mt-2 text-center text-xs text-slate-500">
+                  💡 Dùng App Ngân hàng quét QR để tự điền đúng nội dung và số tiền.
                 </div>
               </div>
 
-              {/* Thông tin tài khoản thủ công */}
-              <div className="space-y-2.5 text-sm sm:text-xs bg-slate-950/60 p-4 rounded-xl border border-slate-800">
-                <div className="flex justify-between items-center py-1.5 border-b border-slate-800/80">
+              {/* Thông tin tài khoản thủ công (Sao chép 1 chạm) */}
+              <div className="space-y-2 text-xs sm:text-sm bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
                   <span className="text-slate-400">Ngân hàng:</span>
                   <span className="font-semibold text-slate-200">{bankName}</span>
                 </div>
-                <div className="flex justify-between items-center py-1.5 border-b border-slate-800/80">
+                <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
                   <span className="text-slate-400">Chủ tài khoản:</span>
                   <span className="font-semibold text-amber-300">{chuTk}</span>
                 </div>
-                <div className="flex justify-between items-center py-1.5 border-b border-slate-800/80">
+                <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
                   <span className="text-slate-400">Số tài khoản:</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-amber-400 text-base sm:text-sm">{stk}</span>
+                    <span className="font-mono font-bold text-amber-400 text-sm sm:text-base">{stk}</span>
                     <button
                       type="button"
                       onClick={handleCopyStk}
-                      className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
+                      className="p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
                       title="Sao chép số tài khoản"
                     >
                       {copiedStk ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
-                <div className="flex justify-between items-center py-1.5 border-b border-slate-800/80">
+                <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
                   <span className="text-slate-400">Số tiền:</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-emerald-400 text-base sm:text-sm">
+                    <span className="font-bold text-emerald-400 text-sm sm:text-base">
                       {finalPrice.toLocaleString('vi-VN')} VNĐ
                     </span>
                     <button
                       type="button"
                       onClick={handleCopyAmount}
-                      className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
+                      className="p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
                       title="Sao chép số tiền"
                     >
                       {copiedAmount ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
-                <div className="flex justify-between items-center py-1.5">
+                <div className="flex justify-between items-center py-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-slate-400">Nội dung CK:</span>
                     <button
@@ -572,13 +650,13 @@ export default function PaymentModal({
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded border border-amber-500/40 text-base sm:text-sm">
+                    <span className="font-mono font-bold text-amber-300 bg-amber-950/80 px-2.5 py-0.5 rounded border border-amber-500/40 text-sm sm:text-base">
                       {orderCode || 'Đang tạo...'}
                     </span>
                     <button
                       type="button"
                       onClick={handleCopyContent}
-                      className="p-1.5 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
+                      className="p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
                       title="Sao chép nội dung"
                     >
                       {copiedContent ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -586,8 +664,8 @@ export default function PaymentModal({
                   </div>
                 </div>
 
-                <div className="pt-2 text-center text-xs text-slate-400">
-                  Cần hỗ trợ hoặc kiểm tra trực tiếp? Hotline / Zalo Thầy Tôn:{' '}
+                <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-800/80">
+                  Hỗ trợ kiểm tra trực tiếp qua Hotline / Zalo Thầy Tôn:{' '}
                   <a href="tel:0935058688" className="text-amber-400 font-bold hover:underline">
                     0935.058.688
                   </a>{' '}
@@ -603,21 +681,77 @@ export default function PaymentModal({
                   )
                 </div>
               </div>
+
+              {/* Email Nhận Thông Báo & Kích Hoạt */}
+              <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-300 font-medium flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Email nhận xác nhận &amp; biên lai kích hoạt:</span>
+                  </label>
+                  {emailSaved && (
+                    <span className="text-xs text-emerald-400 font-medium animate-fade-in flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Đã lưu
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => handleUpdateEmail(e.target.value)}
+                  placeholder="Ví dụ: hoten@gmail.com (để nhận email khi hoàn tất)"
+                  className="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 text-xs sm:text-sm focus:outline-none focus:border-amber-400 placeholder:text-slate-500"
+                />
+                {user?.email && (
+                  <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1 pt-0.5">
+                    <CheckCircle className="w-3 h-3 shrink-0" />
+                    Đã liên kết tài khoản: <span className="font-mono text-amber-300 font-bold">{user.email}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Đặc quyền gói (Có thể mở rộng / thu gọn để không cản trở mã QR) */}
+              <div className="border border-amber-500/20 rounded-xl overflow-hidden bg-amber-950/20">
+                <button
+                  type="button"
+                  onClick={() => setShowBenefits(!showBenefits)}
+                  className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs text-amber-300 hover:text-amber-200 transition cursor-pointer bg-amber-950/30"
+                >
+                  <span className="font-semibold flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    Chi tiết quyền lợi gói ({benefits.length} đặc quyền)
+                  </span>
+                  {showBenefits ? (
+                    <ChevronUp className="w-4 h-4 text-amber-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-amber-400" />
+                  )}
+                </button>
+                {showBenefits && (
+                  <div className="p-3 text-xs text-slate-200 space-y-1.5 border-t border-amber-500/20 animate-fade-in">
+                    <ul className="list-disc list-inside space-y-1.5 pl-1 leading-relaxed text-slate-300">
+                      {benefits.map((b, idx) => (
+                        <li key={idx}>{b}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
 
         {/* Footer Actions */}
         {orderStatus !== 'PAID' && (
-          <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-300">
-              <Loader2 className="w-4 h-4 animate-spin text-amber-400 shrink-0" />
-              <span>Đang chờ chuyển khoản... Hệ thống tự động kích hoạt ngay khi nhận tiền</span>
+          <div className="p-3.5 sm:p-4 border-t border-slate-800 bg-slate-900/95 flex items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2 text-xs text-slate-300">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400 shrink-0" />
+              <span>Đang chờ chuyển khoản... Tự động mở khóa ngay</span>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-sm font-medium transition shrink-0 cursor-pointer"
+              className="py-1.5 px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer"
             >
               Đóng
             </button>
