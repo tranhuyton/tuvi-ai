@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, AlertCircle, Crown, PhoneCall, MessageCircle } from 'lucide-react';
+import { Sparkles, Copy, Check, AlertCircle, Crown } from 'lucide-react';
 import { ServiceTier } from '@/types/tuvi';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface LuanGiaiAIProps {
   readingHtml?: string;
@@ -21,6 +22,7 @@ export default function LuanGiaiAI({
   onUpgrade,
   isUpgrading,
 }: LuanGiaiAIProps) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -41,12 +43,12 @@ export default function LuanGiaiAI({
           {isPro ? (
             <>
               <Crown className="w-6 h-6 text-amber-500 inline" />
-              <span>Bình Giải Chuyên Sâu Từ Thầy Tôn (Bản Pro)</span>
+              <span>{t('reading.proTitle', 'Bình Giải Chuyên Sâu Từ Thầy Tôn (Bản Pro)')}</span>
             </>
           ) : (
             <>
               <span>🔮</span>
-              <span>Bình Giải Tử Vi Thầy Tôn (Bản Cơ Bản)</span>
+              <span>{t('reading.freeTitle', 'Bình Giải Tử Vi Thầy Tôn (Bản Cơ Bản)')}</span>
             </>
           )}
         </h2>
@@ -58,12 +60,14 @@ export default function LuanGiaiAI({
                 : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
             }`}
           >
-            {isPro ? '👑 Bản Chuyên Sâu Bí Truyền' : '📜 Bản Luận Giải Khởi Nguyên'}
+            {isPro
+              ? t('reading.proBadge', '👑 Bản Chuyên Sâu Bí Truyền')
+              : t('reading.freeBadge', '📜 Bản Luận Giải Khởi Nguyên')}
           </span>
           <p className="text-sm sm:text-base text-slate-300">
             {isPro
-              ? 'Toàn diện Tử Vi Cổ Truyền, Tứ Hóa, Tướng Pháp & Hóa Giải 4 Mùa'
-              : 'Tổng quan Mệnh Cục, Tam Hợp Mệnh-Tài-Quan, Đại Vận & Tiểu Vận'}
+              ? t('reading.proSubtitle', 'Toàn diện Tử Vi Cổ Truyền, Tứ Hóa, Tướng Pháp & Hóa Giải 4 Mùa')
+              : t('reading.freeSubtitle', 'Tổng quan Mệnh Cục, Tam Hợp Mệnh-Tài-Quan, Đại Vận & Tiểu Vận')}
           </p>
         </div>
       </div>
@@ -75,12 +79,20 @@ export default function LuanGiaiAI({
             <Sparkles className="w-6 h-6 text-amber-400 absolute inset-0 m-auto animate-pulse" />
           </div>
           <h3 className="text-xl sm:text-2xl font-bold text-amber-400 tracking-wider uppercase font-serif">
-            {isUpgrading ? 'Thầy Đang Nâng Cấp Luận Giải Pro...' : 'Thầy Đang Quán Tưởng...'}
+            {isUpgrading
+              ? t('reading.loadingUpgrading', 'Thầy Đang Nâng Cấp Luận Giải Pro...')
+              : t('reading.loadingNormal', 'Thầy Đang Quán Tưởng...')}
           </h3>
           <p className="text-base text-slate-300 mt-2 max-w-lg leading-relaxed">
             {isPro || isUpgrading
-              ? 'Thầy Tôn đang định tâm quán tưởng thâm sâu, soi rọi 14 Chính tinh, đối chiếu Tướng pháp và luận giải vận khí 4 mùa. Quý khách vui lòng tịnh tâm đợi trong giây lát!'
-              : 'Thầy Tôn đang định tâm chắt lọc huyền cơ lá số tử vi và bản mệnh. Quý khách vui lòng kiên nhẫn đợi trong giây lát!'}
+              ? t(
+                  'reading.loadingProDesc',
+                  'Thầy Tôn đang định tâm quán tưởng thâm sâu, soi rọi 14 Chính tinh, đối chiếu Tướng pháp và luận giải vận khí 4 mùa. Quý khách vui lòng tịnh tâm đợi trong giây lát!'
+                )
+              : t(
+                  'reading.loadingFreeDesc',
+                  'Thầy Tôn đang định tâm chắt lọc huyền cơ lá số tử vi và bản mệnh. Quý khách vui lòng kiên nhẫn đợi trong giây lát!'
+                )}
           </p>
         </div>
       )}
@@ -89,7 +101,7 @@ export default function LuanGiaiAI({
         <div className="bg-red-950/70 border border-red-500/40 rounded-xl p-5 text-red-200 flex items-start gap-3 shadow-lg">
           <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-red-300 text-base">Thông báo từ Thầy Tôn:</h4>
+            <h4 className="font-semibold text-red-300 text-base">{t('reading.errorTitle', 'Thông báo từ Thầy Tôn:')}</h4>
             <p className="text-base sm:text-sm mt-1 whitespace-pre-wrap leading-relaxed">{error}</p>
           </div>
         </div>
@@ -106,7 +118,7 @@ export default function LuanGiaiAI({
                     : 'bg-slate-100 text-slate-700 border border-slate-300'
                 }`}
               >
-                {isPro ? '👑 Bản Chuyên Sâu Pro' : '📜 Bản Miễn Phí'}
+                {isPro ? t('form.proTitle', 'Bản Chuyên Sâu Pro') : t('form.freeTitle', '📜 Bản Miễn Phí')}
               </span>
             </div>
 
@@ -120,7 +132,7 @@ export default function LuanGiaiAI({
                   title="Nâng cấp xem luận giải chuyên sâu chi tiết gấp 2 lần"
                 >
                   <Sparkles className="w-4 h-4 fill-slate-950" />
-                  <span>⚡ Nâng Cấp Bản Pro</span>
+                  <span>{t('reading.topUpgradeBtn', '⚡ Nâng Cấp Bản Pro')}</span>
                 </button>
               )}
 
@@ -132,12 +144,12 @@ export default function LuanGiaiAI({
                 {copied ? (
                   <>
                     <Check className="w-4 h-4 text-emerald-600" />
-                    <span>Đã sao chép</span>
+                    <span>{t('reading.copied', 'Đã sao chép')}</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-4 h-4 text-slate-500" />
-                    <span>Sao chép lời bình</span>
+                    <span>{t('reading.copyBtn', 'Sao chép lời bình')}</span>
                   </>
                 )}
               </button>
@@ -154,10 +166,13 @@ export default function LuanGiaiAI({
               <div>
                 <h4 className="font-bold text-amber-900 text-base sm:text-lg font-serif flex items-center gap-1.5">
                   <Crown className="w-5 h-5 text-amber-600" />
-                  Bạn muốn tìm hiểu sâu sắc hơn về lá số này?
+                  {t('reading.upgradePromptTitle', 'Bạn muốn tìm hiểu sâu sắc hơn về lá số này?')}
                 </h4>
                 <p className="text-sm sm:text-sm text-slate-700 mt-1 max-w-xl leading-relaxed">
-                  Bản Chuyên Sâu mở ra đại pháp bí truyền luận giải chi tiết gấp 2 lần, soi chiếu toàn diện Diện tướng/Chỉ tay, biến chuyển 4 mùa hạn vận và giải pháp hóa giải hung sát tinh.
+                  {t(
+                    'reading.upgradePromptDesc',
+                    'Bản Chuyên Sâu mở ra đại pháp bí truyền luận giải chi tiết gấp 2 lần, soi chiếu toàn diện Diện tướng/Chỉ tay, biến chuyển 4 mùa hạn vận và giải pháp hóa giải hung sát tinh.'
+                  )}
                 </p>
               </div>
               <button
@@ -165,7 +180,7 @@ export default function LuanGiaiAI({
                 onClick={onUpgrade}
                 className="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-md transition whitespace-nowrap cursor-pointer"
               >
-                Nâng Cấp Bản Pro (119.000đ)
+                {t('reading.upgradeBtn', 'Nâng Cấp Bản Pro (119.000đ)')}
               </button>
             </div>
           )}

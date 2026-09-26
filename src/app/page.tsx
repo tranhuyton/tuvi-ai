@@ -26,9 +26,11 @@ import {
 } from '@/lib/tuviService';
 import { supabase } from '@/lib/supabase';
 import { Sparkles, Crown, PhoneCall, MapPin, Mail } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function HomePage() {
   const { user, isLoading: isAuthLoading, isPasswordRecovery } = useAuth();
+  const { language, t } = useLanguage();
 
   const [laSo, setLaSo] = useState<LaSoData | null>(null);
   const [currentDuongSo, setCurrentDuongSo] = useState<DuLieuDuongSo | null>(null);
@@ -246,6 +248,7 @@ export default function HomePage() {
           anhMat: duongSoData.anhMat,
           anhTay: duongSoData.anhTay,
           model: selectedModel,
+          lang: language,
         }),
       });
 
@@ -286,6 +289,7 @@ export default function HomePage() {
           canNang: duongSoData.canNang,
           anhMat: duongSoData.anhMat,
           anhTay: duongSoData.anhTay,
+          lang: language,
         });
 
         const directRes = await callGeminiVision(parts, undefined, selectedModel);
@@ -560,6 +564,7 @@ export default function HomePage() {
           chatHistory,
           mode,
           model: selectedModel,
+          lang: language,
         }),
       });
 
@@ -1032,7 +1037,9 @@ export default function HomePage() {
         {isRestoringSession ? (
           <div className="py-24 flex flex-col items-center justify-center text-center">
             <div className="w-10 h-10 border-4 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-3" />
-            <p className="text-sm text-amber-300/80 font-serif">Đang tải lại lá số của quý khách...</p>
+            <p className="text-sm text-amber-300/80 font-serif">
+              {t('reading.analyzing', 'Đang tải lại lá số của quý khách...')}
+            </p>
           </div>
         ) : !laSo ? (
           <div className="my-auto py-6 sm:py-10 space-y-8 sm:space-y-12">
@@ -1067,7 +1074,7 @@ export default function HomePage() {
               <div className="flex items-center justify-end max-w-[1060px] mx-auto">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-900/90 border border-slate-700 text-slate-300">
-                    <span>📜 Bản Miễn Phí</span>
+                    <span>{t('form.freeTitle', '📜 Bản Miễn Phí')}</span>
                   </span>
                   <button
                     type="button"
@@ -1075,7 +1082,7 @@ export default function HomePage() {
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 cursor-pointer"
                   >
                     <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                    <span>⚡ Nâng Cấp Pro (119.000đ)</span>
+                    <span>{t('reading.upgradeBtn', '⚡ Nâng Cấp Pro (119.000đ)')}</span>
                   </button>
                 </div>
               </div>
@@ -1176,11 +1183,11 @@ export default function HomePage() {
           {!user && (
             <>
               <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
-                Về Thầy Tôn
+                {t('footer.about')}
               </a>
               <span className="text-slate-600 hidden sm:inline">•</span>
               <a href="#cam-nhan-chuyen-gia" className="hover:text-amber-400 transition">
-                Đánh Giá &amp; Cảm Nhận
+                {t('footer.testimonials')}
               </a>
               <span className="text-slate-600 hidden sm:inline">•</span>
             </>
@@ -1195,21 +1202,25 @@ export default function HomePage() {
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
           <a href="tel:0935058688" className="hover:text-amber-400 transition">
-            Liên hệ: <strong className="text-amber-400">+84 93 505 8688</strong>
+            {t('footer.contact')}{' '}
+            <strong className="text-amber-400">+84 93 505 8688</strong>
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
           <a href="mailto:tranhuyton@gmail.com" className="hover:text-amber-300 transition">
-            Email: tranhuyton@gmail.com
+            {t('footer.email')} tranhuyton@gmail.com
           </a>
         </div>
         <p className="text-slate-400 text-xs flex items-center justify-center gap-1.5 flex-wrap">
           <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span>Địa chỉ: <strong>R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</strong></span>
+          <span>
+            {t('footer.addressLabel')}{' '}
+            <strong>{t('footer.addressValue')}</strong>
+          </span>
         </p>
         <p className="text-slate-500 text-[11px] sm:text-xs">
-          © {new Date().getFullYear()} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học &amp; Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.{' '}
+          {t('footer.copyright', undefined, { year: new Date().getFullYear() })}{' '}
           <a href="/admin" className="text-slate-600 hover:text-slate-400 transition ml-1" title="Cổng quản trị Thầy Tôn">
-            [Quản trị]
+            {t('footer.admin')}
           </a>
         </p>
       </footer>

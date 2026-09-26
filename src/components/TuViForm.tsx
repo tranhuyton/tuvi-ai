@@ -6,6 +6,7 @@ import { GIO_ARR } from '@/lib/tuvi/constants';
 import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, PhoneCall, BookOpen } from 'lucide-react';
 import PaymentModal from './PaymentModal';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface TuViFormProps {
   onSubmit: (data: DuLieuDuongSo, tier: ServiceTier) => void;
@@ -66,6 +67,7 @@ function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<stri
 
 export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onRequireAuth }: TuViFormProps) {
   const { user } = useAuth();
+  const { t, tHour } = useLanguage();
   const [hoTen, setHoTen] = useState('');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>('Nam');
   const [ngayDuong, setNgayDuong] = useState(15);
@@ -221,7 +223,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
       <div className="mb-6 pb-4 border-b border-slate-800/80">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-wide text-amber-400 font-serif">
-            LẬP LÁ SỐ TỬ VI
+            {t('form.title', 'LẬP LÁ SỐ TỬ VI')}
           </h2>
           {onOpenSavedCharts ? (
             <button
@@ -231,7 +233,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               title="Xem danh sách các lá số đã lưu"
             >
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              <span>Sổ Tay Số Mệnh</span>
+              <span>{t('nav.savedCharts', 'Sổ Tay Số Mệnh')}</span>
             </button>
           ) : (
             <span className="text-sm sm:text-base text-amber-400/80 font-serif italic tracking-wide">
@@ -240,7 +242,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           )}
         </div>
         <p className="text-sm sm:text-base text-slate-300 mt-1">
-          An sao chính xác theo giờ sinh • Bình giải chuyên sâu đa phương thức
+          {t('form.desc', 'An sao chính xác theo giờ sinh • Bình giải chuyên sâu đa phương thức')}
         </p>
       </div>
 
@@ -249,14 +251,14 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
         <div>
           <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
             <User className="w-4 h-4 sm:w-3.5 sm:h-3.5 inline mr-1 text-amber-400" />
-            Họ tên đương số <span className="text-red-400">*</span>
+            {t('form.fullName', 'Họ tên đương số')} <span className="text-red-400">*</span>
           </label>
           <input
             type="text"
             required
             value={hoTen}
             onChange={(e) => setHoTen(e.target.value)}
-            placeholder="Ví dụ: Trần Huy Tôn..."
+            placeholder={t('form.fullNamePlaceholder', 'Ví dụ: Trần Huy Tôn...')}
             className="w-full px-3.5 py-3 sm:py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
           />
         </div>
@@ -265,22 +267,22 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
-              Giới tính
+              {t('form.gender', 'Giới tính')}
             </label>
             <select
               value={gioiTinh}
               onChange={(e) => setGioiTinh(e.target.value as GioiTinh)}
               className="w-full px-3.5 py-3 sm:py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
             >
-              <option value="Nam">Nam</option>
-              <option value="Nữ">Nữ</option>
+              <option value="Nam">{t('form.male', 'Nam')}</option>
+              <option value="Nữ">{t('form.female', 'Nữ')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
               <Clock className="w-4 h-4 sm:w-3.5 sm:h-3.5 inline mr-1 text-amber-400" />
-              Giờ sinh (Chi)
+              {t('form.birthHour', 'Giờ sinh (Chi)')}
             </label>
             <select
               value={gioSinhVal}
@@ -289,7 +291,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
             >
               {Object.entries(GIO_ARR).map(([key, val]) => (
                 <option key={key} value={key}>
-                  {val.label}
+                  {tHour(key, val.label)}
                 </option>
               ))}
             </select>
@@ -300,7 +302,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
         <div>
           <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
             <Calendar className="w-4 h-4 sm:w-3.5 sm:h-3.5 inline mr-1 text-amber-400" />
-            Ngày tháng năm sinh (Dương lịch) <span className="text-red-400">*</span>
+            {t('form.calendar', 'Ngày tháng năm sinh (Dương lịch)')} <span className="text-red-400">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             <div>
@@ -311,10 +313,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 max={31}
                 value={ngayDuong}
                 onChange={(e) => setNgayDuong(Number(e.target.value))}
-                placeholder="Ngày"
+                placeholder={t('form.day', 'Ngày')}
                 className="w-full px-3 py-3 sm:py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm text-center focus:outline-none focus:border-amber-400 transition"
               />
-              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">Ngày</span>
+              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">
+                {t('form.day', 'Ngày')}
+              </span>
             </div>
             <div>
               <input
@@ -324,10 +328,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 max={12}
                 value={thangDuong}
                 onChange={(e) => setThangDuong(Number(e.target.value))}
-                placeholder="Tháng"
+                placeholder={t('form.month', 'Tháng')}
                 className="w-full px-3 py-3 sm:py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm text-center focus:outline-none focus:border-amber-400 transition"
               />
-              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">Tháng</span>
+              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">
+                {t('form.month', 'Tháng')}
+              </span>
             </div>
             <div>
               <input
@@ -337,10 +343,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 max={2100}
                 value={namDuong}
                 onChange={(e) => setNamDuong(Number(e.target.value))}
-                placeholder="Năm"
+                placeholder={t('form.year', 'Năm')}
                 className="w-full px-3 py-3 sm:py-2 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm text-center focus:outline-none focus:border-amber-400 transition"
               />
-              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">Năm</span>
+              <span className="block text-xs sm:text-[11px] text-slate-300 font-medium text-center mt-1">
+                {t('form.year', 'Năm')}
+              </span>
             </div>
           </div>
         </div>
@@ -349,19 +357,22 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
         <div className="pt-4 mt-4 border-t border-slate-700/60">
           <div className="flex items-center gap-1.5 mb-3 text-amber-400 font-semibold text-sm sm:text-sm uppercase tracking-wider">
             <Sparkles className="w-4 h-4" />
-            Dữ liệu Thực Chứng &amp; Tướng Pháp (Tùy chọn)
+            {t('form.physiqueTitle', 'Dữ liệu Thực Chứng & Tướng Pháp (Tùy chọn)')}
           </div>
 
           <div className="space-y-3">
             <div>
               <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
-                Hoàn cảnh, Nghề nghiệp hiện tại...
+                {t('form.moreInfo', 'Hoàn cảnh, Nghề nghiệp hiện tại...')}
               </label>
               <textarea
                 rows={2}
                 value={thongTinThem}
                 onChange={(e) => setThongTinThem(e.target.value)}
-                placeholder="Ví dụ: Đang làm kỹ sư IT, đã kết hôn, muốn hỏi sâu về đường làm ăn kinh doanh..."
+                placeholder={t(
+                  'form.moreInfoPlaceholder',
+                  'Ví dụ: Đang làm kỹ sư IT, đã kết hôn, muốn hỏi sâu về đường làm ăn kinh doanh...'
+                )}
                 className="w-full px-3.5 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition resize-none"
               />
             </div>
@@ -369,7 +380,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
-                  Chiều cao (cm)
+                  {t('form.height', 'Chiều cao (cm)')}
                 </label>
                 <input
                   type="number"
@@ -377,13 +388,13 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                   max={250}
                   value={chieuCao ?? ''}
                   onChange={(e) => setChieuCao(e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="VD: 170"
+                  placeholder={t('form.heightPlaceholder', 'VD: 170')}
                   className="w-full px-3 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
                 />
               </div>
               <div>
                 <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
-                  Cân nặng (kg)
+                  {t('form.weight', 'Cân nặng (kg)')}
                 </label>
                 <input
                   type="number"
@@ -391,7 +402,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                   max={200}
                   value={canNang ?? ''}
                   onChange={(e) => setCanNang(e.target.value ? Number(e.target.value) : undefined)}
-                  placeholder="VD: 65"
+                  placeholder={t('form.weightPlaceholder', 'VD: 65')}
                   className="w-full px-3 py-2.5 bg-slate-950/60 border border-slate-700/80 rounded-lg text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
                 />
               </div>
@@ -402,12 +413,14 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               {/* Ảnh mặt */}
               <div>
                 <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
-                  Ảnh khuôn mặt (Diện tướng)
+                  {t('form.uploadFace', 'Ảnh khuôn mặt (Diện tướng)')}
                 </label>
                 {isConvertingMat ? (
                   <div className="rounded-lg border border-amber-500/40 h-24 bg-slate-950/80 flex flex-col items-center justify-center p-2 text-center">
                     <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1.5" />
-                    <span className="text-xs text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
+                    <span className="text-xs text-amber-300">
+                      {t('form.readingHeic', 'Đang đọc ảnh iPhone (HEIC)...')}
+                    </span>
                   </div>
                 ) : anhMatBase64 ? (
                   <div className="relative rounded-lg overflow-hidden border border-amber-500/40 h-24 bg-slate-950 flex items-center justify-center">
@@ -429,7 +442,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                   <label className="flex flex-col items-center justify-center h-24 border border-dashed border-slate-700 hover:border-amber-400/60 rounded-lg cursor-pointer bg-slate-950/40 hover:bg-slate-950/60 transition group">
                     <ImageIcon className="w-5 h-5 text-slate-400 group-hover:text-amber-400 transition mb-1" />
                     <span className="text-sm sm:text-xs text-slate-300 group-hover:text-slate-100 font-medium">
-                      Chọn ảnh mặt rõ nét
+                      {t('form.selectFacePhoto', 'Chọn ảnh mặt rõ nét')}
                     </span>
                     <span className="text-xs sm:text-[10px] text-slate-400">JPG, PNG, HEIC (iPhone)</span>
                     <input
@@ -445,15 +458,17 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               {/* Ảnh bàn tay */}
               <div>
                 <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-medium mb-1.5">
-                  Ảnh bàn tay (Thủ tướng){' '}
+                  {t('form.uploadPalm', 'Ảnh bàn tay (Thủ tướng)')}{' '}
                   <span className="text-amber-400 font-semibold normal-case tracking-normal">
-                    (Nam trái, Nữ phải)
+                    {t('form.palmHint', '(Nam trái, Nữ phải)')}
                   </span>
                 </label>
                 {isConvertingTay ? (
                   <div className="rounded-lg border border-amber-500/40 min-h-24 bg-slate-950/80 flex flex-col items-center justify-center p-2 text-center">
                     <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-1.5" />
-                    <span className="text-xs text-amber-300">Đang đọc ảnh iPhone (HEIC)...</span>
+                    <span className="text-xs text-amber-300">
+                      {t('form.readingHeic', 'Đang đọc ảnh iPhone (HEIC)...')}
+                    </span>
                   </div>
                 ) : anhTayBase64 ? (
                   <div className="relative rounded-lg overflow-hidden border border-amber-500/40 min-h-24 bg-slate-950 flex items-center justify-center">
@@ -475,9 +490,14 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                   <label className="flex flex-col items-center justify-center min-h-24 py-2 px-1 text-center border border-dashed border-slate-700 hover:border-amber-400/60 rounded-lg cursor-pointer bg-slate-950/40 hover:bg-slate-950/60 transition group">
                     <Upload className="w-5 h-5 text-slate-400 group-hover:text-amber-400 transition mb-1" />
                     <span className="text-sm sm:text-xs text-slate-300 group-hover:text-slate-100 font-medium">
-                      Chọn ảnh lòng bàn tay <strong className="text-amber-400 font-bold">({gioiTinh === 'Nam' ? 'Tay Trái' : 'Tay Phải'})</strong>
+                      {t('form.selectPalmPhoto', 'Chọn ảnh lòng bàn tay')}{' '}
+                      <strong className="text-amber-400 font-bold">
+                        ({gioiTinh === 'Nam' ? t('form.leftHand', 'Tay Trái') : t('form.rightHand', 'Tay Phải')})
+                      </strong>
                     </span>
-                    <span className="text-xs sm:text-[10px] text-amber-400 font-semibold">Nam tay trái • Nữ tay phải</span>
+                    <span className="text-xs sm:text-[10px] text-amber-400 font-semibold">
+                      {t('form.palmSubHint', 'Nam tay trái • Nữ tay phải')}
+                    </span>
                     <span className="text-xs sm:text-[10px] text-slate-400">JPG, PNG, HEIC (iPhone)</span>
                     <input
                       type="file"
@@ -497,9 +517,11 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           <label className="block text-sm sm:text-base uppercase tracking-wider text-amber-400 font-bold mb-3 flex items-center justify-between">
             <span className="flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-400" />
-              Chọn Gói Bình Giải <span className="text-red-400">*</span>
+              {t('form.packageTitle', 'Chọn Gói Bình Giải')} <span className="text-red-400">*</span>
             </span>
-            <span className="text-xs sm:text-[11px] font-normal text-slate-400">Bắt buộc chọn trước khi lập lá số</span>
+            <span className="text-xs sm:text-[11px] font-normal text-slate-400">
+              {t('form.packageRequired', 'Bắt buộc chọn trước khi lập lá số')}
+            </span>
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -515,19 +537,21 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-base text-slate-100 flex items-center gap-1.5 font-serif">
-                    <span>📜 Bản Miễn Phí</span>
+                    <span>{t('form.freeTitle', '📜 Bản Miễn Phí')}</span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                    0 VNĐ
+                    {t('form.freePrice', '0 VNĐ')}
                   </span>
                 </div>
                 <p className="text-sm sm:text-xs text-slate-300 leading-relaxed">
-                  Pháp môn Khởi Nguyên Căn Bản. Luận giải chuẩn mực, súc tích (~800 - 1000 từ), bao quát Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận &amp; Tiểu Vận năm xem.
+                  {t(
+                    'form.freeDesc',
+                    'Pháp môn Khởi Nguyên Căn Bản. Luận giải chuẩn mực, súc tích (~800 - 1000 từ), bao quát Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận & Tiểu Vận năm xem.'
+                  )}
                 </p>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-slate-400 flex items-center justify-between">
-                <span>Hỏi đáp trực tiếp:</span>
-                <span className="font-semibold text-slate-300">49.000đ / 2 câu</span>
+                <span>{t('form.freeQnA', 'Hỏi đáp trực tiếp: 49.000đ / 2 câu')}</span>
               </div>
             </div>
 
@@ -541,25 +565,27 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               }`}
             >
               <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-red-600 to-amber-600 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
-                Khuyên Dùng
+                {t('form.proBadge', 'Khuyên Dùng')}
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-base text-amber-300 flex items-center gap-1.5 font-serif">
                     <Crown className="w-4 h-4 text-amber-400" />
-                    <span>Bản Chuyên Sâu Pro</span>
+                    <span>{t('form.proTitle', 'Bản Chuyên Sâu Pro')}</span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    119.000 VNĐ
+                    {t('form.proPrice', '119.000 VNĐ')}
                   </span>
                 </div>
                 <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
-                  Đại Pháp Bí Truyền Chuyên Sâu. Luận giải chi tiết gấp 2 lần (~1800 - 2500 từ). Khảo sát sâu 14 Chính tinh, phối hợp Tướng Pháp (mặt/chỉ tay), Đại Vận 10 năm &amp; Hóa Giải 4 Mùa.
+                  {t(
+                    'form.proDesc',
+                    'Đại Pháp Bí Truyền Chuyên Sâu. Luận giải chi tiết gấp 2 lần (~1800 - 2500 từ). Khảo sát sâu 14 Chính tinh, phối hợp Tướng Pháp (mặt/chỉ tay), Đại Vận 10 năm & Hóa Giải 4 Mùa.'
+                  )}
                 </p>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-amber-400 flex items-center justify-between">
-                <span>Ưu đãi hỏi đáp VIP:</span>
-                <span className="font-bold text-amber-300">Tặng 2 câu (Thêm: 99.000đ/2 câu)</span>
+                <span>{t('form.proQnA', 'Ưu đãi hỏi đáp VIP: Tặng 2 câu (Thêm: 99.000đ/2 câu)')}</span>
               </div>
             </div>
           </div>
@@ -578,17 +604,17 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           {isLoading ? (
             <>
               <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span>Thầy Đang Quán Tưởng...</span>
+              <span>{t('form.btnLoading', 'Thầy Đang Quán Tưởng...')}</span>
             </>
           ) : selectedTier === 'pro' ? (
             <>
               <Crown className="w-5 h-5" />
-              <span>Thanh Toán &amp; Luận Giải Bản Pro</span>
+              <span>{t('form.btnSubmitPro', 'Thanh Toán & Luận Giải Bản Pro')}</span>
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              <span>Lập Lá Số &amp; Luận Giải Miễn Phí</span>
+              <span>{t('form.btnSubmitFree', 'Lập Lá Số & Luận Giải Miễn Phí')}</span>
             </>
           )}
         </button>
@@ -596,13 +622,13 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
         {/* Đặt lịch xem trực tiếp Online & Offline */}
         <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap text-sm sm:text-xs text-slate-400">
           <span className="text-slate-300 font-medium">
-            Tư vấn CSKH hoặc Đặt lịch xem Online &amp; Offline:
+            {t('form.bookingTitle', 'Tư vấn CSKH hoặc Đặt lịch xem Online & Offline:')}
           </span>
           <div className="flex items-center gap-2 font-medium">
             <a
               href="tel:0935058688"
               className="inline-flex items-center gap-1 text-amber-400 hover:text-amber-300 transition"
-              title="Gọi điện đặt lịch xem Online &amp; Offline"
+              title="Gọi điện đặt lịch xem Online & Offline"
             >
               <PhoneCall className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
               <strong className="font-bold">0935.058.688</strong>
@@ -615,7 +641,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 transition"
               title="Nhắn tin Zalo với Thầy Tôn"
             >
-              <strong className="font-bold">Zalo Thầy</strong>
+              <strong className="font-bold">{t('form.zaloThay', 'Zalo Thầy')}</strong>
             </a>
           </div>
         </div>

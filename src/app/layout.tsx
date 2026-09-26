@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Be_Vietnam_Pro, Lora } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 const beVietnam = Be_Vietnam_Pro({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -43,7 +44,9 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${beVietnam.variable} ${lora.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#0a0a0f] text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200">
-        <AuthProvider>{children}</AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

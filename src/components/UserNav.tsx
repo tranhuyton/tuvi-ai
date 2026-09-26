@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import LanguageSelector from '@/components/LanguageSelector';
 import { User, LogOut, LogIn, KeyRound } from 'lucide-react';
 
 interface UserNavProps {
@@ -20,6 +22,7 @@ export default function UserNav({
   onOpenChangePassword,
 }: UserNavProps) {
   const { user, profile, signOut, isLoading } = useAuth();
+  const { t } = useLanguage();
 
   const handleSignOut = async () => {
     try {
@@ -58,16 +61,19 @@ export default function UserNav({
         />
         <div>
           <h1 className="text-base sm:text-lg md:text-xl font-bold font-serif text-amber-400 tracking-wide leading-tight">
-            TỬ VI THẦY TÔN
+            {t('brand.title', 'TỬ VI THẦY TÔN')}
           </h1>
           <p className="text-xs text-slate-400 font-sans hidden sm:block">
-            Bát Bộ Thần Sát &amp; Tướng Pháp Bí Truyền
+            {t('brand.subtitle', 'Bát Bộ Thần Sát & Tướng Pháp Bí Truyền')}
           </p>
         </div>
       </div>
 
-      {/* Account actions */}
+      {/* Account & Language actions */}
       <div className="flex items-center gap-2 sm:gap-2.5 flex-nowrap">
+        {/* Bộ chọn ngôn ngữ Quốc Tế */}
+        <LanguageSelector />
+
         {isLoading ? (
           <div className="w-20 h-7 bg-slate-800 animate-pulse rounded-xl" />
         ) : !user ? (
@@ -76,9 +82,9 @@ export default function UserNav({
             <a
               href="#gioi-thieu-thay-ton"
               className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-amber-300 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/70 transition"
-              title="Xem thông tin &amp; tiểu sử Thầy Tôn"
+              title="Xem thông tin & tiểu sử Thầy Tôn"
             >
-              <span>Về Thầy Tôn</span>
+              <span>{t('nav.about', 'Về Thầy Tôn')}</span>
             </a>
             <button
               type="button"
@@ -86,7 +92,7 @@ export default function UserNav({
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
             >
               <LogIn className="w-4 h-4" />
-              <span>Đăng Nhập</span>
+              <span>{t('nav.login', 'Đăng Nhập')}</span>
             </button>
           </>
         ) : (
@@ -107,7 +113,7 @@ export default function UserNav({
                   title="Thay đổi mật khẩu tài khoản"
                 >
                   <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Đổi MK</span>
+                  <span>{t('nav.changePassword', 'Đổi MK')}</span>
                 </button>
               )}
 
@@ -119,7 +125,7 @@ export default function UserNav({
                 title="Đăng xuất tài khoản"
               >
                 <LogOut className="w-3.5 h-3.5 shrink-0" />
-                <span>Log out</span>
+                <span>{t('nav.logout', 'Log out')}</span>
               </button>
             </div>
           </div>

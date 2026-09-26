@@ -8,6 +8,7 @@ import AdminUsersTable, { AdminUser, AdminChatMessage } from '@/components/admin
 import AdminTransactionsTable, { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
 import AdminAffiliatesTable from '@/components/admin/AdminAffiliatesTable';
 import { AffiliateItem } from '@/types/affiliate';
+import LanguageSelector from '@/components/LanguageSelector';
 import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw, Share2 } from 'lucide-react';
 
 type AdminTab = 'studio' | 'users' | 'transactions' | 'affiliates';
@@ -199,6 +200,11 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 mr-1" title="Chuyển ngôn ngữ kiểm thử cho An sao, Luận giải & Hỏi đáp">
+              <span className="text-[11px] text-amber-300 font-medium hidden md:inline">Ngôn ngữ test:</span>
+              <LanguageSelector />
+            </div>
+
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition"

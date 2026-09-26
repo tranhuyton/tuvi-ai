@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, ServiceTier, QuestionsQuota } from '@/types/tuvi';
 import { MessageSquare, Send, Crown, Sparkles, Lock, CheckCircle2, BookOpen } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ChatThayTonProps {
   chatHistory: ChatMessage[];
@@ -25,6 +26,7 @@ export default function ChatThayTon({
   onUnlockQuestions,
   onUpgradeToPro,
 }: ChatThayTonProps) {
+  const { t } = useLanguage();
   const [question, setQuestion] = useState('');
   const isPro = tier === 'pro';
 
@@ -56,7 +58,6 @@ export default function ChatThayTon({
   };
 
   // Phân bổ số câu còn lại theo từng loại:
-  // Nếu đã dùng hết tổng số câu (totalRemaining === 0), cả pro và basic đều bằng 0
   const proAsked = validMessages.filter((c) => isMessageVip(c)).length;
   const proRemaining = totalRemaining === 0 ? 0 : Math.min(totalRemaining, Math.max(0, proAllowed - proAsked));
   const basicRemaining = totalRemaining === 0 ? 0 : Math.max(0, totalRemaining - proRemaining);
@@ -109,7 +110,6 @@ export default function ChatThayTon({
     e.preventDefault();
     if (!question.trim() || isLoading || flowStep !== 'chatting' || totalRemaining <= 0) return;
 
-    // Chọn mode gửi: nếu mode đang chọn đã hết, dùng mode còn lại
     let modeToUse = selectedMode;
     if (modeToUse === 'vip' && proRemaining <= 0 && basicRemaining > 0) {
       modeToUse = 'basic';
@@ -122,7 +122,6 @@ export default function ChatThayTon({
     await onSendMessage(q, modeToUse);
   };
 
-  // Khách bấm vào NÚT MÀU XANH để mở ô hỏi
   const handleOpenChat = () => {
     setFlowStep('chatting');
   };
@@ -136,20 +135,20 @@ export default function ChatThayTon({
             <MessageSquare className="w-5 h-5 text-blue-400 shrink-0" />
             <div>
               <h3 className="font-bold text-lg sm:text-xl text-blue-400 font-serif flex items-center gap-2 flex-wrap">
-                <span>Hỏi Đáp Luận Giải Cùng AI Thầy Tôn</span>
+                <span>{t('chat.headerTitle', 'Hỏi Đáp Luận Giải Cùng AI Thầy Tôn')}</span>
                 {isPro ? (
                   <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans font-semibold flex items-center gap-1">
                     <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Khách VIP Pro</span>
+                    <span>{t('chat.vipClientBadge', 'Khách VIP Pro')}</span>
                   </span>
                 ) : (
                   <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-sans">
-                    📜 Bản Cơ Bản
+                    {t('chat.freeClientBadge', '📜 Bản Cơ Bản')}
                   </span>
                 )}
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                Trí tuệ nhân tạo kế thừa tri thức &amp; pháp số Tử Vi Đẩu Số bí truyền từ Thầy Tôn
+                {t('chat.headerDesc', 'Trí tuệ nhân tạo kế thừa tri thức & pháp số Tử Vi Đẩu Số bí truyền từ Thầy Tôn')}
               </p>
             </div>
           </div>
@@ -159,12 +158,12 @@ export default function ChatThayTon({
             {flowStep === 'unpaid' ? (
               <div className="text-xs sm:text-sm px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-amber-400 font-semibold flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5" />
-                <span>Chưa mở khóa</span>
+                <span>{t('chat.lockedBadge', 'Chưa mở khóa')}</span>
               </div>
             ) : flowStep === 'exhausted' ? (
               <div className="text-xs sm:text-sm px-3 py-1 rounded-full bg-amber-950/40 border border-amber-500/40 text-amber-400 font-semibold flex items-center gap-1.5">
                 <Lock className="w-3.5 h-3.5" />
-                <span>Đã dùng hết ({totalAllowed} lượt)</span>
+                <span>{t('chat.exhaustedBadge', `Đã dùng hết (${totalAllowed} lượt)`)}</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -172,19 +171,19 @@ export default function ChatThayTon({
                 {proRemaining > 0 && (
                   <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold flex items-center gap-1">
                     <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Chuyên Sâu: Còn {proRemaining} câu</span>
+                    <span>{t('chat.proRemaining', `Chuyên Sâu: Còn ${proRemaining} câu`, { count: proRemaining })}</span>
                   </span>
                 )}
-                {/* Lượt Cơ Bản: CHỈ HIỆN KHI CÒN CÂU CƠ BẢN > 0 (KHÔNG HIỆN 0/3 KHI ĐÃ HẾT) */}
+                {/* Lượt Cơ Bản */}
                 {basicRemaining > 0 && (
                   <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-medium flex items-center gap-1">
                     <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Cơ Bản: Còn {basicRemaining} câu</span>
+                    <span>{t('chat.basicRemaining', `Cơ Bản: Còn ${basicRemaining} câu`, { count: basicRemaining })}</span>
                   </span>
                 )}
                 {/* Tổng lượt */}
                 <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200 font-medium">
-                  Tổng: <b className="text-emerald-400 font-bold">{totalRemaining}</b> lượt
+                  {t('chat.totalRemaining', `Tổng: ${totalRemaining} lượt`, { count: totalRemaining })}
                 </span>
               </div>
             )}
@@ -196,10 +195,15 @@ export default function ChatThayTon({
           {chatHistory.length === 0 && flowStep === 'chatting' && (
             <div className="text-center py-6 space-y-1.5">
               <p className="text-base text-slate-200 font-medium">
-                Quý khách đang có <b className="text-emerald-400 font-bold">{totalRemaining}</b> lượt thỉnh giáo cùng AI Thầy Tôn.
+                {t('chat.introQuota', `Quý khách đang có ${totalRemaining} lượt thỉnh giáo cùng AI Thầy Tôn.`, {
+                  count: totalRemaining,
+                })}
               </p>
               <p className="text-sm text-slate-300 italic max-w-md mx-auto leading-relaxed">
-                Hãy nhập câu hỏi chi tiết về công danh, sự nghiệp, tài lộc, tình duyên hoặc hạn vận để Thầy Tôn soi chiếu lá số.
+                {t(
+                  'chat.introGuide',
+                  'Hãy nhập câu hỏi chi tiết về công danh, sự nghiệp, tài lộc, tình duyên hoặc hạn vận để Thầy Tôn soi chiếu lá số.'
+                )}
               </p>
             </div>
           )}
@@ -210,14 +214,14 @@ export default function ChatThayTon({
               <div className="flex justify-end">
                 <div className="max-w-[90%] sm:max-w-[75%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 py-3 text-base sm:text-base shadow-md">
                   <div className="text-xs sm:text-sm font-semibold text-blue-200 mb-1 flex items-center justify-between gap-2">
-                    <span>Khách hỏi:</span>
+                    <span>{t('chat.userPrefix', 'Khách hỏi:')}</span>
                     {isMessageVip(item) ? (
                       <span className="text-xs px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 font-semibold border border-amber-400/40">
-                        ⭐ Chuyên Sâu
+                        ⭐ {t('chat.badgeVip', 'Chuyên Sâu')}
                       </span>
                     ) : (
                       <span className="text-xs px-2 py-0.5 rounded bg-blue-400/20 text-blue-200 font-medium border border-blue-400/30">
-                        📜 Cơ Bản
+                        📜 {t('chat.badgeBasic', 'Cơ Bản')}
                       </span>
                     )}
                   </div>
@@ -238,16 +242,16 @@ export default function ChatThayTon({
                 >
                   <div className="text-xs sm:text-sm font-bold text-amber-950 uppercase tracking-wider mb-2 flex items-center justify-between gap-2 border-b border-slate-200/80 pb-1.5">
                     <span className="flex items-center gap-1 text-amber-800">
-                      <span>🧙‍♂️ AI Thầy Tôn:</span>
+                      <span>{t('chat.masterPrefix', '🧙‍♂️ AI Thầy Tôn:')}</span>
                     </span>
                     {isMessageVip(item) ? (
                       <span className="text-xs normal-case font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                         <Crown className="w-3 h-3 text-amber-700" />
-                        <span>Chuyên Sâu</span>
+                        <span>{t('chat.badgeVip', 'Chuyên Sâu')}</span>
                       </span>
                     ) : (
                       <span className="text-xs normal-case font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                        Cơ Bản
+                        {t('chat.badgeBasic', 'Cơ Bản')}
                       </span>
                     )}
                   </div>
@@ -264,17 +268,13 @@ export default function ChatThayTon({
             <div className="flex justify-start">
               <div className="bg-slate-800 text-slate-300 rounded-2xl rounded-tl-none px-4 py-3 text-sm sm:text-base flex items-center gap-2.5 border border-slate-700 shadow-lg">
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin shrink-0" />
-                <span>AI Thầy Tôn đang xem thiên cơ và biên lời giải đáp...</span>
+                <span>{t('chat.masterThinking', 'AI Thầy Tôn đang xem thiên cơ và biên lời giải đáp...')}</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* ========================================================== */}
-        {/* KHU VỰC TƯƠNG TÁC / THANH TOÁN THEO 4 TRẠNG THÁI */}
-        {/* ========================================================== */}
-
-        {/* 1. CHƯA THANH TOÁN: CÓ NÚT MÀU VÀNG THANH TOÁN 49.000đ */}
+        {/* 1. CHƯA THANH TOÁN */}
         {flowStep === 'unpaid' && (
           <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl">
             <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
@@ -282,10 +282,13 @@ export default function ChatThayTon({
             </div>
             <div>
               <h4 className="font-bold text-lg sm:text-xl text-amber-300 font-serif">
-                Thỉnh Giáo Luận Giải Cùng AI Thầy Tôn
+                {t('chat.unpaidTitle', 'Thỉnh Giáo Luận Giải Cùng AI Thầy Tôn')}
               </h4>
               <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
-                Hệ thống AI soi chiếu lá số giúp giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn (gồm 02 câu hỏi).
+                {t(
+                  'chat.unpaidDesc',
+                  'Hệ thống AI soi chiếu lá số giúp giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn (gồm 02 câu hỏi).'
+                )}
               </p>
             </div>
 
@@ -296,13 +299,17 @@ export default function ChatThayTon({
                 className="px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 fill-slate-950" />
-                <span>⚡ Quét Mã Thanh Toán ({isPro ? '99.000đ' : '49.000đ'} / 2 câu hỏi)</span>
+                <span>
+                  {t('chat.unpaidBtn', `⚡ Quét Mã Thanh Toán (${isPro ? '99.000đ' : '49.000đ'} / 2 câu hỏi)`, {
+                    price: isPro ? '99.000đ' : '49.000đ',
+                  })}
+                </span>
               </button>
             </div>
           </div>
         )}
 
-        {/* 2. ĐÃ THANH TOÁN: Ô VÀNG MẤT ĐI, HIỆN LÊN NÚT MÀU XANH ĐÃ CHUYỂN KHOẢN THÀNH CÔNG */}
+        {/* 2. ĐÃ THANH TOÁN THÀNH CÔNG */}
         {flowStep === 'paid_success' && (
           <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/40 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
             <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
@@ -310,22 +317,32 @@ export default function ChatThayTon({
             </div>
             <div>
               <h4 className="font-bold text-lg sm:text-xl text-emerald-300 font-serif">
-                {proAllowed > 0 && isPro ? 'Khai Mở Đàm Đạo Cùng Thầy Tôn!' : 'Chuyển Khoản Thành Công!'}
+                {t('chat.paidSuccessTitle', 'Khai Mở Đàm Đạo Cùng Thầy Tôn!')}
               </h4>
               <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
                 {proRemaining > 0 && basicRemaining > 0 ? (
                   <>
-                    Hệ thống đã kích hoạt tổng cộng <b className="text-emerald-400 font-bold">{totalRemaining} lượt đàm đạo</b>: gồm{' '}
-                    <span className="text-amber-300 font-bold">{proRemaining} lượt Chuyên Sâu</span> và{' '}
-                    <span className="text-blue-300 font-bold">{basicRemaining} lượt Cơ Bản</span>.
+                    {t(
+                      'chat.paidSuccessDescBoth',
+                      `Hệ thống đã kích hoạt tổng cộng ${totalRemaining} lượt đàm đạo: gồm ${proRemaining} lượt Chuyên Sâu và ${basicRemaining} lượt Cơ Bản.`,
+                      { total: totalRemaining, pro: proRemaining, basic: basicRemaining }
+                    )}
                   </>
                 ) : proRemaining > 0 ? (
                   <>
-                    Hệ thống đã kích hoạt <b className="text-amber-300 font-bold">{proRemaining} câu hỏi Chuyên Sâu</b> trực tiếp cùng AI Thầy Tôn theo gói quyền lợi của bạn.
+                    {t(
+                      'chat.paidSuccessDescPro',
+                      `Hệ thống đã kích hoạt ${proRemaining} câu hỏi Chuyên Sâu trực tiếp cùng AI Thầy Tôn theo gói quyền lợi của bạn.`,
+                      { count: proRemaining }
+                    )}
                   </>
                 ) : (
                   <>
-                    Hệ thống đã ghi nhận thanh toán. Quý khách có <b className="text-emerald-400 font-bold">{basicRemaining} câu hỏi Cơ Bản</b> trực tiếp cùng AI Thầy Tôn.
+                    {t(
+                      'chat.paidSuccessDescFree',
+                      `Hệ thống đã ghi nhận thanh toán. Quý khách có ${basicRemaining} câu hỏi Cơ Bản trực tiếp cùng AI Thầy Tôn.`,
+                      { count: basicRemaining }
+                    )}
                   </>
                 )}
               </p>
@@ -338,19 +355,24 @@ export default function ChatThayTon({
                 className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4 fill-slate-950" />
-                <span>✅ Bấm Vào Đây Để Mở Ô Hỏi ({totalRemaining} câu còn lại)</span>
+                <span>
+                  {t('chat.paidSuccessBtn', `✅ Bấm Vào Đây Để Mở Ô Hỏi (${totalRemaining} câu còn lại)`, {
+                    count: totalRemaining,
+                  })}
+                </span>
               </button>
             </div>
           </div>
         )}
 
-        {/* 3. ĐANG HỎI: Ô NHẬP CÂU HỎI ĐÃ MỞ RA (CÓ BỘ CHUYỂN MODE NẾU CÓ CẢ 2 LOẠI) */}
+        {/* 3. ĐANG HỎI: Ô NHẬP CÂU HỎI */}
         {flowStep === 'chatting' && (
           <div className="space-y-3 animate-fade-in">
-            {/* BỘ CHUYỂN ĐỔI CHẾ ĐỘ CÂU HỎI (LUÔN HIỂN THỊ TRỰC QUAN ĐẦY ĐỦ CẢ 2 NÚT) */}
             <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm sm:text-xs text-slate-300 font-medium">Chế độ hỏi:</span>
+                <span className="text-sm sm:text-xs text-slate-300 font-medium">
+                  {t('chat.modeLabel', 'Chế độ hỏi:')}
+                </span>
                 <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
                   {/* Nút Chuyên Sâu */}
                   <button
@@ -372,7 +394,8 @@ export default function ChatThayTon({
                   >
                     <Crown className="w-3.5 h-3.5 text-amber-400" />
                     <span>
-                      Chuyên Sâu {proRemaining > 0 ? `(${proRemaining} câu)` : '(Hết - Mua 99k)'}
+                      {t('chat.modeProBtn', 'Chuyên Sâu')}{' '}
+                      {proRemaining > 0 ? `(${proRemaining})` : '(99k)'}
                     </span>
                   </button>
 
@@ -392,7 +415,8 @@ export default function ChatThayTon({
                   >
                     <BookOpen className="w-3.5 h-3.5 text-blue-400" />
                     <span>
-                      Cơ Bản {basicRemaining > 0 ? `(${basicRemaining} câu)` : proRemaining > 0 ? `(Dùng lượt VIP)` : '(Hết - Mua 49k)'}
+                      {t('chat.modeBasicBtn', 'Cơ Bản')}{' '}
+                      {basicRemaining > 0 ? `(${basicRemaining})` : proRemaining > 0 ? `(VIP)` : '(49k)'}
                     </span>
                   </button>
                 </div>
@@ -402,12 +426,18 @@ export default function ChatThayTon({
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="text-xs sm:text-[11px] text-slate-300 px-1 flex items-center gap-1.5">
                   {selectedMode === 'vip' ? (
-                    <span className="text-amber-300 font-medium">Đang chọn: <b>Chuyên Sâu</b></span>
+                    <span className="text-amber-300 font-medium">
+                      <b>{t('chat.activeModePro', 'Đang chọn: Chuyên Sâu')}</b>
+                    </span>
                   ) : (
                     <span className="text-blue-300 font-medium flex items-center gap-1">
-                      <span>Đang chọn: <b>Cơ Bản</b></span>
+                      <span>
+                        <b>{t('chat.activeModeBasic', 'Đang chọn: Cơ Bản')}</b>
+                      </span>
                       {basicRemaining === 0 && proRemaining > 0 && (
-                        <span className="text-amber-300 font-normal text-[11px]">(Trừ 1 câu VIP Pro)</span>
+                        <span className="text-amber-300 font-normal text-[11px]">
+                          {t('chat.deductProHint', '(Trừ 1 câu VIP Pro)')}
+                        </span>
                       )}
                     </span>
                   )}
@@ -417,10 +447,10 @@ export default function ChatThayTon({
                   type="button"
                   onClick={() => onUnlockQuestions('basic')}
                   className="text-xs px-2.5 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 transition flex items-center gap-1 cursor-pointer font-medium"
-                  title="Mua thêm 02 câu Cơ Bản với giá 49.000đ"
+                  title="Mua thêm câu hỏi Cơ Bản"
                 >
                   <Sparkles className="w-3 h-3 text-blue-400" />
-                  <span>+ Mua 2 câu Cơ Bản (49k)</span>
+                  <span>{t('chat.buyMoreBasicBtn', '+ Mua 2 câu Cơ Bản (49k)')}</span>
                 </button>
               </div>
             </div>
@@ -434,8 +464,8 @@ export default function ChatThayTon({
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder={
                   selectedMode === 'vip'
-                    ? 'Nhập câu hỏi chuyên sâu...'
-                    : 'Nhập câu hỏi cơ bản...'
+                    ? t('chat.inputPlaceholderVip', 'Nhập câu hỏi chuyên sâu...')
+                    : t('chat.inputPlaceholderBasic', 'Nhập câu hỏi cơ bản...')
                 }
                 className="flex-grow px-4 py-3.5 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-base sm:text-base focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
               />
@@ -449,13 +479,13 @@ export default function ChatThayTon({
                 }`}
               >
                 <Send className="w-4 h-4" />
-                <span>Gửi Thầy</span>
+                <span>{t('chat.sendBtn', 'Gửi Thầy')}</span>
               </button>
             </form>
           </div>
         )}
 
-        {/* 4. ĐÃ HỎI XONG TẤT CẢ CÁC CÂU: Ô HỎI ĐÓNG LẠI, HIỆN PROMPT VỚI NÚT THANH TOÁN TIẾP */}
+        {/* 4. ĐÃ HỎI XONG TẤT CẢ CÁC CÂU */}
         {flowStep === 'exhausted' && (
           <div className="bg-slate-950/90 border border-amber-500/40 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
             <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
@@ -463,12 +493,18 @@ export default function ChatThayTon({
             </div>
             <div>
               <h4 className="font-bold text-lg sm:text-xl text-amber-300 font-serif">
-                Quý khách có muốn thỉnh giáo thêm câu hỏi không?
+                {t('chat.exhaustedTitle', 'Quý khách có muốn thỉnh giáo thêm câu hỏi không?')}
               </h4>
               <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
                 {isPro
-                  ? `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể gia hạn thêm câu hỏi chuyên sâu hoặc câu hỏi cơ bản.`
-                  : `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro.`}
+                  ? t(
+                      'chat.exhaustedDescPro',
+                      `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể gia hạn thêm câu hỏi chuyên sâu hoặc câu hỏi cơ bản.`
+                    )
+                  : t(
+                      'chat.exhaustedDescFree',
+                      `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro.`
+                    )}
               </p>
             </div>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -480,7 +516,7 @@ export default function ChatThayTon({
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
                   >
                     <Crown className="w-4 h-4" />
-                    <span>⚡ Nạp Tiếp (99.000đ / 2 câu chuyên sâu)</span>
+                    <span>{t('chat.buyProMoreBtn', '⚡ Nạp Tiếp (99.000đ / 2 câu chuyên sâu)')}</span>
                   </button>
                   <button
                     type="button"
@@ -488,7 +524,7 @@ export default function ChatThayTon({
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-sm sm:text-base border border-slate-600 transition cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-blue-400" />
-                    <span>⚡ Mua 2 Câu Cơ Bản (49.000đ)</span>
+                    <span>{t('chat.buyBasicMoreBtn', '⚡ Mua 2 Câu Cơ Bản (49.000đ)')}</span>
                   </button>
                 </>
               ) : (
@@ -499,7 +535,7 @@ export default function ChatThayTon({
                     className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-sm sm:text-base border border-slate-600 transition cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>⚡ Mua Thêm 2 Câu Cơ Bản (49.000đ)</span>
+                    <span>{t('chat.buyBasicMoreBtn', '⚡ Mua Thêm 2 Câu Cơ Bản (49.000đ)')}</span>
                   </button>
 
                   {onUpgradeToPro && (
@@ -509,7 +545,7 @@ export default function ChatThayTon({
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
                     >
                       <Crown className="w-4 h-4" />
-                      <span>👑 Nâng Cấp Luận Giải Pro (119.000đ - Tặng 2 câu chuyên sâu)</span>
+                      <span>{t('chat.upgradeProChatBtn', '👑 Nâng Cấp Luận Giải Pro (119.000đ - Tặng 2 câu chuyên sâu)')}</span>
                     </button>
                   )}
                 </>

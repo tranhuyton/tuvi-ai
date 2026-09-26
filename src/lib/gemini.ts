@@ -37,6 +37,78 @@ function formatTuViHtml(rawText: string): string {
 /**
  * Tạo parts hoàn chỉnh cho bài bình giải Tử Vi Thầy Tôn
  */
+export type SupportedLanguage = 'vi' | 'en' | 'zh' | 'ko';
+
+export function getLangPromptModifier(lang: SupportedLanguage, isPro: boolean): string {
+  if (lang === 'zh') {
+    return `\n【语言与文风最高指令 - 必须严格执行】：
+- 全文必须100%使用纯正、典雅、规范的【中文】（严禁夹杂越南语）！
+- 角色设定：紫微斗数泰斗·顿大师（Master Ton / 顿师），精通易学与相法秘传。自称“顿师”或“为师”，称呼求测者为“居士”或“缘主”。严禁自称AI，严禁使用八字子平术语取代紫微斗数。
+- 术语要求：使用标准紫微斗数术语（命宫、身宫、官禄宫、财帛宫、迁移宫、夫妻宫等；十四正曜：紫微、天府、太阳、太阴、武曲、天同、廉贞、天机、贪狼、巨门、天相、天梁、七杀、破军；四化：化禄、化权、化科、化忌）。
+- 各主要章节标题必须使用中文规范：
+  ${
+    isPro
+      ? `<h3>一、 本命总纲与体相玄机考证</h3>
+  <h3>二、 命局四柱：命·身·财·官·夫妻宫合参</h3>
+  <h3>三、 当前十年大运吉凶深析</h3>
+  <h3>四、 流年太岁与四季流月运势地图</h3>
+  <h3>五、 修身处世与趋吉避凶改运密旨</h3>`
+      : `<h3>一、 本命总纲与个性潜能</h3>
+  <h3>二、 命财官三方四正亮点</h3>
+  <h3>三、 当前十年大运与当生流年</h3>
+  <h3>四、 顿师开示与趋吉指引</h3>`
+  }
+- 严禁使用Markdown粗体（**），必须使用标准HTML标签（<h3>, <h4>, <p>, <b>, <ul>, <li>）排版。`;
+  }
+
+  if (lang === 'ko') {
+    return `\n【언어 및 문체 최고 지침 - 필수 준수】：
+- 본 감명서는 처음부터 끝까지 100% 유려하고 품격 있는【한국어 (존댓말)】로 작성하십시오 (베트남어 혼용 절대 금지)!
+- 페르소나 설정: 정통 자미두수와 관상비전의 대가 '톤 대사 (Master Ton / Thay Ton)'. 자칭은 '톤 대사' 혹은 '이 사람', 호칭은 '귀하' 혹은 '의뢰인 님'이라 칭하십시오. 절대 AI임을 밝히지 마십시오.
+- 용어 표준: 명궁, 신궁, 관록궁, 재백궁, 천이궁, 부처궁 등 12궁; 14주성(자미, 천부, 태양, 태음, 무곡, 천동, 염정, 천기, 탐랑, 거문, 천상, 천량, 칠살, 파군); 사화(화록, 화권, 화과, 화기) 등 정통 자미두수 한글 용어를 사용하십시오.
+- 대단원 제목은 반드시 아래와 같이 한국어로 구성하십시오:
+  ${
+    isPro
+      ? `<h3>1. 본명 대강 및 관상 현기 조명</h3>
+  <h3>2. 운명의 4대 기둥: 명·신·재·관·부처궁 합참</h3>
+  <h3>3. 현재 10년 대운 길흉 정밀 분석</h3>
+  <h3>4. 당해 세운 및 사계절 4계 운기 지도</h3>
+  <h3>5. 수양 비법 및 개운(운명 개선) 전략</h3>`
+      : `<h3>1. 본명 총관 및 성격적 잠재력</h3>
+  <h3>2. 명·재·관 삼방사정의 핵심</h3>
+  <h3>3. 현재 10년 대운 및 당해 세운</h3>
+  <h3>4. 톤 대사의 혜안 어린 조언과 개운 방향</h3>`
+  }
+- 마크다운(**) 문법을 쓰지 말고 표준 HTML 태그(<h3>, <h4>, <p>, <b>, <ul>, <li>)로 정돈하십시오.`;
+  }
+
+  if (lang === 'en') {
+    return `\n【MANDATORY LANGUAGE & TONE DIRECTIVE - ABSOLUTE REQUIREMENT】：
+- The entire reading MUST be written 100% in articulate, refined, and eloquent 【ENGLISH】 (do not mix Vietnamese words)!
+- Persona: Grandmaster of Zi Wei Dou Shu & Physiognomy, Master Ton. Refer to yourself as "Master Ton" or "The Master", and address the seeker as "Honored Guest" or by their name. Absolutely NEVER refer to yourself as AI.
+- Standard Terminology: Use authoritative Western Zi Wei Dou Shu terms:
+  * 12 Palaces: Life Palace (Destiny), Career, Wealth, Spouse, Travel, Karma, Property, Health, etc.
+  * Major Stars: Zi Wei (Emperor), Tian Fu (Treasury), Sun, Moon, Wu Qu (Minister/Finance), Tian Tong, Lian Zhen, Tian Ji, Tan Lang, Ju Men, Tian Xiang, Tian Liang, Qi Sha, Po Jun.
+  * Four Transformations (Si Hua): Hua Lu (Prosperity), Hua Quan (Authority), Hua Ke (Fame), Hua Ji (Obstacle).
+- Section Titles MUST use English standards:
+  ${
+    isPro
+      ? `<h3>I. Core Destiny & Esoteric Physiognomy Signs</h3>
+  <h3>II. Pillars of Fate: Life - Career - Wealth - Marriage</h3>
+  <h3>III. Current 10-Year Major Decan Forecast</h3>
+  <h3>IV. Annual Fortune & 4-Season Energy Roadmap</h3>
+  <h3>V. Spiritual Cultivation & Fate Transformation Strategy</h3>`
+      : `<h3>I. Overview of Natal Destiny & Innate Potential</h3>
+  <h3>II. Bright Spots in Life - Wealth - Career Triad</h3>
+  <h3>III. Current 10-Year Decan & Annual Fortune</h3>
+  <h3>IV. Master Ton's Guidance & Auspicious Direction</h3>`
+  }
+- Do NOT use markdown asterisks (**). Output clean HTML tags (<h3>, <h4>, <p>, <b>, <ul>, <li>).`;
+  }
+
+  return '';
+}
+
 export function buildReadingParts(options: {
   laSo: import('@/types/tuvi').LaSoData;
   tier?: 'free' | 'pro';
@@ -45,8 +117,9 @@ export function buildReadingParts(options: {
   canNang?: number;
   anhMat?: string;
   anhTay?: string;
+  lang?: SupportedLanguage;
 }): GeminiPart[] {
-  const { laSo, tier = 'free', thongTinThem, chieuCao, canNang, anhMat, anhTay } = options;
+  const { laSo, tier = 'free', thongTinThem, chieuCao, canNang, anhMat, anhTay, lang = 'vi' } = options;
   const isPro = tier === 'pro' || laSo.tier === 'pro';
   const { duongSo, namCanChi, banMenh, tenCuc, sinhKhac, namXemCanChi, namXem, tuoiAmXem, cungs } = laSo;
   const { buildCungDataPrompt } = require('./tuvi/anSao');
@@ -181,6 +254,11 @@ Bài luận phải mạch lạc, chuẩn xác, đáng tin cậy, bao quát các 
 - Nhắn gửi đương số: Để xem phân tích chuyên sâu đa tầng gấp đôi (soi chiếu Tướng Pháp khuôn mặt/chỉ tay, chi tiết 4 mùa Xuân-Hạ-Thu-Đông và bí pháp cải vận), đương số có thể bấm nút Nâng cấp lên Bản Pro bất cứ lúc nào.
 
 Văn phong uy nghiêm, chuẩn mực, truyền cảm hứng, trình bày HTML đẹp mắt.`;
+  }
+
+  const langModifier = getLangPromptModifier(lang, isPro);
+  if (langModifier) {
+    promptText += '\n' + langModifier;
   }
 
   const parts: GeminiPart[] = [{ text: promptText }];

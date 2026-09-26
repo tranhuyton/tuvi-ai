@@ -3,6 +3,7 @@
 import React from 'react';
 import { CungLaSo } from '@/types/tuvi';
 import { CHINH_TINH_COLORS, STAR_NGU_HANH_COLOR } from '@/lib/tuvi/constants';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface CungViewProps {
   cung: CungLaSo;
@@ -19,6 +20,10 @@ const BOLD_STARS = new Set([
 ]);
 
 export default function CungView({ cung, className = '', style }: CungViewProps) {
+  const { tCung, language } = useLanguage();
+  const displayName = tCung(cung.cungName);
+  const thanLabel = language === 'zh' ? '身' : language === 'ko' ? '신' : language === 'en' ? 'BODY' : 'THÂN';
+
   return (
     <div
       className={`bg-white flex flex-col relative overflow-hidden px-1 py-0.5 select-none text-black font-sans ${className}`}
@@ -35,10 +40,15 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
         </span>
 
         {/* Tên Cung (VD: MỆNH, PHỤ MẪU, PHÚC ĐỨC THÂN...) */}
-        <span className="font-bold uppercase tracking-wide text-center text-[#003399] text-[10.5px] sm:text-[11.5px] flex items-center justify-center whitespace-nowrap min-w-0">
-          <span>{cung.cungName}</span>
+        <span
+          className="font-bold uppercase tracking-wide text-center text-[#003399] text-[10.5px] sm:text-[11.5px] flex items-center justify-center whitespace-nowrap min-w-0"
+          title={displayName !== cung.cungName ? `${cung.cungName} (${displayName})` : cung.cungName}
+        >
+          <span>{displayName}</span>
           {cung.isThan && (
-            <span className="text-red-600 font-bold ml-1 text-[10.5px] sm:text-[11.5px]">THÂN</span>
+            <span className="text-red-600 font-bold ml-1 text-[10.5px] sm:text-[11.5px]">
+              {thanLabel}
+            </span>
           )}
         </span>
 

@@ -7,7 +7,7 @@ export const maxDuration = 120;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { laSo, tier, thongTinThem, chieuCao, canNang, anhMat, anhTay, apiKey, model } = body as {
+    const { laSo, tier, thongTinThem, chieuCao, canNang, anhMat, anhTay, apiKey, model, lang, language } = body as {
       laSo: LaSoData;
       tier?: 'free' | 'pro';
       thongTinThem?: string;
@@ -17,6 +17,8 @@ export async function POST(req: NextRequest) {
       anhTay?: string; // base64 data url: data:image/...;base64,...
       apiKey?: string;
       model?: string;
+      lang?: 'vi' | 'en' | 'zh' | 'ko';
+      language?: 'vi' | 'en' | 'zh' | 'ko';
     };
 
     if (!laSo || !laSo.duongSo) {
@@ -25,6 +27,7 @@ export async function POST(req: NextRequest) {
 
     const currentTier = tier || laSo.tier || 'free';
     const targetModel = model || (currentTier === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash');
+    const targetLang = lang || language || 'vi';
 
     const parts = buildReadingParts({
       laSo,
@@ -34,6 +37,7 @@ export async function POST(req: NextRequest) {
       canNang,
       anhMat,
       anhTay,
+      lang: targetLang,
     });
 
     const result = await callGeminiVision(parts, apiKey, targetModel);

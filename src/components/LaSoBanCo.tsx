@@ -5,6 +5,7 @@ import { LaSoData } from '@/types/tuvi';
 import CungView from './CungView';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 import { Download, RefreshCw, ZoomIn, ZoomOut, BookOpen } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface LaSoBanCoProps {
   laSo: LaSoData;
@@ -53,6 +54,17 @@ const TT_COORDS: Record<number, { l: string; t: string }> = {
 };
 
 export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanCoProps) {
+  const {
+    t,
+    tCanChi,
+    tNapAm,
+    tTenCuc,
+    tSinhKhac,
+    tThanCu,
+    tAmDuong,
+    tThuanNghich,
+    tStar,
+  } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -202,7 +214,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
             className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-sm font-semibold transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4 text-amber-400" />
-            <span>Lập Lá Số Mới</span>
+            <span>{t('chart.newChartBtn', 'Lập Lá Số Mới')}</span>
           </button>
 
           {onOpenSavedCharts && (
@@ -213,7 +225,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
               title="Xem danh sách các lá số đã lưu"
             >
               <BookOpen className="w-4 h-4 text-amber-400" />
-              <span>Sổ Tay Số Mệnh</span>
+              <span>{t('nav.savedCharts', 'Sổ Tay Số Mệnh')}</span>
             </button>
           )}
         </div>
@@ -230,12 +242,12 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
               {isFitMode ? (
                 <>
                   <ZoomIn className="w-4 h-4 text-blue-400" />
-                  <span>Phóng To</span>
+                  <span>{t('chart.originalSize', 'Phóng To')}</span>
                 </>
               ) : (
                 <>
                   <ZoomOut className="w-4 h-4 text-emerald-400" />
-                  <span>Vừa Màn Hình</span>
+                  <span>{t('chart.fitScreen', 'Vừa Màn Hình')}</span>
                 </>
               )}
             </button>
@@ -249,7 +261,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
             className="inline-flex items-center gap-1.5 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>{isExporting ? 'Đang xuất ảnh...' : 'Tải Ảnh Lá Số'}</span>
+            <span>{isExporting ? 'Đang xuất ảnh...' : t('chart.downloadBtn', 'Tải Ảnh Lá Số')}</span>
           </button>
         </div>
       </div>
@@ -341,7 +353,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
               <div className="relative z-10 w-full text-[11px] sm:text-[12px] leading-snug text-black">
                 {/* Họ tên */}
                 <div className="flex items-baseline mb-1.5 sm:mb-2">
-                  <span className="w-16 sm:w-18 text-black">Họ tên:</span>
+                  <span className="w-16 sm:w-18 text-black">{t('chart.fullName', 'Họ tên:')}</span>
                   <span className="text-[#003399] font-bold text-sm sm:text-[15px] tracking-wide">
                     {duongSo.hoTen}
                   </span>
@@ -351,94 +363,96 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
                 <div className="space-y-0.5">
                   {/* Năm */}
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Năm:</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.year', 'Năm:')}</span>
                     <span className="w-12 sm:w-14 font-medium">{duongSo.namDuong}</span>
                     <span className="w-8 sm:w-10"></span>
-                    <span className="text-[#003399] font-bold">{namCanChi}</span>
+                    <span className="text-[#003399] font-bold">{tCanChi(namCanChi)}</span>
                   </div>
 
                   {/* Tháng */}
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Tháng:</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.month', 'Tháng:')}</span>
                     <span className="w-12 sm:w-14 font-medium">{duongSo.thangDuong}</span>
                     <span className="w-8 sm:w-10 text-black">
                       {amLich.thangAmGoc}
                       {amLich.isLeap ? ' (N)' : ''}
                     </span>
-                    <span className="text-[#003399] font-bold">{thangCanChi}</span>
+                    <span className="text-[#003399] font-bold">{tCanChi(thangCanChi)}</span>
                   </div>
 
                   {/* Ngày */}
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Ngày:</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.day', 'Ngày:')}</span>
                     <span className="w-12 sm:w-14 font-medium">{duongSo.ngayDuong}</span>
                     <span className="w-8 sm:w-10 text-black">{amLich.ngayAm}</span>
-                    <span className="text-[#003399] font-bold">{ngayCanChi}</span>
+                    <span className="text-[#003399] font-bold">{tCanChi(ngayCanChi)}</span>
                   </div>
 
                   {/* Giờ */}
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Giờ:</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.hour', 'Giờ:')}</span>
                     <span className="w-20 sm:w-22 font-medium truncate pr-1">{gioText}</span>
-                    <span className="text-[#003399] font-bold">{gioCanChi}</span>
+                    <span className="text-[#003399] font-bold">{tCanChi(gioCanChi)}</span>
                   </div>
                 </div>
 
                 {/* Năm xem & Tuổi */}
                 <div className="mt-2 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Năm xem:</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.viewYear', 'Năm xem:')}</span>
                     <span className="w-20 sm:w-22 font-medium">{namXem}</span>
-                    <span className="text-[#003399] font-bold">{namXemCanChi}</span>
+                    <span className="text-[#003399] font-bold">{tCanChi(namXemCanChi)}</span>
                   </div>
                   <div className="flex items-baseline">
                     <span className="w-16 sm:w-18"></span>
                     <span className="w-20 sm:w-22"></span>
-                    <span className="text-[#003399] font-bold">{tuoiAmXem} tuổi</span>
+                    <span className="text-[#003399] font-bold">
+                      {tuoiAmXem} {t('chart.ageUnit', 'tuổi')}
+                    </span>
                   </div>
                 </div>
 
                 {/* Âm Dương */}
                 <div className="mt-2 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Âm Dương:</span>
-                    <span className="text-[#003399] font-bold">{amDuongTxt}</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.yinYang', 'Âm Dương:')}</span>
+                    <span className="text-[#003399] font-bold">{tAmDuong(amDuongTxt)}</span>
                   </div>
                   <div className="flex items-baseline">
                     <span className="w-16 sm:w-18"></span>
-                    <span className="text-[#003399] font-bold">{thuanNghichLy}</span>
+                    <span className="text-[#003399] font-bold">{tThuanNghich(thuanNghichLy)}</span>
                   </div>
                 </div>
 
                 {/* Mệnh & Cục */}
                 <div className="mt-1.5 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Mệnh:</span>
-                    <span className="text-[#003399] font-bold">{napAmMenh || banMenh}</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.menh', 'Mệnh:')}</span>
+                    <span className="text-[#003399] font-bold">{tNapAm(napAmMenh || banMenh)}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Cục:</span>
-                    <span className="text-[#003399] font-bold">{tenCuc}</span>
-                  </div>
-                  <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18"></span>
-                    <span className="text-[#003399] font-bold">{sinhKhac}</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.cuc', 'Cục:')}</span>
+                    <span className="text-[#003399] font-bold">{tTenCuc(tenCuc)}</span>
                   </div>
                   <div className="flex items-baseline">
                     <span className="w-16 sm:w-18"></span>
-                    <span className="text-[#003399] font-bold">{thanCuName}</span>
+                    <span className="text-[#003399] font-bold">{tSinhKhac(sinhKhac)}</span>
+                  </div>
+                  <div className="flex items-baseline">
+                    <span className="w-16 sm:w-18"></span>
+                    <span className="text-[#003399] font-bold">{tThanCu(thanCuName)}</span>
                   </div>
                 </div>
 
                 {/* Mệnh chủ & Thân chủ */}
                 <div className="mt-2 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Mệnh chủ:</span>
-                    <span className="text-[#003399] font-bold">{menhChu}</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.menhChu', 'Mệnh chủ:')}</span>
+                    <span className="text-[#003399] font-bold">{tStar(menhChu)}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">Thân chủ:</span>
-                    <span className="text-[#003399] font-bold">{thanChu}</span>
+                    <span className="w-16 sm:w-18 text-black">{t('chart.thanChu', 'Thân chủ:')}</span>
+                    <span className="text-[#003399] font-bold">{tStar(thanChu)}</span>
                   </div>
                 </div>
               </div>
@@ -453,9 +467,9 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
                 className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex items-center bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none gap-1 pointer-events-none tracking-wider"
                 style={{ left: TT_COORDS[tuanGoc]?.l, top: TT_COORDS[tuanGoc]?.t }}
               >
-                <span>Triệt</span>
+                <span>{t('chart.triet', 'Triệt')}</span>
                 <span className="opacity-40">/</span>
-                <span>Tuần</span>
+                <span>{t('chart.tuan', 'Tuần')}</span>
               </div>
             ) : (
               <>
@@ -464,7 +478,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
                     className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none text-center leading-none pointer-events-none tracking-wider"
                     style={{ left: TT_COORDS[tuanGoc]?.l, top: TT_COORDS[tuanGoc]?.t }}
                   >
-                    Tuần
+                    {t('chart.tuan', 'Tuần')}
                   </div>
                 )}
                 {TT_COORDS[trietGoc] && (
@@ -472,7 +486,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
                     className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none text-center leading-none pointer-events-none tracking-wider"
                     style={{ left: TT_COORDS[trietGoc]?.l, top: TT_COORDS[trietGoc]?.t }}
                   >
-                    Triệt
+                    {t('chart.triet', 'Triệt')}
                   </div>
                 )}
               </>

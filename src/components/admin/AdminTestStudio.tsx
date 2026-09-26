@@ -6,6 +6,8 @@ import { lapLaSoTuVi, buildCungDataPrompt } from '@/lib/tuvi/anSao';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
+import LanguageSelector from '@/components/LanguageSelector';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   Sparkles,
   Crown,
@@ -101,6 +103,7 @@ const EMPTY_FORM: DuLieuDuongSo = {
 };
 
 export default function AdminTestStudio() {
+  const { language, setLanguage } = useLanguage();
   const [formData, setFormData] = useState<DuLieuDuongSo>(EMPTY_FORM);
   const [testTier, setTestTier] = useState<ServiceTier>('pro');
   const [testModel, setTestModel] = useState<string>('gemini-3.1-pro-preview');
@@ -446,7 +449,7 @@ export default function AdminTestStudio() {
     // Chuẩn bị raw prompt để debug
     const cungDataStr = buildCungDataPrompt(calculated);
     setRawPromptText(
-      `[MODEL TEST]: ${testModel} | [TIER]: ${testTier}\n` +
+      `[MODEL TEST]: ${testModel} | [TIER]: ${testTier} | [LANGUAGE]: ${language.toUpperCase()}\n` +
       `Đương số: ${calculated.duongSo.hoTen} (${calculated.duongSo.gioiTinh} - ${calculated.namCanChi})\n` +
       `Mệnh: ${calculated.banMenh} | Cục: ${calculated.tenCuc}\n` +
       `Ảnh diện tướng: ${formData.anhMat ? 'Có kèm ảnh Base64' : 'Không có'}\n` +
@@ -503,6 +506,7 @@ export default function AdminTestStudio() {
           anhMat: cleanData.anhMat,
           anhTay: cleanData.anhTay,
           model: testModel,
+          lang: language,
         }),
       });
 
@@ -570,6 +574,7 @@ export default function AdminTestStudio() {
           chatHistory,
           mode,
           model: selectedModel,
+          lang: language,
         }),
       });
 
@@ -1191,6 +1196,17 @@ export default function AdminTestStudio() {
                 <option value="gemini-2.5-flash">gemini-2.5-flash (Nhanh &amp; chuẩn)</option>
               </select>
             </div>
+
+            {/* Tùy chọn Ngôn ngữ Kiểm thử (An sao, Luận giải & Hỏi đáp) */}
+            <div className="flex items-center gap-2 pl-3 border-l border-slate-700">
+              <span
+                className="text-xs font-bold text-amber-300 flex items-center gap-1"
+                title="Chuyển ngôn ngữ hiển thị bàn cờ, bài luận giải và phản hồi hỏi đáp của AI"
+              >
+                <span>Ngôn ngữ test:</span>
+              </span>
+              <LanguageSelector />
+            </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -1257,12 +1273,33 @@ export default function AdminTestStudio() {
             <Zap className="w-4 h-4 text-amber-400" />
             <span>Mô hình: <strong className="text-amber-300 font-bold">{testModel}</strong> ({testTier === 'pro' ? 'Bản Pro' : 'Bản Free'})</span>
           </div>
+          <div className="flex items-center gap-1.5 pl-4 border-l border-slate-700">
+            <span className="text-slate-400">Ngôn ngữ:</span>
+            <strong className="text-amber-300 font-bold uppercase">{language}</strong>
+          </div>
         </div>
       )}
 
       {/* Kết quả An Sao & Bàn Cờ Lá Số */}
       {laSo && (
         <div className="space-y-6">
+          {/* Thanh chuyển đổi nhanh ngôn ngữ kiểm thử cho bàn cờ */}
+          <div className="max-w-[760px] mx-auto flex items-center justify-between p-2.5 px-3.5 rounded-xl bg-slate-900/90 border border-amber-500/30 text-xs text-slate-300 flex-wrap gap-2 shadow-md">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-400 font-bold">🌐 Ngôn ngữ Bàn cờ &amp; Luận giải:</span>
+              <span className="text-amber-200 font-medium">
+                {language === 'vi' && '🇻🇳 Tiếng Việt (Gốc)'}
+                {language === 'en' && '🇬🇧 English (Western Astrology)'}
+                {language === 'zh' && '🇨🇳 中文 (正统紫微斗数)'}
+                {language === 'ko' && '🇰🇷 한국어 (정통 자미두수)'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-400">Đổi ngôn ngữ test:</span>
+              <LanguageSelector />
+            </div>
+          </div>
+
           <LaSoBanCo laSo={laSo} onReset={() => setLaSo(null)} />
 
           {/* Thanh công cụ lưu nhanh khi đã có kết quả */}
