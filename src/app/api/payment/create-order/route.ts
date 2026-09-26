@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createOrder, updateOrderEmail } from '@/lib/orderStore';
+import { generateVietQrDataUrl } from '@/lib/vietqr';
 
 const BANK_CODE = 'VPB';
 const STK = 'AGBSPVUONG2026';
@@ -35,7 +36,21 @@ export async function POST(req: Request) {
       affiliateCode: affiliateCode ? String(affiliateCode).trim().toLowerCase() : undefined,
     });
 
-    // Tạo URL VietQR với mã đơn hàng TVxxxxx
+    // 1. Tạo Data URL tức thì (0ms, không phụ thuộc vào máy chủ ngoài img.vietqr.io)
+    let qrDataUrl = '';
+    try {
+      qrDataUrl = await generateVietQrDataUrl({
+        bankBinOrCode: BANK_CODE,
+        accountNumber: STK,
+        amount: order.amount,
+        memo: order.orderCode,
+        accountName: CHU_TK,
+      });
+    } catch (qrErr) {
+      console.warn('[API CREATE-ORDER] Không thể tạo local QR DataURL:', qrErr);
+    }
+
+    // 2. URL VietQR fallback truyền thống
     const qrUrl = `https://img.vietqr.io/image/${BANK_CODE}-${STK}-compact2.png?amount=${order.amount}&addInfo=${encodeURIComponent(
       order.orderCode
     )}&accountName=${encodeURIComponent(CHU_TK)}`;
@@ -44,6 +59,7 @@ export async function POST(req: Request) {
       success: true,
       order,
       qrUrl,
+      qrDataUrl,
       syntax: order.orderCode,
       bankInfo: {
         bankName: BANK_NAME,

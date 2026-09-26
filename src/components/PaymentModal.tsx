@@ -11,6 +11,9 @@ import {
   Loader2,
   Mail,
   CheckCircle2,
+  Download,
+  Smartphone,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -44,6 +47,7 @@ export default function PaymentModal({
   // Trạng thái đơn hàng
   const [orderCode, setOrderCode] = useState<string>('');
   const [qrUrl, setQrUrl] = useState<string>('');
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [isCreatingOrder, setIsCreatingOrder] = useState<boolean>(false);
   const [orderStatus, setOrderStatus] = useState<'PENDING' | 'PAID' | 'IDLE'>('IDLE');
 
@@ -55,6 +59,7 @@ export default function PaymentModal({
   const [copiedStk, setCopiedStk] = useState(false);
   const [copiedContent, setCopiedContent] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
+  const [copiedAll, setCopiedAll] = useState(false);
 
   // Polling ref & Active Order Key ref
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -112,18 +117,20 @@ export default function PaymentModal({
     }
   }, [isOpen, user, profile, customerEmail]);
 
-  // Tạo đơn hàng khi modal mở ra (đảm bảo chỉ tạo duy nhất 1 lần cho mỗi phiên mở modal)
+  // Tạo đơn hàng khi modal mở ra (tái sử dụng đơn pending nếu cùng gói để không sinh mã rác và hiện QR tức thì)
   useEffect(() => {
     if (!isOpen) {
       if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
-      setOrderStatus('IDLE');
-      activeOrderKeyRef.current = null;
+      if (orderStatus !== 'PENDING') {
+        setOrderStatus('IDLE');
+        activeOrderKeyRef.current = null;
+      }
       return;
     }
 
     const targetKey = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
-    // Nếu modal đang mở và đã tạo đơn cho gói này rồi thì không tạo lại để tránh sinh mã rác
-    if (activeOrderKeyRef.current === targetKey && orderCode) {
+    // Nếu modal đang mở và đã có đơn pending cho gói này rồi thì không tạo lại để hiện mã ngay lập tức 0ms
+    if (activeOrderKeyRef.current === targetKey && orderCode && orderStatus === 'PENDING') {
       return;
     }
 
@@ -159,7 +166,8 @@ export default function PaymentModal({
         const data = await res.json();
         if (isMounted && data.success && data.order) {
           setOrderCode(data.order.orderCode);
-          setQrUrl(data.qrUrl);
+          setQrUrl(data.qrUrl || '');
+          setQrDataUrl(data.qrDataUrl || '');
           setOrderStatus('PENDING');
         }
       } catch (err) {
@@ -175,7 +183,7 @@ export default function PaymentModal({
       isMounted = false;
       if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
     };
-  }, [isOpen, paymentType, finalPrice, hoTen, chartId]);
+  }, [isOpen, paymentType, finalPrice, hoTen, chartId, orderCode, orderStatus]);
 
   // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s)
   useEffect(() => {
@@ -206,6 +214,7 @@ export default function PaymentModal({
   const handlePaymentSuccess = () => {
     if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
     setOrderStatus('PAID');
+    activeOrderKeyRef.current = null;
 
     // Lưu email và quyền lợi mở khóa vào localStorage để bền vững qua các lần F5
     if (typeof window !== 'undefined') {
@@ -258,6 +267,72 @@ export default function PaymentModal({
     navigator.clipboard.writeText(String(finalPrice));
     setCopiedAmount(true);
     setTimeout(() => setCopiedAmount(false), 2000);
+  };
+
+  // Sao chép toàn bộ thông tin thanh toán (1-click thuận tiện)
+  const handleCopyAll = () => {
+    const text = `Ngân hàng: VPBank\nSố TK: ${stk}\nChủ TK: ${chuTk}\nSố tiền: ${finalPrice.toLocaleString('vi-VN')} đ\nNội dung CK: ${orderCode}`;
+    navigator.clipboard.writeText(text);
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2000);
+  };
+
+  // Tải ảnh mã QR về máy (hỗ trợ đặc biệt khách dùng điện thoại quét từ thư viện ảnh)
+  const handleDownloadQr = () => {
+    const src = qrDataUrl || qrUrl;
+    if (!src) return;
+    const link = document.createElement('a');
+    link.href = src;
+    link.download = `VietQR_${orderCode || 'ThanhToan'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Làm mới / Tạo mã đơn hàng mới nếu khách muốn
+  const handleRefreshOrder = async () => {
+    activeOrderKeyRef.current = null;
+    setOrderCode('');
+    setQrUrl('');
+    setQrDataUrl('');
+    setIsCreatingOrder(true);
+    try {
+      const initialEmail =
+        customerEmail ||
+        user?.email ||
+        profile?.email ||
+        (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
+
+      const affiliateCode =
+        (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
+
+      const res = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentType,
+          price: finalPrice,
+          hoTen,
+          email: initialEmail,
+          chartId,
+          userId: user?.id,
+          affiliateCode: affiliateCode || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.order) {
+        activeOrderKeyRef.current = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
+        setOrderCode(data.order.orderCode);
+        setQrUrl(data.qrUrl || '');
+        setQrDataUrl(data.qrDataUrl || '');
+        setOrderStatus('PENDING');
+      }
+    } catch (err) {
+      console.error('Lỗi tạo mã mới:', err);
+    } finally {
+      setIsCreatingOrder(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -351,39 +426,94 @@ export default function PaymentModal({
               </div>
 
               {/* QR Code Chuyển Khoản Tự Động */}
-              <div className="bg-white rounded-xl p-4 flex flex-col items-center justify-center text-slate-900 shadow-inner">
-                <div className="flex items-center gap-2 mb-2 text-sm sm:text-xs font-semibold text-slate-700 text-center">
-                  <QrCode className="w-4 h-4 text-slate-700 shrink-0" />
-                  <span>Quét mã VietQR (Tự động điền STK + Số tiền + Nội dung):</span>
+              <div className="bg-white rounded-2xl p-4 flex flex-col items-center justify-center text-slate-900 shadow-xl border border-slate-200">
+                {/* Header VietQR & NAPAS */}
+                <div className="w-full flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-200 px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-blue-700 tracking-wider text-xs sm:text-sm">
+                      VIET<span className="text-red-500">QR</span>
+                    </span>
+                    <span className="text-slate-300">|</span>
+                    <span className="font-bold text-slate-700 text-xs tracking-wide">NAPAS 247</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    ⚡ Chuyển Nhanh 24/7
+                  </span>
                 </div>
 
-                <div className="w-56 h-56 bg-slate-100 rounded-lg overflow-hidden border border-slate-300 flex items-center justify-center relative">
-                  {isCreatingOrder || !qrUrl ? (
-                    <div className="flex flex-col items-center gap-2 text-slate-500 text-sm sm:text-xs">
-                      <Loader2 className="w-7 h-7 animate-spin text-amber-600" />
-                      <span>Đang tạo mã thanh toán...</span>
+                {/* Khung hiển thị QR */}
+                <div className="w-56 h-56 sm:w-60 sm:h-60 bg-white rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center relative p-1 shadow-inner">
+                  {isCreatingOrder || (!qrDataUrl && !qrUrl) ? (
+                    <div className="flex flex-col items-center gap-2 text-slate-500 text-xs sm:text-sm">
+                      <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
+                      <span className="font-medium">Đang tạo mã QR thanh toán...</span>
                     </div>
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={qrUrl}
+                      src={qrDataUrl || qrUrl}
                       alt={`VietQR ${orderCode}`}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain select-none"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          'https://img.vietqr.io/image/VPB-AGBSPVUONG2026-compact2.png';
+                        if (qrDataUrl) {
+                          (e.target as HTMLImageElement).src = qrDataUrl;
+                        }
                       }}
                     />
                   )}
                 </div>
 
+                {/* Các nút hỗ trợ nhanh trên mobile & desktop */}
+                <div className="w-full mt-3 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDownloadQr}
+                    disabled={!qrDataUrl && !qrUrl}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs sm:text-sm font-semibold border border-slate-300 transition cursor-pointer disabled:opacity-50"
+                    title="Tải ảnh mã QR về máy để mở trong App Ngân Hàng"
+                  >
+                    <Download className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span>Lưu ảnh QR</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyAll}
+                    disabled={!orderCode}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs sm:text-sm font-semibold border border-amber-300 transition cursor-pointer disabled:opacity-50"
+                    title="Sao chép toàn bộ thông tin chuyển khoản"
+                  >
+                    {copiedAll ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="text-emerald-700">Đã sao chép!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 text-amber-700 shrink-0" />
+                        <span>Sao chép tất cả</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Gợi ý cho khách dùng điện thoại */}
+                <div className="mt-2.5 flex items-center gap-1.5 text-xs text-slate-600 text-center leading-normal px-1">
+                  <Smartphone className="w-4 h-4 text-amber-600 shrink-0 hidden sm:inline" />
+                  <span>
+                    Dùng điện thoại: Bấm <strong>&quot;Lưu ảnh QR&quot;</strong> rồi vào App Ngân Hàng quét từ ảnh, hoặc sao chép thông tin bên dưới.
+                  </span>
+                </div>
+
                 {/* Radar quét tự động */}
-                <div className="mt-2.5 flex items-center gap-2 px-3.5 py-1.5 bg-amber-50 rounded-full border border-amber-200 text-xs sm:text-[11px] text-amber-900">
+                <div className="mt-2.5 w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-900">
                   <span className="relative flex h-2 w-2 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                  <span>Hệ thống tự động mở khóa ngay khi nhận chuyển khoản</span>
+                  <span className="font-medium text-xs">
+                    Hệ thống SePay tự động mở khóa ngay sau khi tiền vào tài khoản
+                  </span>
                 </div>
               </div>
 
@@ -428,7 +558,19 @@ export default function PaymentModal({
                   </div>
                 </div>
                 <div className="flex justify-between items-center py-1.5">
-                  <span className="text-slate-400">Nội dung CK:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-400">Nội dung CK:</span>
+                    <button
+                      type="button"
+                      onClick={handleRefreshOrder}
+                      disabled={isCreatingOrder}
+                      className="text-[11px] text-slate-400 hover:text-amber-400 flex items-center gap-1 transition cursor-pointer"
+                      title="Tạo mã giao dịch mới nếu cần"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isCreatingOrder ? 'animate-spin' : ''}`} />
+                      <span>Đổi mã</span>
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded border border-amber-500/40 text-base sm:text-sm">
                       {orderCode || 'Đang tạo...'}
