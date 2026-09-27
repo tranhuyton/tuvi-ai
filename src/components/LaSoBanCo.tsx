@@ -168,8 +168,9 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
 
         const fileName = `La_So_Tu_Vi_${duongSo.hoTen.replace(/\s+/g, '_')}.png`;
 
-        // Trên điện thoại: Ưu tiên mở Share Sheet để người dùng bấm "Lưu hình ảnh" vào Thư viện ảnh
-        if (typeof navigator !== 'undefined' && navigator.share) {
+        // Chỉ mở Share Sheet trên điện thoại (để người dùng bấm "Lưu hình ảnh" vào Photos)
+        const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+        if (isMobile && typeof navigator !== 'undefined' && navigator.share) {
           try {
             const res = await fetch(dataUrl);
             const blob = await res.blob();

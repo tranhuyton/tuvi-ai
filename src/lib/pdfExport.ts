@@ -592,8 +592,9 @@ export async function exportReadingToPdf({
     const pdfBlob: Blob = pdfDoc.output('blob');
     const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-    // Trên điện thoại hỗ trợ Web Share API (Safari iOS, Android): Mở menu chia sẻ
-    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+    // Chỉ mở Share Sheet trên thiết bị di động (iOS / Android)
+    const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    if (isMobile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
