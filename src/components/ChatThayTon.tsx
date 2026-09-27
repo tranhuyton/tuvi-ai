@@ -10,6 +10,9 @@ import {
   Lock,
   CheckCircle2,
   BookOpen,
+  Maximize2,
+  Minimize2,
+  GripHorizontal,
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -54,7 +57,6 @@ export default function ChatThayTon({
   const isMessageVip = (c: ChatMessage) => {
     if (c.type === 'vip') return true;
     if (c.type === 'basic') return false;
-    // Nếu tin nhắn cũ chưa gắn nhãn: Trên lá số VIP Pro, mặc định là câu VIP của khách
     if (isPro) return true;
     const a = c.a || '';
     return (
@@ -95,7 +97,6 @@ export default function ChatThayTon({
 
   const prevRemainingRef = useRef(totalRemaining);
   const prevAllowedRef = useRef(totalAllowed);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // Lắng nghe khi được cộng thêm lượt hỏi mới hoặc khi đã dùng hết câu hỏi
   useEffect(() => {
@@ -114,7 +115,61 @@ export default function ChatThayTon({
     prevAllowedRef.current = totalAllowed;
   }, [totalAllowed, totalRemaining, validMessages.length]);
 
-  // Tự động cuộn trang êm ái khi có tin nhắn mới hoặc đang chờ câu trả lời
+  // 5. Tùy biến kích thước & kéo resize trên PC
+  const [chatHeight, setChatHeight] = useState<number>(560);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
+  const startResizeRef = useRef<{ startY: number; startHeight: number }>({ startY: 0, startHeight: 560 });
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Khôi phục chiều cao cửa sổ chat từ localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tuvi_chat_height');
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 380 && val <= 1200) {
+          setChatHeight(val);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Xử lý kéo chuột để resize chiều cao trên PC
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    startResizeRef.current = {
+      startY: e.clientY,
+      startHeight: chatHeight,
+    };
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaY = e.clientY - startResizeRef.current.startY;
+      const newHeight = Math.min(1200, Math.max(380, startResizeRef.current.startHeight + deltaY));
+      setChatHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      try {
+        localStorage.setItem('tuvi_chat_height', chatHeight.toString());
+      } catch {}
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, chatHeight]);
+
+  // Tự động cuộn xuống cuối khi có tin nhắn mới hoặc đang chờ câu trả lời
   useEffect(() => {
     if (chatHistory.length > 0 || isLoading) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -143,82 +198,124 @@ export default function ChatThayTon({
   };
 
   return (
-    <div className="w-full max-w-[1080px] mx-auto mt-12 mb-16 print:hidden px-2 sm:px-4 md:px-0 space-y-6">
-      {/* 1. Header Khối Hỏi Đáp - Thiết kế thoáng đãng, đồng bộ phong cách với trang */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-amber-500/30 backdrop-blur-md shadow-xl text-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 shrink-0">
-            <MessageSquare className="w-6 h-6" />
+    <div className="w-full max-w-[1060px] mx-auto mt-6 sm:mt-10 mb-16 print:hidden px-1 sm:px-2 md:px-0">
+      {/* Khung Bo Chat Gốc - Giữ nguyên viền khung sang trọng và nền vũ trụ */}
+      <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3.5 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md text-slate-100">
+        {/* Header Khung Chat */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3 sm:pb-4 mb-3 sm:mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-400 shrink-0">
+              <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-base sm:text-xl text-blue-400 font-serif flex items-center gap-2 flex-wrap">
+                <span>{t('chat.headerTitle', 'Hỏi Đáp Luận Giải Cùng AI Thầy Tôn')}</span>
+                {isPro ? (
+                  <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans font-semibold flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{t('chat.vipClientBadge', 'Khách VIP Pro')}</span>
+                  </span>
+                ) : (
+                  <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-sans">
+                    {t('chat.freeClientBadge', '📜 Bản Cơ Bản')}
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                {t('chat.headerDesc', 'Trí tuệ nhân tạo kế thừa tri thức & pháp số Tử Vi Đẩu Số bí truyền từ Thầy Tôn')}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-lg sm:text-xl text-blue-400 font-serif flex items-center gap-2 flex-wrap">
-              <span>{t('chat.headerTitle', 'Hỏi Đáp Luận Giải Cùng AI Thầy Tôn')}</span>
-              {isPro ? (
-                <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans font-semibold flex items-center gap-1">
-                  <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{t('chat.vipClientBadge', 'Khách VIP Pro')}</span>
-                </span>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Nút Phóng to / Thu nhỏ nhanh trên PC */}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700 text-xs font-semibold transition cursor-pointer"
+              title={isExpanded ? 'Thu nhỏ cửa sổ chat về độ cao mặc định' : 'Mở rộng tối đa cửa sổ chat trên màn hình'}
+            >
+              {isExpanded ? (
+                <>
+                  <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Thu nhỏ</span>
+                </>
               ) : (
-                <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-sans">
-                  {t('chat.freeClientBadge', '📜 Bản Cơ Bản')}
-                </span>
+                <>
+                  <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Mở rộng</span>
+                </>
               )}
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-              {t('chat.headerDesc', 'Trí tuệ nhân tạo kế thừa tri thức & pháp số Tử Vi Đẩu Số bí truyền từ Thầy Tôn')}
-            </p>
+            </button>
+
+            {/* Huy hiệu hiển thị chi tiết số lượt theo từng loại */}
+            {flowStep === 'unpaid' ? (
+              <div className="text-xs sm:text-sm px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-amber-400 font-semibold flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5" />
+                <span>{t('chat.lockedBadge', 'Chưa mở khóa')}</span>
+              </div>
+            ) : flowStep === 'exhausted' ? (
+              <div className="text-xs sm:text-sm px-3 py-1 rounded-full bg-amber-950/40 border border-amber-500/40 text-amber-400 font-semibold flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5" />
+                <span>{t('chat.exhaustedBadge', `Đã dùng hết (${totalAllowed} lượt)`)}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Lượt Chuyên Sâu */}
+                {proRemaining > 0 && (
+                  <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{t('chat.proRemaining', `Chuyên Sâu: Còn ${proRemaining} câu`, { count: proRemaining })}</span>
+                  </span>
+                )}
+                {/* Lượt Cơ Bản */}
+                {basicRemaining > 0 && (
+                  <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-medium flex items-center gap-1">
+                    <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                    <span>{t('chat.basicRemaining', `Cơ Bản: Còn ${basicRemaining} câu`, { count: basicRemaining })}</span>
+                  </span>
+                )}
+                {/* Tổng lượt */}
+                <span className="text-xs sm:text-sm px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200 font-medium">
+                  {t('chat.totalRemaining', `Tổng: ${totalRemaining} lượt`, { count: totalRemaining })}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Huy hiệu hiển thị chi tiết số lượt theo từng loại */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {flowStep === 'unpaid' ? (
-            <div className="text-xs sm:text-sm px-3.5 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-amber-400 font-semibold flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />
-              <span>{t('chat.lockedBadge', 'Chưa mở khóa')}</span>
-            </div>
-          ) : flowStep === 'exhausted' ? (
-            <div className="text-xs sm:text-sm px-3.5 py-1.5 rounded-full bg-amber-950/50 border border-amber-500/40 text-amber-400 font-semibold flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />
-              <span>{t('chat.exhaustedBadge', `Đã dùng hết (${totalAllowed} lượt)`)}</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Lượt Chuyên Sâu */}
-              {proRemaining > 0 && (
-                <span className="text-xs sm:text-sm px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 font-semibold flex items-center gap-1">
-                  <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{t('chat.proRemaining', `Chuyên Sâu: Còn ${proRemaining} câu`, { count: proRemaining })}</span>
-                </span>
-              )}
-              {/* Lượt Cơ Bản */}
-              {basicRemaining > 0 && (
-                <span className="text-xs sm:text-sm px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-medium flex items-center gap-1">
-                  <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                  <span>{t('chat.basicRemaining', `Cơ Bản: Còn ${basicRemaining} câu`, { count: basicRemaining })}</span>
-                </span>
-              )}
-              {/* Tổng lượt */}
-              <span className="text-xs sm:text-sm px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-200 font-medium">
-                {t('chat.totalRemaining', `Tổng: ${totalRemaining} lượt`, { count: totalRemaining })}
-              </span>
+        {/* Lịch sử tin nhắn - Bo trong khung cuộn, trên điện thoại mở rộng độ thoáng */}
+        <div
+          className="space-y-3.5 sm:space-y-4 mb-3 overflow-y-auto pr-1 sm:pr-2.5 scroll-smooth select-text"
+          style={{
+            height: isExpanded ? '80vh' : `${chatHeight}px`,
+            maxHeight: isExpanded ? '85vh' : `${chatHeight}px`,
+            minHeight: '380px',
+          }}
+        >
+          {chatHistory.length === 0 && flowStep === 'chatting' && (
+            <div className="text-center py-8 space-y-2">
+              <p className="text-base sm:text-lg text-slate-200 font-medium">
+                {t('chat.introQuota', `Quý khách đang có ${totalRemaining} lượt thỉnh giáo cùng AI Thầy Tôn.`, {
+                  count: totalRemaining,
+                })}
+              </p>
+              <p className="text-sm text-slate-300 italic max-w-lg mx-auto leading-relaxed">
+                {t(
+                  'chat.introGuide',
+                  'Hãy nhập câu hỏi chi tiết về công danh, sự nghiệp, tài lộc, tình duyên hoặc hạn vận để Thầy Tôn soi chiếu lá số.'
+                )}
+              </p>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* 2. Danh Sách Tin Nhắn Đàm Đạo - HOÀN TOÀN KHÔNG BỊ GIỚI HẠN KHUNG, CUỘN TRỰC TIẾP THEO TRANG WEB */}
-      {chatHistory.length > 0 && (
-        <div className="space-y-6">
           {chatHistory.map((item, idx) => (
-            <div key={idx} className="space-y-4">
-              {/* Khách hỏi - Bong bóng màu xanh sang trọng, chữ to rõ */}
+            <div key={idx} className="space-y-3">
+              {/* Khách hỏi - Bong bóng xanh rõ ràng, canh phải */}
               <div className="flex justify-end">
-                <div className="max-w-[94%] sm:max-w-[80%] bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl rounded-tr-none px-4 sm:px-5 py-3 sm:py-3.5 text-base sm:text-lg shadow-lg border border-blue-400/30">
-                  <div className="text-xs sm:text-sm font-semibold text-blue-200 mb-1.5 flex items-center justify-between gap-2 border-b border-blue-500/40 pb-1">
-                    <span className="flex items-center gap-1">
-                      <span>{t('chat.userPrefix', 'Khách hỏi:')}</span>
-                    </span>
+                <div className="max-w-[94%] sm:max-w-[82%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 sm:px-5 py-2.5 sm:py-3.5 text-base sm:text-base shadow-md">
+                  <div className="text-xs sm:text-sm font-semibold text-blue-200 mb-1 flex items-center justify-between gap-2 border-b border-blue-400/30 pb-1">
+                    <span>{t('chat.userPrefix', 'Khách hỏi:')}</span>
                     {isMessageVip(item) ? (
                       <span className="text-xs px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 font-semibold border border-amber-400/40">
                         ⭐ {t('chat.badgeVip', 'Chuyên Sâu')}
@@ -233,354 +330,351 @@ export default function ChatThayTon({
                 </div>
               </div>
 
-              {/* Thầy Tôn trả lời - Mở rộng toàn diện, nền sáng sang trọng, không bị bóp nghẹt */}
+              {/* Thầy Tôn trả lời - Nền sáng sang trọng, chữ rõ ràng dễ đọc */}
               <div className="flex justify-start">
                 <div
-                  className={`w-full rounded-2xl rounded-tl-none p-5 sm:p-7 shadow-xl ${
+                  className={`w-full max-w-full sm:max-w-[96%] rounded-2xl rounded-tl-none p-4 sm:p-5 md:p-6 shadow-md ${
                     item.isError
-                      ? 'bg-red-950/80 border border-red-500/50 text-red-200 text-base sm:text-lg'
+                      ? 'bg-red-950/80 border border-red-500/50 text-red-200 text-base'
                       : isMessageVip(item)
                       ? 'bg-white text-slate-900 border-2 border-amber-400/80 shadow-amber-500/10'
-                      : 'bg-white text-slate-900 border border-slate-200 shadow-slate-950/20'
+                      : 'bg-white text-slate-900 border border-slate-200'
                   }`}
                 >
-                  <div className="text-sm sm:text-base font-bold text-amber-950 uppercase tracking-wider mb-3 flex items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                  <div className="text-sm font-bold text-amber-950 uppercase tracking-wider mb-2 flex items-center justify-between gap-2 border-b border-slate-200 pb-1.5">
                     <span className="flex items-center gap-1.5 text-amber-800">
                       <span>{t('chat.masterPrefix', '🧙‍♂️ AI Thầy Tôn Luận Giải:')}</span>
                     </span>
                     {isMessageVip(item) ? (
-                      <span className="text-xs sm:text-sm normal-case font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                      <span className="text-xs normal-case font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
                         <Crown className="w-3.5 h-3.5 text-amber-700" />
                         <span>{t('chat.badgeVip', 'Chuyên Sâu')}</span>
                       </span>
                     ) : (
-                      <span className="text-xs sm:text-sm normal-case font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="text-xs normal-case font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                         {t('chat.badgeBasic', 'Cơ Bản')}
                       </span>
                     )}
                   </div>
                   <div
-                    className="chat-content text-justify"
+                    className="chat-content text-justify text-base sm:text-base leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: item.a }}
                   />
                 </div>
               </div>
             </div>
           ))}
-        </div>
-      )}
 
-      {/* Thông báo hướng dẫn khi mới vào chế độ đàm đạo mà chưa có tin nhắn */}
-      {chatHistory.length === 0 && flowStep === 'chatting' && (
-        <div className="p-6 sm:p-8 rounded-2xl bg-slate-900/80 border border-slate-800 text-center space-y-2.5 shadow-xl">
-          <p className="text-base sm:text-lg text-slate-200 font-medium">
-            {t('chat.introQuota', `Quý khách đang có ${totalRemaining} lượt thỉnh giáo cùng AI Thầy Tôn.`, {
-              count: totalRemaining,
-            })}
-          </p>
-          <p className="text-sm sm:text-base text-slate-300 italic max-w-xl mx-auto leading-relaxed">
-            {t(
-              'chat.introGuide',
-              'Hãy nhập câu hỏi chi tiết về công danh, sự nghiệp, tài lộc, tình duyên hoặc hạn vận để Thầy Tôn soi chiếu lá số.'
-            )}
-          </p>
-        </div>
-      )}
-
-      {/* Hiệu ứng loading Thầy Tôn đang biên lời giải */}
-      {isLoading && (
-        <div className="flex justify-start">
-          <div className="bg-slate-900/90 text-slate-200 rounded-2xl rounded-tl-none p-5 sm:p-6 text-base sm:text-lg flex items-center gap-3.5 border border-amber-500/40 shadow-xl">
-            <div className="w-5 h-5 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin shrink-0" />
-            <span>{t('chat.masterThinking', 'AI Thầy Tôn đang xem thiên cơ và biên lời giải đáp...')}</span>
-          </div>
-        </div>
-      )}
-
-      {/* 3. KHUNG NHẬP CÂU HỎI & CHỌN CHẾ ĐỘ (Nằm ngay bên dưới danh sách tin nhắn) */}
-      {flowStep === 'chatting' && (
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-md space-y-3">
-          {/* Hàng chọn chế độ hỏi & Mua thêm câu hỏi */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-slate-300 font-medium">
-                {t('chat.modeLabel', 'Chế độ hỏi:')}
-              </span>
-              <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
-                {/* Nút Chuyên Sâu */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (proRemaining > 0) {
-                      setSelectedMode('vip');
-                    } else {
-                      onUnlockQuestions('vip');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
-                    selectedMode === 'vip'
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20'
-                      : proRemaining > 0
-                      ? 'text-slate-300 hover:text-slate-100'
-                      : 'text-amber-400/80 hover:text-amber-300'
-                  }`}
-                >
-                  <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>
-                    {t('chat.modeProBtn', 'Chuyên Sâu')}{' '}
-                    {proRemaining > 0 ? `(${proRemaining})` : '(99k)'}
-                  </span>
-                </button>
-
-                {/* Nút Cơ Bản */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedMode('basic');
-                  }}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
-                    selectedMode === 'basic'
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                      : basicRemaining > 0
-                      ? 'text-slate-300 hover:text-slate-100'
-                      : 'text-blue-300/80 hover:text-blue-200'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-                  <span>
-                    {t('chat.modeBasicBtn', 'Cơ Bản')}{' '}
-                    {basicRemaining > 0 ? `(${basicRemaining})` : proRemaining > 0 ? `(VIP)` : '(49k)'}
-                  </span>
-                </button>
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-slate-800 text-slate-200 rounded-2xl rounded-tl-none px-5 py-3.5 text-base flex items-center gap-3 border border-slate-700 shadow-lg">
+                <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin shrink-0" />
+                <span>{t('chat.masterThinking', 'AI Thầy Tôn đang xem thiên cơ và biên lời giải đáp...')}</span>
               </div>
             </div>
+          )}
 
-            {/* Nhãn trạng thái bên phải & Nút mua thêm câu hỏi */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="text-xs sm:text-[11px] text-slate-300 px-1 flex items-center gap-1.5">
-                {selectedMode === 'vip' ? (
-                  <span className="text-amber-300 font-medium">
-                    <b>{t('chat.activeModePro', 'Đang chọn: Chuyên Sâu')}</b>
-                  </span>
-                ) : (
-                  <span className="text-blue-300 font-medium flex items-center gap-1">
-                    <span>
-                      <b>{t('chat.activeModeBasic', 'Đang chọn: Cơ Bản')}</b>
-                    </span>
-                    {basicRemaining === 0 && proRemaining > 0 && (
-                      <span className="text-amber-300 font-normal text-[11px]">
-                        {t('chat.deductProHint', '(Trừ 1 câu VIP Pro)')}
-                      </span>
-                    )}
-                  </span>
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Thanh kéo chỉnh độ cao (PC / Desktop Resize Bar) */}
+        {!isExpanded && (
+          <div
+            onMouseDown={handleMouseDown}
+            className={`hidden sm:flex items-center justify-center gap-2 py-1.5 mb-3 bg-slate-950/60 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/40 rounded-xl cursor-row-resize select-none transition group ${
+              isResizing ? 'bg-amber-950/40 border-amber-500/50 ring-1 ring-amber-500/40' : ''
+            }`}
+            title="Nhấn giữ và kéo lên/xuống để tùy chỉnh độ cao cửa sổ chat"
+          >
+            <GripHorizontal className="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition" />
+            <span className="text-xs text-slate-400 group-hover:text-amber-300 font-medium">
+              Kéo để thay đổi độ cao ({chatHeight}px)
+            </span>
+          </div>
+        )}
+
+        {/* 1. CHƯA THANH TOÁN */}
+        {flowStep === 'unpaid' && (
+          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-4 sm:p-6 text-center space-y-3 shadow-xl">
+            <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-lg sm:text-xl text-amber-300 font-serif">
+                {t('chat.unpaidTitle', 'Thỉnh Giáo Luận Giải Cùng AI Thầy Tôn')}
+              </h4>
+              <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
+                {t(
+                  'chat.unpaidDesc',
+                  'Hệ thống AI soi chiếu lá số giúp giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn (gồm 02 câu hỏi).'
                 )}
-              </div>
+              </p>
+            </div>
 
+            <div className="pt-2 flex flex-col items-center">
               <button
                 type="button"
-                onClick={() => onUnlockQuestions('basic')}
-                className="text-xs px-2.5 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 transition flex items-center gap-1 cursor-pointer font-medium"
-                title="Mua thêm câu hỏi Cơ Bản"
+                onClick={() => onUnlockQuestions()}
+                className="px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
               >
-                <Sparkles className="w-3 h-3 text-blue-400" />
-                <span>{t('chat.buyMoreBasicBtn', '+ Mua 2 câu Cơ Bản (49k)')}</span>
+                <Sparkles className="w-4 h-4 fill-slate-950" />
+                <span>
+                  {t('chat.unpaidBtn', `⚡ Quét Mã Thanh Toán (${isPro ? '99.000đ' : '49.000đ'} / 2 câu hỏi)`, {
+                    price: isPro ? '99.000đ' : '49.000đ',
+                  })}
+                </span>
               </button>
             </div>
           </div>
+        )}
 
-          {/* Form gõ câu hỏi & Nút gửi */}
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              type="text"
-              required
-              disabled={isLoading}
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder={
-                selectedMode === 'vip'
-                  ? t('chat.inputPlaceholderVip', 'Nhập câu hỏi chuyên sâu...')
-                  : t('chat.inputPlaceholderBasic', 'Nhập câu hỏi cơ bản...')
-              }
-              className="flex-grow px-4 sm:px-5 py-3.5 sm:py-4 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-base sm:text-lg focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !question.trim()}
-              className={`px-5 sm:px-7 py-3.5 sm:py-4 font-bold rounded-xl text-base sm:text-lg transition disabled:opacity-50 disabled:pointer-events-none flex items-center gap-2 shadow-lg shrink-0 cursor-pointer ${
-                selectedMode === 'vip'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30'
-              }`}
-            >
-              <Send className="w-4 h-4" />
-              <span className="hidden min-[420px]:inline">{t('chat.sendBtn', 'Gửi Thầy')}</span>
-            </button>
-          </form>
-        </div>
-      )}
+        {/* 2. ĐÃ THANH TOÁN THÀNH CÔNG */}
+        {flowStep === 'paid_success' && (
+          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/40 rounded-2xl p-4 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
+            <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-lg sm:text-xl text-emerald-300 font-serif">
+                {t('chat.paidSuccessTitle', 'Khai Mở Đàm Đạo Cùng Thầy Tôn!')}
+              </h4>
+              <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
+                {proRemaining > 0 && basicRemaining > 0 ? (
+                  <>
+                    {t(
+                      'chat.paidSuccessDescBoth',
+                      `Hệ thống đã kích hoạt tổng cộng ${totalRemaining} lượt đàm đạo: gồm ${proRemaining} lượt Chuyên Sâu và ${basicRemaining} lượt Cơ Bản.`,
+                      { total: totalRemaining, pro: proRemaining, basic: basicRemaining }
+                    )}
+                  </>
+                ) : proRemaining > 0 ? (
+                  <>
+                    {t(
+                      'chat.paidSuccessDescPro',
+                      `Hệ thống đã kích hoạt ${proRemaining} câu hỏi Chuyên Sâu trực tiếp cùng AI Thầy Tôn theo gói quyền lợi của bạn.`,
+                      { count: proRemaining }
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {t(
+                      'chat.paidSuccessDescFree',
+                      `Hệ thống đã ghi nhận thanh toán. Quý khách có ${basicRemaining} câu hỏi Cơ Bản trực tiếp cùng AI Thầy Tôn.`,
+                      { count: basicRemaining }
+                    )}
+                  </>
+                )}
+              </p>
+            </div>
 
-      {/* 4. CHƯA THANH TOÁN (Unpaid Card) */}
-      {flowStep === 'unpaid' && (
-        <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-6 sm:p-8 text-center space-y-4 shadow-2xl">
-          <div className="w-14 h-14 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-md">
-            <Lock className="w-7 h-7" />
+            <div className="pt-2 flex flex-col items-center">
+              <button
+                type="button"
+                onClick={handleOpenChat}
+                className="px-6 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 fill-slate-950" />
+                <span>
+                  {t('chat.paidSuccessBtn', `✅ Bấm Vào Đây Để Mở Ô Hỏi (${totalRemaining} câu còn lại)`, {
+                    count: totalRemaining,
+                  })}
+                </span>
+              </button>
+            </div>
           </div>
-          <div>
-            <h4 className="font-bold text-xl sm:text-2xl text-amber-300 font-serif">
-              {t('chat.unpaidTitle', 'Thỉnh Giáo Luận Giải Cùng AI Thầy Tôn')}
-            </h4>
-            <p className="text-sm sm:text-base text-slate-300 mt-2 max-w-xl mx-auto leading-relaxed">
-              {t(
-                'chat.unpaidDesc',
-                'Hệ thống AI soi chiếu lá số giúp giải khai khúc mắc cụ thể về công việc, tiền tài, nhân duyên hay vận hạn (gồm 02 câu hỏi).'
-              )}
-            </p>
-          </div>
+        )}
 
-          <div className="pt-2 flex flex-col items-center">
-            <button
-              type="button"
-              onClick={() => onUnlockQuestions()}
-              className="px-7 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-base sm:text-lg shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
-            >
-              <Sparkles className="w-5 h-5 fill-slate-950" />
-              <span>
-                {t('chat.unpaidBtn', `⚡ Quét Mã Thanh Toán (${isPro ? '99.000đ' : '49.000đ'} / 2 câu hỏi)`, {
-                  price: isPro ? '99.000đ' : '49.000đ',
-                })}
-              </span>
-            </button>
-          </div>
-        </div>
-      )}
+        {/* 3. ĐANG HỎI: Ô NHẬP CÂU HỎI */}
+        {flowStep === 'chatting' && (
+          <div className="space-y-3 animate-fade-in">
+            {/* Thanh chọn chế độ hỏi */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-slate-300 font-medium">
+                  {t('chat.modeLabel', 'Chế độ hỏi:')}
+                </span>
+                <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
+                  {/* Nút Chuyên Sâu */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (proRemaining > 0) {
+                        setSelectedMode('vip');
+                      } else {
+                        onUnlockQuestions('vip');
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+                      selectedMode === 'vip'
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20'
+                        : proRemaining > 0
+                        ? 'text-slate-300 hover:text-slate-100'
+                        : 'text-amber-400/80 hover:text-amber-300'
+                    }`}
+                  >
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>
+                      {t('chat.modeProBtn', 'Chuyên Sâu')}{' '}
+                      {proRemaining > 0 ? `(${proRemaining})` : '(99k)'}
+                    </span>
+                  </button>
 
-      {/* 5. ĐÃ THANH TOÁN THÀNH CÔNG (Paid Success Card) */}
-      {flowStep === 'paid_success' && (
-        <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/40 rounded-2xl p-6 sm:p-8 text-center space-y-4 shadow-2xl animate-fade-in">
-          <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-md">
-            <CheckCircle2 className="w-7 h-7" />
-          </div>
-          <div>
-            <h4 className="font-bold text-xl sm:text-2xl text-emerald-300 font-serif">
-              {t('chat.paidSuccessTitle', 'Khai Mở Đàm Đạo Cùng Thầy Tôn!')}
-            </h4>
-            <p className="text-sm sm:text-base text-slate-300 mt-2 max-w-xl mx-auto leading-relaxed">
-              {proRemaining > 0 && basicRemaining > 0 ? (
-                <>
-                  {t(
-                    'chat.paidSuccessDescBoth',
-                    `Hệ thống đã kích hoạt tổng cộng ${totalRemaining} lượt đàm đạo: gồm ${proRemaining} lượt Chuyên Sâu và ${basicRemaining} lượt Cơ Bản.`,
-                    { total: totalRemaining, pro: proRemaining, basic: basicRemaining }
+                  {/* Nút Cơ Bản */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMode('basic');
+                    }}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+                      selectedMode === 'basic'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                        : basicRemaining > 0
+                        ? 'text-slate-300 hover:text-slate-100'
+                        : 'text-blue-300/80 hover:text-blue-200'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                    <span>
+                      {t('chat.modeBasicBtn', 'Cơ Bản')}{' '}
+                      {basicRemaining > 0 ? `(${basicRemaining})` : proRemaining > 0 ? `(VIP)` : '(49k)'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Nhãn trạng thái bên phải & Nút mua thêm câu hỏi */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="text-xs sm:text-[11px] text-slate-300 px-1 flex items-center gap-1.5">
+                  {selectedMode === 'vip' ? (
+                    <span className="text-amber-300 font-medium">
+                      <b>{t('chat.activeModePro', 'Đang chọn: Chuyên Sâu')}</b>
+                    </span>
+                  ) : (
+                    <span className="text-blue-300 font-medium flex items-center gap-1">
+                      <span>
+                        <b>{t('chat.activeModeBasic', 'Đang chọn: Cơ Bản')}</b>
+                      </span>
+                      {basicRemaining === 0 && proRemaining > 0 && (
+                        <span className="text-amber-300 font-normal text-[11px]">
+                          {t('chat.deductProHint', '(Trừ 1 câu VIP Pro)')}
+                        </span>
+                      )}
+                    </span>
                   )}
-                </>
-              ) : proRemaining > 0 ? (
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onUnlockQuestions('basic')}
+                  className="text-xs px-2.5 py-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 transition flex items-center gap-1 cursor-pointer font-medium"
+                  title="Mua thêm câu hỏi Cơ Bản"
+                >
+                  <Sparkles className="w-3 h-3 text-blue-400" />
+                  <span>{t('chat.buyMoreBasicBtn', '+ Mua 2 câu Cơ Bản (49k)')}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Ô nhập câu hỏi */}
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <input
+                type="text"
+                required
+                disabled={isLoading}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder={
+                  selectedMode === 'vip'
+                    ? t('chat.inputPlaceholderVip', 'Nhập câu hỏi chuyên sâu...')
+                    : t('chat.inputPlaceholderBasic', 'Nhập câu hỏi cơ bản...')
+                }
+                className="flex-grow px-4 sm:px-5 py-3 sm:py-3.5 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-sm sm:text-base focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !question.trim()}
+                className={`px-4 sm:px-6 py-3 sm:py-3.5 font-bold rounded-xl text-sm sm:text-base transition disabled:opacity-50 disabled:pointer-events-none flex items-center gap-1.5 shadow-lg shrink-0 cursor-pointer ${
+                  selectedMode === 'vip'
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20'
+                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30'
+                }`}
+              >
+                <Send className="w-4 h-4" />
+                <span className="hidden min-[420px]:inline">{t('chat.sendBtn', 'Gửi Thầy')}</span>
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* 4. ĐÃ HỎI XONG TẤT CẢ CÁC CÂU */}
+        {flowStep === 'exhausted' && (
+          <div className="bg-slate-950/90 border border-amber-500/40 rounded-2xl p-4 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
+            <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-lg sm:text-xl text-amber-300 font-serif">
+                {t('chat.exhaustedTitle', 'Quý khách có muốn thỉnh giáo thêm câu hỏi không?')}
+              </h4>
+              <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-lg mx-auto leading-relaxed">
+                {isPro
+                  ? t(
+                      'chat.exhaustedDescPro',
+                      `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể gia hạn thêm câu hỏi chuyên sâu hoặc câu hỏi cơ bản.`
+                    )
+                  : t(
+                      'chat.exhaustedDescFree',
+                      `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro.`
+                    )}
+              </p>
+            </div>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              {isPro ? (
                 <>
-                  {t(
-                    'chat.paidSuccessDescPro',
-                    `Hệ thống đã kích hoạt ${proRemaining} câu hỏi Chuyên Sâu trực tiếp cùng AI Thầy Tôn theo gói quyền lợi của bạn.`,
-                    { count: proRemaining }
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('vip')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span>{t('chat.buyProMoreBtn', '⚡ Nạp Tiếp (99.000đ / 2 câu chuyên sâu)')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('basic')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-sm sm:text-base border border-slate-600 transition cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-blue-400" />
+                    <span>{t('chat.buyBasicMoreBtn', '⚡ Mua 2 Câu Cơ Bản (49.000đ)')}</span>
+                  </button>
                 </>
               ) : (
                 <>
-                  {t(
-                    'chat.paidSuccessDescFree',
-                    `Hệ thống đã ghi nhận thanh toán. Quý khách có ${basicRemaining} câu hỏi Cơ Bản trực tiếp cùng AI Thầy Tôn.`,
-                    { count: basicRemaining }
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('basic')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-sm sm:text-base border border-slate-600 transition cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>{t('chat.buyBasicMoreBtn', '⚡ Mua Thêm 2 Câu Cơ Bản (49.000đ)')}</span>
+                  </button>
+
+                  {onUpgradeToPro && (
+                    <button
+                      type="button"
+                      onClick={onUpgradeToPro}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
+                    >
+                      <Crown className="w-4 h-4" />
+                      <span>{t('chat.upgradeProChatBtn', '👑 Nâng Cấp Luận Giải Pro (119.000đ - Tặng 2 câu chuyên sâu)')}</span>
+                    </button>
                   )}
                 </>
               )}
-            </p>
+            </div>
           </div>
-
-          <div className="pt-2 flex flex-col items-center">
-            <button
-              type="button"
-              onClick={handleOpenChat}
-              className="px-7 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold rounded-xl text-base sm:text-lg shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
-            >
-              <Sparkles className="w-5 h-5 fill-slate-950" />
-              <span>
-                {t('chat.paidSuccessBtn', `✅ Bấm Vào Đây Để Mở Ô Hỏi (${totalRemaining} câu còn lại)`, {
-                  count: totalRemaining,
-                })}
-              </span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 6. ĐÃ HỎI XONG TẤT CẢ CÁC CÂU (Exhausted Card) */}
-      {flowStep === 'exhausted' && (
-        <div className="bg-slate-950/90 border border-amber-500/40 rounded-2xl p-6 sm:p-8 text-center space-y-4 shadow-2xl animate-fade-in">
-          <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <Sparkles className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-bold text-xl sm:text-2xl text-amber-300 font-serif">
-              {t('chat.exhaustedTitle', 'Quý khách có muốn thỉnh giáo thêm câu hỏi không?')}
-            </h4>
-            <p className="text-sm sm:text-base text-slate-300 mt-2 max-w-xl mx-auto leading-relaxed">
-              {isPro
-                ? t(
-                    'chat.exhaustedDescPro',
-                    `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể gia hạn thêm câu hỏi chuyên sâu hoặc câu hỏi cơ bản.`
-                  )
-                : t(
-                    'chat.exhaustedDescFree',
-                    `Quý khách đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro.`
-                  )}
-            </p>
-          </div>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3.5">
-            {isPro ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onUnlockQuestions('vip')}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-base sm:text-lg shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
-                >
-                  <Crown className="w-5 h-5" />
-                  <span>{t('chat.buyProMoreBtn', '⚡ Nạp Tiếp (99.000đ / 2 câu chuyên sâu)')}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUnlockQuestions('basic')}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-base sm:text-lg border border-slate-600 transition cursor-pointer"
-                >
-                  <Sparkles className="w-5 h-5 text-blue-400" />
-                  <span>{t('chat.buyBasicMoreBtn', '⚡ Mua 2 Câu Cơ Bản (49.000đ)')}</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onUnlockQuestions('basic')}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-base sm:text-lg border border-slate-600 transition cursor-pointer"
-                >
-                  <Sparkles className="w-5 h-5 text-amber-400" />
-                  <span>{t('chat.buyBasicMoreBtn', '⚡ Mua Thêm 2 Câu Cơ Bản (49.000đ)')}</span>
-                </button>
-
-                {onUpgradeToPro && (
-                  <button
-                    type="button"
-                    onClick={onUpgradeToPro}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-base sm:text-lg shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
-                  >
-                    <Crown className="w-5 h-5" />
-                    <span>{t('chat.upgradeProChatBtn', '👑 Nâng Cấp Luận Giải Pro (119.000đ - Tặng 2 câu chuyên sâu)')}</span>
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Điểm neo để cuộn mượt mà khi có tin nhắn mới */}
-      <div ref={messagesEndRef} />
+        )}
+      </div>
     </div>
   );
 }
