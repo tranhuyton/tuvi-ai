@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className={`${beVietnam.variable} ${lora.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#0a0a0f] text-slate-100 font-sans selection:bg-amber-500/30 selection:text-amber-200">
+      <body className="min-h-full flex flex-col bg-[#0a0a0f] text-slate-100 font-sans selection:bg-blue-600 selection:text-white">
         <LanguageProvider>
           <AuthProvider>{children}</AuthProvider>
         </LanguageProvider>

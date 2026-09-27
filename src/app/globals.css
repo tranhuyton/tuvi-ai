@@ -17,6 +17,16 @@ body {
   min-height: 100vh;
 }
 
+::selection {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
 .cosmic-bg {
   background-image: 
     radial-gradient(ellipse at top, rgba(212, 175, 55, 0.08), transparent 50%),
