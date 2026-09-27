@@ -670,11 +670,13 @@ export default function HomePage() {
           thongTinThem: laSo.duongSo.thongTinThem,
           chieuCao: laSo.duongSo.chieuCao,
           canNang: laSo.duongSo.canNang,
+          readingHtml,
           chatHistory,
           mode,
           model: selectedModel,
           lang: language,
         }),
+
       });
 
       if (!res.ok) {
