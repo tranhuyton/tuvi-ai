@@ -142,8 +142,8 @@ export async function exportReadingToPdf({
     measureBox.style.width = '710px';
     measureBox.style.boxSizing = 'border-box';
     measureBox.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
-    measureBox.style.fontSize = '14.5px';
-    measureBox.style.lineHeight = '1.75';
+    measureBox.style.fontSize = '16.5px';
+    measureBox.style.lineHeight = '1.8';
     host.appendChild(measureBox);
 
     // Đo chiều cao từng khối
@@ -153,9 +153,11 @@ export async function exportReadingToPdf({
     for (const b of rawBlocks) {
       const clone = b.cloneNode(true) as HTMLElement;
       clone.style.margin = '0 0 10px 0';
+      clone.style.fontSize = '16.5px';
+      clone.style.lineHeight = '1.8';
       clone.style.boxSizing = 'border-box';
       measureBox.appendChild(clone);
-      const h = clone.offsetHeight || 30;
+      const h = clone.offsetHeight || 34;
       blockHeights.push(h + 10);
       blockClones.push(clone);
       measureBox.removeChild(clone);
@@ -163,9 +165,9 @@ export async function exportReadingToPdf({
     host.removeChild(measureBox);
 
     // 5. Thuật toán chia trang A4 (794px x 1123px)
-    // Chiều cao có thể dùng: Page 1 ~550px, các trang sau ~950px
-    const PAGE_HEIGHT_PAGE1 = 540;
-    const PAGE_HEIGHT_NORMAL = 940;
+    // Chiều cao có thể dùng: Page 1 ~510px, các trang sau ~930px
+    const PAGE_HEIGHT_PAGE1 = 510;
+    const PAGE_HEIGHT_NORMAL = 930;
     const FOOTER_REQUIRED_HEIGHT = 280;
 
     const pageBlockGroups: HTMLElement[][] = [];
@@ -209,18 +211,18 @@ export async function exportReadingToPdf({
         padding: 14px 0 12px 0;
         margin-bottom: 16px;
       ">
-        <div style="font-size: 24px; color: #8b1515; line-height: 1; margin-bottom: 3px;">☯</div>
+        <div style="font-size: 26px; color: #8b1515; line-height: 1; margin-bottom: 4px;">☯</div>
         <h1 style="
           font-family: 'Times New Roman', Times, Georgia, serif;
-          font-size: 24px;
+          font-size: 26px;
           font-weight: 800;
           letter-spacing: 1.5px;
           color: #8b1515;
           text-transform: uppercase;
-          margin: 0 0 3px 0;
+          margin: 0 0 4px 0;
         ">Tử Vi Đẩu Số Thầy Tôn</h1>
         <div style="
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 2px;
           color: #b45309;
@@ -229,7 +231,7 @@ export async function exportReadingToPdf({
         ">Tinh Hoa Dịch Học Truyền Thống • Minh Triết Đương Đại</div>
         <div style="
           font-style: italic;
-          font-size: 12px;
+          font-size: 13px;
           color: #64748b;
           margin-bottom: 10px;
         ">"Khai Mở Bản Mệnh • Đắc Lộc Bình An • Kiến Tạo Tương Lai"</div>
@@ -239,18 +241,18 @@ export async function exportReadingToPdf({
           background: #fffbeb;
           border: 1px solid #fcd34d;
           border-radius: 6px;
-          padding: 6px 20px;
+          padding: 8px 22px;
         ">
           <div style="
             font-family: 'Times New Roman', Times, Georgia, serif;
-            font-size: 16px;
+            font-size: 17.5px;
             font-weight: 800;
             color: #78350f;
             text-transform: uppercase;
           ">
             ${isPro ? 'Bản Bình Giải Tử Vi Đẩu Số Chuyên Sâu' : 'Bản Bình Giải Tử Vi Đẩu Số Khởi Nguyên'}
           </div>
-          <div style="font-size: 11px; font-weight: 700; color: #b45309; margin-top: 2px;">
+          <div style="font-size: 12px; font-weight: 700; color: #b45309; margin-top: 3px;">
             ${isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Dành Riêng Cho Thân Chủ' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
           </div>
         </div>
@@ -263,12 +265,12 @@ export async function exportReadingToPdf({
         background: #fafaf9;
         border: 1.5px solid #d4af37;
         border-radius: 8px;
-        padding: 12px 18px;
+        padding: 14px 18px;
         margin-bottom: 16px;
       ">
         <div style="
           font-family: 'Times New Roman', Times, Georgia, serif;
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 700;
           color: #8b1515;
           text-transform: uppercase;
@@ -279,7 +281,7 @@ export async function exportReadingToPdf({
           justify-content: space-between;
         ">
           <span>📜 Thông Tin Thân Chủ & Bản Mệnh</span>
-          <span style="font-size: 11.5px; font-weight: 500; color: #78350f;">
+          <span style="font-size: 12.5px; font-weight: 600; color: #78350f;">
             ${orderCode ? `Mã đơn: ${orderCode}` : 'Hồ sơ: Bản Mệnh Tử Vi'}
           </span>
         </div>
@@ -288,10 +290,10 @@ export async function exportReadingToPdf({
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 6px 20px;
-          font-size: 13px;
-          line-height: 1.5;
+          font-size: 14px;
+          line-height: 1.6;
         ">
-          <div><span style="color: #64748b;">Họ và tên:</span> <span style="color: #8b1515; font-weight: 800; font-size: 14px;">${hoTen.toUpperCase()}</span></div>
+          <div><span style="color: #64748b;">Họ và tên:</span> <span style="color: #8b1515; font-weight: 800; font-size: 15.5px;">${hoTen.toUpperCase()}</span></div>
           <div><span style="color: #64748b;">Giới tính:</span> <span style="font-weight: 600;">${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</span></div>
           <div><span style="color: #64748b;">Dương lịch:</span> <span style="font-weight: 600;">${ngayDuongStr}</span></div>
           <div><span style="color: #64748b;">Giờ sinh:</span> <span style="font-weight: 600;">${gioSinhLabel}</span></div>
@@ -306,7 +308,7 @@ export async function exportReadingToPdf({
         </div>
       </div>
 
-      <div style="text-align: center; margin: 12px 0 16px 0; color: #8b1515; letter-spacing: 4px; font-size: 12px;">
+      <div style="text-align: center; margin: 12px 0 16px 0; color: #8b1515; letter-spacing: 4px; font-size: 13px;">
         ❖ ✦ ❖
       </div>
     `;
@@ -327,7 +329,7 @@ export async function exportReadingToPdf({
         <div style="flex: 1 1 360px;">
           <div style="
             font-family: 'Times New Roman', Times, Georgia, serif;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 800;
             color: #8b1515;
             text-transform: uppercase;
@@ -336,13 +338,13 @@ export async function exportReadingToPdf({
           ">
             ☯ Tử Vi Phong Thủy Thầy Tôn
           </div>
-          <div style="font-size: 12.5px; color: #334155; display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 13.5px; color: #334155; display: flex; flex-direction: column; gap: 4px;">
             <div><strong style="color: #0f172a;">Địa chỉ:</strong> R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</div>
             <div><strong style="color: #0f172a;">Hotline/Zalo:</strong> <span style="font-weight: 700; color: #8b1515;">0935 058 688</span></div>
             <div><strong style="color: #0f172a;">Website:</strong> <span style="font-weight: 700; color: #8b1515;">https://tuvithayton.vn</span></div>
             <div><strong style="color: #0f172a;">Email:</strong> tranhuyton@gmail.com • thayton@tuvithayton.vn</div>
           </div>
-          <div style="font-style: italic; font-size: 11.5px; color: #78350f; margin-top: 6px; line-height: 1.45;">
+          <div style="font-style: italic; font-size: 12.5px; color: #78350f; margin-top: 6px; line-height: 1.45;">
             "Mệnh do trời định, Vận do nhân tạo. Thấu triệt bản mệnh là nấc thang đầu tiên để tu tâm tích phúc, xu cát tị hung, kiến tạo cuộc đời an khang thịnh vượng."
           </div>
         </div>
@@ -350,10 +352,10 @@ export async function exportReadingToPdf({
         <div style="display: flex; flex-direction: column; align-items: center; text-align: center; flex-shrink: 0;">
           ${
             qrCodeDataUrl
-              ? `<img src="${qrCodeDataUrl}" alt="QR tuvithayton.vn" style="width: 90px; height: 90px; border: 2px solid #e2e8f0; border-radius: 6px; background: #ffffff; padding: 2px;" />`
+              ? `<img src="${qrCodeDataUrl}" alt="QR tuvithayton.vn" style="width: 95px; height: 95px; border: 2px solid #e2e8f0; border-radius: 6px; background: #ffffff; padding: 2px;" />`
               : ''
           }
-          <div style="font-size: 10px; color: #64748b; max-width: 120px; margin-top: 4px; line-height: 1.25;">
+          <div style="font-size: 10.5px; color: #64748b; max-width: 125px; margin-top: 4px; line-height: 1.25;">
             Quét mã mở lá số tại tuvithayton.vn
           </div>
         </div>
@@ -361,7 +363,7 @@ export async function exportReadingToPdf({
 
       <div style="
         text-align: center;
-        font-size: 10.5px;
+        font-size: 11px;
         color: #94a3b8;
         margin-top: 10px;
         border-top: 1px solid #f1f5f9;
@@ -410,7 +412,7 @@ export async function exportReadingToPdf({
         runningHeader.style.borderBottom = '1px solid #fed7aa';
         runningHeader.style.paddingBottom = '6px';
         runningHeader.style.marginBottom = '14px';
-        runningHeader.style.fontSize = '11px';
+        runningHeader.style.fontSize = '12px';
         runningHeader.style.color = '#78350f';
         runningHeader.style.fontWeight = '600';
         runningHeader.style.textTransform = 'uppercase';
@@ -423,43 +425,49 @@ export async function exportReadingToPdf({
 
       // Content Container
       const contentContainer = document.createElement('div');
-      contentContainer.style.fontSize = '14.5px';
-      contentContainer.style.lineHeight = '1.75';
+      contentContainer.style.fontSize = '16.5px';
+      contentContainer.style.lineHeight = '1.8';
       contentContainer.style.textAlign = 'justify';
       contentContainer.style.color = '#1e293b';
 
       for (const block of group) {
         const item = block.cloneNode(true) as HTMLElement;
-        // Áp dụng định dạng phong thủy trang trọng
+        // Áp dụng định dạng phong thủy trang trọng với cỡ chữ to rõ
         if (/^H[1-4]$/i.test(item.tagName)) {
           item.style.fontFamily = "'Times New Roman', Times, Georgia, serif";
           item.style.color = '#8b1515';
-          item.style.margin = '14px 0 6px 0';
+          item.style.margin = '16px 0 8px 0';
           if (item.tagName === 'H1') {
-            item.style.fontSize = '18.5px';
+            item.style.fontSize = '21px';
             item.style.borderLeft = '4px solid #8b1515';
-            item.style.paddingLeft = '8px';
+            item.style.paddingLeft = '10px';
           } else if (item.tagName === 'H2') {
-            item.style.fontSize = '17px';
-            item.style.borderBottom = '1px solid #fed7aa';
-            item.style.paddingBottom = '3px';
+            item.style.fontSize = '19px';
+            item.style.borderBottom = '1.5px solid #fed7aa';
+            item.style.paddingBottom = '4px';
           } else if (item.tagName === 'H3') {
-            item.style.fontSize = '15.5px';
+            item.style.fontSize = '17.5px';
             item.style.color = '#9a3412';
           } else {
-            item.style.fontSize = '14.5px';
+            item.style.fontSize = '16.5px';
             item.style.color = '#b45309';
           }
         } else if (item.tagName === 'P') {
-          item.style.margin = '0 0 8px 0';
+          item.style.margin = '0 0 10px 0';
+          item.style.fontSize = '16.5px';
+          item.style.lineHeight = '1.8';
         } else if (item.tagName === 'BLOCKQUOTE') {
           item.style.background = '#fffdf5';
           item.style.borderLeft = '3.5px solid #b45309';
-          item.style.padding = '8px 12px';
-          item.style.margin = '10px 0';
+          item.style.padding = '10px 14px';
+          item.style.margin = '12px 0';
           item.style.fontStyle = 'italic';
           item.style.color = '#451a03';
           item.style.borderRadius = '4px';
+          item.style.fontSize = '15.5px';
+        } else if (item.tagName === 'UL' || item.tagName === 'OL') {
+          item.style.fontSize = '16.5px';
+          item.style.lineHeight = '1.8';
         }
         contentContainer.appendChild(item);
       }
