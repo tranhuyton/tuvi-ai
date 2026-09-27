@@ -278,6 +278,22 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => {
+              setActiveTab('users');
+              fetchAdminData();
+            }}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+              activeTab === 'users'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>👥 Quản Lý Khách Hàng ({users.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
               setActiveTab('affiliates');
               fetchAffiliatesData();
             }}
@@ -306,22 +322,6 @@ export default function AdminPage() {
             <FlaskConical className="w-4 h-4" />
             <span>🧪 Tài Khoản Tester ({testers.length})</span>
           </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('users');
-              fetchAdminData();
-            }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
-              activeTab === 'users'
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>👥 Quản Lý Khách Hàng ({users.length})</span>
-          </button>
         </div>
 
         {/* Nội Dung Từng Tab */}
@@ -332,6 +332,15 @@ export default function AdminPage() {
             charts={charts}
             orders={orders}
             stats={stats}
+            isLoading={isLoadingData}
+            onRefresh={() => fetchAdminData()}
+          />
+        )}
+
+        {activeTab === 'users' && (
+          <AdminUsersTable
+            users={users}
+            messages={messages}
             isLoading={isLoadingData}
             onRefresh={() => fetchAdminData()}
           />
@@ -352,15 +361,6 @@ export default function AdminPage() {
             isLoading={isLoadingData}
             onRefresh={() => fetchTestersData()}
             adminPin={localStorage.getItem('tuvi_admin_pin') || 'thayton2026'}
-          />
-        )}
-
-        {activeTab === 'users' && (
-          <AdminUsersTable
-            users={users}
-            messages={messages}
-            isLoading={isLoadingData}
-            onRefresh={() => fetchAdminData()}
           />
         )}
       </div>
