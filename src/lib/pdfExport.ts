@@ -203,6 +203,46 @@ function applyPdfBlockStyles(item: HTMLElement) {
 }
 
 /**
+ * Kiểm tra xem một dataUrl ảnh có bị trắng tinh (toàn màu trắng hoặc capture lỗi) hay không
+ */
+function isImageBlank(dataUrl: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!dataUrl || dataUrl.length < 500) {
+      resolve(true);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(img.width || 200, 200);
+        canvas.height = Math.min(img.height || 200, 200);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(false);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        let nonWhiteCount = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i] < 240 || d[i + 1] < 240 || d[i + 2] < 240) {
+            nonWhiteCount++;
+          }
+        }
+        // Nếu có ít hơn 0.5% pixel có màu/nét đen => Ảnh bị trắng tinh
+        resolve(nonWhiteCount < (canvas.width * canvas.height * 0.005));
+      } catch {
+        resolve(false);
+      }
+    };
+    img.onerror = () => resolve(true);
+    img.src = dataUrl;
+  });
+}
+
+/**
  * Chuyển đổi ảnh Lá Số sang màu Trắng Đen / Xám (Grayscale Monochrome)
  * - Tự động tăng độ tương phản để các sao màu vàng, đỏ, xanh khi in đen trắng không bị mờ nhạt
  * - Nền trắng giữ nguyên trắng tinh khiết (255)
@@ -214,7 +254,9 @@ function convertImageToGrayscale(dataUrl: string): Promise<string> {
       return;
     }
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (!dataUrl.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
@@ -353,12 +395,25 @@ export async function exportReadingToPdf({
   // 3. Chụp hình Lá Số Tử Vi (từ DOM hoặc lấy từ tham số truyền vào)
   onProgress?.('Đang kết xuất hình ảnh lá số tử vi...');
   let chartImage = chartImageDataUrl || '';
+  let chartAspectRatio = 760 / 890;
+
   if (!chartImage) {
     const boardNode = document.getElementById('tuvi-board-export-node');
     if (boardNode) {
       try {
-        const fullHeight = boardNode.scrollHeight || boardNode.offsetHeight || 880;
-        const rawChartPng = await htmlToImage.toPng(boardNode, {
+        if (typeof document !== 'undefined' && document.fonts?.ready) {
+          try { await document.fonts.ready; } catch {}
+        }
+
+        const fullHeight = Math.max(860, boardNode.scrollHeight || 0, boardNode.offsetHeight || 0);
+        chartAspectRatio = 760 / fullHeight;
+
+        // Warm-up call để Safari / WebKit khởi động vẽ canvas
+        try {
+          await htmlToImage.toPng(boardNode, { pixelRatio: 1 });
+        } catch {}
+
+        let rawChartPng = await htmlToImage.toPng(boardNode, {
           quality: 0.98,
           pixelRatio: 2.0,
           width: 760,
@@ -366,11 +421,34 @@ export async function exportReadingToPdf({
           backgroundColor: '#ffffff',
           style: {
             transform: 'none',
+            transformOrigin: 'top left',
             width: '760px',
             margin: '0',
             backgroundColor: '#ffffff',
           },
         });
+
+        // Kiểm tra xem ảnh có bị trắng tinh do Safari chưa kịp paint không
+        const isBlank = await isImageBlank(rawChartPng);
+        if (isBlank) {
+          console.warn('Lần chụp 1 bị trắng (Safari iOS), thử lại lần 2...');
+          await new Promise((r) => setTimeout(r, 200));
+          rawChartPng = await htmlToImage.toPng(boardNode, {
+            quality: 0.98,
+            pixelRatio: 2.0,
+            width: 760,
+            height: fullHeight,
+            backgroundColor: '#ffffff',
+            style: {
+              transform: 'none',
+              transformOrigin: 'top left',
+              width: '760px',
+              margin: '0',
+              backgroundColor: '#ffffff',
+            },
+          });
+        }
+
         chartImage = await convertImageToGrayscale(rawChartPng);
       } catch (err) {
         console.warn('Không thể chụp hình lá số từ DOM:', err);
@@ -592,26 +670,19 @@ export async function exportReadingToPdf({
           </div>
         </div>
 
-        <!-- HÌNH ẢNH BÀN CỜ LÁ SỐ TOÀN DIỆN CHIẾM TRỌN KHÔNG GIAN TRANG 1 -->
-        <div style="
+        <!-- KHUNG CHỨA BÀN CỜ LÁ SỐ TOÀN DIỆN (Được jsPDF nhúng trực tiếp ảnh vào để tương thích 100% với WebKit/Safari) -->
+        <div id="tuvi-page1-chart-box" style="
+          width: 100%;
+          flex: 1;
           display: flex;
           justify-content: center;
           align-items: center;
-          flex: 1;
+          border: 2px solid #000000;
+          border-radius: 4px;
+          background: #ffffff;
+          box-sizing: border-box;
+          min-height: 940px;
         ">
-          <img
-            src="${chartImage}"
-            alt="Lá Số Tử Vi ${hoTen}"
-            style="
-              width: 100%;
-              max-height: 980px;
-              object-fit: contain;
-              border: 2px solid #000000;
-              border-radius: 4px;
-              display: block;
-              background: #ffffff;
-            "
-          />
         </div>
       `;
       page1.appendChild(topPart1);
@@ -844,7 +915,57 @@ export async function exportReadingToPdf({
         pdfDoc.addPage('a4', 'portrait');
       }
 
+      // 10.1 Vẽ toàn bộ khung trang (Header, Viền, Footer)
       pdfDoc.addImage(imgDataUrl, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+
+      // 10.2 Nếu là Trang 1 và có ảnh lá số: nhúng trực tiếp ảnh lá số vào khung bằng jsPDF engine
+      // Điều này loại bỏ hoàn toàn hạn chế bảo mật của WebKit (Safari/Chrome iOS) khi chặn data URL lồng trong SVG foreignObject
+      if (i === 0 && chartImage) {
+        try {
+          const chartBox = pNode.querySelector('#tuvi-page1-chart-box') as HTMLElement | null;
+          const p1Rect = pNode.getBoundingClientRect();
+          const boxRect = chartBox?.getBoundingClientRect();
+
+          const mmPerPxX = 210 / (p1Rect.width || 794);
+          const mmPerPxY = 297 / (p1Rect.height || 1123);
+
+          const boxLeftMm = boxRect ? (boxRect.left - p1Rect.left) * mmPerPxX : 7.4;
+          const boxTopMm = boxRect ? (boxRect.top - p1Rect.top) * mmPerPxY : 22.5;
+          const boxWidthMm = boxRect ? boxRect.width * mmPerPxX : 195.2;
+          const boxHeightMm = boxRect ? boxRect.height * mmPerPxY : 259.5;
+
+          // Chừa lề nhỏ 0.8mm bên trong viền đen 2px để lá số nằm gọn ghẽ, tinh tế
+          const padMm = 0.8;
+          const innerW = Math.max(10, boxWidthMm - padMm * 2);
+          const innerH = Math.max(10, boxHeightMm - padMm * 2);
+          const innerX = boxLeftMm + padMm;
+          const innerY = boxTopMm + padMm;
+
+          // Lấy tỷ lệ ảnh thực tế từ jsPDF
+          let naturalAspect = chartAspectRatio || 760 / 890;
+          try {
+            const imgProps = pdfDoc.getImageProperties(chartImage);
+            if (imgProps.width && imgProps.height) {
+              naturalAspect = imgProps.width / imgProps.height;
+            }
+          } catch {}
+
+          let drawW = innerW;
+          let drawH = drawW / naturalAspect;
+
+          if (drawH > innerH) {
+            drawH = innerH;
+            drawW = drawH * naturalAspect;
+          }
+
+          const drawX = innerX + (innerW - drawW) / 2;
+          const drawY = innerY + (innerH - drawH) / 2;
+
+          pdfDoc.addImage(chartImage, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
+        } catch (chartDrawErr) {
+          console.error('Lỗi khi vẽ lá số vào Trang 1 bằng jsPDF:', chartDrawErr);
+        }
+      }
     }
 
     onProgress?.('Đang hoàn tất và lưu file PDF...');

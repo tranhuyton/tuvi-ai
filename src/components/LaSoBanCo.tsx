@@ -318,7 +318,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
               }}
             >
               {/* SVG 3 đường kẻ xuất phát từ 1 điểm Cung Mệnh sang Tài Bạch, Quan Lộc và Thiên Di (Màu nhạt mờ ẩn dưới chữ: z-0) */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="absolute inset-0 w-full h-full pointer-events-none z-0">
                 {/* 1. Kéo từ 1 điểm Cung Mệnh sang Cung Tài Bạch */}
                 <line
                   x1={`${pM[0]}%`}
