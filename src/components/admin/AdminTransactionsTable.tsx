@@ -131,9 +131,12 @@ export default function AdminTransactionsTable({
     setTimeout(() => setCopiedReading(false), 2000);
   };
 
+  const [adminPdfProgressText, setAdminPdfProgressText] = useState('');
+
   const handleExportAdminPdf = async () => {
     if (!previewReadingHtml || !previewChart || isExportingPdfAdmin) return;
     setIsExportingPdfAdmin(true);
+    setAdminPdfProgressText('Đang tạo PDF...');
     try {
       await exportReadingToPdf({
         duongSo: previewChart.duong_so_data,
@@ -141,11 +144,13 @@ export default function AdminTransactionsTable({
         readingHtml: previewReadingHtml,
         tier: previewChart.duong_so_data?.tier || 'free',
         chartTitle: previewChart.title,
+        onProgress: (msg) => setAdminPdfProgressText(msg),
       });
     } catch (err) {
       console.error('Lỗi khi xuất PDF cho Admin:', err);
     } finally {
       setIsExportingPdfAdmin(false);
+      setAdminPdfProgressText('');
     }
   };
 
@@ -905,7 +910,7 @@ export default function AdminTransactionsTable({
                         ) : (
                           <FileDown className="w-3.5 h-3.5 text-amber-300" />
                         )}
-                        <span>{isExportingPdfAdmin ? 'Đang tạo PDF...' : 'Xuất File PDF'}</span>
+                        <span>{isExportingPdfAdmin ? (adminPdfProgressText || 'Đang tạo PDF...') : 'Xuất File PDF'}</span>
                       </button>
 
                       <button

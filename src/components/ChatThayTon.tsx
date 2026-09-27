@@ -309,10 +309,10 @@ export default function ChatThayTon({
 
           {chatHistory.map((item, idx) => (
             <div key={idx} className="space-y-3">
-              {/* Khách hỏi - Mở rộng chiều ngang */}
+              {/* Khách hỏi - Mở rộng chiều ngang & font chữ to rõ */}
               <div className="flex justify-end">
-                <div className="max-w-[96%] sm:max-w-[85%] md:max-w-[80%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-3.5 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-md">
-                  <div className="text-xs sm:text-sm font-semibold text-blue-200 mb-1 flex items-center justify-between gap-2">
+                <div className="max-w-[96%] sm:max-w-[85%] md:max-w-[80%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 sm:px-5 py-3 sm:py-3.5 text-base sm:text-lg shadow-md">
+                  <div className="text-xs sm:text-sm font-semibold text-blue-200 mb-1.5 flex items-center justify-between gap-2">
                     <span>{t('chat.userPrefix', 'Khách hỏi:')}</span>
                     {isMessageVip(item) ? (
                       <span className="text-xs px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 font-semibold border border-amber-400/40">
@@ -324,38 +324,38 @@ export default function ChatThayTon({
                       </span>
                     )}
                   </div>
-                  <div className="leading-relaxed">{item.q}</div>
+                  <div className="leading-relaxed font-medium">{item.q}</div>
                 </div>
               </div>
 
-              {/* Thầy Tôn trả lời - Mở rộng sát hai bên mép */}
+              {/* Thầy Tôn trả lời - Mở rộng sát mép & font chữ to rõ, dễ đọc */}
               <div className="flex justify-start">
                 <div
-                  className={`w-full max-w-full sm:max-w-[97%] md:max-w-[95%] rounded-2xl rounded-tl-none px-3.5 sm:px-6 py-3.5 sm:py-4 text-sm sm:text-base leading-relaxed sm:leading-loose shadow-md ${
+                  className={`w-full max-w-full sm:max-w-[97%] md:max-w-[95%] rounded-2xl rounded-tl-none px-4 sm:px-6 md:px-7 py-4 sm:py-5 shadow-md ${
                     item.isError
-                      ? 'bg-red-950/80 border border-red-500/50 text-red-200'
+                      ? 'bg-red-950/80 border border-red-500/50 text-red-200 text-base sm:text-lg'
                       : isMessageVip(item)
                       ? 'bg-slate-100 text-slate-900 border-2 border-amber-400/70 shadow-amber-500/10'
                       : 'bg-slate-100 text-slate-900 border border-slate-200'
                   }`}
                 >
-                  <div className="text-xs sm:text-sm font-bold text-amber-950 uppercase tracking-wider mb-2 flex items-center justify-between gap-2 border-b border-slate-200/80 pb-1.5">
-                    <span className="flex items-center gap-1 text-amber-800">
+                  <div className="text-sm sm:text-base font-bold text-amber-950 uppercase tracking-wider mb-2.5 flex items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
+                    <span className="flex items-center gap-1.5 text-amber-800">
                       <span>{t('chat.masterPrefix', '🧙‍♂️ AI Thầy Tôn:')}</span>
                     </span>
                     {isMessageVip(item) ? (
-                      <span className="text-xs normal-case font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
-                        <Crown className="w-3 h-3 text-amber-700" />
+                      <span className="text-xs sm:text-sm normal-case font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                        <Crown className="w-3.5 h-3.5 text-amber-700" />
                         <span>{t('chat.badgeVip', 'Chuyên Sâu')}</span>
                       </span>
                     ) : (
-                      <span className="text-xs normal-case font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                      <span className="text-xs sm:text-sm normal-case font-medium px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700">
                         {t('chat.badgeBasic', 'Cơ Bản')}
                       </span>
                     )}
                   </div>
                   <div
-                    className="space-y-2 text-justify"
+                    className="chat-content text-justify"
                     dangerouslySetInnerHTML={{ __html: item.a }}
                   />
                 </div>
@@ -365,7 +365,7 @@ export default function ChatThayTon({
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-slate-800 text-slate-300 rounded-2xl rounded-tl-none px-4 py-3 text-sm sm:text-base flex items-center gap-2.5 border border-slate-700 shadow-lg">
+              <div className="bg-slate-800 text-slate-200 rounded-2xl rounded-tl-none px-5 py-3.5 text-base sm:text-lg flex items-center gap-3 border border-slate-700 shadow-lg">
                 <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin shrink-0" />
                 <span>{t('chat.masterThinking', 'AI Thầy Tôn đang xem thiên cơ và biên lời giải đáp...')}</span>
               </div>
@@ -584,12 +584,12 @@ export default function ChatThayTon({
                     ? t('chat.inputPlaceholderVip', 'Nhập câu hỏi chuyên sâu...')
                     : t('chat.inputPlaceholderBasic', 'Nhập câu hỏi cơ bản...')
                 }
-                className="flex-grow px-3.5 sm:px-4 py-3 sm:py-3.5 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-sm sm:text-base focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
+                className="flex-grow px-4 sm:px-5 py-3.5 sm:py-4 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-base sm:text-lg focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={isLoading || !question.trim()}
-                className={`px-4 sm:px-5 py-3 sm:py-3.5 font-bold rounded-xl text-sm sm:text-base transition disabled:opacity-50 disabled:pointer-events-none flex items-center gap-1.5 shadow-lg shrink-0 cursor-pointer ${
+                className={`px-4 sm:px-6 py-3.5 sm:py-4 font-bold rounded-xl text-base sm:text-lg transition disabled:opacity-50 disabled:pointer-events-none flex items-center gap-1.5 shadow-lg shrink-0 cursor-pointer ${
                   selectedMode === 'vip'
                     ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20'
                     : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30'

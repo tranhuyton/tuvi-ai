@@ -30,6 +30,7 @@ export default function LuanGiaiAI({
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [pdfProgressText, setPdfProgressText] = useState('');
 
   const handleCopy = () => {
     if (!readingHtml) return;
@@ -43,17 +44,20 @@ export default function LuanGiaiAI({
   const handleExportPdf = async () => {
     if (!readingHtml || isExportingPdf) return;
     setIsExportingPdf(true);
+    setPdfProgressText('Đang tạo PDF...');
     try {
       await exportReadingToPdf({
         duongSo,
         laSo,
         readingHtml,
         tier,
+        onProgress: (msg) => setPdfProgressText(msg),
       });
     } catch (err) {
       console.error('Lỗi khi xuất PDF:', err);
     } finally {
       setIsExportingPdf(false);
+      setPdfProgressText('');
     }
   };
 
@@ -171,7 +175,7 @@ export default function LuanGiaiAI({
                 ) : (
                   <FileDown className="w-4 h-4 text-amber-300" />
                 )}
-                <span>{isExportingPdf ? t('reading.exportingPdf', 'Đang tạo PDF...') : t('reading.exportPdf', 'Xuất File PDF')}</span>
+                <span>{isExportingPdf ? (pdfProgressText || t('reading.exportingPdf', 'Đang tạo PDF...')) : t('reading.exportPdf', 'Xuất File PDF')}</span>
               </button>
 
               <button
