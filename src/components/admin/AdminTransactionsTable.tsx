@@ -20,6 +20,8 @@ import {
   Clock,
   ExternalLink,
   AlertTriangle,
+  Copy,
+  Check,
 } from 'lucide-react';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
@@ -34,10 +36,12 @@ export interface AdminChartItem {
   created_at: string;
   updated_at: string;
   has_reading: boolean;
+  reading_html?: string | null;
   message_count: number;
   user_name?: string;
   user_email?: string;
 }
+
 
 export interface AdminOrderItem {
   id: string;
@@ -87,7 +91,43 @@ export default function AdminTransactionsTable({
   const [filterTier, setFilterTier] = useState<'all' | 'free' | 'pro'>('all');
   const [filterOrderStatus, setFilterOrderStatus] = useState<'all' | 'PAID' | 'PENDING' | 'CANCELLED'>('all');
   const [previewChart, setPreviewChart] = useState<AdminChartItem | null>(null);
+  const [previewReadingHtml, setPreviewReadingHtml] = useState<string | null>(null);
+  const [isLoadingPreviewReading, setIsLoadingPreviewReading] = useState(false);
+  const [copiedReading, setCopiedReading] = useState(false);
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
+
+  const handleOpenPreview = async (chart: AdminChartItem) => {
+    setPreviewChart(chart);
+    setPreviewReadingHtml(chart.reading_html || null);
+    setCopiedReading(false);
+
+    if (!chart.reading_html) {
+      setIsLoadingPreviewReading(true);
+      try {
+        const res = await fetch(`/api/admin/chart-reading?id=${chart.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reading_html) {
+            setPreviewReadingHtml(data.reading_html);
+          }
+        }
+      } catch (err) {
+        console.warn('Lỗi tải lời bình giải:', err);
+      } finally {
+        setIsLoadingPreviewReading(false);
+      }
+    }
+  };
+
+  const handleCopyReading = () => {
+    if (!previewReadingHtml) return;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = previewReadingHtml;
+    navigator.clipboard.writeText(tempDiv.innerText || tempDiv.textContent || '');
+    setCopiedReading(true);
+    setTimeout(() => setCopiedReading(false), 2000);
+  };
+
 
   // Lọc danh sách lá số
   const filteredCharts = charts.filter((c) => {
@@ -738,9 +778,9 @@ export default function AdminTransactionsTable({
                         <td className="py-3 px-4 text-right">
                           <button
                             type="button"
-                            onClick={() => setPreviewChart(c)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-xs font-semibold border border-slate-700 transition"
-                            title="Xem chi tiết lá số này"
+                            onClick={() => handleOpenPreview(c)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-xs font-semibold border border-slate-700 transition cursor-pointer"
+                            title="Xem chi tiết lá số và bài bình giải"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>Xem lá số</span>
@@ -756,7 +796,7 @@ export default function AdminTransactionsTable({
         </div>
       )}
 
-      {/* Modal Xem Nhanh Lá Số Khách Hàng */}
+      {/* Modal Xem Nhanh Lá Số & Bài Bình Giải Khách Hàng */}
       {previewChart && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="relative w-full max-w-5xl max-h-[92vh] bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl flex flex-col text-slate-200 overflow-hidden">
@@ -779,14 +819,18 @@ export default function AdminTransactionsTable({
               </div>
               <button
                 type="button"
-                onClick={() => setPreviewChart(null)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+                onClick={() => {
+                  setPreviewChart(null);
+                  setPreviewReadingHtml(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-8">
+              {/* Bàn Cờ Lá Số */}
               {previewChart.laso_data || previewChart.duong_so_data ? (
                 <LaSoBanCo
                   laSo={
@@ -798,15 +842,79 @@ export default function AdminTransactionsTable({
                         }
                       : previewChart.laso_data
                   }
-                  onReset={() => setPreviewChart(null)}
+                  onReset={() => {
+                    setPreviewChart(null);
+                    setPreviewReadingHtml(null);
+                  }}
                 />
               ) : (
                 <p className="text-slate-400 italic">Không có dữ liệu bàn cờ lá số.</p>
               )}
+
+              {/* Khối Lời Bình Giải AI Đã Gửi Khách Hàng */}
+              <div className="border-t border-slate-800/80 pt-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base sm:text-lg text-amber-400 font-serif">
+                        Bản Luận Giải Thầy Tôn Đã Gửi Khách Hàng
+                      </h4>
+                      <p className="text-xs text-slate-400">
+                        {previewChart.duong_so_data?.tier === 'pro'
+                          ? '👑 Bản Luận Giải Chuyên Sâu Pro (14 Chính Tinh, Tướng Pháp, Vận Hạn 4 Mùa)'
+                          : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {previewReadingHtml && (
+                    <button
+                      type="button"
+                      onClick={handleCopyReading}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 shadow-sm transition cursor-pointer"
+                      title="Sao chép toàn bộ bài bình giải này để gửi Zalo hoặc email"
+                    >
+                      {copiedReading ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400 font-bold">Đã sao chép</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Sao chép lời bình</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {isLoadingPreviewReading ? (
+                  <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center gap-3 bg-slate-950/70 rounded-2xl border border-slate-800">
+                    <RefreshCw className="w-6 h-6 animate-spin text-amber-400" />
+                    <p className="text-sm font-medium">Đang tải toàn bộ bài bình giải chi tiết đã gửi cho khách...</p>
+                  </div>
+                ) : previewReadingHtml ? (
+                  <div className="bg-white text-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl border border-slate-300">
+                    <div
+                      className="prose max-w-none text-base sm:text-lg leading-relaxed sm:leading-loose space-y-4 font-sans text-justify"
+                      dangerouslySetInnerHTML={{ __html: previewReadingHtml }}
+                    />
+                  </div>
+                ) : (
+                  <div className="p-8 bg-slate-950/60 rounded-2xl border border-slate-800 text-center text-slate-400 italic">
+                    Lá số này hiện chưa có bài bình giải AI được lưu trữ.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
