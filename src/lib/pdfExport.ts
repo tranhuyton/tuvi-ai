@@ -8,12 +8,13 @@ export interface ExportPdfOptions {
   readingHtml: string;
   tier?: ServiceTier;
   chartTitle?: string;
+  orderCode?: string;
 }
 
 /**
- * Xuất bản luận giải Tử Vi Thầy Tôn sang định dạng PDF / In ấn chuyên nghiệp.
- * Mở cửa sổ in ấn với thiết kế hoàng gia truyền thống, đầy đủ nhận diện thương hiệu,
- * mã QR website tuvithayton.vn, hotline 0935 058 688 và thông tin địa chỉ.
+ * Tự động tạo và tải trực tiếp file PDF về điện thoại hoặc máy tính cho khách hàng.
+ * - Trên điện thoại (iOS / Android): Tự động kích hoạt lưu file PDF hoặc mở Share Sheet (Lưu vào Tệp / Zalo).
+ * - Trên máy tính (PC): Tự động tải file .pdf về thư mục Downloads.
  */
 export async function exportReadingToPdf({
   duongSo,
@@ -21,6 +22,7 @@ export async function exportReadingToPdf({
   readingHtml,
   tier = 'free',
   chartTitle,
+  orderCode,
 }: ExportPdfOptions): Promise<void> {
   if (typeof window === 'undefined') return;
 
@@ -93,841 +95,402 @@ export async function exportReadingToPdf({
     year: 'numeric',
   });
 
-  // 3. Mở cửa sổ in ấn
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    alert('Trình duyệt đang chặn cửa sổ bật lên. Vui lòng cho phép mở popup để xuất file PDF.');
-    return;
-  }
+  const cleanNameForFile = hoTen
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s]/gi, '')
+    .trim()
+    .replace(/\s+/g, '_') || 'Duong_So';
 
-  const documentTitle = `Tử Vi Thầy Tôn - Bản Bình Giải ${isPro ? 'Chuyên Sâu Pro' : 'Cơ Bản'} - ${hoTen}`;
+  const fileName = `Tu_Vi_Thay_Ton_${cleanNameForFile}.pdf`;
 
-  // 4. Xây dựng toàn bộ HTML chuyên nghiệp
-  const htmlContent = `<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${documentTitle}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-  <style>
-    /* Reset & Base Setup */
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background-color: #0f172a;
+  // 3. Xây dựng cấu trúc HTML tài liệu A4 hoàn chỉnh
+  const documentHtml = `
+    <div style="
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       color: #1e293b;
       line-height: 1.8;
-      font-size: 16px;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-
-    /* Screen View Container */
-    .screen-container {
-      max-width: 920px;
-      margin: 24px auto 48px auto;
-      padding: 0 16px;
-    }
-
-    /* Floating / Sticky Action Bar on Screen */
-    .action-bar {
-      position: sticky;
-      top: 16px;
-      z-index: 100;
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(217, 119, 6, 0.4);
-      border-radius: 16px;
-      padding: 14px 20px;
-      margin-bottom: 24px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-      color: #f8fafc;
-    }
-
-    .action-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .action-title {
       font-size: 15px;
-      font-weight: 700;
-      color: #fbbf24;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .action-tip {
-      font-size: 12.5px;
-      color: #cbd5e1;
-    }
-
-    .action-buttons {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .btn-print {
-      background: linear-gradient(135deg, #d97706, #b45309);
-      color: #ffffff;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 13.5px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4);
-      transition: all 0.2s ease;
-    }
-
-    .btn-print:hover {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      transform: translateY(-1px);
-    }
-
-    .btn-close {
-      background: #334155;
-      color: #e2e8f0;
-      border: 1px solid #475569;
-      padding: 10px 16px;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 13.5px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-close:hover {
-      background: #475569;
-      color: #ffffff;
-    }
-
-    /* Paper Document */
-    .paper-sheet {
       background-color: #ffffff;
-      color: #1e293b;
-      border-radius: 12px;
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
-      padding: 42px 48px;
-      position: relative;
-      border: 1px solid #e2e8f0;
-    }
+      padding: 24px 30px;
+      box-sizing: border-box;
+      width: 794px;
+    ">
+      <!-- Header Thương Hiệu Hoàng Gia -->
+      <div style="
+        text-align: center;
+        border-top: 3px double #8b1515;
+        border-bottom: 2px solid #b45309;
+        padding: 16px 0;
+        margin-bottom: 20px;
+      ">
+        <div style="font-size: 26px; color: #8b1515; line-height: 1; margin-bottom: 4px;">☯</div>
+        <h1 style="
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 25px;
+          font-weight: 800;
+          letter-spacing: 1.5px;
+          color: #8b1515;
+          text-transform: uppercase;
+          margin: 0 0 4px 0;
+        ">Tử Vi Đẩu Số Thầy Tôn</h1>
+        <div style="
+          font-size: 11.5px;
+          text-transform: uppercase;
+          letter-spacing: 2px;
+          color: #b45309;
+          font-weight: 700;
+          margin-bottom: 6px;
+        ">Tinh Hoa Dịch Học Truyền Thống • Minh Triết Đương Đại</div>
+        <div style="
+          font-style: italic;
+          font-size: 12.5px;
+          color: #64748b;
+          margin-bottom: 12px;
+        ">"Khai Mở Bản Mệnh • Đắc Lộc Bình An • Kiến Tạo Tương Lai"</div>
+        
+        <div style="
+          display: inline-block;
+          background: #fffbeb;
+          border: 1px solid #fcd34d;
+          border-radius: 8px;
+          padding: 8px 22px;
+          margin-top: 4px;
+        ">
+          <div style="
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 17px;
+            font-weight: 800;
+            color: #78350f;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          ">
+            ${isPro ? 'Bản Bình Giải Tử Vi Đẩu Số Chuyên Sâu' : 'Bản Bình Giải Tử Vi Đẩu Số Khởi Nguyên'}
+          </div>
+          <div style="
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #b45309;
+            margin-top: 3px;
+          ">
+            ${isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Dành Riêng Cho Thân Chủ' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
+          </div>
+        </div>
 
-    /* Ornate Outer Border (Chỉ dùng cho màn hình xem trước) */
-    .ornate-border {
-      border: 2px solid #8b1515;
-      outline: 1px solid #b45309;
-      outline-offset: -5px;
-      border-radius: 6px;
-      padding: 30px 32px;
-      position: relative;
-    }
+        <div style="font-size: 12px; color: #64748b; margin-top: 10px;">
+          Ngày xuất bản: ${exportDate} &nbsp;|&nbsp; Tra cứu: tuvithayton.vn &nbsp;|&nbsp; Hotline: 0935 058 688
+        </div>
+      </div>
 
-    /* Corner Emblems */
-    .corner-tl, .corner-tr, .corner-bl, .corner-br {
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      border-color: #8b1515;
-      border-style: solid;
-      pointer-events: none;
-    }
-    .corner-tl { top: 2px; left: 2px; border-width: 3px 0 0 3px; }
-    .corner-tr { top: 2px; right: 2px; border-width: 3px 3px 0 0; }
-    .corner-bl { bottom: 2px; left: 2px; border-width: 0 0 3px 3px; }
-    .corner-br { bottom: 2px; right: 2px; border-width: 0 3px 3px 0; }
+      <!-- Khung Thông Tin Thân Chủ & Bản Mệnh -->
+      <div style="
+        background: #fafaf9;
+        border: 1.5px solid #d4af37;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 22px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      ">
+        <div style="
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: 14.5px;
+          font-weight: 700;
+          color: #8b1515;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          border-bottom: 1px dashed #d6d3d1;
+          padding-bottom: 6px;
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        ">
+          <span>📜 Thông Tin Thân Chủ & Bản Mệnh</span>
+          <span style="font-size: 12px; font-weight: 500; color: #78350f;">
+            ${orderCode ? `Mã đơn: ${orderCode}` : 'Hồ sơ: Bản Mệnh Tử Vi'}
+          </span>
+        </div>
 
-    /* Header Brand */
-    .brand-header {
-      text-align: center;
-      border-bottom: 2px solid #f1f5f9;
-      padding-bottom: 20px;
-      margin-bottom: 22px;
-      position: relative;
-    }
+        <div style="
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px 24px;
+          font-size: 13.5px;
+        ">
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Họ và tên:</span>
+            <span style="color: #8b1515; font-weight: 800; font-size: 15px;">${hoTen.toUpperCase()}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Giới tính:</span>
+            <span style="color: #0f172a; font-weight: 600;">${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Dương lịch:</span>
+            <span style="color: #0f172a; font-weight: 600;">${ngayDuongStr}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Giờ sinh:</span>
+            <span style="color: #0f172a; font-weight: 600;">${gioSinhLabel}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Âm lịch:</span>
+            <span style="color: #0f172a; font-weight: 600;">${ngayAmStr}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Bát tự can chi:</span>
+            <span style="color: #0f172a; font-weight: 600;">${batTuStr || 'Đã quy nạp'}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Bản mệnh:</span>
+            <span style="color: #0f172a; font-weight: 600;">${banMenh}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Cục số & Vận:</span>
+            <span style="color: #0f172a; font-weight: 600;">${tenCuc || 'Thuận Cục'}${sinhKhac ? ` (${sinhKhac})` : ''}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Cung an Thân:</span>
+            <span style="color: #0f172a; font-weight: 600;">${thanCu}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Mệnh/Thân chủ:</span>
+            <span style="color: #0f172a; font-weight: 600;">${[menhChu, thanChu].filter(Boolean).join(' • ') || 'Đã an sao'}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Năm xem hạn:</span>
+            <span style="color: #0f172a; font-weight: 600;">${namXem} (${namXemCanChi})${tuoiAmXem ? ` • ${tuoiAmXem}` : ''}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <span style="color: #64748b; min-width: 105px;">Hạng luận giải:</span>
+            <span style="color: #b45309; font-weight: 700;">${isPro ? '👑 VIP Pro Chuyên Sâu' : '📜 Khởi Nguyên Cơ Bản'}</span>
+          </div>
+        </div>
+      </div>
 
-    .brand-emblem {
-      font-size: 28px;
-      color: #8b1515;
-      line-height: 1;
-      margin-bottom: 5px;
-    }
+      <!-- Dấu Phân Cách Cổ Điển -->
+      <div style="text-align: center; margin: 18px 0 22px 0; color: #8b1515; letter-spacing: 4px; font-size: 13px;">
+        ❖ ✦ ❖
+      </div>
 
-    .brand-name {
+      <!-- Nội Dung Bài Luận Giải Chi Tiết -->
+      <div class="reading-pdf-body" style="
+        font-size: 15px;
+        line-height: 1.8;
+        color: #1e293b;
+        text-align: justify;
+      ">
+        ${readingHtml}
+      </div>
+
+      <!-- Chân Trang Nhận Diện Thương Hiệu Tử Vi Thầy Tôn -->
+      <div style="
+        margin-top: 32px;
+        background: #fffdf5;
+        border: 1.5px solid #d4af37;
+        border-radius: 8px;
+        padding: 20px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      ">
+        <div style="flex: 1 1 360px;">
+          <div style="
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 15.5px;
+            font-weight: 800;
+            color: #8b1515;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          ">
+            <span>☯</span>
+            <span>Tử Vi Phong Thủy Thầy Tôn</span>
+          </div>
+          <div style="font-size: 13px; color: #334155; display: flex; flex-direction: column; gap: 5px;">
+            <div>
+              <strong style="color: #0f172a;">Địa chỉ:</strong>
+              <span>R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</span>
+            </div>
+            <div>
+              <strong style="color: #0f172a;">Hotline/Zalo:</strong>
+              <span style="font-weight: 700; color: #8b1515;">0935 058 688</span>
+            </div>
+            <div>
+              <strong style="color: #0f172a;">Website:</strong>
+              <span style="font-weight: 700; color: #8b1515;">https://tuvithayton.vn</span>
+            </div>
+            <div>
+              <strong style="color: #0f172a;">Email:</strong>
+              <span>tranhuyton@gmail.com &nbsp;•&nbsp; thayton@tuvithayton.vn</span>
+            </div>
+          </div>
+          <div style="font-style: italic; font-size: 12px; color: #78350f; margin-top: 8px; line-height: 1.5;">
+            "Mệnh do trời định, Vận do nhân tạo. Thấu triệt bản mệnh là nấc thang đầu tiên để tu tâm tích phúc, xu cát tị hung, kiến tạo cuộc đời an khang thịnh vượng."
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; flex-shrink: 0;">
+          ${
+            qrCodeDataUrl
+              ? `<img src="${qrCodeDataUrl}" alt="QR tuvithayton.vn" style="width: 100px; height: 100px; border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; padding: 3px;" />`
+              : ''
+          }
+          <div style="font-size: 10.5px; color: #64748b; max-width: 130px; margin-top: 5px; line-height: 1.3;">
+            Quét mã QR để mở lá số & tra cứu tại tuvithayton.vn
+          </div>
+        </div>
+      </div>
+
+      <div style="
+        text-align: center;
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 18px;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 10px;
+        letter-spacing: 0.3px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      ">
+        © ${new Date().getFullYear()} TỬ VI THẦY TÔN (TUVITHAYTON.VN) • BẢN QUYỀN LUẬN GIẢI ĐƯỢC BẢO HỘ • KÍNH CHÚC QUÝ THÂN CHỦ VẠN SỰ HANH THÔNG
+      </div>
+    </div>
+  `;
+
+  // 4. Tạo container ẩn trong DOM để render chính xác mọi thuộc tính
+  const container = document.createElement('div');
+  container.id = 'tuvi-pdf-export-container';
+  container.style.position = 'fixed';
+  container.style.left = '0';
+  container.style.top = '0';
+  container.style.width = '794px'; // Chuẩn A4 tại 96 DPI
+  container.style.zIndex = '-99999';
+  container.style.opacity = '1';
+  container.style.pointerEvents = 'none';
+  container.style.backgroundColor = '#ffffff';
+  container.innerHTML = documentHtml;
+
+  // Thêm style cho nội dung bài luận giải bên trong container
+  const styleEl = document.createElement('style');
+  styleEl.innerHTML = `
+    #tuvi-pdf-export-container h1,
+    #tuvi-pdf-export-container h2,
+    #tuvi-pdf-export-container h3,
+    #tuvi-pdf-export-container h4 {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: 1.5px;
       color: #8b1515;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .brand-tagline {
-      font-size: 11.5px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #b45309;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .brand-slogan {
-      font-style: italic;
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 14px;
-    }
-
-    .doc-title-box {
-      display: inline-block;
-      background: linear-gradient(135deg, #fffbeb, #fef3c7);
-      border: 1px solid #fcd34d;
-      border-radius: 8px;
-      padding: 10px 24px;
-      margin-top: 4px;
-    }
-
-    .doc-main-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 18px;
-      font-weight: 800;
-      color: #78350f;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .doc-tier-badge {
-      display: inline-block;
-      font-size: 11.5px;
-      font-weight: 700;
-      color: #b45309;
-      margin-top: 4px;
-      letter-spacing: 0.5px;
-    }
-
-    .doc-meta-info {
-      font-size: 12px;
-      color: #64748b;
-      margin-top: 10px;
-    }
-
-    /* Destiny Profile Box (Thông tin Đương Số) */
-    .profile-card {
-      background: #fafaf9;
-      border: 1.5px solid #e7e5e4;
-      border-radius: 8px;
-      padding: 18px 22px;
-      margin-bottom: 24px;
-      break-inside: avoid;
-      page-break-inside: avoid;
-    }
-
-    .profile-header {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 15px;
-      font-weight: 700;
-      color: #8b1515;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      border-bottom: 1px dashed #d6d3d1;
-      padding-bottom: 7px;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .profile-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 9px 24px;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 640px) {
-      .profile-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .profile-row {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-
-    .profile-label {
-      color: #64748b;
-      font-weight: 500;
-      min-width: 110px;
-      flex-shrink: 0;
-      font-size: 13.5px;
-    }
-
-    .profile-val {
-      color: #0f172a;
-      font-weight: 600;
-      font-size: 14.5px;
-    }
-
-    .profile-val.name-highlight {
-      color: #8b1515;
-      font-size: 16px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-    }
-
-    .profile-val.tier-highlight {
-      color: #b45309;
-    }
-
-    /* Traditional Divider */
-    .ornate-divider {
-      text-align: center;
-      margin: 22px 0 26px 0;
-      position: relative;
-    }
-    .ornate-divider::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #b45309, transparent);
-      z-index: 1;
-    }
-    .ornate-divider span {
-      position: relative;
-      z-index: 2;
-      background: #ffffff;
-      padding: 0 14px;
-      color: #8b1515;
-      font-size: 14px;
-      letter-spacing: 4px;
-    }
-
-    /* Reading Content Typography - Cỡ chữ to rõ, chuẩn mực */
-    .reading-content {
-      font-size: 15.5px;
-      line-height: 1.85;
-      color: #1e293b;
-      text-align: justify;
-      text-justify: inter-word;
-    }
-
-    .reading-content h1,
-    .reading-content h2,
-    .reading-content h3,
-    .reading-content h4 {
-      font-family: 'Playfair Display', 'Merriweather', Georgia, serif;
-      color: #8b1515;
-      font-weight: 700;
-      margin-top: 24px;
-      margin-bottom: 12px;
-      break-after: avoid;
+      margin-top: 20px;
+      margin-bottom: 10px;
       page-break-after: avoid;
-      break-inside: avoid;
-      page-break-inside: avoid;
+      break-after: avoid;
     }
-
-    .reading-content h1 {
-      font-size: 21px;
-      border-left: 4px solid #8b1515;
-      padding-left: 12px;
-    }
-
-    .reading-content h2 {
-      font-size: 18.5px;
-      border-bottom: 1.5px solid #fed7aa;
-      padding-bottom: 5px;
-    }
-
-    .reading-content h3 {
-      font-size: 17px;
-      color: #9a3412;
-    }
-
-    .reading-content h4 {
-      font-size: 15.5px;
-      color: #b45309;
-    }
-
-    .reading-content p {
-      margin-bottom: 14px;
-      orphans: 3;
-      widows: 3;
-    }
-
-    .reading-content strong,
-    .reading-content b {
-      color: #0f172a;
-      font-weight: 700;
-    }
-
-    .reading-content em,
-    .reading-content i {
-      color: #334155;
-    }
-
-    .reading-content ul,
-    .reading-content ol {
-      margin-left: 22px;
-      margin-bottom: 14px;
-    }
-
-    .reading-content li {
-      margin-bottom: 8px;
-    }
-
-    .reading-content blockquote {
+    #tuvi-pdf-export-container h1 { font-size: 20px; border-left: 4px solid #8b1515; padding-left: 10px; }
+    #tuvi-pdf-export-container h2 { font-size: 18px; border-bottom: 1.5px solid #fed7aa; padding-bottom: 4px; }
+    #tuvi-pdf-export-container h3 { font-size: 16.5px; color: #9a3412; }
+    #tuvi-pdf-export-container h4 { font-size: 15px; color: #b45309; }
+    #tuvi-pdf-export-container p { margin-bottom: 12px; }
+    #tuvi-pdf-export-container strong, #tuvi-pdf-export-container b { color: #0f172a; font-weight: 700; }
+    #tuvi-pdf-export-container ul, #tuvi-pdf-export-container ol { margin-left: 20px; margin-bottom: 12px; }
+    #tuvi-pdf-export-container li { margin-bottom: 6px; }
+    #tuvi-pdf-export-container blockquote {
       background: #fffdf5;
       border-left: 3.5px solid #b45309;
-      padding: 14px 18px;
-      margin: 16px 0;
+      padding: 12px 16px;
+      margin: 14px 0;
       font-style: italic;
       color: #451a03;
       border-radius: 4px;
-      break-inside: avoid;
       page-break-inside: avoid;
-      font-size: 15px;
-      line-height: 1.75;
-    }
-
-    /* Branded Footer Box */
-    .brand-footer-card {
-      margin-top: 36px;
-      background: #fffbeb;
-      border: 1.5px solid #fcd34d;
-      border-radius: 8px;
-      padding: 22px 24px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
       break-inside: avoid;
-      page-break-inside: avoid;
+    }
+  `;
+  container.appendChild(styleEl);
+  document.body.appendChild(container);
+
+  try {
+    // Đợi 250ms để DOM và hình ảnh QR render ổn định
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    // Dynamic import html2pdf.js
+    const html2pdfModule = await import('html2pdf.js');
+    const html2pdf = html2pdfModule.default || html2pdfModule;
+
+    const opt = {
+      margin: [10, 10, 12, 10], // Lề mm [trên, trái, dưới, phải]
+      filename: fileName,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2, // Độ nét x2
+        useCORS: true,
+        logging: false,
+        width: 794,
+        windowWidth: 794,
+        scrollY: 0,
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait',
+      },
+      pagebreak: {
+        mode: ['avoid-all', 'css', 'legacy'],
+        avoid: ['h1', 'h2', 'h3', 'h4', 'blockquote'],
+      },
+    };
+
+    // Tạo PDF dạng Blob
+    const worker = (html2pdf as any)().from(container).set(opt);
+    const pdfBlob: Blob = await worker.output('blob');
+
+    // Tạo file từ Blob
+    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+    // Trên điện thoại (iOS Safari, Android): Ưu tiên Web Share API để mở trực tiếp menu "Lưu vào Tệp" / "Gửi Zalo"
+    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: fileName,
+          text: 'Bản Bình Giải Tử Vi Thầy Tôn (tuvithayton.vn)',
+        });
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return; // Người dùng ấn Hủy trên Share Sheet
+        console.warn('Share API không khả dụng, chuyển sang tải file trực tiếp:', err);
+      }
     }
 
-    .footer-left {
-      flex: 1 1 360px;
+    // Tự động tải file PDF trực tiếp về máy (PC hoặc khi không dùng Share Sheet)
+    const blobUrl = URL.createObjectURL(pdfBlob);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.href = blobUrl;
+    downloadAnchor.download = fileName;
+    downloadAnchor.style.display = 'none';
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+
+    setTimeout(() => {
+      if (downloadAnchor.parentNode) {
+        downloadAnchor.parentNode.removeChild(downloadAnchor);
+      }
+      URL.revokeObjectURL(blobUrl);
+    }, 4000);
+  } catch (pdfErr) {
+    console.error('Lỗi tạo PDF tự động, chuyển sang phương thức dự phòng:', pdfErr);
+    // Dự phòng: Mở cửa sổ in ấn nếu trình duyệt không hỗ trợ thư viện canvas
+    window.print();
+  } finally {
+    // Dọn dẹp DOM container
+    if (container.parentNode) {
+      container.parentNode.removeChild(container);
     }
-
-    .footer-title {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 16px;
-      font-weight: 800;
-      color: #8b1515;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .footer-list {
-      list-style: none;
-      font-size: 13.5px;
-      color: #334155;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .footer-list li {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-
-    .footer-list strong {
-      color: #0f172a;
-      min-width: 80px;
-      flex-shrink: 0;
-    }
-
-    .footer-link {
-      color: #8b1515;
-      text-decoration: none;
-      font-weight: 700;
-    }
-
-    .footer-note {
-      font-style: italic;
-      font-size: 12.5px;
-      color: #78350f;
-      margin-top: 10px;
-      line-height: 1.55;
-    }
-
-    .footer-right {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    .footer-qr-img {
-      width: 105px;
-      height: 105px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      background: #ffffff;
-      padding: 3px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    }
-
-    .footer-qr-label {
-      font-size: 11px;
-      color: #64748b;
-      max-width: 135px;
-      margin-top: 6px;
-      line-height: 1.35;
-      font-weight: 500;
-    }
-
-    /* Print Watermark / Legal */
-    .legal-strip {
-      text-align: center;
-      font-size: 11.5px;
-      color: #94a3b8;
-      margin-top: 22px;
-      border-top: 1px solid #f1f5f9;
-      padding-top: 12px;
-      letter-spacing: 0.3px;
-    }
-
-    /* PRINT SPECIFIC STYLES - CHUẨN IN ẤN VÀ XUẤT PDF MẶC ĐỊNH */
-    @media print {
-      @page {
-        size: A4 portrait;
-        margin: 16mm 18mm 18mm 18mm;
-      }
-
-      html, body {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        font-size: 15.5px !important;
-        line-height: 1.85 !important;
-        width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      .screen-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      .action-bar {
-        display: none !important;
-      }
-
-      .paper-sheet {
-        width: 100% !important;
-        max-width: 100% !important;
-        box-shadow: none !important;
-        border: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border-radius: 0 !important;
-      }
-
-      /* KHÔNG in khung viền ornate-border bao toàn bộ văn bản nhiều trang để tránh bị đứt gãy nét */
-      .ornate-border {
-        border: none !important;
-        outline: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-
-      .corner-tl, .corner-tr, .corner-bl, .corner-br {
-        display: none !important;
-      }
-
-      .brand-header {
-        border-top: 3px double #8b1515 !important;
-        border-bottom: 2px solid #b45309 !important;
-        padding: 16px 0 !important;
-        margin-bottom: 20px !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
-
-      .brand-name {
-        font-size: 24px !important;
-      }
-
-      .profile-card {
-        border: 1.5px solid #d4af37 !important;
-        background: #fafaf9 !important;
-        padding: 16px 20px !important;
-        margin-bottom: 22px !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
-
-      .ornate-divider {
-        margin: 20px 0 !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
-
-      .reading-content {
-        font-size: 15.5px !important;
-        line-height: 1.85 !important;
-      }
-
-      .reading-content h1,
-      .reading-content h2,
-      .reading-content h3,
-      .reading-content h4 {
-        break-after: avoid !important;
-        page-break-after: avoid !important;
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-        margin-top: 22px !important;
-        margin-bottom: 10px !important;
-      }
-
-      .reading-content p {
-        orphans: 3 !important;
-        widows: 3 !important;
-        margin-bottom: 12px !important;
-      }
-
-      .reading-content blockquote {
-        break-inside: avoid !important;
-        page-break-inside: avoid !important;
-      }
-
-      .brand-footer-card {
-        border: 1.5px solid #d4af37 !important;
-        background: #fffdf5 !important;
-        margin-top: 30px !important;
-        padding: 16px 20px !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
-
-      .legal-strip {
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <div class="screen-container">
-    <!-- Floating / Sticky Action Bar (Hidden in Print) -->
-    <div class="action-bar">
-      <div class="action-info">
-        <div class="action-title">
-          <span>👑</span>
-          <span>Bản Bình Giải Tử Vi Thầy Tôn (Xuất File PDF)</span>
-        </div>
-        <div class="action-tip">
-          💡 Chọn <strong>"Lưu dưới dạng PDF" (Save as PDF)</strong> tại mục Máy in để tải file PDF về máy tính hoặc điện thoại.
-        </div>
-      </div>
-      <div class="action-buttons">
-        <button class="btn-print" onclick="window.print()">
-          🖨️ In / Tải File PDF
-        </button>
-        <button class="btn-close" onclick="window.close()">
-          ✖ Đóng
-        </button>
-      </div>
-    </div>
-
-    <!-- Paper Sheet -->
-    <div class="paper-sheet">
-      <div class="ornate-border">
-        <!-- Corner Ornaments -->
-        <div class="corner-tl"></div>
-        <div class="corner-tr"></div>
-        <div class="corner-bl"></div>
-        <div class="corner-br"></div>
-
-        <!-- Brand Header -->
-        <header class="brand-header">
-          <div class="brand-emblem">☯</div>
-          <h1 class="brand-name">Tử Vi Đẩu Số Thầy Tôn</h1>
-          <div class="brand-tagline">Tinh Hoa Dịch Học Truyền Thống • Minh Triết Đương Đại</div>
-          <div class="brand-slogan">"Khai Mở Bản Mệnh • Đắc Lộc Bình An • Kiến Tạo Tương Lai"</div>
-          
-          <div class="doc-title-box">
-            <div class="doc-main-title">
-              ${isPro ? 'Bản Bình Giải Tử Vi Đẩu Số Chuyên Sâu' : 'Bản Bình Giải Tử Vi Đẩu Số Khởi Nguyên'}
-            </div>
-            <div class="doc-tier-badge">
-              ${isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Dành Riêng Cho Thân Chủ' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
-            </div>
-          </div>
-
-          <div class="doc-meta-info">
-            Ngày xuất bản: ${exportDate} &nbsp;|&nbsp; Hệ Thống Tra Cứu: tuvithayton.vn &nbsp;|&nbsp; Hotline: 0935 058 688
-          </div>
-        </header>
-
-        <!-- Customer Destiny Profile -->
-        <section class="profile-card">
-          <div class="profile-header">
-            <span>📜 Thông Tin Thân Chủ & Bản Mệnh</span>
-            <span style="font-size: 11.5px; font-weight: 500; color: #78350f;">Hồ sơ: Bản Mệnh Tử Vi</span>
-          </div>
-
-          <div class="profile-grid">
-            <div class="profile-row">
-              <span class="profile-label">Họ và tên:</span>
-              <span class="profile-val name-highlight">${hoTen.toUpperCase()}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Giới tính:</span>
-              <span class="profile-val">${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Dương lịch:</span>
-              <span class="profile-val">${ngayDuongStr}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Giờ sinh:</span>
-              <span class="profile-val">${gioSinhLabel}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Âm lịch:</span>
-              <span class="profile-val">${ngayAmStr}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Bát tự can chi:</span>
-              <span class="profile-val">${batTuStr || 'Đã quy nạp'}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Bản mệnh:</span>
-              <span class="profile-val">${banMenh}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Cục số & Vận:</span>
-              <span class="profile-val">${tenCuc || 'Thuận Cục'}${sinhKhac ? ` (${sinhKhac})` : ''}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Cung an Thân:</span>
-              <span class="profile-val">${thanCu || 'Mệnh Thân đồng cung'}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Mệnh/Thân chủ:</span>
-              <span class="profile-val">${[menhChu, thanChu].filter(Boolean).join(' • ') || 'Đã an sao'}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Năm xem hạn:</span>
-              <span class="profile-val">${namXem} (${namXemCanChi})${tuoiAmXem ? ` • ${tuoiAmXem}` : ''}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Hạng luận giải:</span>
-              <span class="profile-val tier-highlight">${isPro ? '👑 VIP Pro Chuyên Sâu' : '📜 Khởi Nguyên Cơ Bản'}</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- Ornate Divider -->
-        <div class="ornate-divider">
-          <span>❖ ✦ ❖</span>
-        </div>
-
-        <!-- Reading Content -->
-        <main class="reading-content">
-          ${readingHtml}
-        </main>
-
-        <!-- Brand Footer -->
-        <footer class="brand-footer-card">
-          <div class="footer-left">
-            <div class="footer-title">
-              <span>☯</span>
-              <span>Tử Vi Phong Thủy Thầy Tôn</span>
-            </div>
-            <ul class="footer-list">
-              <li>
-                <strong>Địa chỉ:</strong>
-                <span>R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</span>
-              </li>
-              <li>
-                <strong>Hotline/Zalo:</strong>
-                <span style="font-weight: 700; color: #8b1515;">0935 058 688</span>
-              </li>
-              <li>
-                <strong>Website:</strong>
-                <a href="https://tuvithayton.vn" target="_blank" class="footer-link">https://tuvithayton.vn</a>
-              </li>
-              <li>
-                <strong>Email:</strong>
-                <span>tranhuyton@gmail.com &nbsp;•&nbsp; thayton@tuvithayton.vn</span>
-              </li>
-            </ul>
-            <div class="footer-note">
-              "Mệnh do trời định, Vận do nhân tạo. Thấu triệt bản mệnh là nấc thang đầu tiên để tu tâm tích phúc, xu cát tị hung, kiến tạo cuộc đời an khang thịnh vượng."
-            </div>
-          </div>
-
-          <div class="footer-right">
-            ${
-              qrCodeDataUrl
-                ? `<img src="${qrCodeDataUrl}" alt="QR tuvithayton.vn" class="footer-qr-img" />`
-                : ''
-            }
-            <div class="footer-qr-label">
-              Quét mã QR để mở lá số & tra cứu trực tuyến trên tuvithayton.vn
-            </div>
-          </div>
-        </footer>
-
-        <!-- Legal Disclaimer -->
-        <div class="legal-strip">
-          © ${new Date().getFullYear()} TỬ VI THẦY TÔN (TUVITHAYTON.VN) • BẢN QUYỀN LUẬN GIẢI ĐƯỢC BẢO HỘ • KÍNH CHÚC QUÝ THÂN CHỦ VẠN SỰ HANH THÔNG
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Tự động mở hộp thoại in sau khi tải trang và hình ảnh
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        window.print();
-      }, 500);
-    });
-  </script>
-</body>
-</html>`;
-
-  printWindow.document.open();
-  printWindow.document.write(htmlContent);
-  printWindow.document.close();
+  }
 }

@@ -898,9 +898,13 @@ export default function AdminTransactionsTable({
                         onClick={handleExportAdminPdf}
                         disabled={isExportingPdfAdmin}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
-                        title="Xuất bản luận giải này thành file PDF chuẩn A4 để in hoặc gửi khách hàng"
+                        title="Tải trực tiếp file PDF luận giải về máy tính"
                       >
-                        <FileDown className="w-3.5 h-3.5 text-amber-300" />
+                        {isExportingPdfAdmin ? (
+                          <RefreshCw className="w-3.5 h-3.5 text-amber-300 animate-spin" />
+                        ) : (
+                          <FileDown className="w-3.5 h-3.5 text-amber-300" />
+                        )}
                         <span>{isExportingPdfAdmin ? 'Đang tạo PDF...' : 'Xuất File PDF'}</span>
                       </button>
 

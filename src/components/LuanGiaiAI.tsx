@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, AlertCircle, Crown, FileDown } from 'lucide-react';
+import { Sparkles, Copy, Check, AlertCircle, Crown, FileDown, RefreshCw } from 'lucide-react';
 import { ServiceTier, DuLieuDuongSo, LaSoData } from '@/types/tuvi';
 import { useLanguage } from '@/context/LanguageContext';
 import { exportReadingToPdf } from '@/lib/pdfExport';
@@ -164,9 +164,13 @@ export default function LuanGiaiAI({
                 onClick={handleExportPdf}
                 disabled={isExportingPdf}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 text-white rounded-lg text-sm sm:text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
-                title="Xuất bản luận giải ra file PDF hoặc in lưu trữ"
+                title="Tải trực tiếp file PDF về điện thoại hoặc máy tính"
               >
-                <FileDown className="w-4 h-4 text-amber-300" />
+                {isExportingPdf ? (
+                  <RefreshCw className="w-4 h-4 text-amber-300 animate-spin" />
+                ) : (
+                  <FileDown className="w-4 h-4 text-amber-300" />
+                )}
                 <span>{isExportingPdf ? t('reading.exportingPdf', 'Đang tạo PDF...') : t('reading.exportPdf', 'Xuất File PDF')}</span>
               </button>
 
