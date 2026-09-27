@@ -794,13 +794,13 @@ export async function exportReadingToPdf({
         <footer class="brand-footer-card">
           <div class="footer-left">
             <div class="footer-title">
-              <span>🏛</span>
-              <span>Trung Tâm Phong Thủy & Tử Vi Thầy Tôn</span>
+              <span>☯</span>
+              <span>Tử Vi Phong Thủy Thầy Tôn</span>
             </div>
             <ul class="footer-list">
               <li>
                 <strong>Địa chỉ:</strong>
-                <span>Biệt thự Louis 1, Khu đô thị Louis City Hoàng Mai, P. Hoàng Văn Thụ, Q. Hoàng Mai, Hà Nội</span>
+                <span>R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</span>
               </li>
               <li>
                 <strong>Hotline/Zalo:</strong>
@@ -812,7 +812,7 @@ export async function exportReadingToPdf({
               </li>
               <li>
                 <strong>Email:</strong>
-                <span>thayton@tuvithayton.vn &nbsp;•&nbsp; tranhuyton@gmail.com</span>
+                <span>tranhuyton@gmail.com &nbsp;•&nbsp; thayton@tuvithayton.vn</span>
               </li>
             </ul>
             <div class="footer-note">
