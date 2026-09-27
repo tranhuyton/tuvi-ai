@@ -19,6 +19,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Header & Brand
     'brand.title': 'TỬ VI THẦY TÔN',
     'brand.subtitle': 'Bát Bộ Thần Sát & Tướng Pháp Bí Truyền',
+    'brand.multilingual': 'Luận Giải Đa Ngôn Ngữ',
     'nav.createChart': 'Lập Lá Số',
     'nav.savedCharts': 'Lá Số Đã Lưu',
     'nav.offlineNotebook': 'Sổ Tay Khách Offline',
@@ -216,7 +217,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   en: {
     // Header & Brand
     'brand.title': 'MASTER TON ASTROLOGY',
-    'brand.subtitle': 'Secret Zi Wei Dou Shu & Physiognomy School',
+    'brand.subtitle': 'Secret Zi Wei & Physiognomy School',
+    'brand.multilingual': 'Multilingual Readings',
     'nav.createChart': 'Generate Chart',
     'nav.savedCharts': 'Saved Charts',
     'nav.offlineNotebook': 'Offline Client Book',
@@ -415,6 +417,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Header & Brand
     'brand.title': '顿师紫微斗数',
     'brand.subtitle': '八部神煞与相法秘传',
+    'brand.multilingual': '多语言命理精批',
     'nav.createChart': '排盘算命',
     'nav.savedCharts': '保存命盘',
     'nav.offlineNotebook': '线下客户名录',
@@ -613,6 +616,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Header & Brand
     'brand.title': '톤 대사 자미두수',
     'brand.subtitle': '팔부신살과 관상비전 심층추명',
+    'brand.multilingual': '다국어 운명 감정',
     'nav.createChart': '명반 명조 작성',
     'nav.savedCharts': '저장된 명반',
     'nav.offlineNotebook': '오프라인 고객 장부',

@@ -67,8 +67,10 @@ export default function UserNav({
             <h1 className="text-sm sm:text-lg md:text-xl font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
               {t('brand.title', 'TỬ VI THẦY TÔN')}
             </h1>
-            <p className="text-xs text-slate-400 font-sans hidden sm:block">
-              {t('brand.subtitle', 'Bát Bộ Thần Sát & Tướng Pháp Bí Truyền')}
+            <p className="text-[11px] sm:text-xs text-slate-400 font-sans hidden sm:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
+              <span>{t('brand.subtitle', 'Bát Bộ Thần Sát & Tướng Pháp Bí Truyền')}</span>
+              <span className="text-slate-600 font-light">•</span>
+              <span className="text-amber-300/85 font-medium">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
             </p>
           </div>
         </div>
