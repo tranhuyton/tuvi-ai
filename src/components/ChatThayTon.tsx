@@ -120,7 +120,8 @@ export default function ChatThayTon({
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const startResizeRef = useRef<{ startY: number; startHeight: number }>({ startY: 0, startHeight: 560 });
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatListRef = useRef<HTMLDivElement | null>(null);
+  const prevMsgCountRef = useRef<number>(chatHistory.length);
 
   // Khôi phục chiều cao cửa sổ chat từ localStorage
   useEffect(() => {
@@ -169,11 +170,17 @@ export default function ChatThayTon({
     };
   }, [isResizing, chatHeight]);
 
-  // Tự động cuộn xuống cuối khi có tin nhắn mới hoặc đang chờ câu trả lời
+  // Tự động cuộn NỘI BỘ bên trong khung chat khi người dùng đang gửi câu hỏi (TUYỆT ĐỐI KHÔNG cuộn trang web window)
   useEffect(() => {
-    if (chatHistory.length > 0 || isLoading) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isLoading || chatHistory.length > prevMsgCountRef.current) {
+      if (chatListRef.current) {
+        chatListRef.current.scrollTo({
+          top: chatListRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
     }
+    prevMsgCountRef.current = chatHistory.length;
   }, [chatHistory.length, isLoading]);
 
   // Xử lý gửi câu hỏi
@@ -286,6 +293,7 @@ export default function ChatThayTon({
 
         {/* Lịch sử tin nhắn - Bo trong khung cuộn, trên điện thoại mở rộng độ thoáng */}
         <div
+          ref={chatListRef}
           className="space-y-3.5 sm:space-y-4 mb-3 overflow-y-auto pr-1 sm:pr-2.5 scroll-smooth select-text"
           style={{
             height: isExpanded ? '80vh' : `${chatHeight}px`,
@@ -373,8 +381,6 @@ export default function ChatThayTon({
               </div>
             </div>
           )}
-
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Thanh kéo chỉnh độ cao (PC / Desktop Resize Bar) */}

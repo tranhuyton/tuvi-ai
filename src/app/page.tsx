@@ -736,6 +736,9 @@ export default function HomePage() {
   const handleSelectSavedChart = async (chartId: string) => {
     setIsSavedChartsModalOpen(false);
     setIsLoadingReading(true);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
 
     try {
       const { chart, chatMessages, error } = await getChartDetails(chartId);
@@ -910,7 +913,12 @@ export default function HomePage() {
         }
       }
 
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }, 50);
+      }
     } catch (e: any) {
       alert('Lỗi tải dữ liệu lá số: ' + e.message);
     } finally {
