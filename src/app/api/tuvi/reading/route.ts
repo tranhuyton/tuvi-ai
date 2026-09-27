@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
       anhTay?: string; // base64 data url: data:image/...;base64,...
       apiKey?: string;
       model?: string;
-      lang?: 'vi' | 'en' | 'zh' | 'ko';
-      language?: 'vi' | 'en' | 'zh' | 'ko';
+      lang?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
+      language?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
     };
 
     if (!laSo || !laSo.duongSo) {

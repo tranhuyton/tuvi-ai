@@ -87,6 +87,16 @@ export function FlagKR({ className = 'w-5 h-3.5' }: { className?: string }) {
   );
 }
 
+// SVG Lá Cờ Nhật Bản (Hinomaru) chuẩn xác
+export function FlagJP({ className = 'w-5 h-3.5' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 30 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="30" height="20" fill="#FFFFFF" rx="2" />
+      <circle cx="15" cy="10" r="5.5" fill="#BC002D" />
+    </svg>
+  );
+}
+
 const LANG_ITEMS: {
   code: Language;
   label: string;
@@ -97,6 +107,7 @@ const LANG_ITEMS: {
   { code: 'en', label: 'EN', name: 'English', Flag: FlagGB },
   { code: 'zh', label: '中文', name: '中文 (简体)', Flag: FlagCN },
   { code: 'ko', label: '한국어', name: '한국어', Flag: FlagKR },
+  { code: 'ja', label: '日本語', name: '日本語', Flag: FlagJP },
 ];
 
 export default function LanguageSelector({ className = '' }: { className?: string }) {

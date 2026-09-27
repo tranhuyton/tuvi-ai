@@ -1292,6 +1292,7 @@ export default function AdminTestStudio() {
                 {language === 'en' && '🇬🇧 English (Western Astrology)'}
                 {language === 'zh' && '🇨🇳 中文 (正统紫微斗数)'}
                 {language === 'ko' && '🇰🇷 한국어 (정통 자미두수)'}
+                {language === 'ja' && '🇯🇵 日本語 (正統紫微斗数)'}
               </span>
             </div>
             <div className="flex items-center gap-1.5">

@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
       apiKey?: string;
       mode?: 'basic' | 'vip';
       questionType?: 'basic' | 'vip';
-      lang?: 'vi' | 'en' | 'zh' | 'ko';
-      language?: 'vi' | 'en' | 'zh' | 'ko';
+      lang?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
+      language?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
     };
 
     const targetLang = lang || language || 'vi';
@@ -90,7 +90,9 @@ export async function POST(req: NextRequest) {
         : `YÊU CẦU LUẬN GIẢI CƠ BẢN: Trả lời 250-350 chữ cô đọng, dễ hiểu, ân cần, giải đáp thẳng thắn và chính xác vào trọng tâm câu hỏi của khách (về công danh, tài lộc, tình cảm hoặc gia đạo) dựa trên cung vị liên quan. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>). KHÔNG dùng markdown **.`;
 
     let langInstruction = '';
-    if (targetLang === 'zh') {
+    if (targetLang === 'ja') {
+      langInstruction = '\n\n【言語最高指令】：回答は100%美しく格調高い【日本語（丁寧語・敬語）】で記述してください！自称は「トン先生」または「当方」、相談者への呼称は「ご相談者様」としてください。正統派紫微斗数の専門用語を使用し、標準HTMLタグ（<p>, <b>, <ul>, <li>）を用いてください。Markdown太字（**）は使用禁止です。';
+    } else if (targetLang === 'zh') {
       langInstruction = '\n\n【语言最高指令】：全文必须100%使用中文（规范中文）作答！自称“顿师”或“为师”，称呼求测者为“居士”或“缘主”。使用标准紫微斗数术语。使用标准HTML标签（<p>, <b>, <ul>, <li>），严禁使用Markdown粗体（**）。';
     } else if (targetLang === 'ko') {
       langInstruction = '\n\n【언어 필수 지침】：답변은 100% 품격 있는 한국어(존댓말)로 작성하십시오! 자칭은 \'톤 대사\' 혹은 \'이 사람\', 호칭은 \'귀하\' 혹은 \'의뢰인 님\'이라 칭하십시오. 자미두수 정통 한글 용어를 사용하십시오. 표준 HTML 태그(<p>, <b>, <ul>, <li>)를 사용하고 마크다운 **은 쓰지 마십시오.';

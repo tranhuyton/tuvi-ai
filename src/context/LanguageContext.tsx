@@ -67,7 +67,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('tuvi_language') as Language;
-      if (saved && (saved === 'vi' || saved === 'en' || saved === 'zh' || saved === 'ko')) {
+      if (saved && (saved === 'vi' || saved === 'en' || saved === 'zh' || saved === 'ko' || saved === 'ja')) {
         setLanguageState(saved);
         document.documentElement.lang = saved;
       }

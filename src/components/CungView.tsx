@@ -22,7 +22,7 @@ const BOLD_STARS = new Set([
 export default function CungView({ cung, className = '', style }: CungViewProps) {
   const { tCung, language } = useLanguage();
   const displayName = tCung(cung.cungName);
-  const thanLabel = language === 'zh' ? '身' : language === 'ko' ? '신' : language === 'en' ? 'BODY' : 'THÂN';
+  const thanLabel = language === 'zh' || language === 'ja' ? '身' : language === 'ko' ? '신' : language === 'en' ? 'BODY' : 'THÂN';
 
   return (
     <div
