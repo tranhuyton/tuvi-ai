@@ -1401,6 +1401,8 @@ export default function HomePage() {
               tier={currentTier}
               onUpgrade={openUpgradeModal}
               isUpgrading={isUpgrading}
+              duongSo={currentDuongSo || undefined}
+              laSo={laSo || undefined}
             />
 
             {/* Khung Hỏi Đáp Luận Giải Cùng AI Thầy Tôn */}

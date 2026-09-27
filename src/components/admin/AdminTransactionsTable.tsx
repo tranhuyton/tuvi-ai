@@ -22,10 +22,12 @@ import {
   AlertTriangle,
   Copy,
   Check,
+  FileDown,
 } from 'lucide-react';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import { GIO_ARR } from '@/lib/tuvi/constants';
+import { exportReadingToPdf } from '@/lib/pdfExport';
 
 export interface AdminChartItem {
   id: string;
@@ -94,6 +96,7 @@ export default function AdminTransactionsTable({
   const [previewReadingHtml, setPreviewReadingHtml] = useState<string | null>(null);
   const [isLoadingPreviewReading, setIsLoadingPreviewReading] = useState(false);
   const [copiedReading, setCopiedReading] = useState(false);
+  const [isExportingPdfAdmin, setIsExportingPdfAdmin] = useState(false);
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
 
   const handleOpenPreview = async (chart: AdminChartItem) => {
@@ -126,6 +129,24 @@ export default function AdminTransactionsTable({
     navigator.clipboard.writeText(tempDiv.innerText || tempDiv.textContent || '');
     setCopiedReading(true);
     setTimeout(() => setCopiedReading(false), 2000);
+  };
+
+  const handleExportAdminPdf = async () => {
+    if (!previewReadingHtml || !previewChart || isExportingPdfAdmin) return;
+    setIsExportingPdfAdmin(true);
+    try {
+      await exportReadingToPdf({
+        duongSo: previewChart.duong_so_data,
+        laSo: previewChart.laso_data,
+        readingHtml: previewReadingHtml,
+        tier: previewChart.duong_so_data?.tier || 'free',
+        chartTitle: previewChart.title,
+      });
+    } catch (err) {
+      console.error('Lỗi khi xuất PDF cho Admin:', err);
+    } finally {
+      setIsExportingPdfAdmin(false);
+    }
   };
 
 
@@ -871,24 +892,37 @@ export default function AdminTransactionsTable({
                   </div>
 
                   {previewReadingHtml && (
-                    <button
-                      type="button"
-                      onClick={handleCopyReading}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 shadow-sm transition cursor-pointer"
-                      title="Sao chép toàn bộ bài bình giải này để gửi Zalo hoặc email"
-                    >
-                      {copiedReading ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="text-emerald-400 font-bold">Đã sao chép</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Sao chép lời bình</span>
-                        </>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleExportAdminPdf}
+                        disabled={isExportingPdfAdmin}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
+                        title="Xuất bản luận giải này thành file PDF chuẩn A4 để in hoặc gửi khách hàng"
+                      >
+                        <FileDown className="w-3.5 h-3.5 text-amber-300" />
+                        <span>{isExportingPdfAdmin ? 'Đang tạo PDF...' : 'Xuất File PDF'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleCopyReading}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 shadow-sm transition cursor-pointer"
+                        title="Sao chép toàn bộ bài bình giải này để gửi Zalo hoặc email"
+                      >
+                        {copiedReading ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400 font-bold">Đã sao chép</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Sao chép lời bình</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   )}
                 </div>
 

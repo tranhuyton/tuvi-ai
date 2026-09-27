@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, AlertCircle, Crown } from 'lucide-react';
-import { ServiceTier } from '@/types/tuvi';
+import { Sparkles, Copy, Check, AlertCircle, Crown, FileDown } from 'lucide-react';
+import { ServiceTier, DuLieuDuongSo, LaSoData } from '@/types/tuvi';
 import { useLanguage } from '@/context/LanguageContext';
+import { exportReadingToPdf } from '@/lib/pdfExport';
 
 interface LuanGiaiAIProps {
   readingHtml?: string;
@@ -12,6 +13,8 @@ interface LuanGiaiAIProps {
   tier?: ServiceTier;
   onUpgrade?: () => void;
   isUpgrading?: boolean;
+  duongSo?: DuLieuDuongSo;
+  laSo?: LaSoData;
 }
 
 export default function LuanGiaiAI({
@@ -21,9 +24,12 @@ export default function LuanGiaiAI({
   tier = 'free',
   onUpgrade,
   isUpgrading,
+  duongSo,
+  laSo,
 }: LuanGiaiAIProps) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const handleCopy = () => {
     if (!readingHtml) return;
@@ -32,6 +38,23 @@ export default function LuanGiaiAI({
     navigator.clipboard.writeText(tempDiv.innerText || tempDiv.textContent || '');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleExportPdf = async () => {
+    if (!readingHtml || isExportingPdf) return;
+    setIsExportingPdf(true);
+    try {
+      await exportReadingToPdf({
+        duongSo,
+        laSo,
+        readingHtml,
+        tier,
+      });
+    } catch (err) {
+      console.error('Lỗi khi xuất PDF:', err);
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const isPro = tier === 'pro';
@@ -135,6 +158,17 @@ export default function LuanGiaiAI({
                   <span>{t('reading.topUpgradeBtn', '⚡ Nâng Cấp Bản Pro')}</span>
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                disabled={isExportingPdf}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 text-white rounded-lg text-sm sm:text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
+                title="Xuất bản luận giải ra file PDF hoặc in lưu trữ"
+              >
+                <FileDown className="w-4 h-4 text-amber-300" />
+                <span>{isExportingPdf ? t('reading.exportingPdf', 'Đang tạo PDF...') : t('reading.exportPdf', 'Xuất File PDF')}</span>
+              </button>
 
               <button
                 type="button"
