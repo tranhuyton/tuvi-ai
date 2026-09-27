@@ -158,17 +158,13 @@ function applyPdfBlockStyles(item: HTMLElement) {
       item.style.margin = '16px 0 8px 0';
       item.style.borderLeft = '5px solid #000000';
       item.style.paddingLeft = '10px';
-    } else if (tag === 'H2') {
-      item.style.fontSize = '24px';
-      item.style.margin = '14px 0 6px 0';
-      item.style.borderBottom = '2px solid #000000';
-      item.style.paddingBottom = '4px';
-    } else if (tag === 'H3') {
-      item.style.fontSize = '22px';
-      item.style.margin = '12px 0 6px 0';
     } else {
-      item.style.fontSize = '21.5px';
-      item.style.margin = '10px 0 6px 0';
+      item.style.fontSize = '24.5px';
+      item.style.margin = '14px 0 6px 0';
+      if (tag === 'H2') {
+        item.style.borderBottom = '1.5px solid #000000';
+        item.style.paddingBottom = '3px';
+      }
     }
   } else if (tag === 'P') {
     item.style.fontSize = '21px';
@@ -501,89 +497,42 @@ export async function exportReadingToPdf({
       topPart1.style.flexDirection = 'column';
 
       topPart1.innerHTML = `
-        <!-- Tiêu đề thương hiệu Thầy Tôn -->
+        <!-- Tiêu đề tinh gọn, đồng bộ đen trắng, đẩy lá số lên tối đa -->
         <div style="
           text-align: center;
-          border-top: 3px double #000000;
           border-bottom: 2px solid #000000;
-          padding: 8px 0;
-          margin-bottom: 8px;
+          padding-bottom: 6px;
+          margin-bottom: 10px;
         ">
-          <div style="font-size: 20px; color: #000000; line-height: 1; margin-bottom: 2px;">☯</div>
-          <h1 style="
+          <div style="
             font-family: 'Times New Roman', Times, Georgia, serif;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 900;
             letter-spacing: 1px;
             color: #000000;
             text-transform: uppercase;
-            margin: 0 0 2px 0;
-          ">Tử Vi Đẩu Số Thầy Tôn</h1>
-          <div style="
-            font-size: 11.5px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: #000000;
-            font-weight: 800;
-            margin-bottom: 2px;
-          ">Tinh Hoa Dịch Học Truyền Thống • Minh Triết Đương Đại</div>
-          <div style="
-            font-style: italic;
-            font-size: 11.5px;
-            color: #000000;
-            font-weight: 600;
-          ">"Khai Mở Bản Mệnh • Đắc Lộc Bình An • Kiến Tạo Tương Lai"</div>
-        </div>
-
-        <!-- Khung tóm tắt thông tin thân chủ -->
-        <div style="
-          background: #ffffff;
-          border: 1.5px solid #000000;
-          border-radius: 6px;
-          padding: 7px 12px;
-          margin-bottom: 8px;
-          color: #000000;
-        ">
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-bottom: 5px;">
-            <div>
-              <span style="font-weight: 800; font-size: 13px;">HỌ TÊN:</span> <span style="font-weight: 900; font-size: 15px; color: #000000;">${hoTen.toUpperCase()}</span>
-              <span style="margin: 0 6px; font-weight: 700;">•</span>
-              <span style="font-weight: 700; font-size: 13px;">GIỚI TÍNH:</span> <span style="font-weight: 800; font-size: 13px;">${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</span>
-              <span style="margin: 0 6px; font-weight: 700;">•</span>
-              <span style="font-weight: 700; font-size: 13px;">HẠNG:</span> <span style="font-weight: 900; font-size: 13px;">${isPro ? '👑 VIP PRO CHUYÊN SÂU' : '📜 KHỞI NGUYÊN CƠ BẢN'}</span>
-            </div>
-            <div style="font-size: 12px; font-weight: 800;">
-              ${orderCode ? `Mã: ${orderCode}` : 'Hồ Sơ: Bản Mệnh Tử Vi'}
-            </div>
+          ">
+            TỬ VI ĐẨU SỐ THẦY TÔN • LÁ SỐ BẢN MỆNH TOÀN ĐỒ
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 12px; font-size: 12.5px; line-height: 1.4;">
-            <div><strong style="color: #000000;">Dương lịch:</strong> ${ngayDuongStr} (${gioSinhLabel})</div>
-            <div><strong style="color: #000000;">Âm lịch:</strong> ${ngayAmStr}</div>
-            <div><strong style="color: #000000;">Bát tự:</strong> ${batTuStr || 'Đã quy nạp'}</div>
-            <div><strong style="color: #000000;">Bản mệnh:</strong> ${banMenh}</div>
-            <div><strong style="color: #000000;">Cục số:</strong> ${tenCuc || 'Thuận Cục'}${sinhKhac ? ` (${sinhKhac})` : ''}</div>
-            <div><strong style="color: #000000;">Cung an Thân:</strong> ${thanCu}</div>
-            <div><strong style="color: #000000;">Mệnh chủ:</strong> ${menhChu || 'Đã an'}</div>
-            <div><strong style="color: #000000;">Thân chủ:</strong> ${thanChu || 'Đã an'}</div>
-            <div><strong style="color: #000000;">Năm xem:</strong> ${namXem} (${namXemCanChi})${tuoiAmXem ? ` • ${tuoiAmXem}` : ''}</div>
+          <div style="
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #000000;
+            margin-top: 3px;
+          ">
+            <span>Thân chủ: <strong style="font-size: 15px; font-weight: 900;">${hoTen.toUpperCase()}</strong></span>
+            <span>•</span>
+            <span>Giới tính: <strong>${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</strong></span>
+            <span>•</span>
+            <span>Năm xem: <strong>${namXem} (${namXemCanChi})</strong></span>
+            ${orderCode ? `<span>•</span><span>Mã đơn: <strong>${orderCode}</strong></span>` : ''}
           </div>
         </div>
 
-        <!-- Tiêu đề lá số toàn đồ -->
-        <div style="
-          text-align: center;
-          font-family: 'Times New Roman', Times, Georgia, serif;
-          font-size: 14px;
-          font-weight: 900;
-          color: #000000;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          margin-bottom: 6px;
-        ">
-          ❖ LÁ SỐ TỬ VI ĐẨU SỐ TOÀN ĐỒ (12 CUNG & THIÊN BÀN) ❖
-        </div>
-
-        <!-- HÌNH ẢNH BÀN CỜ LÁ SỐ TOÀN DIỆN -->
+        <!-- HÌNH ẢNH BÀN CỜ LÁ SỐ TOÀN DIỆN CHIẾM TRỌN KHÔNG GIAN TRANG 1 -->
         <div style="
           display: flex;
           justify-content: center;
@@ -595,10 +544,10 @@ export async function exportReadingToPdf({
             alt="Lá Số Tử Vi ${hoTen}"
             style="
               width: 100%;
-              max-height: 850px;
+              max-height: 980px;
               object-fit: contain;
               border: 2px solid #000000;
-              border-radius: 6px;
+              border-radius: 4px;
               display: block;
               background: #ffffff;
             "
