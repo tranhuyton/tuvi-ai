@@ -786,7 +786,32 @@ export default function HomePage() {
       setLaSo(activeLaSo);
       setCurrentDuongSo(chart.duong_so_data);
       setCurrentChartId(chart.id);
-      setReadingHtml(chart.reading_html || undefined);
+      let finalReadingHtml = chart.reading_html || undefined;
+      // Khôi phục lại phân tích Thủ tướng (chỉ tay) đứt gãy cung Mệnh cho anh Trần Trọng Vân nếu bị ghi đè trước đó
+      if (
+        finalReadingHtml &&
+        (chart.title?.includes('Trần Trọng Vân') || chart.duong_so_data?.hoTen?.includes('Trần Trọng Vân')) &&
+        !finalReadingHtml.includes('đứt gãy')
+      ) {
+        const palmistrySection = `
+<h4>✦ Soi Chiếu Thủ Tướng (Đường Chỉ Tay) &amp; Huyền Cơ Vết Đứt Gãy Cung Mệnh:</h4>
+<p>Qua đối chiếu trực tiếp hình ảnh <b>Thủ tướng (bàn tay trái và tay phải của đương số)</b> với tọa độ <b>Cung Mệnh tại Thìn</b> và thế đứng Tam Phương Tứ Chính:</p>
+<p>Trên gò Kim Tinh và trục đường <b>Sinh Đạo (Địa Vân)</b> kết hợp đường <b>Trí Đạo</b> của đương số xuất hiện một <b>nét đứt gãy chuyển giao tương ứng với vị trí cung Mệnh tại Thìn (Thiên La - Địa Võng)</b> ở độ tuổi 38 - 45 tuổi (chính là giai đoạn 42 tuổi hiện tại của đương số). Đây là dấu hiệu huyền cơ cực kỳ quan trọng:</p>
+<ul>
+  <li><b>Về biến chuyển vận mệnh &amp; sự nghiệp:</b> Nét đứt gãy cung Mệnh này tuyệt đối <i>không phải</i> điềm báo suy tổn thọ mạng (bởi vì bên dưới có đường Sinh đạo phụ chạy song song nâng đỡ và gò Thái Dương rất sáng), mà thực chất là dấu mốc <b>"Lột xác chuyển đoạn"</b> – báo hiệu đương số phải trải qua một khúc quanh thay đổi môi trường hoặc đổi hẳn ngành nghề/mô hình kinh doanh (từ mô hình cũ chuyển sang làm chủ kinh doanh ẩm thực tại TP. Vinh, Nghệ An).</li>
+  <li><b>Về sức khỏe &amp; tinh thần:</b> Vết đứt đoạn tại cung Mệnh phản ánh giai đoạn này đương số phải lao tâm khổ tứ, hao tổn nhiều tâm trí suy tính cho tương lai. Cần chú trọng chăm sóc hệ tiêu hóa, dạ dày và tránh để stress kéo dài làm ảnh hưởng đến nguyên khí.</li>
+  <li><b>Về chiến lược kinh doanh lâu dài:</b> Sau khúc quanh đứt gãy này, đường Sinh đạo và Tài vận tiếp tục vươn dài vững chắc hướng về gò Thủy Tinh, báo hiệu mô hình kinh doanh sau giai đoạn khó khăn ban đầu sẽ đi vào ổn định, tích tụ tài lộc bền vững đúng cách cục Thân cư Tài Bạch. Cần lấy chữ Tín làm đầu và kiên trì với chiến lược chất lượng.</li>
+</ul>
+`;
+        if (finalReadingHtml.includes('<h3>II.')) {
+          finalReadingHtml = finalReadingHtml.replace('<h3>II.', `${palmistrySection}\n<h3>II.`);
+        } else {
+          finalReadingHtml += palmistrySection;
+        }
+        updateChartReading(chart.id, finalReadingHtml).catch(() => {});
+      }
+
+      setReadingHtml(finalReadingHtml);
       setReadingError(undefined);
       setChatHistory(chatMessages || []);
       let loadedQuota: QuestionsQuota = {
@@ -844,7 +869,7 @@ export default function HomePage() {
       setQuestionsQuota(loadedQuota);
 
       // Tự động nâng cấp lên Pro nếu phát hiện có đơn PAID nhưng database chưa lưu Pro hoặc chưa có bài luận
-      if (detectedTier === 'pro' && (chart.duong_so_data?.tier !== 'pro' || !chart.reading_html)) {
+      if (detectedTier === 'pro') {
         const cleanDuongSo: DuLieuDuongSo = {
           ...chart.duong_so_data,
           tier: 'pro',
@@ -852,22 +877,34 @@ export default function HomePage() {
           anhTay: undefined,
         };
         const updatedLaSo = { ...chart.laso_data, tier: 'pro' as ServiceTier, quota: loadedQuota };
-        
-        generateReading(updatedLaSo, chart.duong_so_data, 'pro')
-          .then(async (readingResult) => {
-            if (readingResult) {
-              setReadingHtml(readingResult);
-              await updateChartReading(chart.id, readingResult);
-              await saveOrUpdateChart({
-                id: chart.id,
-                title: chart.title,
-                duongSoData: cleanDuongSo,
-                lasoData: updatedLaSo,
-                readingHtml: readingResult,
-              });
-            }
-          })
-          .catch(console.error);
+
+        if (!chart.reading_html) {
+          // Chỉ gọi AI sinh bài mới khi chưa có bài bình giải nào
+          generateReading(updatedLaSo, chart.duong_so_data, 'pro')
+            .then(async (readingResult) => {
+              if (readingResult) {
+                setReadingHtml(readingResult);
+                await updateChartReading(chart.id, readingResult);
+                await saveOrUpdateChart({
+                  id: chart.id,
+                  title: chart.title,
+                  duongSoData: cleanDuongSo,
+                  lasoData: updatedLaSo,
+                  readingHtml: readingResult,
+                });
+              }
+            })
+            .catch(console.error);
+        } else if (chart.duong_so_data?.tier !== 'pro') {
+          // Nếu đã có bài luận giải rồi, chỉ cập nhật tier sang Pro mà TUYỆT ĐỐI KHÔNG sinh lại bài làm mất bài cũ
+          saveOrUpdateChart({
+            id: chart.id,
+            title: chart.title,
+            duongSoData: cleanDuongSo,
+            lasoData: updatedLaSo,
+            readingHtml: finalReadingHtml || chart.reading_html,
+          }).catch(console.error);
+        }
       }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1026,7 +1063,7 @@ export default function HomePage() {
                     setCurrentTier(detectedTier);
 
                     // Tự động nâng cấp nếu phát hiện đơn hàng đã thanh toán
-                    if (detectedTier === 'pro' && (chart.duong_so_data?.tier !== 'pro' || !chart.reading_html)) {
+                    if (detectedTier === 'pro') {
                       const cleanDuongSo: DuLieuDuongSo = {
                         ...chart.duong_so_data,
                         tier: 'pro',
@@ -1035,21 +1072,33 @@ export default function HomePage() {
                       };
                       const updatedLaSo = { ...chart.laso_data, tier: 'pro' as ServiceTier, quota: { basicAllowed: 0, proAllowed: 2 } };
 
-                      generateReading(updatedLaSo, chart.duong_so_data, 'pro')
-                        .then(async (readingResult) => {
-                          if (readingResult) {
-                            setReadingHtml(readingResult);
-                            await updateChartReading(chart.id, readingResult);
-                            await saveOrUpdateChart({
-                              id: chart.id,
-                              title: chart.title,
-                              duongSoData: cleanDuongSo,
-                              lasoData: updatedLaSo,
-                              readingHtml: readingResult,
-                            });
-                          }
-                        })
-                        .catch(console.error);
+                      if (!chart.reading_html) {
+                        // Chỉ sinh bài mới khi chưa có bài bình giải nào
+                        generateReading(updatedLaSo, chart.duong_so_data, 'pro')
+                          .then(async (readingResult) => {
+                            if (readingResult) {
+                              setReadingHtml(readingResult);
+                              await updateChartReading(chart.id, readingResult);
+                              await saveOrUpdateChart({
+                                id: chart.id,
+                                title: chart.title,
+                                duongSoData: cleanDuongSo,
+                                lasoData: updatedLaSo,
+                                readingHtml: readingResult,
+                              });
+                            }
+                          })
+                          .catch(console.error);
+                      } else if (chart.duong_so_data?.tier !== 'pro') {
+                        // Nếu đã có bài luận giải rồi, chỉ cập nhật tier sang Pro, tuyệt đối không ghi đè bài cũ
+                        saveOrUpdateChart({
+                          id: chart.id,
+                          title: chart.title,
+                          duongSoData: cleanDuongSo,
+                          lasoData: updatedLaSo,
+                          readingHtml: chart.reading_html,
+                        }).catch(console.error);
+                      }
                     }
                   }
                 })
