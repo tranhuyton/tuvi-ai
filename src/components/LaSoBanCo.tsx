@@ -466,7 +466,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
             {/* Huy hiệu TUẦN và TRIỆT đặt chuẩn xác trên các đường ranh giới của Grid */}
             {tuanGoc === trietGoc ? (
               <div
-                className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex items-center bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none gap-1 pointer-events-none tracking-wider"
+                className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex items-center bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] select-none gap-1 pointer-events-none tracking-wider"
                 style={{ left: TT_COORDS[tuanGoc]?.l, top: TT_COORDS[tuanGoc]?.t }}
               >
                 <span>{t('chart.triet', 'Triệt')}</span>
@@ -477,7 +477,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
               <>
                 {TT_COORDS[tuanGoc] && (
                   <div
-                    className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none text-center leading-none pointer-events-none tracking-wider"
+                    className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-[2px] select-none text-center leading-none pointer-events-none tracking-wider"
                     style={{ left: TT_COORDS[tuanGoc]?.l, top: TT_COORDS[tuanGoc]?.t }}
                   >
                     {t('chart.tuan', 'Tuần')}
@@ -485,7 +485,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
                 )}
                 {TT_COORDS[trietGoc] && (
                   <div
-                    className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-[2px] shadow-md border border-white/60 select-none text-center leading-none pointer-events-none tracking-wider"
+                    className="absolute z-20 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] sm:text-[10.5px] font-bold px-2 py-0.5 rounded-[2px] select-none text-center leading-none pointer-events-none tracking-wider"
                     style={{ left: TT_COORDS[trietGoc]?.l, top: TT_COORDS[trietGoc]?.t }}
                   >
                     {t('chart.triet', 'Triệt')}

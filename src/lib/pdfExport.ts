@@ -155,12 +155,12 @@ function applyPdfBlockStyles(item: HTMLElement) {
     item.style.color = '#000000';
     if (tag === 'H1') {
       item.style.fontSize = '26px';
-      item.style.margin = '16px 0 8px 0';
+      item.style.margin = '26px 0 14px 0';
       item.style.borderLeft = '5px solid #000000';
       item.style.paddingLeft = '10px';
     } else {
       item.style.fontSize = '24.5px';
-      item.style.margin = '14px 0 6px 0';
+      item.style.margin = '22px 0 12px 0';
       if (tag === 'H2') {
         item.style.borderBottom = '1.5px solid #000000';
         item.style.paddingBottom = '3px';
@@ -170,7 +170,7 @@ function applyPdfBlockStyles(item: HTMLElement) {
     item.style.fontSize = '21px';
     item.style.lineHeight = '1.65';
     item.style.fontWeight = '500';
-    item.style.margin = '0 0 8px 0';
+    item.style.margin = '0 0 18px 0';
     item.style.textAlign = 'justify';
     item.style.color = '#000000';
   } else if (tag === 'BLOCKQUOTE') {
@@ -181,14 +181,14 @@ function applyPdfBlockStyles(item: HTMLElement) {
     item.style.background = '#f8fafc';
     item.style.borderLeft = '4px solid #000000';
     item.style.padding = '8px 14px';
-    item.style.margin = '10px 0';
+    item.style.margin = '16px 0';
     item.style.borderRadius = '4px';
     item.style.fontStyle = 'italic';
   } else {
     item.style.fontSize = '21px';
     item.style.lineHeight = '1.65';
     item.style.color = '#000000';
-    item.style.margin = '0 0 8px 0';
+    item.style.margin = '0 0 18px 0';
   }
 
   // Toàn bộ phần tử con cũng mang màu đen tuyền tuyệt đối
@@ -415,7 +415,7 @@ export async function exportReadingToPdf({
 
       const h = clone.offsetHeight || 34;
       const mTop = parseFloat(clone.style.marginTop) || 0;
-      const mBottom = parseFloat(clone.style.marginBottom) || 8;
+      const mBottom = parseFloat(clone.style.marginBottom) || 18;
       const totalHeight = h + mTop + mBottom;
 
       blockHeights.push(totalHeight);
