@@ -2,7 +2,18 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, ServiceTier, QuestionsQuota } from '@/types/tuvi';
-import { MessageSquare, Send, Crown, Sparkles, Lock, CheckCircle2, BookOpen } from 'lucide-react';
+import {
+  MessageSquare,
+  Send,
+  Crown,
+  Sparkles,
+  Lock,
+  CheckCircle2,
+  BookOpen,
+  Maximize2,
+  Minimize2,
+  GripHorizontal,
+} from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface ChatThayTonProps {
@@ -105,6 +116,67 @@ export default function ChatThayTon({
     prevAllowedRef.current = totalAllowed;
   }, [totalAllowed, totalRemaining, validMessages.length]);
 
+  // 5. Tùy biến kích thước & kéo resize trên PC
+  const [chatHeight, setChatHeight] = useState<number>(640);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
+  const startResizeRef = useRef<{ startY: number; startHeight: number }>({ startY: 0, startHeight: 640 });
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Khôi phục chiều cao cửa sổ chat từ localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('tuvi_chat_height');
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 380 && val <= 1200) {
+          setChatHeight(val);
+        }
+      }
+    } catch {}
+  }, []);
+
+  // Xử lý kéo chuột để resize chiều cao trên PC
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    startResizeRef.current = {
+      startY: e.clientY,
+      startHeight: chatHeight,
+    };
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaY = e.clientY - startResizeRef.current.startY;
+      const newHeight = Math.min(1200, Math.max(380, startResizeRef.current.startHeight + deltaY));
+      setChatHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      try {
+        localStorage.setItem('tuvi_chat_height', chatHeight.toString());
+      } catch {}
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, chatHeight]);
+
+  // Tự động cuộn xuống cuối khi có tin nhắn mới hoặc đang chờ câu trả lời
+  useEffect(() => {
+    if (chatHistory.length > 0 || isLoading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatHistory.length, isLoading]);
+
   // Xử lý gửi câu hỏi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,14 +199,14 @@ export default function ChatThayTon({
   };
 
   return (
-    <div className="w-full max-w-[1060px] mx-auto mt-10 mb-16 print:hidden">
-      <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md text-slate-100">
+    <div className="w-full max-w-[1140px] mx-auto mt-6 sm:mt-10 mb-16 print:hidden px-1 sm:px-2 md:px-0">
+      <div className="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-3 sm:p-5 md:p-6 shadow-2xl backdrop-blur-md text-slate-100">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3 sm:pb-4 mb-3 sm:mb-4">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-blue-400 shrink-0" />
             <div>
-              <h3 className="font-bold text-lg sm:text-xl text-blue-400 font-serif flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-base sm:text-xl text-blue-400 font-serif flex items-center gap-2 flex-wrap">
                 <span>{t('chat.headerTitle', 'Hỏi Đáp Luận Giải Cùng AI Thầy Tôn')}</span>
                 {isPro ? (
                   <span className="text-xs sm:text-sm px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-sans font-semibold flex items-center gap-1">
@@ -154,6 +226,26 @@ export default function ChatThayTon({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Nút Phóng to / Thu nhỏ nhanh trên PC */}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700 text-xs font-semibold transition cursor-pointer"
+              title={isExpanded ? 'Thu nhỏ cửa sổ chat về độ cao mặc định' : 'Mở rộng tối đa cửa sổ chat trên màn hình'}
+            >
+              {isExpanded ? (
+                <>
+                  <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Thu nhỏ</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Mở rộng</span>
+                </>
+              )}
+            </button>
+
             {/* Huy hiệu hiển thị chi tiết số lượt theo từng loại */}
             {flowStep === 'unpaid' ? (
               <div className="text-xs sm:text-sm px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-amber-400 font-semibold flex items-center gap-1.5">
@@ -190,16 +282,23 @@ export default function ChatThayTon({
           </div>
         </div>
 
-        {/* Lịch sử tin nhắn */}
-        <div className="space-y-4 mb-5 max-h-[500px] overflow-y-auto pr-1">
+        {/* Lịch sử tin nhắn - Chiều cao mở rộng & có thể co giãn */}
+        <div
+          className="space-y-3.5 sm:space-y-4 mb-2 overflow-y-auto pr-1 sm:pr-2.5 scroll-smooth select-text"
+          style={{
+            height: isExpanded ? '80vh' : `${chatHeight}px`,
+            maxHeight: isExpanded ? '85vh' : `${chatHeight}px`,
+            minHeight: '360px',
+          }}
+        >
           {chatHistory.length === 0 && flowStep === 'chatting' && (
-            <div className="text-center py-6 space-y-1.5">
-              <p className="text-base text-slate-200 font-medium">
+            <div className="text-center py-8 space-y-2">
+              <p className="text-base sm:text-lg text-slate-200 font-medium">
                 {t('chat.introQuota', `Quý khách đang có ${totalRemaining} lượt thỉnh giáo cùng AI Thầy Tôn.`, {
                   count: totalRemaining,
                 })}
               </p>
-              <p className="text-sm text-slate-300 italic max-w-md mx-auto leading-relaxed">
+              <p className="text-sm text-slate-300 italic max-w-lg mx-auto leading-relaxed">
                 {t(
                   'chat.introGuide',
                   'Hãy nhập câu hỏi chi tiết về công danh, sự nghiệp, tài lộc, tình duyên hoặc hạn vận để Thầy Tôn soi chiếu lá số.'
@@ -210,9 +309,9 @@ export default function ChatThayTon({
 
           {chatHistory.map((item, idx) => (
             <div key={idx} className="space-y-3">
-              {/* Khách hỏi */}
+              {/* Khách hỏi - Mở rộng chiều ngang */}
               <div className="flex justify-end">
-                <div className="max-w-[90%] sm:max-w-[75%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 py-3 text-base sm:text-base shadow-md">
+                <div className="max-w-[96%] sm:max-w-[85%] md:max-w-[80%] bg-blue-600 text-white rounded-2xl rounded-tr-none px-3.5 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-md">
                   <div className="text-xs sm:text-sm font-semibold text-blue-200 mb-1 flex items-center justify-between gap-2">
                     <span>{t('chat.userPrefix', 'Khách hỏi:')}</span>
                     {isMessageVip(item) ? (
@@ -225,14 +324,14 @@ export default function ChatThayTon({
                       </span>
                     )}
                   </div>
-                  <div>{item.q}</div>
+                  <div className="leading-relaxed">{item.q}</div>
                 </div>
               </div>
 
-              {/* Thầy Tôn trả lời */}
+              {/* Thầy Tôn trả lời - Mở rộng sát hai bên mép */}
               <div className="flex justify-start">
                 <div
-                  className={`max-w-[95%] sm:max-w-[85%] rounded-2xl rounded-tl-none px-5 py-4 text-base sm:text-base leading-relaxed sm:leading-loose shadow-md ${
+                  className={`w-full max-w-full sm:max-w-[97%] md:max-w-[95%] rounded-2xl rounded-tl-none px-3.5 sm:px-6 py-3.5 sm:py-4 text-sm sm:text-base leading-relaxed sm:leading-loose shadow-md ${
                     item.isError
                       ? 'bg-red-950/80 border border-red-500/50 text-red-200'
                       : isMessageVip(item)
@@ -272,11 +371,29 @@ export default function ChatThayTon({
               </div>
             </div>
           )}
+
+          <div ref={messagesEndRef} />
         </div>
+
+        {/* Thanh kéo chỉnh độ cao (PC / Desktop Resize Bar) */}
+        {!isExpanded && (
+          <div
+            onMouseDown={handleMouseDown}
+            className={`hidden sm:flex items-center justify-center gap-2 py-1.5 mb-3 bg-slate-950/60 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/40 rounded-xl cursor-row-resize select-none transition group ${
+              isResizing ? 'bg-amber-950/40 border-amber-500/50 ring-1 ring-amber-500/40' : ''
+            }`}
+            title="Nhấn giữ và kéo lên/xuống để tùy chỉnh độ cao cửa sổ chat"
+          >
+            <GripHorizontal className="w-4 h-4 text-slate-500 group-hover:text-amber-400 transition" />
+            <span className="text-xs text-slate-400 group-hover:text-amber-300 font-medium">
+              Kéo để thay đổi độ cao ({chatHeight}px)
+            </span>
+          </div>
+        )}
 
         {/* 1. CHƯA THANH TOÁN */}
         {flowStep === 'unpaid' && (
-          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl">
+          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-4 sm:p-6 text-center space-y-3 shadow-xl">
             <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
               <Lock className="w-6 h-6" />
             </div>
@@ -311,7 +428,7 @@ export default function ChatThayTon({
 
         {/* 2. ĐÃ THANH TOÁN THÀNH CÔNG */}
         {flowStep === 'paid_success' && (
-          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/40 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
+          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-emerald-500/40 rounded-2xl p-4 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
             <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
               <CheckCircle2 className="w-6 h-6" />
             </div>
@@ -370,7 +487,7 @@ export default function ChatThayTon({
           <div className="space-y-3 animate-fade-in">
             <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-950/80 border border-slate-800 rounded-xl">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm sm:text-xs text-slate-300 font-medium">
+                <span className="text-xs text-slate-300 font-medium">
                   {t('chat.modeLabel', 'Chế độ hỏi:')}
                 </span>
                 <div className="inline-flex rounded-lg bg-slate-900 p-0.5 border border-slate-800">
@@ -384,7 +501,7 @@ export default function ChatThayTon({
                         onUnlockQuestions('vip');
                       }
                     }}
-                    className={`px-3.5 py-2 rounded-md text-sm sm:text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
                       selectedMode === 'vip'
                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20'
                         : proRemaining > 0
@@ -405,7 +522,7 @@ export default function ChatThayTon({
                     onClick={() => {
                       setSelectedMode('basic');
                     }}
-                    className={`px-3.5 py-2 rounded-md text-sm sm:text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
                       selectedMode === 'basic'
                         ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                         : basicRemaining > 0
@@ -467,19 +584,19 @@ export default function ChatThayTon({
                     ? t('chat.inputPlaceholderVip', 'Nhập câu hỏi chuyên sâu...')
                     : t('chat.inputPlaceholderBasic', 'Nhập câu hỏi cơ bản...')
                 }
-                className="flex-grow px-4 py-3.5 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-base sm:text-base focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
+                className="flex-grow px-3.5 sm:px-4 py-3 sm:py-3.5 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-sm sm:text-base focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={isLoading || !question.trim()}
-                className={`px-5 py-3.5 font-bold rounded-xl text-base sm:text-base transition disabled:opacity-50 disabled:pointer-events-none flex items-center gap-1.5 shadow-lg shrink-0 cursor-pointer ${
+                className={`px-4 sm:px-5 py-3 sm:py-3.5 font-bold rounded-xl text-sm sm:text-base transition disabled:opacity-50 disabled:pointer-events-none flex items-center gap-1.5 shadow-lg shrink-0 cursor-pointer ${
                   selectedMode === 'vip'
                     ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20'
                     : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/30'
                 }`}
               >
                 <Send className="w-4 h-4" />
-                <span>{t('chat.sendBtn', 'Gửi Thầy')}</span>
+                <span className="hidden min-[420px]:inline">{t('chat.sendBtn', 'Gửi Thầy')}</span>
               </button>
             </form>
           </div>
@@ -487,7 +604,7 @@ export default function ChatThayTon({
 
         {/* 4. ĐÃ HỎI XONG TẤT CẢ CÁC CÂU */}
         {flowStep === 'exhausted' && (
-          <div className="bg-slate-950/90 border border-amber-500/40 rounded-2xl p-5 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
+          <div className="bg-slate-950/90 border border-amber-500/40 rounded-2xl p-4 sm:p-6 text-center space-y-3 shadow-xl animate-fade-in">
             <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
               <Sparkles className="w-5 h-5" />
             </div>
