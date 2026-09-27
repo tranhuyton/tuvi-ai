@@ -199,7 +199,7 @@ export default function LuanGiaiAI({
           </div>
 
           <div
-            className="prose max-w-none text-justify text-base sm:text-lg leading-relaxed sm:leading-loose space-y-4 font-sans"
+            className="prose max-w-none text-justify text-lg sm:text-xl leading-relaxed sm:leading-loose space-y-4 font-sans"
             dangerouslySetInnerHTML={{ __html: readingHtml }}
           />
 
