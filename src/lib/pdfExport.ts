@@ -124,15 +124,15 @@ export async function exportReadingToPdf({
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background-color: #0f172a;
       color: #1e293b;
-      line-height: 1.7;
-      font-size: 14px;
+      line-height: 1.8;
+      font-size: 16px;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
 
     /* Screen View Container */
     .screen-container {
-      max-width: 900px;
+      max-width: 920px;
       margin: 24px auto 48px auto;
       padding: 0 16px;
     }
@@ -173,7 +173,7 @@ export async function exportReadingToPdf({
     }
 
     .action-tip {
-      font-size: 12px;
+      font-size: 12.5px;
       color: #cbd5e1;
     }
 
@@ -187,10 +187,10 @@ export async function exportReadingToPdf({
       background: linear-gradient(135deg, #d97706, #b45309);
       color: #ffffff;
       border: none;
-      padding: 9px 18px;
+      padding: 10px 20px;
       border-radius: 10px;
       font-weight: 700;
-      font-size: 13px;
+      font-size: 13.5px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -208,10 +208,10 @@ export async function exportReadingToPdf({
       background: #334155;
       color: #e2e8f0;
       border: 1px solid #475569;
-      padding: 9px 15px;
+      padding: 10px 16px;
       border-radius: 10px;
       font-weight: 600;
-      font-size: 13px;
+      font-size: 13.5px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
@@ -227,12 +227,12 @@ export async function exportReadingToPdf({
       color: #1e293b;
       border-radius: 12px;
       box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
-      padding: 40px 46px;
+      padding: 42px 48px;
       position: relative;
       border: 1px solid #e2e8f0;
     }
 
-    /* Ornate Outer Border */
+    /* Ornate Outer Border (Chỉ dùng cho màn hình xem trước) */
     .ornate-border {
       border: 2px solid #8b1515;
       outline: 1px solid #b45309;
@@ -266,24 +266,24 @@ export async function exportReadingToPdf({
     }
 
     .brand-emblem {
-      font-size: 26px;
+      font-size: 28px;
       color: #8b1515;
       line-height: 1;
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
 
     .brand-name {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 800;
       letter-spacing: 1.5px;
       color: #8b1515;
       text-transform: uppercase;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
 
     .brand-tagline {
-      font-size: 11px;
+      font-size: 11.5px;
       text-transform: uppercase;
       letter-spacing: 2px;
       color: #b45309;
@@ -293,7 +293,7 @@ export async function exportReadingToPdf({
 
     .brand-slogan {
       font-style: italic;
-      font-size: 12.5px;
+      font-size: 13px;
       color: #64748b;
       margin-bottom: 14px;
     }
@@ -303,13 +303,13 @@ export async function exportReadingToPdf({
       background: linear-gradient(135deg, #fffbeb, #fef3c7);
       border: 1px solid #fcd34d;
       border-radius: 8px;
-      padding: 8px 22px;
+      padding: 10px 24px;
       margin-top: 4px;
     }
 
     .doc-main-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 17px;
+      font-size: 18px;
       font-weight: 800;
       color: #78350f;
       text-transform: uppercase;
@@ -318,15 +318,15 @@ export async function exportReadingToPdf({
 
     .doc-tier-badge {
       display: inline-block;
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 700;
       color: #b45309;
-      margin-top: 3px;
+      margin-top: 4px;
       letter-spacing: 0.5px;
     }
 
     .doc-meta-info {
-      font-size: 11.5px;
+      font-size: 12px;
       color: #64748b;
       margin-top: 10px;
     }
@@ -334,9 +334,9 @@ export async function exportReadingToPdf({
     /* Destiny Profile Box (Thông tin Đương Số) */
     .profile-card {
       background: #fafaf9;
-      border: 1px solid #e7e5e4;
+      border: 1.5px solid #e7e5e4;
       border-radius: 8px;
-      padding: 16px 20px;
+      padding: 18px 22px;
       margin-bottom: 24px;
       break-inside: avoid;
       page-break-inside: avoid;
@@ -344,14 +344,14 @@ export async function exportReadingToPdf({
 
     .profile-header {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
       color: #8b1515;
       text-transform: uppercase;
       letter-spacing: 0.8px;
       border-bottom: 1px dashed #d6d3d1;
-      padding-bottom: 6px;
-      margin-bottom: 12px;
+      padding-bottom: 7px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -360,8 +360,9 @@ export async function exportReadingToPdf({
     .profile-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px 20px;
-      font-size: 13px;
+      gap: 9px 24px;
+      font-size: 14px;
+      line-height: 1.6;
     }
 
     @media (max-width: 640px) {
@@ -379,18 +380,20 @@ export async function exportReadingToPdf({
     .profile-label {
       color: #64748b;
       font-weight: 500;
-      min-width: 105px;
+      min-width: 110px;
       flex-shrink: 0;
+      font-size: 13.5px;
     }
 
     .profile-val {
       color: #0f172a;
       font-weight: 600;
+      font-size: 14.5px;
     }
 
     .profile-val.name-highlight {
       color: #8b1515;
-      font-size: 14.5px;
+      font-size: 16px;
       font-weight: 800;
       letter-spacing: 0.5px;
     }
@@ -402,7 +405,7 @@ export async function exportReadingToPdf({
     /* Traditional Divider */
     .ornate-divider {
       text-align: center;
-      margin: 20px 0 24px 0;
+      margin: 22px 0 26px 0;
       position: relative;
     }
     .ornate-divider::before {
@@ -425,12 +428,13 @@ export async function exportReadingToPdf({
       letter-spacing: 4px;
     }
 
-    /* Reading Content Typography */
+    /* Reading Content Typography - Cỡ chữ to rõ, chuẩn mực */
     .reading-content {
-      font-size: 14px;
-      line-height: 1.8;
+      font-size: 15.5px;
+      line-height: 1.85;
       color: #1e293b;
       text-align: justify;
+      text-justify: inter-word;
     }
 
     .reading-content h1,
@@ -440,36 +444,38 @@ export async function exportReadingToPdf({
       font-family: 'Playfair Display', 'Merriweather', Georgia, serif;
       color: #8b1515;
       font-weight: 700;
-      margin-top: 22px;
-      margin-bottom: 10px;
+      margin-top: 24px;
+      margin-bottom: 12px;
       break-after: avoid;
       page-break-after: avoid;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
 
     .reading-content h1 {
-      font-size: 18px;
-      border-left: 3px solid #8b1515;
-      padding-left: 10px;
+      font-size: 21px;
+      border-left: 4px solid #8b1515;
+      padding-left: 12px;
     }
 
     .reading-content h2 {
-      font-size: 16.5px;
-      border-bottom: 1px solid #fed7aa;
-      padding-bottom: 4px;
+      font-size: 18.5px;
+      border-bottom: 1.5px solid #fed7aa;
+      padding-bottom: 5px;
     }
 
     .reading-content h3 {
-      font-size: 15px;
+      font-size: 17px;
       color: #9a3412;
     }
 
     .reading-content h4 {
-      font-size: 14px;
+      font-size: 15.5px;
       color: #b45309;
     }
 
     .reading-content p {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       orphans: 3;
       widows: 3;
     }
@@ -487,24 +493,26 @@ export async function exportReadingToPdf({
 
     .reading-content ul,
     .reading-content ol {
-      margin-left: 20px;
-      margin-bottom: 12px;
+      margin-left: 22px;
+      margin-bottom: 14px;
     }
 
     .reading-content li {
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .reading-content blockquote {
       background: #fffdf5;
-      border-left: 3px solid #b45309;
-      padding: 12px 16px;
-      margin: 14px 0;
+      border-left: 3.5px solid #b45309;
+      padding: 14px 18px;
+      margin: 16px 0;
       font-style: italic;
       color: #451a03;
       border-radius: 4px;
       break-inside: avoid;
       page-break-inside: avoid;
+      font-size: 15px;
+      line-height: 1.75;
     }
 
     /* Branded Footer Box */
@@ -513,7 +521,7 @@ export async function exportReadingToPdf({
       background: #fffbeb;
       border: 1.5px solid #fcd34d;
       border-radius: 8px;
-      padding: 20px 22px;
+      padding: 22px 24px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
@@ -529,24 +537,24 @@ export async function exportReadingToPdf({
 
     .footer-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 14.5px;
+      font-size: 16px;
       font-weight: 800;
       color: #8b1515;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .footer-list {
       list-style: none;
-      font-size: 12.5px;
+      font-size: 13.5px;
       color: #334155;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
     }
 
     .footer-list li {
@@ -557,7 +565,7 @@ export async function exportReadingToPdf({
 
     .footer-list strong {
       color: #0f172a;
-      min-width: 75px;
+      min-width: 80px;
       flex-shrink: 0;
     }
 
@@ -569,10 +577,10 @@ export async function exportReadingToPdf({
 
     .footer-note {
       font-style: italic;
-      font-size: 11.5px;
+      font-size: 12.5px;
       color: #78350f;
-      margin-top: 8px;
-      line-height: 1.5;
+      margin-top: 10px;
+      line-height: 1.55;
     }
 
     .footer-right {
@@ -584,8 +592,8 @@ export async function exportReadingToPdf({
     }
 
     .footer-qr-img {
-      width: 100px;
-      height: 100px;
+      width: 105px;
+      height: 105px;
       border: 2px solid #e2e8f0;
       border-radius: 8px;
       background: #ffffff;
@@ -594,39 +602,44 @@ export async function exportReadingToPdf({
     }
 
     .footer-qr-label {
-      font-size: 10.5px;
+      font-size: 11px;
       color: #64748b;
-      max-width: 130px;
-      margin-top: 5px;
-      line-height: 1.3;
+      max-width: 135px;
+      margin-top: 6px;
+      line-height: 1.35;
       font-weight: 500;
     }
 
     /* Print Watermark / Legal */
     .legal-strip {
       text-align: center;
-      font-size: 11px;
+      font-size: 11.5px;
       color: #94a3b8;
-      margin-top: 20px;
+      margin-top: 22px;
       border-top: 1px solid #f1f5f9;
       padding-top: 12px;
       letter-spacing: 0.3px;
     }
 
-    /* PRINT SPECIFIC STYLES */
+    /* PRINT SPECIFIC STYLES - CHUẨN IN ẤN VÀ XUẤT PDF MẶC ĐỊNH */
     @media print {
       @page {
         size: A4 portrait;
-        margin: 12mm 14mm 14mm 14mm;
+        margin: 16mm 18mm 18mm 18mm;
       }
 
-      body {
+      html, body {
         background-color: #ffffff !important;
         color: #1e293b !important;
-        font-size: 13.5px;
+        font-size: 15.5px !important;
+        line-height: 1.85 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
       .screen-container {
+        width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -637,37 +650,95 @@ export async function exportReadingToPdf({
       }
 
       .paper-sheet {
+        width: 100% !important;
+        max-width: 100% !important;
         box-shadow: none !important;
         border: none !important;
         padding: 0 !important;
+        margin: 0 !important;
         border-radius: 0 !important;
       }
 
+      /* KHÔNG in khung viền ornate-border bao toàn bộ văn bản nhiều trang để tránh bị đứt gãy nét */
       .ornate-border {
-        border-width: 1.5px !important;
-        outline-width: 1px !important;
-        padding: 20px 22px !important;
+        border: none !important;
+        outline: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .corner-tl, .corner-tr, .corner-bl, .corner-br {
+        display: none !important;
       }
 
       .brand-header {
-        padding-bottom: 14px !important;
-        margin-bottom: 16px !important;
+        border-top: 3px double #8b1515 !important;
+        border-bottom: 2px solid #b45309 !important;
+        padding: 16px 0 !important;
+        margin-bottom: 20px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
 
       .brand-name {
-        font-size: 21px !important;
+        font-size: 24px !important;
       }
 
-      .brand-footer-card {
-        margin-top: 24px !important;
-        padding: 14px 16px !important;
+      .profile-card {
+        border: 1.5px solid #d4af37 !important;
+        background: #fafaf9 !important;
+        padding: 16px 20px !important;
+        margin-bottom: 22px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
+      .ornate-divider {
+        margin: 20px 0 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
+      .reading-content {
+        font-size: 15.5px !important;
+        line-height: 1.85 !important;
       }
 
       .reading-content h1,
       .reading-content h2,
-      .reading-content h3 {
+      .reading-content h3,
+      .reading-content h4 {
         break-after: avoid !important;
         page-break-after: avoid !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+        margin-top: 22px !important;
+        margin-bottom: 10px !important;
+      }
+
+      .reading-content p {
+        orphans: 3 !important;
+        widows: 3 !important;
+        margin-bottom: 12px !important;
+      }
+
+      .reading-content blockquote {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      .brand-footer-card {
+        border: 1.5px solid #d4af37 !important;
+        background: #fffdf5 !important;
+        margin-top: 30px !important;
+        padding: 16px 20px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
+      .legal-strip {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
     }
   </style>
