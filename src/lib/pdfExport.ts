@@ -15,10 +15,36 @@ export interface ExportPdfOptions {
 }
 
 /**
+ * Kiểm tra xem một phần tử có phải là tiêu đề hoặc đầu mục hay không
+ * (Bao gồm thẻ H1-H6, và các đoạn P in đậm bắt đầu bằng số thứ tự như "2. Bản đồ 4 mùa...", "IV. ...")
+ */
+function isHeadingElement(el: HTMLElement): boolean {
+  const tag = el.tagName.toUpperCase();
+  if (/^H[1-6]$/.test(tag)) return true;
+
+  const text = (el.textContent || '').trim();
+  if (text.length > 0 && text.length < 90) {
+    if (/^([0-9]+[\.\)]|[IVXLCDM]+[\.\)]|[A-Z][\.\)]|❖|✦)/i.test(text)) {
+      return true;
+    }
+    const firstChild = el.firstElementChild;
+    if (
+      firstChild &&
+      ['B', 'STRONG'].includes(firstChild.tagName) &&
+      text === (firstChild.textContent || '').trim()
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Phân tích và bẻ nhỏ HTML bài luận giải thành các khối (blocks) chi tiết:
- * - Mở phẳng các container lồng nhau (DIV, SECTION, ARTICLE)
- * - Tách các đoạn văn có chứa thẻ <br> thành các thẻ <p> độc lập (tránh trường hợp 4 mùa dồn vào 1 thẻ)
- * - Tách các đoạn văn quá dài thành các câu nhỏ để phân trang mượt mà, không để lại khoảng trống vô lý
+ * 1. Mở phẳng các container lồng nhau (DIV, SECTION, ARTICLE)
+ * 2. Mở phẳng UL / OL: Từng thẻ LI trở thành một đoạn văn độc lập có bullet • (tránh tình trạng 4 mùa bị gom vào 1 thẻ UL khổng lồ)
+ * 3. Tách các đoạn văn có chứa thẻ <br> thành các thẻ <p> độc lập
+ * 4. Tách các đoạn văn dài (> 180 ký tự) thành các câu nhỏ 1-2 câu để trang lấp đầy tự nhiên, không bao giờ bị khoảng trống lớn
  */
 function parseHtmlToBlocks(html: string): HTMLElement[] {
   const container = document.createElement('div');
@@ -29,10 +55,11 @@ function parseHtmlToBlocks(html: string): HTMLElement[] {
   function walk(node: HTMLElement) {
     const tag = node.tagName.toUpperCase();
 
-    // Mở phẳng các thẻ container
+    // 1. Mở phẳng các thẻ container
     if (['DIV', 'SECTION', 'ARTICLE', 'MAIN'].includes(tag)) {
       const hasBlockChildren = Array.from(node.children).some((c) =>
-        /^H[1-6]$/i.test(c.tagName) || ['P', 'UL', 'OL', 'BLOCKQUOTE', 'TABLE', 'DIV', 'SECTION'].includes(c.tagName)
+        /^H[1-6]$/i.test(c.tagName) ||
+        ['P', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'TABLE', 'DIV', 'SECTION'].includes(c.tagName)
       );
       if (hasBlockChildren) {
         Array.from(node.children).forEach((c) => walk(c as HTMLElement));
@@ -40,7 +67,24 @@ function parseHtmlToBlocks(html: string): HTMLElement[] {
       }
     }
 
-    // Nếu là thẻ P có chứa ngắt dòng <br> (thường gặp khi AI liệt kê 4 mùa hoặc gạch đầu dòng)
+    // 2. Mở phẳng danh sách UL / OL: Tách từng LI ra để có thể ngắt trang giữa các mục
+    if (tag === 'UL' || tag === 'OL') {
+      const liElements = Array.from(node.children).filter((c) => c.tagName === 'LI') as HTMLElement[];
+      if (liElements.length > 0) {
+        liElements.forEach((li) => walk(li));
+        return;
+      }
+    }
+
+    // 3. Xử lý thẻ LI: Biến thành thẻ P có bullet • rõ ràng
+    if (tag === 'LI') {
+      const p = document.createElement('p');
+      p.innerHTML = `<span style="font-weight: 900; margin-right: 6px;">•</span>${node.innerHTML.trim()}`;
+      walk(p);
+      return;
+    }
+
+    // 4. Nếu là thẻ P có chứa ngắt dòng <br> (thường gặp khi liệt kê các mùa hoặc gạch đầu dòng)
     if (tag === 'P' && /<br\s*\/?>/i.test(node.innerHTML)) {
       const parts = node.innerHTML.split(/<br\s*\/?>/i);
       for (const part of parts) {
@@ -48,19 +92,19 @@ function parseHtmlToBlocks(html: string): HTMLElement[] {
         if (trimmed) {
           const newP = document.createElement('p');
           newP.innerHTML = trimmed;
-          rawList.push(newP);
+          walk(newP);
         }
       }
       return;
     }
 
-    // Nếu là đoạn văn dài (> 300 ký tự) có nhiều câu, tách thành các đoạn nhỏ 2-3 câu
-    if (tag === 'P' && (node.textContent || '').length > 300) {
-      const sentences = node.innerHTML.split(/(?<=[.?!])\s+/);
-      if (sentences.length > 2) {
+    // 5. Nếu là đoạn văn dài (> 180 ký tự) có nhiều câu, bẻ thành các câu nhỏ để phân trang lấp đầy từng trang
+    if (tag === 'P' && (node.textContent || '').length > 180 && !isHeadingElement(node)) {
+      const sentences = node.innerHTML.split(/(?<=[.?!:])\s+/);
+      if (sentences.length > 1) {
         let currentChunk = '';
         for (const s of sentences) {
-          if ((currentChunk + ' ' + s).length > 220 && currentChunk) {
+          if ((currentChunk + ' ' + s).length > 150 && currentChunk) {
             const pChunk = document.createElement('p');
             pChunk.innerHTML = currentChunk.trim();
             rawList.push(pChunk);
@@ -95,69 +139,59 @@ function parseHtmlToBlocks(html: string): HTMLElement[] {
 /**
  * Định dạng thống nhất cho tất cả các khối nội dung:
  * - Chữ đen tuyền 100% (#000000), nét đậm rõ ràng, tương phản tối đa
- * - Font chữ to (21.5px - 22px), dễ đọc trên điện thoại mà không cần zoom
+ * - Font chữ to (21px), dễ đọc trên điện thoại mà không cần zoom
  */
 function applyPdfBlockStyles(item: HTMLElement) {
   const tag = item.tagName.toUpperCase();
   item.style.color = '#000000';
   item.style.boxSizing = 'border-box';
 
-  if (/^H[1-4]$/.test(tag)) {
+  const isHeading = isHeadingElement(item);
+
+  if (/^H[1-4]$/.test(tag) || (isHeading && tag === 'P')) {
     item.style.fontFamily = "'Times New Roman', Times, Georgia, serif";
     item.style.fontWeight = '900';
     item.style.color = '#000000';
     if (tag === 'H1') {
-      item.style.fontSize = '27px';
-      item.style.margin = '20px 0 10px 0';
+      item.style.fontSize = '26px';
+      item.style.margin = '16px 0 8px 0';
       item.style.borderLeft = '5px solid #000000';
-      item.style.paddingLeft = '12px';
+      item.style.paddingLeft = '10px';
     } else if (tag === 'H2') {
-      item.style.fontSize = '25px';
-      item.style.margin = '18px 0 8px 0';
+      item.style.fontSize = '24px';
+      item.style.margin = '14px 0 6px 0';
       item.style.borderBottom = '2px solid #000000';
       item.style.paddingBottom = '4px';
     } else if (tag === 'H3') {
-      item.style.fontSize = '23px';
-      item.style.margin = '16px 0 6px 0';
-    } else {
       item.style.fontSize = '22px';
-      item.style.margin = '14px 0 6px 0';
+      item.style.margin = '12px 0 6px 0';
+    } else {
+      item.style.fontSize = '21.5px';
+      item.style.margin = '10px 0 6px 0';
     }
   } else if (tag === 'P') {
-    item.style.fontSize = '21.5px';
-    item.style.lineHeight = '1.7';
+    item.style.fontSize = '21px';
+    item.style.lineHeight = '1.65';
     item.style.fontWeight = '500';
-    item.style.margin = '0 0 12px 0';
+    item.style.margin = '0 0 8px 0';
     item.style.textAlign = 'justify';
     item.style.color = '#000000';
   } else if (tag === 'BLOCKQUOTE') {
-    item.style.fontSize = '21px';
-    item.style.lineHeight = '1.7';
+    item.style.fontSize = '20px';
+    item.style.lineHeight = '1.65';
     item.style.fontWeight = '500';
     item.style.color = '#000000';
     item.style.background = '#f8fafc';
     item.style.borderLeft = '4px solid #000000';
-    item.style.padding = '10px 16px';
-    item.style.margin = '14px 0';
+    item.style.padding = '8px 14px';
+    item.style.margin = '10px 0';
     item.style.borderRadius = '4px';
     item.style.fontStyle = 'italic';
-  } else if (tag === 'UL' || tag === 'OL') {
-    item.style.fontSize = '21.5px';
-    item.style.lineHeight = '1.7';
-    item.style.fontWeight = '500';
-    item.style.color = '#000000';
-    item.style.margin = '0 0 12px 0';
-    item.style.paddingLeft = '28px';
-  } else if (tag === 'LI') {
-    item.style.fontSize = '21.5px';
-    item.style.lineHeight = '1.7';
-    item.style.fontWeight = '500';
-    item.style.color = '#000000';
-    item.style.marginBottom = '6px';
   } else {
-    item.style.fontSize = '21.5px';
-    item.style.lineHeight = '1.7';
+    item.style.fontSize = '21px';
+    item.style.lineHeight = '1.65';
     item.style.color = '#000000';
+    item.style.margin = '0 0 8px 0';
   }
 
   // Toàn bộ phần tử con cũng mang màu đen tuyền tuyệt đối
@@ -173,9 +207,10 @@ function applyPdfBlockStyles(item: HTMLElement) {
 
 /**
  * Tự động kết xuất và tải trực tiếp file PDF chuyên nghiệp về máy (Mobile & PC).
- * - Sử dụng html-to-image (PNG Retina) + jsPDF chia trang chuẩn A4.
+ * - Sử dụng html-to-image (PNG Retina 2x) + jsPDF chia trang chuẩn A4.
  * - Chữ đen tuyền 100% (#000000), font chữ to sắc nét, đọc cực rõ trên điện thoại.
- * - Tự động bẻ nhỏ khối văn bản và chống tiêu đề lẻ loi (orphan heading).
+ * - Bảo đảm Footer không bao giờ bị mất ở bất kỳ trang nào.
+ * - Bẻ nhỏ khối nội dung linh hoạt, không để trang giấy bị trống lỗ chỗ.
  */
 export async function exportReadingToPdf({
   duongSo,
@@ -284,11 +319,11 @@ export async function exportReadingToPdf({
     measureBox.style.width = '738px'; // Chiều rộng nội dung (794px - 28px * 2)
     measureBox.style.boxSizing = 'border-box';
     measureBox.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
-    measureBox.style.fontSize = '21.5px';
-    measureBox.style.lineHeight = '1.7';
+    measureBox.style.fontSize = '21px';
+    measureBox.style.lineHeight = '1.65';
     host.appendChild(measureBox);
 
-    // Đo chiều cao từng khối với style thực tế
+    // Đo chiều cao từng khối với style thực tế (BAO GỒM CẢ MARGIN ĐỂ KHÔNG BAO GIỜ BỊ THIẾU)
     const blockHeights: number[] = [];
     const blockClones: HTMLElement[] = [];
 
@@ -296,19 +331,24 @@ export async function exportReadingToPdf({
       const clone = b.cloneNode(true) as HTMLElement;
       applyPdfBlockStyles(clone);
       measureBox.appendChild(clone);
-      const h = clone.offsetHeight || 38;
-      blockHeights.push(h);
+
+      const h = clone.offsetHeight || 34;
+      const mTop = parseFloat(clone.style.marginTop) || 0;
+      const mBottom = parseFloat(clone.style.marginBottom) || 8;
+      const totalHeight = h + mTop + mBottom;
+
+      blockHeights.push(totalHeight);
       blockClones.push(clone);
       measureBox.removeChild(clone);
     }
     host.removeChild(measureBox);
 
-    // 5. Thuật toán chia trang A4 (794px x 1123px)
-    // Trang 1: Overhead ~430px => Sức chứa ~590px
-    // Các trang sau: Overhead ~60px => Sức chứa ~960px
-    const PAGE_HEIGHT_PAGE1 = 590;
-    const PAGE_HEIGHT_NORMAL = 960;
-    const FOOTER_REQUIRED_HEIGHT = 270;
+    // 5. Thuật toán chia trang A4 (794px x 1123px) an toàn tuyệt đối
+    // Trang 1: Overhead Header + Profile ~450px + Padding 44px + Footer 30px = 524px => Budget nội dung: 490px (Dư an toàn > 100px)
+    // Các trang sau: Overhead RunningHeader ~35px + Padding 44px + Footer 30px = 109px => Budget nội dung: 890px (Dư an toàn > 120px)
+    const PAGE_HEIGHT_PAGE1 = 490;
+    const PAGE_HEIGHT_NORMAL = 890;
+    const FOOTER_REQUIRED_HEIGHT = 280;
 
     const pageBlockGroups: HTMLElement[][] = [];
     let currentGroup: HTMLElement[] = [];
@@ -317,17 +357,19 @@ export async function exportReadingToPdf({
     for (let i = 0; i < blockClones.length; i++) {
       const clone = blockClones[i];
       const h = blockHeights[i];
-      const isHeading = /^H[1-4]$/i.test(clone.tagName);
+      const isHeading = isHeadingElement(clone);
 
-      if (h > currentRemaining || (isHeading && currentRemaining < 120)) {
+      // Nếu không đủ chỗ hoặc là tiêu đề nhưng không gian còn lại quá hẹp (< 110px)
+      if (h > currentRemaining || (isHeading && currentRemaining < 110)) {
         if (currentGroup.length > 0) {
-          // Tránh để tiêu đề lẻ loi (orphan heading) ở đáy trang mà không có nội dung đi kèm
+          // CHỐNG TIÊU ĐỀ LẺ LOI: Nếu khối cuối cùng của trang là tiêu đề, chuyển ngay sang trang mới cùng nội dung
           const lastItem = currentGroup[currentGroup.length - 1];
-          if (/^H[1-4]$/i.test(lastItem.tagName)) {
+          if (isHeadingElement(lastItem)) {
             currentGroup.pop();
             pageBlockGroups.push(currentGroup);
-            currentGroup = [lastItem];
-            currentRemaining = PAGE_HEIGHT_NORMAL - blockHeights[i - 1];
+            currentGroup = [lastItem, clone];
+            currentRemaining = PAGE_HEIGHT_NORMAL - blockHeights[i - 1] - h;
+            continue;
           } else {
             pageBlockGroups.push(currentGroup);
             currentGroup = [];
@@ -357,33 +399,33 @@ export async function exportReadingToPdf({
         text-align: center;
         border-top: 3px double #000000;
         border-bottom: 2px solid #000000;
-        padding: 14px 0 12px 0;
-        margin-bottom: 16px;
+        padding: 12px 0 10px 0;
+        margin-bottom: 12px;
       ">
-        <div style="font-size: 26px; color: #000000; line-height: 1; margin-bottom: 4px;">☯</div>
+        <div style="font-size: 24px; color: #000000; line-height: 1; margin-bottom: 2px;">☯</div>
         <h1 style="
           font-family: 'Times New Roman', Times, Georgia, serif;
-          font-size: 28px;
+          font-size: 26px;
           font-weight: 900;
           letter-spacing: 1.5px;
           color: #000000;
           text-transform: uppercase;
-          margin: 0 0 4px 0;
+          margin: 0 0 3px 0;
         ">Tử Vi Đẩu Số Thầy Tôn</h1>
         <div style="
-          font-size: 13.5px;
+          font-size: 13px;
           text-transform: uppercase;
-          letter-spacing: 2px;
+          letter-spacing: 1.5px;
           color: #000000;
           font-weight: 800;
-          margin-bottom: 4px;
+          margin-bottom: 3px;
         ">Tinh Hoa Dịch Học Truyền Thống • Minh Triết Đương Đại</div>
         <div style="
           font-style: italic;
-          font-size: 13.5px;
+          font-size: 13px;
           color: #000000;
           font-weight: 600;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
         ">"Khai Mở Bản Mệnh • Đắc Lộc Bình An • Kiến Tạo Tương Lai"</div>
         
         <div style="
@@ -391,18 +433,18 @@ export async function exportReadingToPdf({
           background: #ffffff;
           border: 2px solid #000000;
           border-radius: 6px;
-          padding: 8px 24px;
+          padding: 6px 20px;
         ">
           <div style="
             font-family: 'Times New Roman', Times, Georgia, serif;
-            font-size: 19px;
+            font-size: 18px;
             font-weight: 900;
             color: #000000;
             text-transform: uppercase;
           ">
             ${isPro ? 'Bản Bình Giải Tử Vi Đẩu Số Chuyên Sâu' : 'Bản Bình Giải Tử Vi Đẩu Số Khởi Nguyên'}
           </div>
-          <div style="font-size: 13px; font-weight: 800; color: #000000; margin-top: 3px;">
+          <div style="font-size: 12.5px; font-weight: 800; color: #000000; margin-top: 2px;">
             ${isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Dành Riêng Cho Thân Chủ' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
           </div>
         </div>
@@ -415,23 +457,23 @@ export async function exportReadingToPdf({
         background: #ffffff;
         border: 2px solid #000000;
         border-radius: 8px;
-        padding: 14px 18px;
-        margin-bottom: 16px;
+        padding: 12px 16px;
+        margin-bottom: 12px;
       ">
         <div style="
           font-family: 'Times New Roman', Times, Georgia, serif;
-          font-size: 17px;
+          font-size: 16px;
           font-weight: 900;
           color: #000000;
           text-transform: uppercase;
           border-bottom: 1.5px solid #000000;
-          padding-bottom: 6px;
-          margin-bottom: 10px;
+          padding-bottom: 5px;
+          margin-bottom: 8px;
           display: flex;
           justify-content: space-between;
         ">
           <span>📜 Thông Tin Thân Chủ & Bản Mệnh</span>
-          <span style="font-size: 14px; font-weight: 800; color: #000000;">
+          <span style="font-size: 13px; font-weight: 800; color: #000000;">
             ${orderCode ? `Mã đơn: ${orderCode}` : 'Hồ sơ: Bản Mệnh Tử Vi'}
           </span>
         </div>
@@ -439,12 +481,12 @@ export async function exportReadingToPdf({
         <div style="
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 8px 20px;
-          font-size: 16px;
-          line-height: 1.6;
+          gap: 6px 20px;
+          font-size: 15px;
+          line-height: 1.5;
           color: #000000;
         ">
-          <div><span style="color: #000000; font-weight: 700;">Họ và tên:</span> <span style="color: #000000; font-weight: 900; font-size: 18px;">${hoTen.toUpperCase()}</span></div>
+          <div><span style="color: #000000; font-weight: 700;">Họ và tên:</span> <span style="color: #000000; font-weight: 900; font-size: 17px;">${hoTen.toUpperCase()}</span></div>
           <div><span style="color: #000000; font-weight: 700;">Giới tính:</span> <span style="font-weight: 700; color: #000000;">${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</span></div>
           <div><span style="color: #000000; font-weight: 700;">Dương lịch:</span> <span style="font-weight: 700; color: #000000;">${ngayDuongStr}</span></div>
           <div><span style="color: #000000; font-weight: 700;">Giờ sinh:</span> <span style="font-weight: 700; color: #000000;">${gioSinhLabel}</span></div>
@@ -459,7 +501,7 @@ export async function exportReadingToPdf({
         </div>
       </div>
 
-      <div style="text-align: center; margin: 10px 0 14px 0; color: #000000; letter-spacing: 4px; font-size: 14px; font-weight: 900;">
+      <div style="text-align: center; margin: 8px 0 10px 0; color: #000000; letter-spacing: 4px; font-size: 13px; font-weight: 900;">
         ❖ ✦ ❖
       </div>
     `;
@@ -467,11 +509,11 @@ export async function exportReadingToPdf({
     // --- HTML Chân Trang Thương Hiệu Thầy Tôn (Đen tuyền, rõ nét) ---
     const brandFooterHtml = `
       <div style="
-        margin-top: 16px;
+        margin-top: 14px;
         background: #ffffff;
         border: 2px solid #000000;
         border-radius: 8px;
-        padding: 16px 18px;
+        padding: 14px 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -485,17 +527,17 @@ export async function exportReadingToPdf({
             color: #000000;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
           ">
             ☯ Tử Vi Phong Thủy Thầy Tôn
           </div>
-          <div style="font-size: 14.5px; color: #000000; font-weight: 600; display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 14px; color: #000000; font-weight: 600; display: flex; flex-direction: column; gap: 3px;">
             <div><strong style="color: #000000; font-weight: 800;">Địa chỉ:</strong> R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</div>
             <div><strong style="color: #000000; font-weight: 800;">Hotline/Zalo:</strong> <span style="font-weight: 900; color: #000000;">0935 058 688</span></div>
             <div><strong style="color: #000000; font-weight: 800;">Website:</strong> <span style="font-weight: 900; color: #000000;">https://tuvithayton.vn</span></div>
             <div><strong style="color: #000000; font-weight: 800;">Email:</strong> tranhuyton@gmail.com • thayton@tuvithayton.vn</div>
           </div>
-          <div style="font-style: italic; font-size: 13px; color: #000000; font-weight: 600; margin-top: 8px; line-height: 1.45;">
+          <div style="font-style: italic; font-size: 12.5px; color: #000000; font-weight: 600; margin-top: 6px; line-height: 1.4;">
             "Mệnh do trời định, Vận do nhân tạo. Thấu triệt bản mệnh là nấc thang đầu tiên để tu tâm tích phúc, xu cát tị hung, kiến tạo cuộc đời an khang thịnh vượng."
           </div>
         </div>
@@ -503,10 +545,10 @@ export async function exportReadingToPdf({
         <div style="display: flex; flex-direction: column; align-items: center; text-align: center; flex-shrink: 0;">
           ${
             qrCodeDataUrl
-              ? `<img src="${qrCodeDataUrl}" alt="QR tuvithayton.vn" style="width: 100px; height: 100px; border: 2px solid #000000; border-radius: 6px; background: #ffffff; padding: 2px;" />`
+              ? `<img src="${qrCodeDataUrl}" alt="QR tuvithayton.vn" style="width: 95px; height: 95px; border: 2px solid #000000; border-radius: 6px; background: #ffffff; padding: 2px;" />`
               : ''
           }
-          <div style="font-size: 11.5px; font-weight: 700; color: #000000; max-width: 130px; margin-top: 4px; line-height: 1.25;">
+          <div style="font-size: 11px; font-weight: 700; color: #000000; max-width: 125px; margin-top: 3px; line-height: 1.25;">
             Quét mã mở lá số tại tuvithayton.vn
           </div>
         </div>
@@ -514,12 +556,12 @@ export async function exportReadingToPdf({
 
       <div style="
         text-align: center;
-        font-size: 12px;
+        font-size: 11.5px;
         font-weight: 700;
         color: #000000;
-        margin-top: 10px;
+        margin-top: 8px;
         border-top: 1.5px solid #000000;
-        padding-top: 6px;
+        padding-top: 5px;
       ">
         © ${new Date().getFullYear()} TỬ VI THẦY TÔN (TUVITHAYTON.VN) • BẢN QUYỀN LUẬN GIẢI ĐƯỢC BẢO HỘ • KÍNH CHÚC QUÝ THÂN CHỦ VẠN SỰ HANH THÔNG
       </div>
@@ -537,7 +579,7 @@ export async function exportReadingToPdf({
       pageEl.style.height = '1123px';
       pageEl.style.minHeight = '1123px';
       pageEl.style.maxHeight = '1123px';
-      pageEl.style.padding = '28px';
+      pageEl.style.padding = '24px 28px 20px 28px';
       pageEl.style.boxSizing = 'border-box';
       pageEl.style.backgroundColor = '#ffffff';
       pageEl.style.color = '#000000';
@@ -545,6 +587,7 @@ export async function exportReadingToPdf({
       pageEl.style.display = 'flex';
       pageEl.style.flexDirection = 'column';
       pageEl.style.justifyContent = 'space-between';
+      pageEl.style.overflow = 'hidden';
       pageEl.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
       // Top Container
@@ -562,9 +605,9 @@ export async function exportReadingToPdf({
         runningHeader.style.justifyContent = 'space-between';
         runningHeader.style.alignItems = 'center';
         runningHeader.style.borderBottom = '2px solid #000000';
-        runningHeader.style.paddingBottom = '6px';
-        runningHeader.style.marginBottom = '16px';
-        runningHeader.style.fontSize = '13.5px';
+        runningHeader.style.paddingBottom = '5px';
+        runningHeader.style.marginBottom = '12px';
+        runningHeader.style.fontSize = '13px';
         runningHeader.style.color = '#000000';
         runningHeader.style.fontWeight = '800';
         runningHeader.style.textTransform = 'uppercase';
@@ -577,8 +620,8 @@ export async function exportReadingToPdf({
 
       // Content Container
       const contentContainer = document.createElement('div');
-      contentContainer.style.fontSize = '21.5px';
-      contentContainer.style.lineHeight = '1.7';
+      contentContainer.style.fontSize = '21px';
+      contentContainer.style.lineHeight = '1.65';
       contentContainer.style.textAlign = 'justify';
       contentContainer.style.color = '#000000';
 
@@ -598,16 +641,19 @@ export async function exportReadingToPdf({
 
       pageEl.appendChild(topContainer);
 
-      // Bottom Running Page Number
+      // Bottom Running Page Number (LUÔN CỐ ĐỊNH, KHÔNG BAO GIỜ BỊ ĐẨY MẤT)
       const bottomBar = document.createElement('div');
       bottomBar.style.display = 'flex';
       bottomBar.style.justifyContent = 'space-between';
+      bottomBar.style.alignItems = 'center';
+      bottomBar.style.height = '24px';
+      bottomBar.style.flexShrink = '0';
       bottomBar.style.fontSize = '12px';
       bottomBar.style.fontWeight = '700';
       bottomBar.style.color = '#000000';
       bottomBar.style.borderTop = '1.5px solid #000000';
-      bottomBar.style.paddingTop = '6px';
-      bottomBar.style.marginTop = '8px';
+      bottomBar.style.paddingTop = '5px';
+      bottomBar.style.marginTop = '6px';
       bottomBar.innerHTML = `
         <span>tuvithayton.vn • Hotline: 0935 058 688</span>
         <span>Trang ${pageNum} / ${totalPages}</span>
@@ -623,7 +669,7 @@ export async function exportReadingToPdf({
       const extraPage = document.createElement('div');
       extraPage.style.width = '794px';
       extraPage.style.height = '1123px';
-      extraPage.style.padding = '28px';
+      extraPage.style.padding = '24px 28px 20px 28px';
       extraPage.style.boxSizing = 'border-box';
       extraPage.style.backgroundColor = '#ffffff';
       extraPage.style.color = '#000000';
@@ -631,6 +677,7 @@ export async function exportReadingToPdf({
       extraPage.style.display = 'flex';
       extraPage.style.flexDirection = 'column';
       extraPage.style.justifyContent = 'space-between';
+      extraPage.style.overflow = 'hidden';
       extraPage.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
       const topPart = document.createElement('div');
@@ -640,9 +687,9 @@ export async function exportReadingToPdf({
           display: flex;
           justify-content: space-between;
           border-bottom: 2px solid #000000;
-          padding-bottom: 6px;
-          margin-bottom: 24px;
-          font-size: 13.5px;
+          padding-bottom: 5px;
+          margin-bottom: 20px;
+          font-size: 13px;
           color: #000000;
           font-weight: 800;
           text-transform: uppercase;
@@ -657,11 +704,15 @@ export async function exportReadingToPdf({
       const bottomBar = document.createElement('div');
       bottomBar.style.display = 'flex';
       bottomBar.style.justifyContent = 'space-between';
+      bottomBar.style.alignItems = 'center';
+      bottomBar.style.height = '24px';
+      bottomBar.style.flexShrink = '0';
       bottomBar.style.fontSize = '12px';
       bottomBar.style.fontWeight = '700';
       bottomBar.style.color = '#000000';
       bottomBar.style.borderTop = '1.5px solid #000000';
-      bottomBar.style.paddingTop = '6px';
+      bottomBar.style.paddingTop = '5px';
+      bottomBar.style.marginTop = '6px';
       bottomBar.innerHTML = `
         <span>tuvithayton.vn • Hotline: 0935 058 688</span>
         <span>Trang ${totalPages} / ${totalPages}</span>
