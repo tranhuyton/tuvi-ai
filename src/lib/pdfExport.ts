@@ -203,6 +203,63 @@ function applyPdfBlockStyles(item: HTMLElement) {
 }
 
 /**
+ * Chuyển đổi ảnh Lá Số sang màu Trắng Đen / Xám (Grayscale Monochrome)
+ * - Tự động tăng độ tương phản để các sao màu vàng, đỏ, xanh khi in đen trắng không bị mờ nhạt
+ * - Nền trắng giữ nguyên trắng tinh khiết (255)
+ */
+function convertImageToGrayscale(dataUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !dataUrl) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(dataUrl);
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i];
+          const g = d[i + 1];
+          const b = d[i + 2];
+          // Độ sáng theo chuẩn trắc quang ITU-R BT.601
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+          let finalVal = lum;
+          if (lum >= 250) {
+            finalVal = 255; // Nền trắng tinh khiết
+          } else {
+            // Tăng độ đậm nét cho các chữ màu (vàng, đỏ, xanh) để khi in laser đen trắng rõ như mực in
+            finalVal = Math.max(0, Math.min(255, lum * 0.78));
+          }
+
+          d[i] = finalVal;
+          d[i + 1] = finalVal;
+          d[i + 2] = finalVal;
+        }
+        ctx.putImageData(imgData, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch (err) {
+        console.warn('Lỗi khi convert ảnh lá số sang grayscale:', err);
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+/**
  * Tự động kết xuất và tải trực tiếp file PDF chuyên nghiệp về máy (Mobile & PC).
  * - Trang 1: Chứa toàn bộ HÌNH ẢNH LÁ SỐ TỬ VI TOÀN ĐỒ (12 cung + thiên bàn) sắc nét để đối chiếu.
  * - Trang 2+: Toàn bộ bài bình giải luận giải chuyên sâu to rõ, chữ đen tuyền, không bao giờ mất footer.
@@ -301,7 +358,7 @@ export async function exportReadingToPdf({
     if (boardNode) {
       try {
         const fullHeight = boardNode.scrollHeight || boardNode.offsetHeight || 880;
-        chartImage = await htmlToImage.toPng(boardNode, {
+        const rawChartPng = await htmlToImage.toPng(boardNode, {
           quality: 0.98,
           pixelRatio: 2.0,
           width: 760,
@@ -314,10 +371,13 @@ export async function exportReadingToPdf({
             backgroundColor: '#ffffff',
           },
         });
+        chartImage = await convertImageToGrayscale(rawChartPng);
       } catch (err) {
         console.warn('Không thể chụp hình lá số từ DOM:', err);
       }
     }
+  } else {
+    chartImage = await convertImageToGrayscale(chartImage);
   }
 
   // 4. Tạo host container ẩn trong DOM để đo đạc và tạo các trang
