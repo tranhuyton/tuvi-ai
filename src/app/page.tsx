@@ -27,6 +27,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { Sparkles, Crown, PhoneCall, MapPin, Mail, FlaskConical } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 
 export default function HomePage() {
   const { user, profile, testerInfo, refreshTesterInfo, isLoading: isAuthLoading, isPasswordRecovery, signOut } = useAuth();
@@ -788,7 +789,7 @@ export default function HomePage() {
       setLaSo(activeLaSo);
       setCurrentDuongSo(chart.duong_so_data);
       setCurrentChartId(chart.id);
-      let finalReadingHtml = chart.reading_html || undefined;
+      let finalReadingHtml = chart.reading_html ? cleanReadingHtml(chart.reading_html) : undefined;
       // Khôi phục lại phân tích Thủ tướng (chỉ tay) đứt gãy cung Mệnh cho anh Trần Trọng Vân nếu bị ghi đè trước đó
       if (
         finalReadingHtml &&
@@ -1026,7 +1027,7 @@ export default function HomePage() {
             setCurrentDuongSo(session.duongSo);
             setCurrentChartId(session.chartId || null);
             setCurrentTier(session.tier || 'free');
-            if (session.readingHtml) setReadingHtml(session.readingHtml);
+            if (session.readingHtml) setReadingHtml(cleanReadingHtml(session.readingHtml));
             if (Array.isArray(session.chatHistory)) setChatHistory(session.chatHistory);
             if (session.quota) setQuestionsQuota(session.quota);
             hasRestored = true;
@@ -1036,7 +1037,7 @@ export default function HomePage() {
               getChartDetails(session.chartId)
                 .then(async ({ chart, chatMessages }) => {
                   if (chart) {
-                    if (chart.reading_html) setReadingHtml(chart.reading_html);
+                    if (chart.reading_html) setReadingHtml(cleanReadingHtml(chart.reading_html));
                     if (chatMessages && chatMessages.length > 0) setChatHistory(chatMessages);
                     let detectedTier: ServiceTier =
                       chart.duong_so_data?.tier ||
@@ -1143,7 +1144,7 @@ export default function HomePage() {
             } catch {}
             setLaSo(activeLaSo);
             setCurrentDuongSo(data.duongSo);
-            setReadingHtml(data.readingHtml);
+            setReadingHtml(cleanReadingHtml(data.readingHtml));
             setCurrentTier('pro');
             setQuestionsQuota({ basicAllowed: 0, proAllowed: 2 });
 
@@ -1195,7 +1196,7 @@ export default function HomePage() {
             } catch {}
             setLaSo(activeLaSo);
             setCurrentDuongSo(data.duongSo);
-            setReadingHtml(data.readingHtml);
+            setReadingHtml(cleanReadingHtml(data.readingHtml));
             setCurrentTier('pro');
             setQuestionsQuota({ basicAllowed: 0, proAllowed: 2 });
 

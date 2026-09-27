@@ -5,6 +5,7 @@ import { Sparkles, Copy, Check, AlertCircle, Crown, FileDown, RefreshCw } from '
 import { ServiceTier, DuLieuDuongSo, LaSoData } from '@/types/tuvi';
 import { useLanguage } from '@/context/LanguageContext';
 import { exportReadingToPdf } from '@/lib/pdfExport';
+import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 
 interface LuanGiaiAIProps {
   readingHtml?: string;
@@ -32,24 +33,26 @@ export default function LuanGiaiAI({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [pdfProgressText, setPdfProgressText] = useState('');
 
+  const safeReadingHtml = cleanReadingHtml(readingHtml);
+
   const handleCopy = () => {
-    if (!readingHtml) return;
+    if (!safeReadingHtml) return;
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = readingHtml;
+    tempDiv.innerHTML = safeReadingHtml;
     navigator.clipboard.writeText(tempDiv.innerText || tempDiv.textContent || '');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleExportPdf = async () => {
-    if (!readingHtml || isExportingPdf) return;
+    if (!safeReadingHtml || isExportingPdf) return;
     setIsExportingPdf(true);
     setPdfProgressText('Đang tạo PDF...');
     try {
       await exportReadingToPdf({
         duongSo,
         laSo,
-        readingHtml,
+        readingHtml: safeReadingHtml,
         tier,
         onProgress: (msg) => setPdfProgressText(msg),
       });
@@ -134,7 +137,7 @@ export default function LuanGiaiAI({
         </div>
       )}
 
-      {readingHtml && !isLoading && (
+      {safeReadingHtml && !isLoading && (
         <div className="relative bg-white text-slate-800 rounded-2xl p-5 sm:p-10 shadow-2xl border border-slate-300 print:shadow-none print:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4 print:hidden border-b border-slate-200 pb-3">
             <div className="flex items-center gap-2">
@@ -200,7 +203,7 @@ export default function LuanGiaiAI({
 
           <div
             className="prose max-w-none text-justify text-lg sm:text-xl leading-relaxed sm:leading-loose space-y-4 font-sans"
-            dangerouslySetInnerHTML={{ __html: readingHtml }}
+            dangerouslySetInnerHTML={{ __html: safeReadingHtml }}
           />
 
           {!isPro && onUpgrade && (

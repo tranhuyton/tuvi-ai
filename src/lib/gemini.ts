@@ -19,19 +19,10 @@ const SUPABASE_ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTYzNTEsImV4cCI6MjA5MjY5MjM1MX0.ZEgXs3LfI9diL9aji56N9HIxPOl0e1sMeRxbMfSM2qw';
 
+import { cleanReadingHtml } from './tuvi/cleanReadingHtml';
+
 function formatTuViHtml(rawText: string): string {
-  let cleaned = rawText.replace(/```html|```markdown|```/gi, '');
-  cleaned = cleaned.replace(
-    /### (.*?)(\r\n|\n)/g,
-    '<h4 class="font-bold text-amber-700 text-lg mt-4 mb-2">$1</h4>'
-  );
-  cleaned = cleaned.replace(
-    /## (.*?)(\r\n|\n)/g,
-    '<h3 class="font-bold text-red-700 text-xl mt-6 mb-3 border-b border-red-200 pb-1">$1</h3>'
-  );
-  cleaned = cleaned.replace(/\*\*(.*?)\*\*/g, '<b class="text-red-700 font-semibold">$1</b>');
-  cleaned = cleaned.replace(/\*(.*?)\*/g, '<i class="italic text-slate-700">$1</i>');
-  return cleaned.trim();
+  return cleanReadingHtml(rawText);
 }
 
 /**
