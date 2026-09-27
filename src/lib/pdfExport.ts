@@ -75,7 +75,12 @@ export async function exportReadingToPdf({
   const amDuongTxt = laSo?.amDuongTxt || '';
   const tenCuc = laSo?.tenCuc || '';
   const sinhKhac = laSo?.sinhKhac || '';
-  const thanCu = laSo?.thanCuName ? `Thân cư ${laSo.thanCuName}` : '';
+  const rawThanCu = laSo?.thanCuName || '';
+  const thanCu = rawThanCu
+    ? rawThanCu.startsWith('Thân cư')
+      ? rawThanCu
+      : `Thân cư ${rawThanCu}`
+    : 'Mệnh Thân đồng cung';
   const menhChu = laSo?.menhChu ? `Mệnh chủ: ${laSo.menhChu}` : '';
   const thanChu = laSo?.thanChu ? `Thân chủ: ${laSo.thanChu}` : '';
   const namXem = laSo?.namXem || new Date().getFullYear();
@@ -725,7 +730,7 @@ export async function exportReadingToPdf({
         <section class="profile-card">
           <div class="profile-header">
             <span>📜 Thông Tin Thân Chủ & Bản Mệnh</span>
-            <span style="font-size: 11.5px; font-weight: 500; color: #78350f;">Mã tra cứu: TUVITHAYTON-${namDuong || 'VN'}</span>
+            <span style="font-size: 11.5px; font-weight: 500; color: #78350f;">Hồ sơ: Bản Mệnh Tử Vi</span>
           </div>
 
           <div class="profile-grid">
@@ -762,7 +767,7 @@ export async function exportReadingToPdf({
               <span class="profile-val">${tenCuc || 'Thuận Cục'}${sinhKhac ? ` (${sinhKhac})` : ''}</span>
             </div>
             <div class="profile-row">
-              <span class="profile-label">Thân cư:</span>
+              <span class="profile-label">Cung an Thân:</span>
               <span class="profile-val">${thanCu || 'Mệnh Thân đồng cung'}</span>
             </div>
             <div class="profile-row">
