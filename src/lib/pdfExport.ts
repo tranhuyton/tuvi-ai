@@ -11,6 +11,7 @@ export interface ExportPdfOptions {
   tier?: ServiceTier;
   chartTitle?: string;
   orderCode?: string;
+  chartImageDataUrl?: string;
   onProgress?: (msg: string) => void;
 }
 
@@ -207,10 +208,8 @@ function applyPdfBlockStyles(item: HTMLElement) {
 
 /**
  * Tự động kết xuất và tải trực tiếp file PDF chuyên nghiệp về máy (Mobile & PC).
- * - Sử dụng html-to-image (PNG Retina 2x) + jsPDF chia trang chuẩn A4.
- * - Chữ đen tuyền 100% (#000000), font chữ to sắc nét, đọc cực rõ trên điện thoại.
- * - Bảo đảm Footer không bao giờ bị mất ở bất kỳ trang nào.
- * - Bẻ nhỏ khối nội dung linh hoạt, không để trang giấy bị trống lỗ chỗ.
+ * - Trang 1: Chứa toàn bộ HÌNH ẢNH LÁ SỐ TỬ VI TOÀN ĐỒ (12 cung + thiên bàn) sắc nét để đối chiếu.
+ * - Trang 2+: Toàn bộ bài bình giải luận giải chuyên sâu to rõ, chữ đen tuyền, không bao giờ mất footer.
  */
 export async function exportReadingToPdf({
   duongSo,
@@ -219,6 +218,7 @@ export async function exportReadingToPdf({
   tier = 'free',
   chartTitle,
   orderCode,
+  chartImageDataUrl,
   onProgress,
 }: ExportPdfOptions): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -297,7 +297,34 @@ export async function exportReadingToPdf({
 
   const fileName = `Tu_Vi_Thay_Ton_${cleanNameForFile}.pdf`;
 
-  // 3. Tạo host container ẩn trong DOM để trình duyệt tính toán kích thước thực tế
+  // 3. Chụp hình Lá Số Tử Vi (từ DOM hoặc lấy từ tham số truyền vào)
+  onProgress?.('Đang kết xuất hình ảnh lá số tử vi...');
+  let chartImage = chartImageDataUrl || '';
+  if (!chartImage) {
+    const boardNode = document.getElementById('tuvi-board-export-node');
+    if (boardNode) {
+      try {
+        const fullHeight = boardNode.scrollHeight || boardNode.offsetHeight || 880;
+        chartImage = await htmlToImage.toPng(boardNode, {
+          quality: 0.98,
+          pixelRatio: 2.0,
+          width: 760,
+          height: fullHeight,
+          backgroundColor: '#ffffff',
+          style: {
+            transform: 'none',
+            width: '760px',
+            margin: '0',
+            backgroundColor: '#ffffff',
+          },
+        });
+      } catch (err) {
+        console.warn('Không thể chụp hình lá số từ DOM:', err);
+      }
+    }
+  }
+
+  // 4. Tạo host container ẩn trong DOM để đo đạc và tạo các trang
   const host = document.createElement('div');
   host.id = 'tuvi-pdf-render-host';
   host.style.position = 'fixed';
@@ -311,19 +338,17 @@ export async function exportReadingToPdf({
   document.body.appendChild(host);
 
   try {
-    // 4. Phân tích nội dung readingHtml thành các khối (blocks) chi tiết
+    // 5. Phân tích nội dung readingHtml thành các khối (blocks) chi tiết
     const rawBlocks = parseHtmlToBlocks(readingHtml);
 
-    // Container đo đạc kích thước thực tế
     const measureBox = document.createElement('div');
-    measureBox.style.width = '738px'; // Chiều rộng nội dung (794px - 28px * 2)
+    measureBox.style.width = '738px';
     measureBox.style.boxSizing = 'border-box';
     measureBox.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
     measureBox.style.fontSize = '21px';
     measureBox.style.lineHeight = '1.65';
     host.appendChild(measureBox);
 
-    // Đo chiều cao từng khối với style thực tế (BAO GỒM CẢ MARGIN ĐỂ KHÔNG BAO GIỜ BỊ THIẾU)
     const blockHeights: number[] = [];
     const blockClones: HTMLElement[] = [];
 
@@ -343,26 +368,23 @@ export async function exportReadingToPdf({
     }
     host.removeChild(measureBox);
 
-    // 5. Thuật toán chia trang A4 (794px x 1123px) an toàn tuyệt đối
-    // Trang 1: Overhead Header + Profile ~450px + Padding 44px + Footer 30px = 524px => Budget nội dung: 490px (Dư an toàn > 100px)
-    // Các trang sau: Overhead RunningHeader ~35px + Padding 44px + Footer 30px = 109px => Budget nội dung: 890px (Dư an toàn > 120px)
-    const PAGE_HEIGHT_PAGE1 = 490;
+    // 6. Phân trang nội dung luận giải
+    // Nếu có Trang 1 dành riêng cho Hình Lá Số => Các trang luận giải đều dùng chuẩn an toàn 890px
     const PAGE_HEIGHT_NORMAL = 890;
+    const PAGE_HEIGHT_PAGE1_NO_CHART = 490;
     const FOOTER_REQUIRED_HEIGHT = 280;
 
     const pageBlockGroups: HTMLElement[][] = [];
     let currentGroup: HTMLElement[] = [];
-    let currentRemaining = PAGE_HEIGHT_PAGE1;
+    let currentRemaining = chartImage ? PAGE_HEIGHT_NORMAL : PAGE_HEIGHT_PAGE1_NO_CHART;
 
     for (let i = 0; i < blockClones.length; i++) {
       const clone = blockClones[i];
       const h = blockHeights[i];
       const isHeading = isHeadingElement(clone);
 
-      // Nếu không đủ chỗ hoặc là tiêu đề nhưng không gian còn lại quá hẹp (< 110px)
       if (h > currentRemaining || (isHeading && currentRemaining < 110)) {
         if (currentGroup.length > 0) {
-          // CHỐNG TIÊU ĐỀ LẺ LOI: Nếu khối cuối cùng của trang là tiêu đề, chuyển ngay sang trang mới cùng nội dung
           const lastItem = currentGroup[currentGroup.length - 1];
           if (isHeadingElement(lastItem)) {
             currentGroup.pop();
@@ -386,125 +408,11 @@ export async function exportReadingToPdf({
       pageBlockGroups.push(currentGroup);
     }
 
-    // Kiểm tra trang cuối có đủ chỗ cho chân trang thương hiệu không
     const needExtraPageForFooter = currentRemaining < FOOTER_REQUIRED_HEIGHT;
-    const totalPages = pageBlockGroups.length + (needExtraPageForFooter ? 1 : 0);
+    // Tổng số trang = (1 trang lá số nếu có) + (các trang luận giải) + (1 trang chân trang nếu cần)
+    const totalPages = (chartImage ? 1 : 0) + pageBlockGroups.length + (needExtraPageForFooter ? 1 : 0);
 
-    // 6. Xây dựng các trang A4 hoàn chỉnh trong DOM
     const pageElements: HTMLElement[] = [];
-
-    // --- HTML Header trang 1 (Đen tuyền, trang trọng, chữ to) ---
-    const headerHtml = `
-      <div style="
-        text-align: center;
-        border-top: 3px double #000000;
-        border-bottom: 2px solid #000000;
-        padding: 12px 0 10px 0;
-        margin-bottom: 12px;
-      ">
-        <div style="font-size: 24px; color: #000000; line-height: 1; margin-bottom: 2px;">☯</div>
-        <h1 style="
-          font-family: 'Times New Roman', Times, Georgia, serif;
-          font-size: 26px;
-          font-weight: 900;
-          letter-spacing: 1.5px;
-          color: #000000;
-          text-transform: uppercase;
-          margin: 0 0 3px 0;
-        ">Tử Vi Đẩu Số Thầy Tôn</h1>
-        <div style="
-          font-size: 13px;
-          text-transform: uppercase;
-          letter-spacing: 1.5px;
-          color: #000000;
-          font-weight: 800;
-          margin-bottom: 3px;
-        ">Tinh Hoa Dịch Học Truyền Thống • Minh Triết Đương Đại</div>
-        <div style="
-          font-style: italic;
-          font-size: 13px;
-          color: #000000;
-          font-weight: 600;
-          margin-bottom: 8px;
-        ">"Khai Mở Bản Mệnh • Đắc Lộc Bình An • Kiến Tạo Tương Lai"</div>
-        
-        <div style="
-          display: inline-block;
-          background: #ffffff;
-          border: 2px solid #000000;
-          border-radius: 6px;
-          padding: 6px 20px;
-        ">
-          <div style="
-            font-family: 'Times New Roman', Times, Georgia, serif;
-            font-size: 18px;
-            font-weight: 900;
-            color: #000000;
-            text-transform: uppercase;
-          ">
-            ${isPro ? 'Bản Bình Giải Tử Vi Đẩu Số Chuyên Sâu' : 'Bản Bình Giải Tử Vi Đẩu Số Khởi Nguyên'}
-          </div>
-          <div style="font-size: 12.5px; font-weight: 800; color: #000000; margin-top: 2px;">
-            ${isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Dành Riêng Cho Thân Chủ' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
-          </div>
-        </div>
-      </div>
-    `;
-
-    // --- HTML Khung Hồ Sơ Bản Mệnh (Đen tuyền, rõ nét) ---
-    const profileHtml = `
-      <div style="
-        background: #ffffff;
-        border: 2px solid #000000;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-bottom: 12px;
-      ">
-        <div style="
-          font-family: 'Times New Roman', Times, Georgia, serif;
-          font-size: 16px;
-          font-weight: 900;
-          color: #000000;
-          text-transform: uppercase;
-          border-bottom: 1.5px solid #000000;
-          padding-bottom: 5px;
-          margin-bottom: 8px;
-          display: flex;
-          justify-content: space-between;
-        ">
-          <span>📜 Thông Tin Thân Chủ & Bản Mệnh</span>
-          <span style="font-size: 13px; font-weight: 800; color: #000000;">
-            ${orderCode ? `Mã đơn: ${orderCode}` : 'Hồ sơ: Bản Mệnh Tử Vi'}
-          </span>
-        </div>
-
-        <div style="
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 6px 20px;
-          font-size: 15px;
-          line-height: 1.5;
-          color: #000000;
-        ">
-          <div><span style="color: #000000; font-weight: 700;">Họ và tên:</span> <span style="color: #000000; font-weight: 900; font-size: 17px;">${hoTen.toUpperCase()}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Giới tính:</span> <span style="font-weight: 700; color: #000000;">${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Dương lịch:</span> <span style="font-weight: 700; color: #000000;">${ngayDuongStr}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Giờ sinh:</span> <span style="font-weight: 700; color: #000000;">${gioSinhLabel}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Âm lịch:</span> <span style="font-weight: 700; color: #000000;">${ngayAmStr}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Bát tự:</span> <span style="font-weight: 700; color: #000000;">${batTuStr || 'Đã quy nạp'}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Bản mệnh:</span> <span style="font-weight: 700; color: #000000;">${banMenh}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Cục số:</span> <span style="font-weight: 700; color: #000000;">${tenCuc || 'Thuận Cục'}${sinhKhac ? ` (${sinhKhac})` : ''}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Cung an Thân:</span> <span style="font-weight: 700; color: #000000;">${thanCu}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Mệnh/Thân chủ:</span> <span style="font-weight: 700; color: #000000;">${[menhChu, thanChu].filter(Boolean).join(' • ') || 'Đã an sao'}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Năm xem:</span> <span style="font-weight: 700; color: #000000;">${namXem} (${namXemCanChi})${tuoiAmXem ? ` • ${tuoiAmXem}` : ''}</span></div>
-          <div><span style="color: #000000; font-weight: 700;">Hạng:</span> <span style="color: #000000; font-weight: 900;">${isPro ? '👑 VIP Pro Chuyên Sâu' : '📜 Khởi Nguyên Cơ Bản'}</span></div>
-        </div>
-      </div>
-
-      <div style="text-align: center; margin: 8px 0 10px 0; color: #000000; letter-spacing: 4px; font-size: 13px; font-weight: 900;">
-        ❖ ✦ ❖
-      </div>
-    `;
 
     // --- HTML Chân Trang Thương Hiệu Thầy Tôn (Đen tuyền, rõ nét) ---
     const brandFooterHtml = `
@@ -567,11 +475,170 @@ export async function exportReadingToPdf({
       </div>
     `;
 
-    // Tạo từng trang DOM hoàn chỉnh
+    // =========================================================================
+    // 7. XÂY DỰNG TRANG 1: TRANG BÌA & HÌNH ẢNH LÁ SỐ TOÀN ĐỒ (Nếu có hình lá số)
+    // =========================================================================
+    if (chartImage) {
+      const page1 = document.createElement('div');
+      page1.style.width = '794px';
+      page1.style.height = '1123px';
+      page1.style.minHeight = '1123px';
+      page1.style.maxHeight = '1123px';
+      page1.style.padding = '18px 28px 16px 28px';
+      page1.style.boxSizing = 'border-box';
+      page1.style.backgroundColor = '#ffffff';
+      page1.style.color = '#000000';
+      page1.style.position = 'relative';
+      page1.style.display = 'flex';
+      page1.style.flexDirection = 'column';
+      page1.style.justifyContent = 'space-between';
+      page1.style.overflow = 'hidden';
+      page1.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+
+      const topPart1 = document.createElement('div');
+      topPart1.style.flex = '1';
+      topPart1.style.display = 'flex';
+      topPart1.style.flexDirection = 'column';
+
+      topPart1.innerHTML = `
+        <!-- Tiêu đề thương hiệu Thầy Tôn -->
+        <div style="
+          text-align: center;
+          border-top: 3px double #000000;
+          border-bottom: 2px solid #000000;
+          padding: 8px 0;
+          margin-bottom: 8px;
+        ">
+          <div style="font-size: 20px; color: #000000; line-height: 1; margin-bottom: 2px;">☯</div>
+          <h1 style="
+            font-family: 'Times New Roman', Times, Georgia, serif;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #000000;
+            text-transform: uppercase;
+            margin: 0 0 2px 0;
+          ">Tử Vi Đẩu Số Thầy Tôn</h1>
+          <div style="
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #000000;
+            font-weight: 800;
+            margin-bottom: 2px;
+          ">Tinh Hoa Dịch Học Truyền Thống • Minh Triết Đương Đại</div>
+          <div style="
+            font-style: italic;
+            font-size: 11.5px;
+            color: #000000;
+            font-weight: 600;
+          ">"Khai Mở Bản Mệnh • Đắc Lộc Bình An • Kiến Tạo Tương Lai"</div>
+        </div>
+
+        <!-- Khung tóm tắt thông tin thân chủ -->
+        <div style="
+          background: #ffffff;
+          border: 1.5px solid #000000;
+          border-radius: 6px;
+          padding: 7px 12px;
+          margin-bottom: 8px;
+          color: #000000;
+        ">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000000; padding-bottom: 3px; margin-bottom: 5px;">
+            <div>
+              <span style="font-weight: 800; font-size: 13px;">HỌ TÊN:</span> <span style="font-weight: 900; font-size: 15px; color: #000000;">${hoTen.toUpperCase()}</span>
+              <span style="margin: 0 6px; font-weight: 700;">•</span>
+              <span style="font-weight: 700; font-size: 13px;">GIỚI TÍNH:</span> <span style="font-weight: 800; font-size: 13px;">${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</span>
+              <span style="margin: 0 6px; font-weight: 700;">•</span>
+              <span style="font-weight: 700; font-size: 13px;">HẠNG:</span> <span style="font-weight: 900; font-size: 13px;">${isPro ? '👑 VIP PRO CHUYÊN SÂU' : '📜 KHỞI NGUYÊN CƠ BẢN'}</span>
+            </div>
+            <div style="font-size: 12px; font-weight: 800;">
+              ${orderCode ? `Mã: ${orderCode}` : 'Hồ Sơ: Bản Mệnh Tử Vi'}
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 12px; font-size: 12.5px; line-height: 1.4;">
+            <div><strong style="color: #000000;">Dương lịch:</strong> ${ngayDuongStr} (${gioSinhLabel})</div>
+            <div><strong style="color: #000000;">Âm lịch:</strong> ${ngayAmStr}</div>
+            <div><strong style="color: #000000;">Bát tự:</strong> ${batTuStr || 'Đã quy nạp'}</div>
+            <div><strong style="color: #000000;">Bản mệnh:</strong> ${banMenh}</div>
+            <div><strong style="color: #000000;">Cục số:</strong> ${tenCuc || 'Thuận Cục'}${sinhKhac ? ` (${sinhKhac})` : ''}</div>
+            <div><strong style="color: #000000;">Cung an Thân:</strong> ${thanCu}</div>
+            <div><strong style="color: #000000;">Mệnh chủ:</strong> ${menhChu || 'Đã an'}</div>
+            <div><strong style="color: #000000;">Thân chủ:</strong> ${thanChu || 'Đã an'}</div>
+            <div><strong style="color: #000000;">Năm xem:</strong> ${namXem} (${namXemCanChi})${tuoiAmXem ? ` • ${tuoiAmXem}` : ''}</div>
+          </div>
+        </div>
+
+        <!-- Tiêu đề lá số toàn đồ -->
+        <div style="
+          text-align: center;
+          font-family: 'Times New Roman', Times, Georgia, serif;
+          font-size: 14px;
+          font-weight: 900;
+          color: #000000;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 6px;
+        ">
+          ❖ LÁ SỐ TỬ VI ĐẨU SỐ TOÀN ĐỒ (12 CUNG & THIÊN BÀN) ❖
+        </div>
+
+        <!-- HÌNH ẢNH BÀN CỜ LÁ SỐ TOÀN DIỆN -->
+        <div style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          flex: 1;
+        ">
+          <img
+            src="${chartImage}"
+            alt="Lá Số Tử Vi ${hoTen}"
+            style="
+              width: 100%;
+              max-height: 850px;
+              object-fit: contain;
+              border: 2px solid #000000;
+              border-radius: 6px;
+              display: block;
+              background: #ffffff;
+            "
+          />
+        </div>
+      `;
+      page1.appendChild(topPart1);
+
+      // Thanh chân trang Trang 1
+      const bottomBar1 = document.createElement('div');
+      bottomBar1.style.display = 'flex';
+      bottomBar1.style.justifyContent = 'space-between';
+      bottomBar1.style.alignItems = 'center';
+      bottomBar1.style.height = '24px';
+      bottomBar1.style.flexShrink = '0';
+      bottomBar1.style.fontSize = '12px';
+      bottomBar1.style.fontWeight = '700';
+      bottomBar1.style.color = '#000000';
+      bottomBar1.style.borderTop = '1.5px solid #000000';
+      bottomBar1.style.paddingTop = '5px';
+      bottomBar1.style.marginTop = '6px';
+      bottomBar1.innerHTML = `
+        <span>tuvithayton.vn • Hotline: 0935 058 688</span>
+        <span>Trang 1 / ${totalPages}</span>
+      `;
+      page1.appendChild(bottomBar1);
+
+      host.appendChild(page1);
+      pageElements.push(page1);
+    }
+
+    // =========================================================================
+    // 8. XÂY DỰNG CÁC TRANG BÌNH GIẢI LUẬN GIẢI NỘI DUNG (Từ Trang 2 trở đi)
+    // =========================================================================
+    const startingContentPageNum = chartImage ? 2 : 1;
+
     for (let pIdx = 0; pIdx < pageBlockGroups.length; pIdx++) {
-      const pageNum = pIdx + 1;
-      const isPage1 = pageNum === 1;
-      const isLastContentPage = pageNum === pageBlockGroups.length;
+      const pageNum = startingContentPageNum + pIdx;
+      const isFirstContentPage = pIdx === 0;
+      const isLastContentPage = pIdx === pageBlockGroups.length - 1;
       const group = pageBlockGroups[pIdx];
 
       const pageEl = document.createElement('div');
@@ -590,35 +657,50 @@ export async function exportReadingToPdf({
       pageEl.style.overflow = 'hidden';
       pageEl.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
-      // Top Container
       const topContainer = document.createElement('div');
       topContainer.style.flex = '1';
       topContainer.style.display = 'flex';
       topContainer.style.flexDirection = 'column';
 
-      if (isPage1) {
-        topContainer.innerHTML = headerHtml + profileHtml;
-      } else {
-        // Tiêu đề chạy ở đầu trang 2 trở đi
-        const runningHeader = document.createElement('div');
-        runningHeader.style.display = 'flex';
-        runningHeader.style.justifyContent = 'space-between';
-        runningHeader.style.alignItems = 'center';
-        runningHeader.style.borderBottom = '2px solid #000000';
-        runningHeader.style.paddingBottom = '5px';
-        runningHeader.style.marginBottom = '12px';
-        runningHeader.style.fontSize = '13px';
-        runningHeader.style.color = '#000000';
-        runningHeader.style.fontWeight = '800';
-        runningHeader.style.textTransform = 'uppercase';
-        runningHeader.innerHTML = `
-          <span>Tử Vi Đẩu Số Thầy Tôn • Bản Luận Giải Bản Mệnh</span>
-          <span>Thân chủ: ${hoTen}</span>
+      // Header chạy ở đầu mỗi trang luận giải
+      const runningHeader = document.createElement('div');
+      runningHeader.style.display = 'flex';
+      runningHeader.style.justifyContent = 'space-between';
+      runningHeader.style.alignItems = 'center';
+      runningHeader.style.borderBottom = '2px solid #000000';
+      runningHeader.style.paddingBottom = '5px';
+      runningHeader.style.marginBottom = '12px';
+      runningHeader.style.fontSize = '13px';
+      runningHeader.style.color = '#000000';
+      runningHeader.style.fontWeight = '800';
+      runningHeader.style.textTransform = 'uppercase';
+      runningHeader.innerHTML = `
+        <span>Tử Vi Đẩu Số Thầy Tôn • Bản Luận Giải Chi Tiết</span>
+        <span>Thân chủ: ${hoTen}</span>
+      `;
+      topContainer.appendChild(runningHeader);
+
+      // Nếu là trang đầu tiên của phần luận giải, thêm banner tiêu đề bản luận giải
+      if (isFirstContentPage) {
+        const introBanner = document.createElement('div');
+        introBanner.style.textAlign = 'center';
+        introBanner.style.border = '2px solid #000000';
+        introBanner.style.borderRadius = '6px';
+        introBanner.style.padding = '8px 16px';
+        introBanner.style.marginBottom = '14px';
+        introBanner.style.background = '#ffffff';
+        introBanner.innerHTML = `
+          <div style="font-family: 'Times New Roman', Times, Georgia, serif; font-size: 19px; font-weight: 900; color: #000000; text-transform: uppercase;">
+            ${isPro ? 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ CHUYÊN SÂU' : 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ KHỞI NGUYÊN'}
+          </div>
+          <div style="font-size: 12.5px; font-weight: 800; color: #000000; margin-top: 2px;">
+            ${isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Soi Chiếu Tinh Đẩu & Tướng Pháp' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
+          </div>
         `;
-        topContainer.appendChild(runningHeader);
+        topContainer.appendChild(introBanner);
       }
 
-      // Content Container
+      // Content Container chứa các khối đoạn văn
       const contentContainer = document.createElement('div');
       contentContainer.style.fontSize = '21px';
       contentContainer.style.lineHeight = '1.65';
@@ -641,7 +723,7 @@ export async function exportReadingToPdf({
 
       pageEl.appendChild(topContainer);
 
-      // Bottom Running Page Number (LUÔN CỐ ĐỊNH, KHÔNG BAO GIỜ BỊ ĐẨY MẤT)
+      // Bottom Running Page Number (Cố định, không bao giờ bị mất)
       const bottomBar = document.createElement('div');
       bottomBar.style.display = 'flex';
       bottomBar.style.justifyContent = 'space-between';
@@ -664,7 +746,9 @@ export async function exportReadingToPdf({
       pageElements.push(pageEl);
     }
 
-    // Nếu cần trang riêng cho Brand Footer
+    // =========================================================================
+    // 9. NẾU CẦN TRANG RIÊNG CHO CHÂN TRANG THƯƠNG HIỆU & MÃ QR
+    // =========================================================================
     if (needExtraPageForFooter) {
       const extraPage = document.createElement('div');
       extraPage.style.width = '794px';
@@ -723,10 +807,10 @@ export async function exportReadingToPdf({
       pageElements.push(extraPage);
     }
 
-    // Đợi 250ms để tất cả hình ảnh QR và DOM render ổn định
+    // Đợi 250ms để tất cả hình ảnh lá số, QR và DOM render ổn định
     await new Promise((resolve) => setTimeout(resolve, 250));
 
-    // 7. Kết xuất từng trang thành ảnh PNG sắc nét (Retina 2x, không nhiễu JPEG) và ghép vào PDF
+    // 10. Kết xuất từng trang thành ảnh PNG sắc nét (Retina 2x, không nhiễu) và ghép vào PDF
     const pdfDoc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -756,7 +840,7 @@ export async function exportReadingToPdf({
 
     onProgress?.('Đang hoàn tất và lưu file PDF...');
 
-    // 8. Tạo Blob và tải file
+    // 11. Tạo Blob và tải file
     const pdfBlob: Blob = pdfDoc.output('blob');
     const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 

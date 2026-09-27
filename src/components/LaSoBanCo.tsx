@@ -277,6 +277,7 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
         }}
       >
         <div
+          id="tuvi-board-export-node"
           ref={boardInnerRef}
           className="w-[760px] mx-auto relative bg-white p-1 sm:p-2 select-none"
           style={{
