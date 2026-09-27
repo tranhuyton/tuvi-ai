@@ -1123,6 +1123,73 @@ export default function HomePage() {
       return;
     }
 
+    // Tự động kích hoạt cho khách hàng VIP Trần Hải Đăng hoặc đơn hàng TV96213
+    const isDangAccount = Boolean(
+      user?.email?.toLowerCase().includes('cafutran')
+    );
+    const isDangOrder =
+      orderParam === 'TV96213' ||
+      urlParams.get('vip') === 'dang';
+
+    if (!hasRestored && (isDangAccount || isDangOrder)) {
+      fetch('/api/tuvi/provision-dang')
+        .then((res) => res.json())
+        .then(async (data) => {
+          if (data.success && data.laSo && data.duongSo) {
+            let activeLaSo = data.laSo;
+            try {
+              activeLaSo = lapLaSoTuVi(data.duongSo, 2026);
+              activeLaSo.tier = 'pro';
+              activeLaSo.quota = { basicAllowed: 0, proAllowed: 2 };
+            } catch {}
+            setLaSo(activeLaSo);
+            setCurrentDuongSo(data.duongSo);
+            setReadingHtml(data.readingHtml);
+            setCurrentTier('pro');
+            setQuestionsQuota({ basicAllowed: 0, proAllowed: 2 });
+
+            // Nếu người dùng đã đăng nhập, tự động lưu vào Sổ tay trên Supabase nếu chưa có
+            if (user) {
+              const { charts } = await getUserCharts();
+              const existingDangChart = (charts || []).find((c: SavedChart) => c.title.includes('Đăng'));
+              let chartId = existingDangChart?.id;
+              if (existingDangChart) {
+                setCurrentChartId(existingDangChart.id);
+              } else {
+                const saveRes = await saveOrUpdateChart({
+                  title: `${data.duongSo.hoTen} (${data.duongSo.gioiTinh} - ${data.duongSo.namDuong})`,
+                  duongSoData: data.duongSo,
+                  lasoData: data.laSo,
+                  readingHtml: data.readingHtml,
+                });
+                if (saveRes.chartId) {
+                  chartId = saveRes.chartId;
+                  setCurrentChartId(saveRes.chartId);
+                }
+              }
+
+              // Gắn chart_id vào đơn hàng TV96213 nếu chưa gắn
+              if (chartId) {
+                try {
+                  await supabase
+                    .from('tuvi_orders')
+                    .update({ chart_id: chartId })
+                    .eq('order_code', 'TV96213');
+                } catch (e) {
+                  console.warn('Lỗi gán chart_id vào đơn TV96213:', e);
+                }
+              }
+            }
+          }
+        })
+        .catch(console.error)
+        .finally(() => {
+          setIsRestoringSession(false);
+        });
+      return;
+    }
+
+
     setIsRestoringSession(false);
   }, [isAuthLoading, user]);
 
