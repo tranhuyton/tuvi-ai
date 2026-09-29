@@ -2,13 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { LaSoData, ChatMessage } from '@/types/tuvi';
 import { buildCungDataPrompt } from '@/lib/tuvi/anSao';
 import { callGeminiVision } from '@/lib/gemini';
+import { createClient } from '@supabase/supabase-js';
 
 export const maxDuration = 60;
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ubkvzgwespfvrlpjuxkp.supabase.co';
+const serviceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzExNjM1MSwiZXhwIjoyMDkyNjkyMzUxfQ.Ubmws-Yg0pJKaCaXy7aO8rbt6bw4O3PGgM6GzPR0PLk';
+
+const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userQuestion, laSo, thongTinThem, chieuCao, canNang, readingHtml, chatHistory, apiKey, mode, questionType, lang, language } = body as {
+    const {
+      userQuestion,
+      laSo,
+      thongTinThem,
+      chieuCao,
+      canNang,
+      readingHtml,
+      chatHistory,
+      apiKey,
+      mode,
+      questionType,
+      lang,
+      language,
+      chartId,
+      userId,
+    } = body as {
       userQuestion: string;
       laSo: LaSoData;
       thongTinThem?: string;
@@ -21,6 +44,8 @@ export async function POST(req: NextRequest) {
       questionType?: 'basic' | 'vip';
       lang?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
       language?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
+      chartId?: string;
+      userId?: string;
     };
 
     const targetLang = lang || language || 'vi';
@@ -34,15 +59,133 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Thiếu thông tin lá số' }, { status: 400 });
     }
 
-    // Kiểm tra quota cứng từ phía máy chủ: Nếu lá số đã dùng hết câu hỏi cho phép thì từ chối xử lý
-    if (laSo && laSo.quota) {
-      const allowedPro = Number(laSo.quota.proAllowed || 0);
-      const allowedBasic = Number(laSo.quota.basicAllowed || 0);
-      const totalAllowed = allowedPro + allowedBasic;
-      const askedCount = (chatHistory || []).filter((c) => !c.isError).length;
-      if (totalAllowed > 0 && askedCount >= totalAllowed) {
+    // =========================================================================
+    // KIỂM TRA QUOTA CỨNG TỪ PHÍA MÁY CHỦ BẰNG DỮ LIỆU THỰC TẾ TRONG SUPABASE
+    // Tuyệt đối không phụ thuộc vào state phía client để chống gian lận/reset
+    // =========================================================================
+    let totalAllowed = 0;
+    let allowedPro = 0;
+    let allowedBasic = 0;
+    let askedCount = 0;
+
+    if (chartId) {
+      // 1. Đếm số câu hỏi thực tế đã được lưu trong DB cho chart này
+      const { count: dbMsgCount } = await adminSupabase
+        .from('tuvi_chat_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('chart_id', chartId);
+
+      askedCount = dbMsgCount || 0;
+
+      // 2. Kiểm tra quyền lợi Tester
+      let isTester = false;
+      let testerMaxQuestions = 0;
+      if (userId) {
+        const { data: tester } = await adminSupabase
+          .from('tuvi_testers')
+          .select('max_questions_per_chart, is_active')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (tester && tester.is_active !== false) {
+          isTester = true;
+          testerMaxQuestions = Number(tester.max_questions_per_chart || 20);
+        }
+      }
+
+      if (isTester) {
+        allowedPro = testerMaxQuestions;
+        totalAllowed = testerMaxQuestions;
+      } else {
+        // 3. Lấy thông tin lá số từ tuvi_charts
+        const { data: dbChart } = await adminSupabase
+          .from('tuvi_charts')
+          .select('user_id, duong_so_data, laso_data')
+          .eq('id', chartId)
+          .maybeSingle();
+
+        const chartUserId = dbChart?.user_id || userId;
+        const chartTier = dbChart?.duong_so_data?.tier || dbChart?.laso_data?.tier || laSo?.tier;
+
+        // Kiểm tra các đơn hàng đã thanh toán (tuvi_orders)
+        let paidProOrders = 0;
+        let paidChatVipOrders = 0;
+        let paidChatBasicOrders = 0;
+
+        if (chartId || chartUserId) {
+          const filterQuery = chartId && chartUserId
+            ? `chart_id.eq.${chartId},user_id.eq.${chartUserId}`
+            : chartId
+            ? `chart_id.eq.${chartId}`
+            : `user_id.eq.${chartUserId}`;
+
+          const { data: paidOrders } = await adminSupabase
+            .from('tuvi_orders')
+            .select('payment_type, status')
+            .or(filterQuery)
+            .eq('status', 'PAID');
+
+          (paidOrders || []).forEach((o) => {
+            if (o.payment_type === 'reading_vip') paidProOrders++;
+            else if (o.payment_type === 'chat_vip') paidChatVipOrders++;
+            else if (o.payment_type === 'chat_free') paidChatBasicOrders++;
+          });
+        }
+
+        // Hạn mức tính từ đơn hàng
+        const orderProAllowed = (paidProOrders > 0 ? 2 : 0) + (paidChatVipOrders * 2);
+        const orderBasicAllowed = paidChatBasicOrders * 2;
+
+        // Hạn mức lưu trong laso_data (admin chỉnh tay hoặc khuyến mãi)
+        const quotaPro = Number(dbChart?.laso_data?.quota?.proAllowed || laSo?.quota?.proAllowed || 0);
+        const quotaBasic = Number(dbChart?.laso_data?.quota?.basicAllowed || laSo?.quota?.basicAllowed || 0);
+
+        // Mặc định gói Pro luôn có tối thiểu 2 câu VIP
+        const basePro = (chartTier === 'pro' || paidProOrders > 0) ? 2 : 0;
+
+        allowedPro = Math.max(basePro, orderProAllowed, quotaPro);
+        allowedBasic = Math.max(orderBasicAllowed, quotaBasic);
+        totalAllowed = allowedPro + allowedBasic;
+      }
+
+      // Chặn nếu chưa đăng ký gói
+      if (totalAllowed === 0) {
         return NextResponse.json(
-          { error: 'Lá số này đã sử dụng hết số lượt hỏi cho phép. Quý khách vui lòng nạp thêm lượt hỏi để tiếp tục đàm đạo cùng Thầy Tôn.' },
+          { error: 'Lá số này chưa đăng ký gói câu hỏi đàm đạo cùng Thầy Tôn. Quý khách vui lòng đăng ký gói hỏi đáp để tiếp tục.' },
+          { status: 403 }
+        );
+      }
+
+      // Chặn nếu đã hỏi hết lượt cho phép
+      if (askedCount >= totalAllowed) {
+        return NextResponse.json(
+          {
+            error: `Lá số này đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi đàm đạo (${askedCount}/${totalAllowed}). Quý khách vui lòng nạp thêm câu hỏi để tiếp tục đàm đạo cùng Thầy Tôn.`
+          },
+          { status: 403 }
+        );
+      }
+    } else {
+      // Trường hợp khách chưa lưu lá số
+      if (laSo && laSo.quota) {
+        allowedPro = Number(laSo.quota.proAllowed || 0);
+        allowedBasic = Number(laSo.quota.basicAllowed || 0);
+        totalAllowed = allowedPro + allowedBasic;
+      } else if (laSo?.tier === 'pro') {
+        allowedPro = 2;
+        totalAllowed = 2;
+      }
+      askedCount = (chatHistory || []).filter((c) => !c.isError).length;
+
+      if (totalAllowed === 0) {
+        return NextResponse.json(
+          { error: 'Quý khách chưa đăng ký gói câu hỏi đàm đạo cùng Thầy Tôn. Vui lòng thanh toán để mở khóa câu hỏi.' },
+          { status: 403 }
+        );
+      }
+      if (askedCount >= totalAllowed) {
+        return NextResponse.json(
+          { error: `Quý khách đã sử dụng hết ${totalAllowed} lượt câu hỏi cho phép. Vui lòng nạp thêm câu hỏi để tiếp tục đàm đạo cùng Thầy Tôn.` },
           { status: 403 }
         );
       }
@@ -117,7 +260,22 @@ ${requirementText}${langInstruction}`;
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json({ answer: result.text, mode: activeMode });
+    // Tự động ghi lại tin nhắn vào tuvi_chat_messages trên máy chủ để đảm bảo tính toàn vẹn (không thể bị bỏ qua)
+    if (chartId) {
+      try {
+        await adminSupabase.from('tuvi_chat_messages').insert({
+          chart_id: chartId,
+          user_id: userId || null,
+          question: userQuestion.trim(),
+          answer: result.text,
+          message_type: activeMode,
+        });
+      } catch (saveErr) {
+        console.warn('Lỗi khi tự động lưu tin nhắn từ máy chủ:', saveErr);
+      }
+    }
+
+    return NextResponse.json({ answer: result.text, mode: activeMode, savedToDb: Boolean(chartId) });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Lỗi máy chủ nội bộ';
     return NextResponse.json({ error: `Lỗi: ${msg}` }, { status: 500 });

@@ -650,10 +650,10 @@ export default function HomePage() {
   const handleSendMessage = async (userQuestion: string, mode: 'basic' | 'vip' = 'vip') => {
     if (!laSo) return;
 
-    // Kiểm tra quota cứng: Nếu đã hỏi đủ hạn mức cho phép thì chặn
+    // Kiểm tra quota cứng: Nếu chưa đăng ký gói hoặc đã hỏi đủ hạn mức cho phép thì chặn
     const validCount = chatHistory.filter((c) => !c.isError).length;
     const totalAllowed = (questionsQuota?.proAllowed || 0) + (questionsQuota?.basicAllowed || 0);
-    if (totalAllowed > 0 && validCount >= totalAllowed) {
+    if (totalAllowed === 0 || validCount >= totalAllowed) {
       alert('Quý khách đã sử dụng hết số lượt câu hỏi của lá số này. Xin vui lòng nạp thêm lượt hỏi để tiếp tục đàm đạo cùng Thầy Tôn.');
       return;
     }
@@ -668,16 +668,17 @@ export default function HomePage() {
         body: JSON.stringify({
           userQuestion,
           laSo,
-          thongTinThem: laSo.duongSo.thongTinThem,
-          chieuCao: laSo.duongSo.chieuCao,
-          canNang: laSo.duongSo.canNang,
+          thongTinThem: laSo.duongSo?.thongTinThem,
+          chieuCao: laSo.duongSo?.chieuCao,
+          canNang: laSo.duongSo?.canNang,
           readingHtml,
           chatHistory,
           mode,
           model: selectedModel,
           lang: language,
+          chartId: currentChartId,
+          userId: user?.id,
         }),
-
       });
 
       if (!res.ok) {
@@ -711,8 +712,8 @@ export default function HomePage() {
           },
         ]);
 
-        // Nếu đã đăng nhập và có chartId, lưu tin nhắn vào database
-        if (currentChartId) {
+        // Nếu đã đăng nhập và có chartId, lưu tin nhắn vào database nếu server chưa tự lưu
+        if (currentChartId && !json.savedToDb) {
           saveChatMessage(currentChartId, userQuestion, answer, mode);
         }
       }
@@ -1129,121 +1130,19 @@ export default function HomePage() {
       return;
     }
 
-    // Tự động kích hoạt cho khách hàng VIP Trần Thị Hiên hoặc đơn hàng TV90948/TV86309
-    const orderParam = urlParams.get('order');
-    const isHienAccount = Boolean(
-      user?.email?.toLowerCase().includes('tyhonbo') || user?.email?.toLowerCase().includes('tyhonbon')
-    );
-    const isHienOrder =
-      orderParam === 'TV90948' ||
-      orderParam === 'TV86309' ||
-      urlParams.get('vip') === 'hien';
-
-    if (!hasRestored && (isHienAccount || isHienOrder)) {
-      fetch('/api/tuvi/provision-vip')
-        .then((res) => res.json())
-        .then(async (data) => {
-          if (data.success && data.laSo && data.duongSo) {
-            let activeLaSo = data.laSo;
-            try {
-              activeLaSo = lapLaSoTuVi(data.duongSo, 2026);
-              activeLaSo.tier = 'pro';
-              activeLaSo.quota = { basicAllowed: 0, proAllowed: 2 };
-            } catch {}
-            setLaSo(activeLaSo);
-            setCurrentDuongSo(data.duongSo);
-            setReadingHtml(cleanReadingHtml(data.readingHtml));
-            setCurrentTier('pro');
-            setQuestionsQuota({ basicAllowed: 0, proAllowed: 2 });
-
-            // Nếu người dùng đã đăng nhập, tự động lưu vào Sổ tay trên Supabase nếu chưa có
-            if (user) {
-              const { charts } = await getUserCharts();
-              const existingHienChart = (charts || []).find((c: SavedChart) => c.title.includes('Hiên'));
-              if (existingHienChart) {
-                setCurrentChartId(existingHienChart.id);
-              } else {
-                const saveRes = await saveOrUpdateChart({
-                  title: `${data.duongSo.hoTen} (${data.duongSo.gioiTinh} - ${data.duongSo.namDuong})`,
-                  duongSoData: data.duongSo,
-                  lasoData: data.laSo,
-                  readingHtml: data.readingHtml,
-                });
-                if (saveRes.chartId) {
-                  setCurrentChartId(saveRes.chartId);
-                }
-              }
-            }
+    // Nếu người dùng đã đăng nhập và chưa mở lá số nào: Tự động mở lá số gần nhất trong Sổ tay trên Supabase
+    if (!hasRestored && user) {
+      getUserCharts()
+        .then(({ charts }) => {
+          if (charts && charts.length > 0) {
+            handleSelectSavedChart(charts[0].id).finally(() => {
+              setIsRestoringSession(false);
+            });
+          } else {
+            setIsRestoringSession(false);
           }
         })
-        .catch(console.error)
-        .finally(() => {
-          setIsRestoringSession(false);
-        });
-      return;
-    }
-
-    // Tự động kích hoạt cho khách hàng VIP Trần Hải Đăng hoặc đơn hàng TV96213
-    const isDangAccount = Boolean(
-      user?.email?.toLowerCase().includes('cafutran')
-    );
-    const isDangOrder =
-      orderParam === 'TV96213' ||
-      urlParams.get('vip') === 'dang';
-
-    if (!hasRestored && (isDangAccount || isDangOrder)) {
-      fetch('/api/tuvi/provision-dang')
-        .then((res) => res.json())
-        .then(async (data) => {
-          if (data.success && data.laSo && data.duongSo) {
-            let activeLaSo = data.laSo;
-            try {
-              activeLaSo = lapLaSoTuVi(data.duongSo, 2026);
-              activeLaSo.tier = 'pro';
-              activeLaSo.quota = { basicAllowed: 0, proAllowed: 2 };
-            } catch {}
-            setLaSo(activeLaSo);
-            setCurrentDuongSo(data.duongSo);
-            setReadingHtml(cleanReadingHtml(data.readingHtml));
-            setCurrentTier('pro');
-            setQuestionsQuota({ basicAllowed: 0, proAllowed: 2 });
-
-            // Nếu người dùng đã đăng nhập, tự động lưu vào Sổ tay trên Supabase nếu chưa có
-            if (user) {
-              const { charts } = await getUserCharts();
-              const existingDangChart = (charts || []).find((c: SavedChart) => c.title.includes('Đăng'));
-              let chartId = existingDangChart?.id;
-              if (existingDangChart) {
-                setCurrentChartId(existingDangChart.id);
-              } else {
-                const saveRes = await saveOrUpdateChart({
-                  title: `${data.duongSo.hoTen} (${data.duongSo.gioiTinh} - ${data.duongSo.namDuong})`,
-                  duongSoData: data.duongSo,
-                  lasoData: data.laSo,
-                  readingHtml: data.readingHtml,
-                });
-                if (saveRes.chartId) {
-                  chartId = saveRes.chartId;
-                  setCurrentChartId(saveRes.chartId);
-                }
-              }
-
-              // Gắn chart_id vào đơn hàng TV96213 nếu chưa gắn
-              if (chartId) {
-                try {
-                  await supabase
-                    .from('tuvi_orders')
-                    .update({ chart_id: chartId })
-                    .eq('order_code', 'TV96213');
-                } catch (e) {
-                  console.warn('Lỗi gán chart_id vào đơn TV96213:', e);
-                }
-              }
-            }
-          }
-        })
-        .catch(console.error)
-        .finally(() => {
+        .catch(() => {
           setIsRestoringSession(false);
         });
       return;

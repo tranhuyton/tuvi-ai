@@ -100,7 +100,11 @@ export default function ChatThayTon({
 
   // Lắng nghe khi được cộng thêm lượt hỏi mới hoặc khi đã dùng hết câu hỏi
   useEffect(() => {
-    if (totalAllowed > prevAllowedRef.current || totalRemaining > prevRemainingRef.current) {
+    if (totalAllowed === 0) {
+      setFlowStep('unpaid');
+    } else if (totalRemaining === 0) {
+      setFlowStep('exhausted');
+    } else if (totalAllowed > prevAllowedRef.current || totalRemaining > prevRemainingRef.current) {
       if (totalRemaining > 0) {
         if (validMessages.length === 0) {
           setFlowStep('paid_success');
@@ -108,8 +112,6 @@ export default function ChatThayTon({
           setFlowStep('chatting');
         }
       }
-    } else if (totalRemaining === 0 && totalAllowed > 0) {
-      setFlowStep('exhausted');
     }
     prevRemainingRef.current = totalRemaining;
     prevAllowedRef.current = totalAllowed;
