@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme, ThemeId } from '@/context/ThemeContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { Palette, Check, Pipette, X } from 'lucide-react';
+import { Palette, Check, Pipette, X, ChevronDown } from 'lucide-react';
 
 export default function ThemeSelector({ className = '' }: { className?: string }) {
   const { theme, setTheme, customColor, setCustomColor, themes, currentThemeConfig } = useTheme();
@@ -47,7 +47,7 @@ export default function ThemeSelector({ className = '' }: { className?: string }
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
+        className={`flex items-center gap-1.5 h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border ${
           isOpen
             ? 'bg-slate-800 text-amber-300 border-amber-400/80 shadow-md shadow-amber-500/15'
             : 'bg-slate-950/70 hover:bg-slate-800/80 text-slate-300 hover:text-white border-slate-700/80 shadow-inner'
@@ -61,9 +61,11 @@ export default function ThemeSelector({ className = '' }: { className?: string }
           className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-transform ring-1 ring-white/30"
           style={{ backgroundColor: currentThemeConfig.color }}
         />
-        <span className="hidden xl:inline text-[11px] font-medium tracking-tight">
-          {t('theme.btnLabel', 'Giao diện')}
-        </span>
+        <ChevronDown
+          className={`w-3 h-3 text-slate-400 transition-transform duration-200 shrink-0 ${
+            isOpen ? 'rotate-180 text-amber-400' : ''
+          }`}
+        />
       </button>
 
       {/* Dropdown Bảng Chọn Màu Nền */}

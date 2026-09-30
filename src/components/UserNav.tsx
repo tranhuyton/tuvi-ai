@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSelector from '@/components/LanguageSelector';
 import ThemeSelector from '@/components/ThemeSelector';
-import { User, LogOut, LogIn, KeyRound } from 'lucide-react';
+import { User, LogOut, LogIn, KeyRound, ChevronDown, BookOpen } from 'lucide-react';
 
 interface UserNavProps {
   onOpenAuthModal: () => void;
@@ -24,6 +24,30 @@ export default function UserNav({
 }: UserNavProps) {
   const { user, profile, testerInfo, signOut, isLoading } = useAuth();
   const { t } = useLanguage();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Đóng menu tài khoản khi click ra ngoài hoặc bấm phím Escape
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setIsUserMenuOpen(false);
+      }
+    }
+    if (isUserMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isUserMenuOpen]);
 
   const handleSignOut = async () => {
     try {
@@ -49,148 +73,165 @@ export default function UserNav({
   };
 
   const displayName = getFirstName(profile?.full_name, user?.email);
+  const fullDisplayName = profile?.full_name?.trim() || user?.email?.split('@')[0] || 'Tài khoản';
+  const initialLetter = (displayName || 'U').charAt(0).toUpperCase();
 
   return (
-    <header className="w-full max-w-[1060px] mx-auto mb-4 sm:mb-6 p-2.5 sm:p-3.5 rounded-2xl bg-slate-900/80 border border-amber-500/20 backdrop-blur-md shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 relative z-30">
-      {/* Hàng 1 (Mobile) / Khối bên trái (Desktop): Logo & Tài khoản */}
-      <div className="flex items-center justify-between w-full sm:w-auto gap-2">
-        {/* Logo & Brand */}
-        <div
-          onClick={onNewChart}
-          className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group shrink-0"
-        >
-          <img
-            src="/icon.svg"
-            alt="Tử Vi Thầy Tôn"
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
-          />
-          <div>
-            <h1 className="text-sm sm:text-lg md:text-xl font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
-              {t('brand.title', 'TỬ VI THẦY TÔN')}
-            </h1>
-            <p className="text-[11px] sm:text-xs text-slate-400 font-sans hidden xl:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
-              <span>{t('brand.subtitle', 'Bát Bộ Thần Sát & Tướng Pháp Bí Truyền')}</span>
-              <span className="text-slate-600 font-light">•</span>
-              <span className="text-amber-300/85 font-medium">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Khối tài khoản trên Mobile (Góc phải hàng 1) */}
-        <div className="flex items-center gap-1.5 sm:hidden shrink-0">
-          {isLoading ? (
-            <div className="w-16 h-7 bg-slate-800 animate-pulse rounded-xl" />
-          ) : !user ? (
-            <button
-              type="button"
-              onClick={onOpenAuthModal}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>{t('nav.login', 'Đăng Nhập')}</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-1">
-              {/* Tên First Name */}
-              <div className="flex items-center gap-1 text-xs text-slate-200 font-semibold px-2 py-1 bg-slate-800/80 border border-slate-700/80 rounded-xl max-w-[85px] truncate">
-                <User className="w-3 h-3 text-amber-400 shrink-0" />
-                <span className="truncate">{displayName}</span>
-              </div>
-
-              {/* Nút Đổi MK */}
-              {onOpenChangePassword && (
-                <button
-                  type="button"
-                  onClick={onOpenChangePassword}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700/80 rounded-xl text-xs font-medium transition cursor-pointer"
-                  title="Thay đổi mật khẩu tài khoản"
-                >
-                  <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="hidden min-[380px]:inline">Đổi MK</span>
-                </button>
-              )}
-
-              {/* Nút Đăng Xuất */}
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-slate-800/60 hover:bg-red-950/40 text-slate-300 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 rounded-xl text-xs font-medium transition cursor-pointer"
-                title="Đăng xuất tài khoản"
-              >
-                <LogOut className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden min-[380px]:inline">Thoát</span>
-              </button>
-            </div>
-          )}
+    <header className="w-full max-w-[1060px] mx-auto mb-3 sm:mb-5 px-2.5 py-2 sm:px-4 sm:py-2 rounded-2xl bg-slate-900/85 border border-amber-500/20 backdrop-blur-md shadow-xl flex items-center justify-between gap-2 relative z-30">
+      {/* Khối bên trái: Logo & Brand */}
+      <div
+        onClick={onNewChart}
+        className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group shrink-0"
+        title="Lập lá số mới"
+      >
+        <img
+          src="/icon.svg"
+          alt="Tử Vi Thầy Tôn"
+          className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
+        />
+        <div className="flex flex-col">
+          <h1 className="text-xs sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
+            {t('brand.title', 'TỬ VI THẦY TÔN')}
+          </h1>
+          <p className="text-[10.5px] text-slate-400 font-sans hidden xl:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
+            <span>{t('brand.subtitle', 'Bát Bộ Thần Sát & Tướng Pháp Bí Truyền')}</span>
+            <span className="text-slate-600 font-light">•</span>
+            <span className="text-amber-300/85 font-medium">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
+          </p>
         </div>
       </div>
 
-      {/* Dòng dưới trên Mobile (Cờ & Theme) / Bên phải trên Desktop */}
-      <div className="flex flex-row items-center justify-center sm:justify-end gap-2 sm:gap-2.5 w-full sm:w-auto pt-2 sm:pt-0 border-t border-slate-800/70 sm:border-none flex-wrap sm:flex-nowrap shrink-0">
-        {/* Bộ chọn ngôn ngữ Quốc Tế */}
+      {/* Khối bên phải: Ngôn ngữ + Theme + Tài khoản (Đồng bộ 1 dòng trên cả PC & Mobile) */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Bộ chọn ngôn ngữ Quốc Tế dạng Dropdown */}
         <LanguageSelector />
 
         {/* Bộ chọn màu nền giao diện */}
         <ThemeSelector />
 
-        {/* Khối tài khoản trên Desktop */}
-        <div className="hidden sm:flex items-center gap-2">
-          {isLoading ? (
-            <div className="w-20 h-7 bg-slate-800 animate-pulse rounded-xl" />
-          ) : !user ? (
-            <>
-              <a
-                href="#gioi-thieu-thay-ton"
-                className="hidden md:inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:text-amber-300 bg-slate-800/50 hover:bg-slate-800 border border-slate-700/70 transition"
-                title="Xem thông tin & tiểu sử Thầy Tôn"
-              >
-                <span>{t('nav.about', 'Về Thầy Tôn')}</span>
-              </a>
-              <button
-                type="button"
-                onClick={onOpenAuthModal}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>{t('nav.login', 'Đăng Nhập')}</span>
-              </button>
-            </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 text-sm text-slate-200 font-semibold px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/80 rounded-xl whitespace-nowrap max-w-[180px] truncate">
-                <User className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="truncate">{displayName}</span>
-                {testerInfo?.isTester && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-bold">
-                    🧪 Tester
-                  </span>
-                )}
+        {/* Khối tài khoản */}
+        {isLoading ? (
+          <div className="w-16 sm:w-20 h-8 sm:h-9 bg-slate-800 animate-pulse rounded-xl" />
+        ) : !user ? (
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <a
+              href="#gioi-thieu-thay-ton"
+              className="hidden lg:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-300 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner"
+              title="Xem thông tin & tiểu sử Thầy Tôn"
+            >
+              <span>{t('nav.about', 'Về Thầy Tôn')}</span>
+            </a>
+            <button
+              type="button"
+              onClick={onOpenAuthModal}
+              className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
+            >
+              <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span>{t('nav.login', 'Đăng Nhập')}</span>
+            </button>
+          </div>
+        ) : (
+          /* Dropdown Menu Tài Khoản Người Dùng */
+          <div className="relative inline-block" ref={userMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsUserMenuOpen((prev) => !prev)}
+              className={`flex items-center gap-1.5 h-8 sm:h-9 px-2 sm:px-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border max-w-[120px] sm:max-w-[160px] ${
+                isUserMenuOpen
+                  ? 'bg-slate-800 text-amber-300 border-amber-400/80 shadow-md shadow-amber-500/15'
+                  : 'bg-slate-950/70 hover:bg-slate-800/80 text-slate-200 hover:text-white border-slate-700/80 shadow-inner'
+              }`}
+              aria-expanded={isUserMenuOpen}
+              title={user?.email || displayName}
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-500/40 to-amber-700/40 text-amber-300 flex items-center justify-center text-[10px] font-bold border border-amber-400/40 shrink-0">
+                {initialLetter}
               </div>
-
-              {onOpenChangePassword && (
-                <button
-                  type="button"
-                  onClick={onOpenChangePassword}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700/80 rounded-xl text-sm font-medium transition whitespace-nowrap cursor-pointer"
-                  title="Thay đổi mật khẩu tài khoản"
-                >
-                  <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>{t('nav.changePassword', 'Đổi MK')}</span>
-                </button>
+              <span className="truncate text-[11px] sm:text-xs font-medium">{displayName}</span>
+              {testerInfo?.isTester && (
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 shrink-0 animate-pulse" title="Tester" />
               )}
+              <ChevronDown
+                className={`w-3 h-3 text-slate-400 transition-transform duration-200 shrink-0 ${
+                  isUserMenuOpen ? 'rotate-180 text-amber-400' : ''
+                }`}
+              />
+            </button>
 
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/60 hover:bg-red-950/40 text-slate-300 hover:text-red-400 border border-slate-700/60 hover:border-red-500/40 rounded-xl text-sm font-medium transition whitespace-nowrap cursor-pointer"
-                title="Đăng xuất tài khoản"
-              >
-                <LogOut className="w-3.5 h-3.5 shrink-0" />
-                <span>{t('nav.logout', 'Log out')}</span>
-              </button>
-            </div>
-          )}
-        </div>
+            {/* Menu xổ xuống tài khoản */}
+            {isUserMenuOpen && (
+              <div className="absolute right-0 mt-2 w-56 sm:w-64 p-2 rounded-2xl bg-slate-900/98 border border-amber-500/40 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in divide-y divide-slate-800">
+                {/* Thông tin người dùng */}
+                <div className="p-2.5 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500/30 to-amber-600/10 border border-amber-500/40 flex items-center justify-center text-amber-300 font-bold text-sm shrink-0 shadow-inner">
+                    {initialLetter}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-xs sm:text-sm text-slate-200 truncate">{fullDisplayName}</span>
+                      {testerInfo?.isTester && (
+                        <span className="px-1.5 py-0.5 rounded bg-purple-500/25 text-purple-300 border border-purple-500/40 text-[9px] font-bold shrink-0">
+                          Tester
+                        </span>
+                      )}
+                    </div>
+                    {user?.email && (
+                      <p className="text-[10.5px] text-slate-400 truncate leading-tight mt-0.5">{user.email}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Các thao tác nhanh */}
+                <div className="py-1.5 space-y-0.5">
+                  {/* Lá Số Đã Lưu */}
+                  {onOpenSavedCharts && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        onOpenSavedCharts();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs text-slate-300 hover:text-amber-300 hover:bg-slate-800/80 transition cursor-pointer text-left"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>{t('nav.savedCharts', 'Lá Số Đã Lưu')}</span>
+                    </button>
+                  )}
+
+                  {/* Đổi Mật Khẩu */}
+                  {onOpenChangePassword && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        onOpenChangePassword();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs text-slate-300 hover:text-amber-300 hover:bg-slate-800/80 transition cursor-pointer text-left"
+                    >
+                      <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>{t('nav.changePassword', 'Đổi Mật Khẩu')}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Đăng Xuất */}
+                <div className="pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUserMenuOpen(false);
+                      handleSignOut();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs text-red-400 hover:text-red-300 hover:bg-red-950/40 transition cursor-pointer text-left"
+                  >
+                    <LogOut className="w-3.5 h-3.5 shrink-0" />
+                    <span>{t('nav.logout', 'Đăng Xuất')}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
