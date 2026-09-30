@@ -883,6 +883,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.copyright': '© {year} 톤 대사 자미두수. 천년 주역과 정통 비전의 계승 — 타고난 운명을 밝히고 형통한 삶을 열어갑니다.',
 
     // Theme
+    'theme.btnLabel': '테마',
     'theme.btnTitle': '배경 테마 변경',
     'theme.title': '배경 테마 색상 선택',
     'theme.subtitle': '사주 본명과 풍수 기운에 어울리는 색채',
@@ -1105,6 +1106,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.copyright': '© {year} トン先生の紫微斗数. 千年の易学と正統秘伝の継承 — 天命を照らし、吉祥なる人生を拓く。',
 
     // Theme
+    'theme.btnLabel': 'テーマ',
     'theme.btnTitle': '背景テーマ変更',
     'theme.title': '背景テーマ色の選択',
     'theme.subtitle': '本命五行と風水の調和をもたらす色合い',
