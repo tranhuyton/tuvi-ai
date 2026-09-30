@@ -11,6 +11,7 @@ import AdminTestersTable from '@/components/admin/AdminTestersTable';
 import { AffiliateItem } from '@/types/affiliate';
 import { TesterAccount } from '@/types/tester';
 import LanguageSelector from '@/components/LanguageSelector';
+import ThemeSelector from '@/components/ThemeSelector';
 import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw, Share2, FlaskConical } from 'lucide-react';
 
 type AdminTab = 'studio' | 'transactions' | 'affiliates' | 'testers' | 'users';
@@ -223,6 +224,8 @@ export default function AdminPage() {
               <span className="text-[11px] text-amber-300 font-medium hidden md:inline">Ngôn ngữ test:</span>
               <LanguageSelector />
             </div>
+
+            <ThemeSelector />
 
             <Link
               href="/"

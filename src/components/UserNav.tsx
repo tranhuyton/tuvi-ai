@@ -4,6 +4,7 @@ import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSelector from '@/components/LanguageSelector';
+import ThemeSelector from '@/components/ThemeSelector';
 import { User, LogOut, LogIn, KeyRound } from 'lucide-react';
 
 interface UserNavProps {
@@ -124,10 +125,13 @@ export default function UserNav({
         </div>
       </div>
 
-      {/* Dòng dưới trên Mobile (Cờ nằm ở đây) / Bên phải trên Desktop */}
-      <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-2 sm:gap-2.5 w-full sm:w-auto pt-2 sm:pt-0 border-t border-slate-800/70 sm:border-none">
-        {/* Bộ chọn ngôn ngữ Quốc Tế: Trên mobile căn giữa dòng dưới */}
+      {/* Dòng dưới trên Mobile (Cờ & Theme) / Bên phải trên Desktop */}
+      <div className="flex flex-row items-center justify-center sm:justify-end gap-2 sm:gap-2.5 w-full sm:w-auto pt-2 sm:pt-0 border-t border-slate-800/70 sm:border-none flex-wrap">
+        {/* Bộ chọn ngôn ngữ Quốc Tế */}
         <LanguageSelector />
+
+        {/* Bộ chọn màu nền giao diện */}
+        <ThemeSelector />
 
         {/* Khối tài khoản trên Desktop */}
         <div className="hidden sm:flex items-center gap-2">

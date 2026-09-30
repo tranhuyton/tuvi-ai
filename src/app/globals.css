@@ -5,16 +5,89 @@
   --font-serif: var(--font-lora), Georgia, "Times New Roman", serif;
 }
 
-:root {
+:root, [data-theme="cosmic"] {
   --background: #0a0a0f;
   --foreground: #f8fafc;
+  --bg-color: #0a0a0f;
+  --bg-glow-top: rgba(212, 175, 55, 0.09);
+  --bg-glow-bottom: rgba(183, 28, 28, 0.12);
+  --bg-overlay-start: rgba(10, 10, 15, 0.88);
+  --bg-overlay-end: rgba(10, 10, 15, 0.96);
+  --theme-accent: #f59e0b;
+}
+
+[data-theme="amethyst"] {
+  --background: #0d0618;
+  --foreground: #f8fafc;
+  --bg-color: #0d0618;
+  --bg-glow-top: rgba(168, 85, 247, 0.18);
+  --bg-glow-bottom: rgba(236, 72, 153, 0.14);
+  --bg-overlay-start: rgba(13, 6, 24, 0.88);
+  --bg-overlay-end: rgba(13, 6, 24, 0.96);
+  --theme-accent: #c084fc;
+}
+
+[data-theme="emerald"] {
+  --background: #041410;
+  --foreground: #f8fafc;
+  --bg-color: #041410;
+  --bg-glow-top: rgba(16, 185, 129, 0.18);
+  --bg-glow-bottom: rgba(6, 95, 70, 0.16);
+  --bg-overlay-start: rgba(4, 20, 16, 0.88);
+  --bg-overlay-end: rgba(4, 20, 16, 0.96);
+  --theme-accent: #34d399;
+}
+
+[data-theme="crimson"] {
+  --background: #160606;
+  --foreground: #f8fafc;
+  --bg-color: #160606;
+  --bg-glow-top: rgba(239, 68, 68, 0.18);
+  --bg-glow-bottom: rgba(180, 83, 9, 0.16);
+  --bg-overlay-start: rgba(22, 6, 6, 0.88);
+  --bg-overlay-end: rgba(22, 6, 6, 0.96);
+  --theme-accent: #f87171;
+}
+
+[data-theme="amber"] {
+  --background: #140f0a;
+  --foreground: #f8fafc;
+  --bg-color: #140f0a;
+  --bg-glow-top: rgba(245, 158, 11, 0.18);
+  --bg-glow-bottom: rgba(180, 83, 9, 0.15);
+  --bg-overlay-start: rgba(20, 15, 10, 0.88);
+  --bg-overlay-end: rgba(20, 15, 10, 0.96);
+  --theme-accent: #fbbf24;
+}
+
+[data-theme="ocean"] {
+  --background: #040d1a;
+  --foreground: #f8fafc;
+  --bg-color: #040d1a;
+  --bg-glow-top: rgba(14, 165, 233, 0.18);
+  --bg-glow-bottom: rgba(30, 58, 138, 0.18);
+  --bg-overlay-start: rgba(4, 13, 26, 0.88);
+  --bg-overlay-end: rgba(4, 13, 26, 0.96);
+  --theme-accent: #38bdf8;
+}
+
+[data-theme="obsidian"] {
+  --background: #050507;
+  --foreground: #f8fafc;
+  --bg-color: #050507;
+  --bg-glow-top: rgba(99, 102, 241, 0.10);
+  --bg-glow-bottom: rgba(15, 23, 42, 0.22);
+  --bg-overlay-start: rgba(5, 5, 7, 0.92);
+  --bg-overlay-end: rgba(5, 5, 7, 0.98);
+  --theme-accent: #94a3b8;
 }
 
 body {
-  background-color: #0a0a0f;
+  background-color: var(--bg-color, #0a0a0f);
   color: #f8fafc;
   font-family: var(--font-be-vietnam), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   min-height: 100vh;
+  transition: background-color 0.4s ease;
 }
 
 ::selection {
@@ -28,14 +101,16 @@ body {
 }
 
 .cosmic-bg {
+  background-color: var(--bg-color, #0a0a0f);
   background-image: 
-    radial-gradient(ellipse at top, rgba(212, 175, 55, 0.08), transparent 50%),
-    radial-gradient(ellipse at bottom, rgba(183, 28, 28, 0.12), transparent 50%),
-    linear-gradient(rgba(10, 10, 15, 0.88), rgba(10, 10, 15, 0.96)),
+    radial-gradient(ellipse at top, var(--bg-glow-top, rgba(212, 175, 55, 0.08)), transparent 50%),
+    radial-gradient(ellipse at bottom, var(--bg-glow-bottom, rgba(183, 28, 28, 0.12)), transparent 50%),
+    linear-gradient(var(--bg-overlay-start, rgba(10, 10, 15, 0.88)), var(--bg-overlay-end, rgba(10, 10, 15, 0.96))),
     url("https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&q=80");
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
+  transition: background 0.4s ease, background-color 0.4s ease;
 }
 
 /* Tinh chỉnh typography khi render lời giải AI (Luận giải chuyên sâu & Cơ bản) */
