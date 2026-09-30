@@ -61,14 +61,14 @@ export default function ThemeSelector({ className = '' }: { className?: string }
           className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-transform ring-1 ring-white/30"
           style={{ backgroundColor: currentThemeConfig.color }}
         />
-        <span className="hidden md:inline text-[11px] font-medium tracking-tight">
-          {t(currentThemeConfig.nameKey, currentThemeConfig.defaultName)}
+        <span className="hidden xl:inline text-[11px] font-medium tracking-tight">
+          {t('theme.btnLabel', 'Giao diện')}
         </span>
       </button>
 
       {/* Dropdown Bảng Chọn Màu Nền */}
       {isOpen && (
-        <div className="absolute right-0 sm:right-auto sm:left-0 mt-2 w-[310px] sm:w-[350px] p-3 rounded-2xl bg-slate-900/95 border border-amber-500/40 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in divide-y divide-slate-800">
+        <div className="absolute right-0 mt-2 w-[295px] sm:w-[340px] p-3 rounded-2xl bg-slate-900/98 border border-amber-500/50 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in divide-y divide-slate-800">
           {/* Header */}
           <div className="pb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">

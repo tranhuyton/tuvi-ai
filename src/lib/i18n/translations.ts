@@ -214,6 +214,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.copyright': '© {year} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học & Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.',
 
     // Theme
+    'theme.btnLabel': 'Giao diện',
     'theme.btnTitle': 'Đổi màu nền giao diện',
     'theme.title': 'Chọn Màu Nền Giao Diện',
     'theme.subtitle': 'Đổi sắc thái hợp bản mệnh & phong thủy',
@@ -436,6 +437,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.copyright': '© {year} Master Ton Astrology. Inheriting millennium-old I-Ching wisdom — Illuminating life paths, unlocking prosperity.',
 
     // Theme
+    'theme.btnLabel': 'Theme',
     'theme.btnTitle': 'Change background theme',
     'theme.title': 'Select Background Theme',
     'theme.subtitle': 'Personalize your cosmic astrology space',
@@ -658,6 +660,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.copyright': '© {year} 顿师紫微斗数。承继千载易学古法精粹 — 洞悉宿世宿命，开阖康泰坦途。',
 
     // Theme
+    'theme.btnLabel': '主题',
     'theme.btnTitle': '切换背景主题',
     'theme.title': '选择界面背景色',
     'theme.subtitle': '契合五行本命与风水气场',

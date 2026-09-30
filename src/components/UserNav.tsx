@@ -51,7 +51,7 @@ export default function UserNav({
   const displayName = getFirstName(profile?.full_name, user?.email);
 
   return (
-    <header className="w-full max-w-[1060px] mx-auto mb-4 sm:mb-6 p-2.5 sm:p-3.5 rounded-2xl bg-slate-900/80 border border-amber-500/20 backdrop-blur-md shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 overflow-hidden">
+    <header className="w-full max-w-[1060px] mx-auto mb-4 sm:mb-6 p-2.5 sm:p-3.5 rounded-2xl bg-slate-900/80 border border-amber-500/20 backdrop-blur-md shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 relative z-30">
       {/* Hàng 1 (Mobile) / Khối bên trái (Desktop): Logo & Tài khoản */}
       <div className="flex items-center justify-between w-full sm:w-auto gap-2">
         {/* Logo & Brand */}
@@ -68,7 +68,7 @@ export default function UserNav({
             <h1 className="text-sm sm:text-lg md:text-xl font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
               {t('brand.title', 'TỬ VI THẦY TÔN')}
             </h1>
-            <p className="text-[11px] sm:text-xs text-slate-400 font-sans hidden sm:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-sans hidden xl:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
               <span>{t('brand.subtitle', 'Bát Bộ Thần Sát & Tướng Pháp Bí Truyền')}</span>
               <span className="text-slate-600 font-light">•</span>
               <span className="text-amber-300/85 font-medium">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
@@ -126,7 +126,7 @@ export default function UserNav({
       </div>
 
       {/* Dòng dưới trên Mobile (Cờ & Theme) / Bên phải trên Desktop */}
-      <div className="flex flex-row items-center justify-center sm:justify-end gap-2 sm:gap-2.5 w-full sm:w-auto pt-2 sm:pt-0 border-t border-slate-800/70 sm:border-none flex-wrap">
+      <div className="flex flex-row items-center justify-center sm:justify-end gap-2 sm:gap-2.5 w-full sm:w-auto pt-2 sm:pt-0 border-t border-slate-800/70 sm:border-none flex-wrap sm:flex-nowrap shrink-0">
         {/* Bộ chọn ngôn ngữ Quốc Tế */}
         <LanguageSelector />
 

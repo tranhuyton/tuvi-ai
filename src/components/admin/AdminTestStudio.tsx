@@ -444,6 +444,7 @@ export default function AdminTestStudio() {
 
     const calculated = lapLaSoTuVi(cleanData, 2026);
     calculated.tier = testTier;
+    calculated.quota = { basicAllowed: 999, proAllowed: 999 };
     setLaSo(calculated);
 
     // Chuẩn bị raw prompt để debug
@@ -562,19 +563,25 @@ export default function AdminTestStudio() {
 
     try {
       const selectedModel = mode === 'vip' ? (testModel || 'gemini-3.1-pro-preview') : 'gemini-2.5-flash';
+      const pin = typeof window !== 'undefined' ? (localStorage.getItem('tuvi_admin_pin') || 'thayton2026') : 'thayton2026';
       const res = await fetch('/api/tuvi/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pin': pin,
+        },
         body: JSON.stringify({
           userQuestion,
           laSo,
-          thongTinThem: laSo.duongSo.thongTinThem,
-          chieuCao: laSo.duongSo.chieuCao,
-          canNang: laSo.duongSo.canNang,
+          thongTinThem: laSo.duongSo?.thongTinThem,
+          chieuCao: laSo.duongSo?.chieuCao,
+          canNang: laSo.duongSo?.canNang,
           chatHistory,
           mode,
           model: selectedModel,
           lang: language,
+          isAdmin: true,
+          adminPin: pin,
         }),
       });
 

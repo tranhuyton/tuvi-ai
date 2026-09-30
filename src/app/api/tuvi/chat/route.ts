@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
       language?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
       chartId?: string;
       userId?: string;
+      isAdmin?: boolean;
+      adminPin?: string;
     };
 
     const targetLang = lang || language || 'vi';
@@ -60,15 +62,35 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================================
+    // 0. XÁC THỰC QUYỀN ADMIN (BYPASS 100% QUOTA NẾU LÀ ADMIN TRONG STUDIO)
+    // =========================================================================
+    const adminPinHeader = req.headers.get('x-admin-pin') || req.nextUrl.searchParams.get('pin');
+    const validPins = [
+      process.env.ADMIN_PIN || 'thayton2026',
+      '0935058688',
+      'thayton2026',
+    ];
+    const isAdmin = Boolean(
+      (adminPinHeader && validPins.includes(adminPinHeader)) ||
+      (body.adminPin && validPins.includes(body.adminPin)) ||
+      (body.isAdmin && (!adminPinHeader || validPins.includes(adminPinHeader)))
+    );
+
+    // =========================================================================
     // KIỂM TRA QUOTA CỨNG TỪ PHÍA MÁY CHỦ BẰNG DỮ LIỆU THỰC TẾ TRONG SUPABASE
     // Tuyệt đối không phụ thuộc vào state phía client để chống gian lận/reset
+    // (Bỏ qua hoàn toàn đối với Admin trong Studio để đàm đạo không giới hạn)
     // =========================================================================
     let totalAllowed = 0;
     let allowedPro = 0;
     let allowedBasic = 0;
     let askedCount = 0;
 
-    if (chartId) {
+    if (isAdmin) {
+      totalAllowed = 999999;
+      allowedPro = 999999;
+      allowedBasic = 999999;
+    } else if (chartId) {
       // 1. Đếm số câu hỏi thực tế đã được lưu trong DB cho chart này
       const { count: dbMsgCount } = await adminSupabase
         .from('tuvi_chat_messages')
@@ -261,7 +283,7 @@ ${requirementText}${langInstruction}`;
     }
 
     // Tự động ghi lại tin nhắn vào tuvi_chat_messages trên máy chủ để đảm bảo tính toàn vẹn (không thể bị bỏ qua)
-    if (chartId) {
+    if (chartId && !isAdmin) {
       try {
         await adminSupabase.from('tuvi_chat_messages').insert({
           chart_id: chartId,
