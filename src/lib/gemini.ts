@@ -133,7 +133,20 @@ export function buildReadingParts(options: {
 }): GeminiPart[] {
   const { laSo, tier = 'free', thongTinThem, chieuCao, canNang, anhMat, anhTay, lang = 'vi' } = options;
   const isPro = tier === 'pro' || laSo.tier === 'pro';
-  const { duongSo, namCanChi, banMenh, tenCuc, sinhKhac, namXemCanChi, namXem, tuoiAmXem, cungs } = laSo;
+  const {
+    duongSo,
+    namCanChi,
+    amDuongTxt,
+    thuanNghichLy,
+    thanCuName,
+    banMenh,
+    tenCuc,
+    sinhKhac,
+    namXemCanChi,
+    namXem,
+    tuoiAmXem,
+    cungs,
+  } = laSo;
   const { buildCungDataPrompt } = require('./tuvi/anSao');
   const cungDataStr = buildCungDataPrompt(laSo);
 
@@ -174,7 +187,11 @@ XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số
 ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
 
 THÔNG TIN LÁ SỐ:
-- Năm sinh Âm lịch: ${namCanChi}. Mệnh: ${banMenh}. Cục: ${tenCuc}. Sinh khắc Mệnh Cục: ${sinhKhac}.
+- Họ tên đương số: ${duongSo.hoTen} (${duongSo.gioiTinh}).
+- Năm sinh Âm lịch: ${namCanChi} (${amDuongTxt}).
+- Bản mệnh: ${banMenh}. Cục: ${tenCuc}. Sinh khắc Mệnh Cục: ${sinhKhac}.
+- ÂM DƯƠNG THUẬN / NGHỊCH LÝ: ${thuanNghichLy} (LƯU Ý CỰC KỲ QUAN TRỌNG: Lá số này chuẩn xác 100% là "${thuanNghichLy}". TUYỆT ĐỐI BẮT BUỘC PHẢI LUẬN LÀ "${thuanNghichLy}", CẤM LUẬN NGƯỢC THÀNH ${thuanNghichLy === 'Âm Dương thuận lý' ? 'Âm Dương nghịch lý' : 'Âm Dương thuận lý'}!).
+- Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
 - Xem hạn năm: ${namXemCanChi} (${namXem}), tuổi Âm lịch: ${tuoiAmXem} tuổi.
 ${daiVanPromptStr}${tieuVanPromptStr}
 CHI TIẾT 12 CUNG & TINH ĐẨU:
@@ -193,7 +210,11 @@ YÊU CẦU ĐẶC BIỆT DÀNH CHO BẢN CHUYÊN SÂU PRO (ĐỘ DÀI KHOẢNG 1
 Bài luận phải cực kỳ sâu sắc, phân tích đa tầng, giải nghĩa rành mạch căn nguyên cát hung theo 5 phần lớn sau:
 
 <h3>I. ĐẠI CƯƠNG BẢN MỆNH &amp; CHÂN TƯỚNG HUYỀN CƠ</h3>
-- Luận giải sâu sắc về Âm Dương thuận/nghịch lý, Mệnh Cục tương sinh tương khắc và ý nghĩa với số phận đời người.
+- Phân tích Mệnh Cục và Âm Dương: BẮT BUỘC khẳng định và giải nghĩa chuẩn xác theo đúng thế "${thuanNghichLy}" của lá số: ${
+  thuanNghichLy === 'Âm Dương thuận lý'
+    ? 'Khẳng định rõ ràng đương số là "Âm Dương thuận lý", biểu trưng cho người được trời đất và hoàn cảnh ưu ái, đắc thiên thời địa lợi, gặp nhiều may mắn, lúc khó khăn luôn có quý nhân trợ lực, mưu sự dễ thành.'
+    : 'Khẳng định rõ ràng đương số là "Âm Dương nghịch lý", biểu trưng cho người phải tự lực cánh sinh, cuộc đời nhiều thử thách chông gai lúc ban đầu trước khi tôi luyện thành tựu.'
+} Kết hợp phân tích Sinh khắc Mệnh Cục (${sinhKhac}) và Cung Thân (${thanCuName || 'Thân cư Mệnh'}).
 - Phân tích cặn kẽ 14 Chính tinh thủ và chiếu Mệnh/Thân, sự giao hội của Tứ Hóa (Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ).
 - NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) gửi kèm: Hãy đối chiếu trực tiếp các nét tướng mạo (ấn đường, chuẩn đầu, cung điền trạch, các gò chỉ tay, đường sinh đạo, trí đạo, tâm đạo theo quy tắc Nam tay trái, Nữ tay phải) với các sao thủ Mệnh để xác tín độ chính xác giờ sinh và thế mạnh thiên bẩm.
 
@@ -231,7 +252,11 @@ XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số
 ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
 
 THÔNG TIN LÁ SỐ:
-- Năm sinh Âm lịch: ${namCanChi}. Mệnh: ${banMenh}, Cục: ${tenCuc}. Sinh khắc: ${sinhKhac}.
+- Họ tên: ${duongSo.hoTen} (${duongSo.gioiTinh}).
+- Năm sinh Âm lịch: ${namCanChi} (${amDuongTxt}).
+- Bản mệnh: ${banMenh}, Cục: ${tenCuc}. Sinh khắc: ${sinhKhac}.
+- ÂM DƯƠNG: ${thuanNghichLy} (LƯU Ý QUAN TRỌNG: Lá số này là "${thuanNghichLy}". Bắt buộc phải luận đúng là "${thuanNghichLy}", không được luận ngược!).
+- Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
 - Xem hạn năm: ${namXemCanChi} (${namXem}), ${tuoiAmXem} tuổi Âm.
 ${daiVanPromptStr}${tieuVanPromptStr}
 CHI TIẾT 12 CUNG & TINH ĐẨU:
@@ -250,7 +275,7 @@ YÊU CẦU BẢN LUẬN GIẢI CƠ BẢN (ĐỘ DÀI KHOẢNG 800 - 1000 TỪ):
 Bài luận phải mạch lạc, chuẩn xác, đáng tin cậy, bao quát các phương diện chính yếu sau:
 
 <h3>I. TỔNG QUAN BẢN MỆNH &amp; CÁ TÍNH TIỀM NĂNG</h3>
-- Phân tích Bản Mệnh, Cục, Âm Dương thuận nghịch và tính cách nổi trội của đương số dựa trên các Chính tinh thủ Cung Mệnh.
+- Phân tích Bản Mệnh, Cục, Âm Dương (BẮT BUỘC luận đúng là "${thuanNghichLy}") và tính cách nổi trội của đương số dựa trên các Chính tinh thủ Cung Mệnh.
 - Ưu điểm thiên bẩm và khuyết điểm cần tiết chế trong cách đối nhân xử thế.
 
 <h3>II. ĐIỂM SÁNG TAM HỢP MỆNH - TÀI - QUAN</h3>

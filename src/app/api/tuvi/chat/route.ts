@@ -213,7 +213,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const { banMenh, namXemCanChi, tuoiAmXem, cungs } = laSo;
+    const {
+      banMenh,
+      namXemCanChi,
+      tuoiAmXem,
+      cungs,
+      amDuongTxt,
+      thuanNghichLy,
+      thanCuName,
+      namCanChi,
+      tenCuc,
+      sinhKhac,
+    } = laSo;
     const cungDataStr = buildCungDataPrompt(laSo);
 
     // Tính chính xác Đại Vận hiện tại
@@ -266,7 +277,11 @@ export async function POST(req: NextRequest) {
     }
 
     const chatPrompt = `${readingContext}${historyText}Khách hỏi câu mới (${activeMode === 'vip' ? 'Gói Chuyên Sâu VIP Pro' : 'Gói Cơ Bản'}): '${userQuestion.trim()}'
-Mệnh ${banMenh}. Năm nay ${namXemCanChi}, ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
+Đương số: ${laSo.duongSo?.hoTen || 'Quý khách'} (${laSo.duongSo?.gioiTinh || 'Nam'}, sinh năm ${namCanChi || ''} - ${amDuongTxt || ''}).
+Mệnh: ${banMenh || ''}, Cục: ${tenCuc || ''}, Sinh khắc: ${sinhKhac || ''}.
+Âm Dương: ${thuanNghichLy || ''} (Bắt buộc khẳng định đúng thế "${thuanNghichLy}", tuyệt đối không nói ngược).
+Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
+Năm nay: ${namXemCanChi}, ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
 12 CUNG & NGUYỆT VẬN:
 ${cungDataStr}
 
