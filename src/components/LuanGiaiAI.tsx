@@ -66,6 +66,10 @@ export default function LuanGiaiAI({
 
   const isPro = tier === 'pro';
 
+  if (!safeReadingHtml && !isLoading && !error) {
+    return null;
+  }
+
   return (
     <div className="w-full max-w-[1060px] mx-auto mt-10">
       <div className="text-center mb-6">

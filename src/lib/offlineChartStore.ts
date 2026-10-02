@@ -152,17 +152,48 @@ export async function saveOfflineChart(
 
   const now = new Date().toISOString();
   const id = item.id || `offline-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-  const existing = chartsMap.get(id);
+
+  // 1. Kiểm tra cache trong bộ nhớ
+  let existing = chartsMap.get(id);
+
+  // 2. Nếu trong bộ nhớ chưa có nhưng có id, BẮT BUỘC query Supabase để lấy dữ liệu gốc,
+  //    tránh trường hợp Serverless / Vercel làm mới instance làm mất readingHtml, lasoData, notes...
+  if (!existing && item.id) {
+    try {
+      const { data: dbRow } = await supabase
+        .from('tuvi_offline_charts')
+        .select('*')
+        .eq('id', item.id)
+        .single();
+      if (dbRow) {
+        existing = rowToOfflineChartItem(dbRow);
+        chartsMap.set(id, existing);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 3. Bảo toàn tuyệt đối readingHtml nếu request không truyền hoặc truyền chuỗi rỗng
+  const readingHtmlToSave =
+    (item.readingHtml !== undefined && item.readingHtml !== null && item.readingHtml !== '')
+      ? item.readingHtml
+      : (existing?.readingHtml || undefined);
+
+  const lasoDataToSave = item.lasoData || existing?.lasoData;
+  const notesToSave = item.notes !== undefined ? item.notes : existing?.notes;
+  const tagToSave = item.tag || (existing?.tag || 'offline');
+  const chatHistoryToSave = item.chatHistory !== undefined ? item.chatHistory : existing?.chatHistory;
 
   const fullItem: OfflineChartItem = {
     id,
     hoTen: item.hoTen.trim(),
-    tag: item.tag || (existing?.tag || 'offline'),
-    notes: item.notes !== undefined ? item.notes : existing?.notes,
+    tag: tagToSave,
+    notes: notesToSave,
     duongSoData: item.duongSoData,
-    lasoData: item.lasoData || existing?.lasoData,
-    readingHtml: item.readingHtml !== undefined ? item.readingHtml : existing?.readingHtml,
-    chatHistory: item.chatHistory !== undefined ? item.chatHistory : existing?.chatHistory,
+    lasoData: lasoDataToSave,
+    readingHtml: readingHtmlToSave,
+    chatHistory: chatHistoryToSave,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };

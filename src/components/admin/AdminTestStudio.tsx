@@ -606,10 +606,44 @@ export default function AdminTestStudio() {
             body: JSON.stringify({
               id: activeChartId,
               hoTen: formData.hoTen.trim(),
+              tag: chartTag,
+              notes: clientNotes.trim() || undefined,
               duongSoData: formData,
+              lasoData: laSo || undefined,
+              readingHtml: readingHtml || undefined,
               chatHistory: updatedChat,
             }),
           }).catch(() => {});
+
+          // Cập nhật ngay danh sách trong session và localStorage
+          setOfflineCharts((prev) =>
+            prev.map((c) =>
+              c.id === activeChartId
+                ? {
+                    ...c,
+                    chatHistory: updatedChat,
+                    readingHtml: readingHtml || c.readingHtml,
+                    lasoData: laSo || c.lasoData,
+                  }
+                : c
+            )
+          );
+          try {
+            const localSaved = localStorage.getItem('tuvi_offline_charts_local');
+            if (localSaved) {
+              const localList: OfflineChartItem[] = JSON.parse(localSaved);
+              const idx = localList.findIndex((c) => c.id === activeChartId);
+              if (idx >= 0) {
+                localList[idx] = {
+                  ...localList[idx],
+                  chatHistory: updatedChat,
+                  readingHtml: readingHtml || localList[idx].readingHtml,
+                  lasoData: laSo || localList[idx].lasoData,
+                };
+                localStorage.setItem('tuvi_offline_charts_local', JSON.stringify(localList));
+              }
+            }
+          } catch (e) {}
         }
       } else {
         const errJson = await res.json().catch(() => ({}));
