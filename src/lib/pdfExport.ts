@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf';
 import * as htmlToImage from 'html-to-image';
 import { DuLieuDuongSo, LaSoData, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR } from '@/lib/tuvi/constants';
+import { isInAppBrowser } from './inAppBrowser';
 
 export interface ExportPdfOptions {
   duongSo?: DuLieuDuongSo | null;
@@ -974,9 +975,10 @@ export async function exportReadingToPdf({
     const pdfBlob: Blob = pdfDoc.output('blob');
     const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-    // Chỉ mở Share Sheet trên thiết bị di động (iOS / Android) nếu trình duyệt hỗ trợ
+    // Chỉ mở Share Sheet trên thiết bị di động (iOS / Android) nếu là trình duyệt chuẩn (không phải in-app webview như Zalo)
     const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-    if (isMobile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+    const inApp = isInAppBrowser();
+    if (!inApp && isMobile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
@@ -988,6 +990,7 @@ export async function exportReadingToPdf({
         if ((shareErr as { name?: string })?.name === 'AbortError') {
           return;
         }
+        console.warn('Lỗi Share Sheet di động:', shareErr);
       }
     }
 

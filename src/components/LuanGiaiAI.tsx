@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, AlertCircle, Crown, FileDown, RefreshCw } from 'lucide-react';
+import { Sparkles, Copy, Check, AlertCircle, Crown, FileDown, RefreshCw, Compass, X } from 'lucide-react';
 import { ServiceTier, DuLieuDuongSo, LaSoData } from '@/types/tuvi';
 import { useLanguage } from '@/context/LanguageContext';
 import { exportReadingToPdf } from '@/lib/pdfExport';
 import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
+import { isInAppBrowser, getInAppBrowserName } from '@/lib/inAppBrowser';
 
 interface LuanGiaiAIProps {
   readingHtml?: string;
@@ -32,6 +33,8 @@ export default function LuanGiaiAI({
   const [copied, setCopied] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [pdfProgressText, setPdfProgressText] = useState('');
+  const [showInAppModal, setShowInAppModal] = useState(false);
+  const [inAppName, setInAppName] = useState('');
 
   const safeReadingHtml = cleanReadingHtml(readingHtml);
 
@@ -44,7 +47,7 @@ export default function LuanGiaiAI({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleExportPdf = async () => {
+  const executeExportPdf = async () => {
     if (!safeReadingHtml || isExportingPdf) return;
     setIsExportingPdf(true);
     setPdfProgressText('Đang tạo PDF...');
@@ -62,6 +65,15 @@ export default function LuanGiaiAI({
       setIsExportingPdf(false);
       setPdfProgressText('');
     }
+  };
+
+  const handleExportPdf = () => {
+    if (isInAppBrowser()) {
+      setInAppName(getInAppBrowserName());
+      setShowInAppModal(true);
+      return;
+    }
+    executeExportPdf();
   };
 
   const isPro = tier === 'pro';
@@ -233,6 +245,79 @@ export default function LuanGiaiAI({
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal hướng dẫn khi tải PDF trên trình duyệt in-app (Zalo, Facebook, TikTok...) */}
+      {showInAppModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl text-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-base font-serif">
+                <Compass className="w-5 h-5" />
+                <span>Hướng dẫn tải PDF trên {inAppName || 'Zalo'}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInAppModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+                title="Đóng"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Quý khách đang mở web qua trình duyệt nhúng của <strong>{inAppName || 'Zalo'}</strong>. Để bảo mật, trình duyệt nhúng chặn việc lưu file PDF trực tiếp về máy (hoặc báo lỗi <i>&quot;Không tìm thấy ứng dụng&quot;</i>).
+            </p>
+
+            <div className="bg-slate-800/80 rounded-xl p-3.5 space-y-2.5 text-xs sm:text-sm border border-slate-700">
+              <div className="flex items-start gap-2.5">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-bold text-xs shrink-0 mt-0.5">
+                  1
+                </span>
+                <span>
+                  Bấm vào biểu tượng <strong>dấu 3 chấm (•••)</strong> ở góc trên cùng bên phải màn hình.
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-bold text-xs shrink-0 mt-0.5">
+                  2
+                </span>
+                <span>
+                  Chọn <strong>&ldquo;Mở bằng trình duyệt&rdquo;</strong> (Safari trên iPhone, Chrome trên Android).
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-bold text-xs shrink-0 mt-0.5">
+                  3
+                </span>
+                <span>
+                  Bấm lại <strong>&ldquo;Xuất file PDF&rdquo;</strong> để tải và lưu file mượt mà vào máy.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowInAppModal(false)}
+                className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm transition shadow-lg shadow-amber-500/20 cursor-pointer"
+              >
+                Tôi đã hiểu
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowInAppModal(false);
+                  executeExportPdf();
+                }}
+                className="text-xs text-slate-400 hover:text-slate-200 underline text-center py-1 transition cursor-pointer"
+              >
+                Vẫn thử tải trực tiếp tại đây
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
