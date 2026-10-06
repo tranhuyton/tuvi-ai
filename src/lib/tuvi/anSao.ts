@@ -29,7 +29,11 @@ function mod12(n: number): number {
   return ((n % 12) + 12) % 12;
 }
 
-export function lapLaSoTuVi(data: DuLieuDuongSo, namXem = 2026): LaSoData {
+export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData {
+  const currentYear = new Date().getFullYear();
+  const namXem = Number(namXemInput || data.namXem || currentYear);
+  data.namXem = namXem;
+
   const rawVal = String(data.gioSinhVal || '0_0').trim();
   const isLateTy = rawVal === '0_23' || rawVal.toLowerCase().includes('dạ');
 

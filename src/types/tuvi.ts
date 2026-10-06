@@ -18,6 +18,7 @@ export interface DuLieuDuongSo extends NgayThangNamSinh {
   anhMat?: string; // base64
   anhTay?: string; // base64
   tier?: ServiceTier;
+  namXem?: number;
 }
 
 export interface AmLichResult {

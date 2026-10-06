@@ -51,6 +51,7 @@ export default function HomePage() {
     proAllowed: 0,
   });
   const [isRestoringSession, setIsRestoringSession] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   const getChartStorageKey = (duongSo?: DuLieuDuongSo | null, chartId?: string | null) =>
     chartId || (duongSo ? `${duongSo.hoTen}_${duongSo.namDuong}` : 'default');
@@ -425,12 +426,15 @@ export default function HomePage() {
       }
     }
 
-    const calculatedLaSo = lapLaSoTuVi(cleanDuongSo, 2026);
+    const resolvedNamXem = cleanDuongSo.namXem || new Date().getFullYear();
+    cleanDuongSo.namXem = resolvedNamXem;
+    const calculatedLaSo = lapLaSoTuVi(cleanDuongSo, resolvedNamXem);
     calculatedLaSo.tier = effectiveTier;
     calculatedLaSo.quota = initialQuota;
 
     setLaSo(calculatedLaSo);
-    setCurrentDuongSo(data);
+    setCurrentDuongSo(cleanDuongSo);
+    setIsEditing(false);
     setCurrentChartId(null);
     setReadingHtml(undefined);
     setReadingError(undefined);
@@ -783,7 +787,8 @@ export default function HomePage() {
       let activeLaSo = chart.laso_data;
       if (chart.duong_so_data) {
         try {
-          activeLaSo = lapLaSoTuVi(chart.duong_so_data, 2026);
+          const resolvedNamXem = chart.duong_so_data.namXem || new Date().getFullYear();
+          activeLaSo = lapLaSoTuVi(chart.duong_so_data, resolvedNamXem);
           activeLaSo.tier = detectedTier;
           if (chart.laso_data?.quota) activeLaSo.quota = chart.laso_data.quota;
         } catch (calcErr) {
@@ -943,6 +948,7 @@ export default function HomePage() {
     setReadingError(undefined);
     setChatHistory([]);
     setIsRestoringSession(false);
+    setIsEditing(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -1018,7 +1024,8 @@ export default function HomePage() {
             let activeLaSo = session.laSo;
             if (session.duongSo) {
               try {
-                activeLaSo = lapLaSoTuVi(session.duongSo, 2026);
+                const resolvedNamXem = session.duongSo.namXem || new Date().getFullYear();
+                activeLaSo = lapLaSoTuVi(session.duongSo, resolvedNamXem);
                 activeLaSo.tier = session.tier || 'free';
                 if (session.quota) activeLaSo.quota = session.quota;
                 // Cập nhật lại session trong localStorage với lá số chuẩn mới nhất
@@ -1247,12 +1254,14 @@ export default function HomePage() {
               {t('reading.analyzing', 'Đang tải lại lá số của quý khách...')}
             </p>
           </div>
-        ) : !laSo ? (
+        ) : (!laSo || isEditing) ? (
           <div className="my-auto py-6 sm:py-10 space-y-8 sm:space-y-12">
             <TuViForm
               onSubmit={handleFormSubmit}
               isLoading={isLoadingReading}
               onOpenSavedCharts={handleOpenSavedCharts}
+              initialData={isEditing ? (currentDuongSo || laSo?.duongSo) : null}
+              onCancelEdit={isEditing && laSo ? () => setIsEditing(false) : undefined}
               onRequireAuth={(action, notice) => {
                 pendingPostAuthActionRef.current = action;
                 setAuthModalNotice(notice);
@@ -1260,7 +1269,7 @@ export default function HomePage() {
               }}
             />
 
-            {!user && (
+            {!isEditing && !user && (
               <>
                 {/* Mục Giới thiệu về Thầy Tôn */}
                 <AboutThayTon />
@@ -1270,8 +1279,10 @@ export default function HomePage() {
               </>
             )}
 
-            {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */}
-            <BookingBanner />
+            {!isEditing && (
+              /* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */
+              <BookingBanner />
+            )}
           </div>
         ) : (
           <div className="space-y-6">
@@ -1298,6 +1309,10 @@ export default function HomePage() {
             <LaSoBanCo
               laSo={laSo}
               onReset={handleReset}
+              onEdit={() => {
+                setIsEditing(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               onOpenSavedCharts={handleOpenSavedCharts}
             />
 

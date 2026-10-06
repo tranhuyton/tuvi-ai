@@ -4,12 +4,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { LaSoData } from '@/types/tuvi';
 import CungView from './CungView';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { Download, RefreshCw, ZoomIn, ZoomOut, BookOpen } from 'lucide-react';
+import { Download, RefreshCw, ZoomIn, ZoomOut, BookOpen, Pencil } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface LaSoBanCoProps {
   laSo: LaSoData;
   onReset: () => void;
+  onEdit?: () => void;
   onOpenSavedCharts?: () => void;
 }
 
@@ -53,7 +54,7 @@ const TT_COORDS: Record<number, { l: string; t: string }> = {
   10: { l: '87.5%', t: '75%' },  // Tuất - Hợi (đường ranh giới ngang giữa Tuất row 3 và Hợi row 4)
 };
 
-export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanCoProps) {
+export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: LaSoBanCoProps) {
   const {
     t,
     tCanChi,
@@ -217,6 +218,18 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
             <RefreshCw className="w-4 h-4 text-amber-400" />
             <span>{t('chart.newChartBtn', 'Lập Lá Số Mới')}</span>
           </button>
+
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 rounded-xl border border-amber-500/50 text-sm font-bold transition cursor-pointer shadow-sm"
+              title="Sửa thông tin hoặc đổi năm xem để an lại lá số & bình giải nguyệt vận"
+            >
+              <Pencil className="w-4 h-4 text-amber-400" />
+              <span>{t('chart.editChartBtn', 'Sửa Lá Số / Đổi Năm Xem')}</span>
+            </button>
+          )}
 
           {onOpenSavedCharts && (
             <button
@@ -400,10 +413,22 @@ export default function LaSoBanCo({ laSo, onReset, onOpenSavedCharts }: LaSoBanC
 
                 {/* Năm xem & Tuổi */}
                 <div className="mt-2 space-y-0.5">
-                  <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.viewYear', 'Năm xem:')}</span>
-                    <span className="w-20 sm:w-22 font-medium">{namXem}</span>
-                    <span className="text-[#003399] font-bold">{tCanChi(namXemCanChi)}</span>
+                  <div className="flex items-baseline justify-between">
+                    <div className="flex items-baseline">
+                      <span className="w-16 sm:w-18 text-black">{t('chart.viewYear', 'Năm xem:')}</span>
+                      <span className="w-20 sm:w-22 font-medium">{namXem}</span>
+                      <span className="text-[#003399] font-bold">{tCanChi(namXemCanChi)}</span>
+                    </div>
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onClick={onEdit}
+                        className="print:hidden text-[10px] text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer ml-1"
+                        title="Đổi năm xem để an lại lá số và bình giải nguyệt vận"
+                      >
+                        [Đổi năm]
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-baseline">
                     <span className="w-16 sm:w-18"></span>

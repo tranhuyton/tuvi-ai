@@ -100,6 +100,7 @@ const EMPTY_FORM: DuLieuDuongSo = {
   anhMat: undefined,
   anhTay: undefined,
   tier: 'pro',
+  namXem: new Date().getFullYear(),
 };
 
 export default function AdminTestStudio() {
@@ -214,9 +215,11 @@ export default function AdminTestStudio() {
   // Xử lý nạp lá số từ kho vào Studio
   const loadChartItem = (item: OfflineChartItem) => {
     setActiveChartId(item.id);
+    const resolvedNamXem = item.duongSoData.namXem || new Date().getFullYear();
     setFormData({
       ...item.duongSoData,
       tier: item.duongSoData.tier || 'pro',
+      namXem: resolvedNamXem,
     });
     setClientNotes(item.notes || '');
     setChartTag(item.tag || 'offline');
@@ -242,8 +245,9 @@ export default function AdminTestStudio() {
     const cleanData: DuLieuDuongSo = {
       ...item.duongSoData,
       tier: item.duongSoData.tier || 'pro',
+      namXem: resolvedNamXem,
     };
-    const calculated = lapLaSoTuVi(cleanData, 2026);
+    const calculated = lapLaSoTuVi(cleanData, resolvedNamXem);
     calculated.tier = item.duongSoData.tier || 'pro';
     setLaSo(calculated);
   };
@@ -256,6 +260,7 @@ export default function AdminTestStudio() {
       namDuong: 1990,
       ngayDuong: 15,
       thangDuong: 6,
+      namXem: new Date().getFullYear(),
     });
     setClientNotes('');
     setChartTag('offline');
@@ -423,6 +428,37 @@ export default function AdminTestStudio() {
     }
   };
 
+  // Hàm an sao nhanh (chỉ xem bàn cờ & nguyệt vận theo năm xem, không gọi AI)
+  const handleCalculateOnly = () => {
+    if (!formData.hoTen.trim()) {
+      alert('Vui lòng nhập Họ tên đương số trước khi an sao!');
+      return;
+    }
+    const resolvedNamXem = Number(formData.namXem) || new Date().getFullYear();
+    const cleanData: DuLieuDuongSo = {
+      ...formData,
+      tier: testTier,
+      namXem: resolvedNamXem,
+    };
+    const calculated = lapLaSoTuVi(cleanData, resolvedNamXem);
+    calculated.tier = testTier;
+    calculated.quota = { basicAllowed: 999, proAllowed: 999 };
+    setLaSo(calculated);
+
+    // Chuẩn bị raw prompt để xem trước
+    const cungDataStr = buildCungDataPrompt(calculated);
+    setRawPromptText(
+      `[MODEL TEST]: ${testModel} | [TIER]: ${testTier} | [NĂM XEM]: ${resolvedNamXem} (${calculated.namXemCanChi})\n` +
+      `Đương số: ${calculated.duongSo.hoTen} (${calculated.duongSo.gioiTinh} - ${calculated.namCanChi})\n` +
+      `Mệnh: ${calculated.banMenh} | Cục: ${calculated.tenCuc}\n` +
+      `Ảnh diện tướng: ${formData.anhMat ? 'Có kèm ảnh Base64' : 'Không có'}\n` +
+      `Ảnh chỉ tay: ${formData.anhTay ? 'Có kèm ảnh Base64' : 'Không có'}\n` +
+      `Chiều cao: ${formData.chieuCao || 'Chưa nhập'} cm | Cân nặng: ${formData.canNang || 'Chưa nhập'} kg\n` +
+      `Hoàn cảnh/Ghi chú: ${formData.thongTinThem || 'Không có'}\n` +
+      `12 CUNG DỮ LIỆU & NGUYỆT VẬN NĂM ${resolvedNamXem}:\n${cungDataStr}`
+    );
+  };
+
   // Hàm An sao & Luận giải
   const handleExecuteTest = async () => {
     if (!formData.hoTen.trim()) {
@@ -437,12 +473,14 @@ export default function AdminTestStudio() {
     setWordCount(null);
     setChatHistory([]);
 
+    const resolvedNamXem = Number(formData.namXem) || new Date().getFullYear();
     const cleanData: DuLieuDuongSo = {
       ...formData,
       tier: testTier,
+      namXem: resolvedNamXem,
     };
 
-    const calculated = lapLaSoTuVi(cleanData, 2026);
+    const calculated = lapLaSoTuVi(cleanData, resolvedNamXem);
     calculated.tier = testTier;
     calculated.quota = { basicAllowed: 999, proAllowed: 999 };
     setLaSo(calculated);
@@ -959,8 +997,8 @@ export default function AdminTestStudio() {
           </div>
         </div>
 
-        {/* 1. Hàng thông tin cơ bản: Tên, Giới tính, Ngày sinh, Giờ sinh */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        {/* 1. Hàng thông tin cơ bản: Tên, Giới tính, Ngày sinh, Giờ sinh, Năm xem */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 mb-4">
           <div>
             <label className="block text-xs text-slate-400 font-medium mb-1">
               Họ tên đương số: <span className="text-red-400">*</span>
@@ -1027,6 +1065,22 @@ export default function AdminTestStudio() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs text-amber-300 font-medium mb-1 flex items-center justify-between">
+              <span>Năm xem hạn:</span>
+              <span className="text-[10px] text-slate-400 font-normal">Mặc định {new Date().getFullYear()}</span>
+            </label>
+            <input
+              type="number"
+              min={1900}
+              max={2100}
+              value={formData.namXem || new Date().getFullYear()}
+              onChange={(e) => setFormData({ ...formData, namXem: Number(e.target.value) })}
+              placeholder={`VD: ${new Date().getFullYear()}`}
+              className="w-full px-3 py-2 bg-slate-950/70 border border-amber-500/50 rounded-lg text-xs sm:text-sm text-amber-200 font-bold focus:outline-none focus:border-amber-400 transition"
+            />
           </div>
         </div>
 
@@ -1261,6 +1315,18 @@ export default function AdminTestStudio() {
             >
               <Save className={`w-4 h-4 text-amber-400 ${isSavingChart ? 'animate-spin' : ''}`} />
               <span>{isSavingChart ? 'Đang lưu...' : 'Lưu Thay Đổi'}</span>
+            </button>
+
+            {/* Nút chỉ An Sao & Xem Bàn Cờ (Không gọi AI) */}
+            <button
+              type="button"
+              onClick={handleCalculateOnly}
+              disabled={isLoadingReading || !formData.hoTen}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-bold text-xs sm:text-sm rounded-xl border border-amber-500/40 transition disabled:opacity-50 cursor-pointer"
+              title="An sao lá số theo năm xem và hiển thị bàn cờ ngay lập tức (không gọi AI)"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>An Sao Bàn Cờ</span>
             </button>
 
             {/* Nút Chạy An Sao & Luận Giải (Tự Động Lưu) */}

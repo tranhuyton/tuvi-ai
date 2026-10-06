@@ -12,6 +12,8 @@ interface TuViFormProps {
   isLoading: boolean;
   onOpenSavedCharts?: () => void;
   onRequireAuth?: (action: () => void, notice: string) => void;
+  initialData?: DuLieuDuongSo | null;
+  onCancelEdit?: () => void;
 }
 
 function isHeicFile(file: File): boolean {
@@ -64,26 +66,46 @@ function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<stri
   });
 }
 
-export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onRequireAuth }: TuViFormProps) {
+export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onRequireAuth, initialData, onCancelEdit }: TuViFormProps) {
   const { user } = useAuth();
   const { t, tHour } = useLanguage();
-  const [hoTen, setHoTen] = useState('');
-  const [gioiTinh, setGioiTinh] = useState<GioiTinh>('Nam');
-  const [ngayDuong, setNgayDuong] = useState(15);
-  const [thangDuong, setThangDuong] = useState(8);
-  const [namDuong, setNamDuong] = useState(1995);
-  const [gioSinhVal, setGioSinhVal] = useState('2'); // Dần (03h-05h)
-  const [thongTinThem, setThongTinThem] = useState('');
-  const [chieuCao, setChieuCao] = useState<number | undefined>(undefined);
-  const [canNang, setCanNang] = useState<number | undefined>(undefined);
+  const currentYear = new Date().getFullYear();
+  const [hoTen, setHoTen] = useState(initialData?.hoTen || '');
+  const [gioiTinh, setGioiTinh] = useState<GioiTinh>(initialData?.gioiTinh || 'Nam');
+  const [ngayDuong, setNgayDuong] = useState(initialData?.ngayDuong ?? 15);
+  const [thangDuong, setThangDuong] = useState(initialData?.thangDuong ?? 8);
+  const [namDuong, setNamDuong] = useState(initialData?.namDuong ?? 1995);
+  const [gioSinhVal, setGioSinhVal] = useState(initialData?.gioSinhVal || '2'); // Dần (03h-05h)
+  const [namXem, setNamXem] = useState<number>(initialData?.namXem || currentYear);
+  const [thongTinThem, setThongTinThem] = useState(initialData?.thongTinThem || '');
+  const [chieuCao, setChieuCao] = useState<number | undefined>(initialData?.chieuCao);
+  const [canNang, setCanNang] = useState<number | undefined>(initialData?.canNang);
 
-  const [anhMatBase64, setAnhMatBase64] = useState<string | undefined>(undefined);
-  const [anhTayBase64, setAnhTayBase64] = useState<string | undefined>(undefined);
+  const [anhMatBase64, setAnhMatBase64] = useState<string | undefined>(initialData?.anhMat);
+  const [anhTayBase64, setAnhTayBase64] = useState<string | undefined>(initialData?.anhTay);
   const [isConvertingMat, setIsConvertingMat] = useState(false);
   const [isConvertingTay, setIsConvertingTay] = useState(false);
 
   // Lựa chọn gói dịch vụ
-  const [selectedTier, setSelectedTier] = useState<ServiceTier>('free');
+  const [selectedTier, setSelectedTier] = useState<ServiceTier>(initialData?.tier || 'free');
+
+  React.useEffect(() => {
+    if (initialData) {
+      setHoTen(initialData.hoTen || '');
+      setGioiTinh(initialData.gioiTinh || 'Nam');
+      setNgayDuong(initialData.ngayDuong ?? 15);
+      setThangDuong(initialData.thangDuong ?? 8);
+      setNamDuong(initialData.namDuong ?? 1995);
+      setGioSinhVal(initialData.gioSinhVal || '2');
+      setNamXem(initialData.namXem || currentYear);
+      setThongTinThem(initialData.thongTinThem || '');
+      setChieuCao(initialData.chieuCao);
+      setCanNang(initialData.canNang);
+      setAnhMatBase64(initialData.anhMat);
+      setAnhTayBase64(initialData.anhTay);
+      if (initialData.tier) setSelectedTier(initialData.tier);
+    }
+  }, [initialData, currentYear]);
 
   const handleImageUpload = async (
     e: ChangeEvent<HTMLInputElement>,
@@ -166,6 +188,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
       thangDuong: Number(thangDuong),
       namDuong: Number(namDuong),
       gioSinhVal,
+      namXem: Number(namXem) || currentYear,
       thongTinThem: thongTinThem.trim() || undefined,
       chieuCao: chieuCao ? Number(chieuCao) : undefined,
       canNang: canNang ? Number(canNang) : undefined,
@@ -218,6 +241,26 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           {t('form.desc', 'An sao chính xác theo giờ sinh • Bình giải chuyên sâu đa phương thức')}
         </p>
       </div>
+
+      {initialData && (
+        <div className="mb-4 p-3.5 bg-amber-500/15 border border-amber-500/40 rounded-xl flex items-center justify-between gap-2 animate-in fade-in">
+          <div className="text-xs sm:text-sm text-amber-200 font-medium flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              Đang chỉnh sửa lá số của <strong>{initialData.hoTen}</strong> (Bạn có thể đổi năm xem để an lại lá số &amp; xem nguyệt vận mới)
+            </span>
+          </div>
+          {onCancelEdit && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="text-xs text-slate-400 hover:text-white underline cursor-pointer shrink-0 font-medium"
+            >
+              Hủy sửa
+            </button>
+          )}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-4">
         {/* Họ tên */}
@@ -324,6 +367,34 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Năm xem hạn (Mặc định: Năm hiện tại) */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+            <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold">
+              <Calendar className="w-4 h-4 sm:w-3.5 sm:h-3.5 inline mr-1 text-amber-400" />
+              {t('form.viewYear', 'Năm xem hạn (Dương lịch)')}
+            </label>
+            <span className="text-xs text-amber-400/90 font-medium">
+              {t('form.viewYearDefault', `Mặc định năm ${currentYear}`)}
+            </span>
+          </div>
+          <input
+            type="number"
+            min={1900}
+            max={2100}
+            value={namXem}
+            onChange={(e) => setNamXem(Number(e.target.value))}
+            placeholder={`VD: ${currentYear}`}
+            className="w-full px-3.5 py-3 sm:py-2.5 bg-slate-950/60 border border-amber-500/50 rounded-lg text-amber-200 font-bold text-base sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
+          />
+          <p className="text-xs text-slate-400 mt-1">
+            {t(
+              'form.viewYearDesc',
+              'Hệ thống sẽ an hệ sao lưu, đại vận, tiểu vận và bình giải 12 tháng nguyệt vận chuẩn xác theo năm này.'
+            )}
+          </p>
         </div>
 
         {/* Khối Thực Chứng & Tướng Pháp (Tùy chọn) */}
@@ -578,6 +649,11 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
             <>
               <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               <span>{t('form.btnLoading', 'Thầy Đang Quán Tưởng...')}</span>
+            </>
+          ) : initialData ? (
+            <>
+              <Sparkles className="w-5 h-5 text-amber-300" />
+              <span>Cập Nhật &amp; An Lại Lá Số (Năm {namXem})</span>
             </>
           ) : selectedTier === 'pro' ? (
             <>
