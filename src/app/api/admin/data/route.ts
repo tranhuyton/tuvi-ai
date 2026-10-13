@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       const { data: rpcData, error: rpcErr } = await supabase.rpc('get_admin_dashboard_data');
       if (!rpcErr && rpcData) {
         const { getAllOrders } = await import('@/lib/orderStore');
-        const orders = await getAllOrders(100);
+        const orders = await getAllOrders();
         const paidOrders = orders.filter((o) => o.status === 'PAID');
         const paidProOrders = paidOrders.filter((o) => o.paymentType === 'reading_vip').length;
         const actualRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
 
     // Lấy danh sách đơn hàng quét QR
     const { getAllOrders } = await import('@/lib/orderStore');
-    const orders = await getAllOrders(100);
+    const orders = await getAllOrders();
     const paidOrders = orders.filter((o) => o.status === 'PAID');
     const paidProOrders = paidOrders.filter((o) => o.paymentType === 'reading_vip').length;
     const actualRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);

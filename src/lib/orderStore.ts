@@ -303,21 +303,31 @@ export async function linkOrderToChart(
 }
 
 /**
- * Lấy danh sách toàn bộ đơn hàng (Dùng cho Admin)
+ * Lấy danh sách toàn bộ đơn hàng (Dùng cho Admin / Affiliate)
+ * Mặc định lấy tối đa 5000 đơn hàng mới nhất từ database
  */
-export async function getAllOrders(limit: number = 50): Promise<OrderItem[]> {
+export async function getAllOrders(limit?: number): Promise<OrderItem[]> {
   loadOrdersFromFile();
 
   // Thử lấy từ Supabase
   try {
-    const { data } = await supabase
+    let query = supabase
       .from('tuvi_orders')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
+
+    if (limit && limit > 0) {
+      query = query.limit(limit);
+    } else {
+      query = query.limit(5000);
+    }
+
+    const { data } = await query;
 
     if (data && data.length > 0) {
-      ordersMap.clear();
+      if (!limit || limit >= 500) {
+        ordersMap.clear();
+      }
       for (const row of data) {
         const item: OrderItem = {
           id: row.id,
@@ -347,5 +357,7 @@ export async function getAllOrders(limit: number = 50): Promise<OrderItem[]> {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  return list.slice(0, limit);
+  return limit && limit > 0 ? list.slice(0, limit) : list;
 }
+
+

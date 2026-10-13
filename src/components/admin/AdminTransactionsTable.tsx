@@ -255,7 +255,7 @@ export default function AdminTransactionsTable({
   const actualOrdersRevenue = orders
     .filter((o) => o.status === 'PAID')
     .reduce((sum, o) => sum + (o.amount || 0), 0);
-  const totalRevenue = actualOrdersRevenue > 0 ? actualOrdersRevenue : (stats.estimated_revenue || 0);
+  const totalRevenue = Math.max(stats.estimated_revenue || 0, actualOrdersRevenue);
 
   return (
     <div className="space-y-6">

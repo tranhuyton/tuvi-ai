@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Không tìm thấy thông tin Cộng Tác Viên tương ứng' }, { status: 404 });
     }
 
-    // Lấy các đơn hàng gần đây của riêng CTV này
-    const allOrders = await getAllOrders(100);
+    // Lấy các đơn hàng của riêng CTV này
+    const allOrders = await getAllOrders();
     const myOrders = allOrders
       .filter((o) => (o.affiliateCode || '').toLowerCase() === aff.code.toLowerCase())
       .map((o) => ({

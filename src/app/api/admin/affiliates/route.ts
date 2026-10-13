@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const affiliates = await getAllAffiliates();
-    const allOrders = await getAllOrders(200);
+    const allOrders = await getAllOrders();
     const affiliateOrders = allOrders.filter((o) => !!o.affiliateCode);
 
     return NextResponse.json({
