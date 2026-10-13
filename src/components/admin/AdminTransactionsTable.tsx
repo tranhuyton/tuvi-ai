@@ -91,7 +91,7 @@ export default function AdminTransactionsTable({
   const [subTab, setSubTab] = useState<'orders' | 'charts'>('orders');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTier, setFilterTier] = useState<'all' | 'free' | 'pro'>('all');
-  const [filterOrderStatus, setFilterOrderStatus] = useState<'all' | 'PAID' | 'PENDING' | 'CANCELLED'>('all');
+  const [filterOrderStatus, setFilterOrderStatus] = useState<'all' | 'PAID' | 'PENDING' | 'CANCELLED'>('PAID');
   const [previewChart, setPreviewChart] = useState<AdminChartItem | null>(null);
   const [previewReadingHtml, setPreviewReadingHtml] = useState<string | null>(null);
   const [isLoadingPreviewReading, setIsLoadingPreviewReading] = useState(false);
@@ -434,17 +434,6 @@ export default function AdminTransactionsTable({
           <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs flex-wrap">
             <button
               type="button"
-              onClick={() => setFilterOrderStatus('all')}
-              className={`px-3 py-1.5 rounded-lg transition font-medium ${
-                filterOrderStatus === 'all'
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              Tất cả ({orders.length})
-            </button>
-            <button
-              type="button"
               onClick={() => setFilterOrderStatus('PAID')}
               className={`px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1 ${
                 filterOrderStatus === 'PAID'
@@ -478,6 +467,17 @@ export default function AdminTransactionsTable({
                 <span>Đã hủy / Trùng ({cancelledOrdersCount})</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setFilterOrderStatus('all')}
+              className={`px-3 py-1.5 rounded-lg transition font-medium ${
+                filterOrderStatus === 'all'
+                  ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+            >
+              Tất cả ({orders.length})
+            </button>
           </div>
         ) : (
           <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
