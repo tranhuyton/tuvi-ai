@@ -260,47 +260,49 @@ export default function HomePage() {
     let readingResult: string | null = null;
     let lastErrMsg: string | null = null;
 
-    // Bước 1: Gọi qua Next.js API Route
-    try {
-      const res = await fetch('/api/tuvi/reading', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          laSo: calculatedLaSo,
-          tier,
-          thongTinThem: duongSoData.thongTinThem,
-          chieuCao: duongSoData.chieuCao,
-          canNang: duongSoData.canNang,
-          anhMat: duongSoData.anhMat,
-          anhTay: duongSoData.anhTay,
-          model: selectedModel,
-          lang: language,
-        }),
-      });
+    // Bước 1: Gọi qua Next.js API Route (Với gói Expert độ dài gấp đôi, ưu tiên đi thẳng qua cổng Supabase Edge 3 luồng để không vướng giới hạn 60s của Vercel)
+    if (tier !== 'expert') {
+      try {
+        const res = await fetch('/api/tuvi/reading', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            laSo: calculatedLaSo,
+            tier,
+            thongTinThem: duongSoData.thongTinThem,
+            chieuCao: duongSoData.chieuCao,
+            canNang: duongSoData.canNang,
+            anhMat: duongSoData.anhMat,
+            anhTay: duongSoData.anhTay,
+            model: selectedModel,
+            lang: language,
+          }),
+        });
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.reading) {
-          readingResult = json.reading;
-        } else if (json.error) {
-          lastErrMsg = json.error;
+        if (res.ok) {
+          const json = await res.json();
+          if (json.reading) {
+            readingResult = json.reading;
+          } else if (json.error) {
+            lastErrMsg = json.error;
+          }
+        } else {
+          const rawText = await res.text().catch(() => '');
+          let parsedError = rawText;
+          try {
+            const parsed = JSON.parse(rawText);
+            if (parsed.error) parsedError = parsed.error;
+          } catch {
+            // ignore
+          }
+          if (res.status === 413 || parsedError.includes('Request Entity Too Large')) {
+            parsedError = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
+          }
+          lastErrMsg = parsedError || `Lỗi máy chủ (HTTP ${res.status})`;
         }
-      } else {
-        const rawText = await res.text().catch(() => '');
-        let parsedError = rawText;
-        try {
-          const parsed = JSON.parse(rawText);
-          if (parsed.error) parsedError = parsed.error;
-        } catch {
-          // ignore
-        }
-        if (res.status === 413 || parsedError.includes('Request Entity Too Large')) {
-          parsedError = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
-        }
-        lastErrMsg = parsedError || `Lỗi máy chủ (HTTP ${res.status})`;
+      } catch (fetchErr) {
+        console.warn('API route gặp sự cố mạng hoặc timeout, chuyển sang cổng trực tiếp Supabase Edge...', fetchErr);
       }
-    } catch (fetchErr) {
-      console.warn('API route gặp sự cố mạng hoặc timeout, chuyển sang cổng trực tiếp Supabase Edge...', fetchErr);
     }
 
     // Bước 2: Fallback trực tiếp Supabase Edge Function từ trình duyệt nếu Vercel bị timeout

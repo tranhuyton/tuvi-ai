@@ -541,10 +541,47 @@ export default function AdminTestStudio() {
     const startTime = Date.now();
 
     try {
-      const res = await fetch('/api/tuvi/reading', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      let finalReadingText: string | undefined;
+      let fallbackError: string | undefined;
+
+      if (testTier !== 'expert') {
+        try {
+          const res = await fetch('/api/tuvi/reading', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              laSo: calculated,
+              tier: testTier,
+              thongTinThem: cleanData.thongTinThem,
+              chieuCao: cleanData.chieuCao,
+              canNang: cleanData.canNang,
+              anhMat: cleanData.anhMat,
+              anhTay: cleanData.anhTay,
+              model: testModel,
+              lang: language,
+            }),
+          });
+
+          if (res.ok) {
+            const json = await res.json();
+            if (json.reading) {
+              finalReadingText = json.reading;
+            } else {
+              fallbackError = json.error;
+            }
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            fallbackError = errJson.error || `HTTP ${res.status}`;
+          }
+        } catch (fetchErr: any) {
+          fallbackError = fetchErr.message;
+        }
+      }
+
+      // Gọi trực tiếp qua Supabase Edge Function (Mặc định cho gói Expert 3 luồng song song, hoặc khi /api/tuvi/reading bị timeout)
+      if (!finalReadingText) {
+        const { buildReadingParts, callGeminiVision } = await import('@/lib/gemini');
+        const parts = buildReadingParts({
           laSo: calculated,
           tier: testTier,
           thongTinThem: cleanData.thongTinThem,
@@ -552,48 +589,47 @@ export default function AdminTestStudio() {
           canNang: cleanData.canNang,
           anhMat: cleanData.anhMat,
           anhTay: cleanData.anhTay,
-          model: testModel,
           lang: language,
-        }),
-      });
+        });
+        const directRes = await callGeminiVision(parts, undefined, testModel);
+        if (directRes.text) {
+          finalReadingText = directRes.text;
+        } else {
+          fallbackError = directRes.error || fallbackError;
+        }
+      }
 
       const elapsed = Date.now() - startTime;
       setGenerationTimeMs(elapsed);
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.reading) {
-          setReadingHtml(json.reading);
-          const textOnly = json.reading.replace(/<[^>]*>/g, ' ');
-          const words = textOnly.trim().split(/\s+/).filter(Boolean).length;
-          setWordCount(words);
+      if (finalReadingText) {
+        setReadingHtml(finalReadingText);
+        const textOnly = finalReadingText.replace(/<[^>]*>/g, ' ');
+        const words = textOnly.trim().split(/\s+/).filter(Boolean).length;
+        setWordCount(words);
 
-          // Tự động cập nhật bài bình giải AI vào Sổ tay khách offline
-          try {
-            const updatePayload = {
-              id: savedChartId || activeChartId || undefined,
-              hoTen: cleanData.hoTen.trim(),
-              tag: chartTag === 'vip_offline' ? 'vip_offline' : 'offline',
-              notes: clientNotes.trim() || undefined,
-              duongSoData: cleanData,
-              lasoData: calculated,
-              readingHtml: json.reading,
-            };
-            await fetch('/api/admin/offline-charts', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
-              body: JSON.stringify(updatePayload),
-            });
-            fetchOfflineCharts();
-          } catch (e) {
-            console.warn('Lỗi tự động cập nhật bài bình giải vào Sổ tay:', e);
-          }
-        } else {
-          setReadingError(json.error || 'Không nhận được bài luận giải.');
+        // Tự động cập nhật bài bình giải AI vào Sổ tay khách offline
+        try {
+          const updatePayload = {
+            id: savedChartId || activeChartId || undefined,
+            hoTen: cleanData.hoTen.trim(),
+            tag: chartTag === 'vip_offline' ? 'vip_offline' : 'offline',
+            notes: clientNotes.trim() || undefined,
+            duongSoData: cleanData,
+            lasoData: calculated,
+            readingHtml: finalReadingText,
+          };
+          await fetch('/api/admin/offline-charts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+            body: JSON.stringify(updatePayload),
+          });
+          fetchOfflineCharts();
+        } catch (e) {
+          console.warn('Lỗi tự động cập nhật bài bình giải vào Sổ tay:', e);
         }
       } else {
-        const errJson = await res.json().catch(() => ({}));
-        setReadingError(errJson.error || `HTTP ${res.status}`);
+        setReadingError(fallbackError || 'Không nhận được bài luận giải.');
       }
     } catch (e: any) {
       setReadingError(e.message || 'Lỗi kết nối tới máy chủ');

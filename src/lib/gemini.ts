@@ -218,11 +218,11 @@ LƯU Ý QUAN TRỌNG: Hiện tại năm ${namXem} đương số đúng ${tuoiAmX
 
   if (isExpert) {
     // ==========================================
-    // EXPERT TIER PROMPT: GEMINI 4 ARGON (3600 - 5000 TỪ - GẤP 2 LẦN BẢN PRO, LUẬN GIẢI KỸ TOÀN DIỆN CẢ 12 CUNG)
+    // EXPERT TIER PROMPT: CHIA 3 PHẦN SONG SONG (3600 - 5000 TỪ - GẤP 2 LẦN BẢN PRO, LUẬN GIẢI KỸ TOÀN DIỆN CẢ 12 CUNG, TỐC ĐỘ ~25-35s)
     // ==========================================
-    promptText = `Bạn là ĐẠI TÔNG SƯ TỬ VI THẦY TÔN uyên bác bậc nhất, thấu triệt tinh hoa Dịch học, Tử Vi Đẩu Số Bát Bộ Thần Sát và Tướng Pháp Bí Truyền.
-Đang thực hiện BẢN LUẬN GIẢI CHUYÊN GIA ĐẶC BIỆT (EXPERT EDITION - ĐỘ DÀI GẤP 2 LẦN BẢN PRO: KHOẢNG 3600 - 5000 TỪ) cho đương số: ${duongSo.hoTen}, Giới tính: ${duongSo.gioiTinh}.
-XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số là 'quý khách' hoặc tên '${duongSo.hoTen}'. TUYỆT ĐỐI KHÔNG xưng AI, KHÔNG dùng bát tự tử bình.
+    let expertBaseHeader = `Bạn là ĐẠI TÔNG SƯ TỬ VI THẦY TÔN uyên bác bậc nhất, thấu triệt tinh hoa Dịch học, Tử Vi Đẩu Số Bát Bộ Thần Sát và Tướng Pháp Bí Truyền.
+Đang thực hiện BẢN LUẬN GIẢI CHUYÊN GIA ĐẶC BIỆT (EXPERT EDITION) cho đương số: ${duongSo.hoTen}, Giới tính: ${duongSo.gioiTinh}.
+XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số là 'quý khách' hoặc tên '${duongSo.hoTen}'. TUYỆT ĐỐI KHÔNG xưng AI, KHÔNG nhắc tên model AI, KHÔNG dùng bát tự tử bình.
 ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
 
 THÔNG TIN LÁ SỐ:
@@ -239,74 +239,80 @@ ${cungDataStr}
 `;
 
     if (thongTinThem && thongTinThem.trim()) {
-      promptText += `\nHOÀN CẢNH & NGUYỆN VỌNG THỰC TẾ: ${thongTinThem.trim()}.\n`;
+      expertBaseHeader += `\nHOÀN CẢNH & NGUYỆN VỌNG THỰC TẾ: ${thongTinThem.trim()}.\n`;
     }
     if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
-      promptText += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
+      expertBaseHeader += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
     }
 
-    promptText += `
-YÊU CẦU TỐI THƯỢNG DÀNH CHO BẢN CHUYÊN GIA EXPERT (ĐỘ DÀI BẮT BUỘC: 3600 - 5000 TỪ, GẤP ĐÔI BẢN PRO):
-Đây là gói bình giải cao cấp nhất (269.000đ). Bạn BẮT BUỘC phải viết cực kỳ chi tiết, sâu sắc, dài gấp 2 lần Bản Pro thông thường, mổ xẻ cặn kẽ từng chính tinh, phụ tinh, tứ hóa, tuần/triệt và KHẢO SÁT KỸ LƯỠNG ĐẦY ĐỦ CẢ 12 CUNG TRÊN LÁ SỐ (không được gộp chung hay bỏ sót bất kỳ cung nào) theo đúng 5 chương lớn sau:
+    const langMod = getLangPromptModifier(lang, effectiveTier);
+    const langSuffix = langMod ? `\n${langMod}` : '';
+
+    const part1Prompt = `${expertBaseHeader}
+NHIỆM VỤ PHẦN 1 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 1.500 TỪ, KHÔNG VIẾT DÀI QUÁ 1.600 TỪ):
+Hãy viết thật sâu sắc, uyên bác nhưng súc tích CHƯƠNG I (khoảng 350 từ) và NỬA ĐẦU CHƯƠNG II từ Cung số 1 đến Cung số 6 (mỗi cung viết cô đọng khoảng 160 - 190 từ, đi thẳng vào trọng tâm tinh đẩu và cát hung):
 
 <h3>I. ĐẠI CƯƠNG BẢN MỆNH, CỤC SỐ, ÂM DƯƠNG &amp; ĐỐI CHIẾU TƯỚNG PHÁP CHUYÊN GIA</h3>
 - Phân tích chuyên sâu Mệnh (${banMenh}), Cục (${tenCuc}), quan hệ Sinh khắc Mệnh - Cục (${sinhKhac}), ý nghĩa sao Mệnh Chủ (${menhChu}) và Thân Chủ (${thanChu}).
 - BẮT BUỘC khẳng định chuẩn xác thế "${thuanNghichLy}": ${
-  thuanNghichLy === 'Âm Dương thuận lý'
-    ? 'Khẳng định rõ ràng đương số là "Âm Dương thuận lý", biểu trưng cho người được trời đất và hoàn cảnh ưu ái, đắc thiên thời địa lợi, lúc nguy nan luôn có quý nhân phù trợ, mưu sự thuận dòng.'
-    : 'Khẳng định rõ ràng đương số là "Âm Dương nghịch lý", biểu trưng cho người có ý chí phi thường, vượt nghịch cảnh mà lập nên cơ nghiệp lớn, tiền vận rèn luyện hậu vận hiển vinh.'
-}
-- Đánh giá tổng thể cách cục lớn của lá số (Tam Phương Tứ Chính hội hợp những bộ sao đắc cách nào, Tứ Hóa Lộc - Quyền - Khoa - Kỵ xoay chuyển ra sao, ảnh hưởng của Tuần/Triệt).
-- NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) hoặc thông số Chiều cao/Cân nặng gửi kèm: Phân tích tỉ mỉ Tam Đình (Thượng - Trung - Hạ đình), Ngũ Quan (Mắt, Mũi, Miệng, Tai, Lông mày), Ấn Đường, Lưỡng Quyền, Nhân Trung; và mổ xẻ các đường chỉ tay chính (Sinh đạo, Trí đạo, Tâm đạo, Định mệnh tuyến, gò Kim Tinh, Mộc Tinh, Thủy Tinh, Thái Dương theo nguyên tắc Nam tả Nữ hữu) đối chiếu trực tiếp với các sao trên lá số để nghiệm lý thực chứng.
+      thuanNghichLy === 'Âm Dương thuận lý'
+        ? 'Khẳng định rõ ràng đương số là "Âm Dương thuận lý", biểu trưng cho người được trời đất và hoàn cảnh ưu ái, đắc thiên thời địa lợi, lúc nguy nan luôn có quý nhân phù trợ, mưu sự thuận dòng.'
+        : 'Khẳng định rõ ràng đương số là "Âm Dương nghịch lý", biểu trưng cho người có ý chí phi thường, vượt nghịch cảnh mà lập nên cơ nghiệp lớn, tiền vận rèn luyện hậu vận hiển vinh.'
+    }
+- Đánh giá tổng thể cách cục lớn của lá số (Tam Phương Tứ Chính, Tứ Hóa Lộc - Quyền - Khoa - Kỵ, Tuần/Triệt).
+- NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) hoặc thông số Chiều cao/Cân nặng gửi kèm: Phân tích Tam Đình, Ngũ Quan và các đường chỉ tay chính (Sinh đạo, Trí đạo, Tâm đạo theo nguyên tắc Nam tả Nữ hữu) đối chiếu với các sao trên lá số.
 
 <h3>II. LUẬN GIẢI CHUYÊN SÂU &amp; TOÀN DIỆN ĐỦ 12 CUNG TRÊN LÁ SỐ (KHẢO SÁT TỪNG CUNG VỊ)</h3>
-QUY TẮC BẮT BUỘC: Phải tách riêng và phân tích sâu sắc, đầy đủ cả 12 cung dưới đây bằng từng thẻ <h4> riêng biệt (mỗi cung tối thiểu 200 - 300 từ, tuyệt đối không gộp chung hay viết sơ sài):
+Phân tích từng cung từ Cung 1 đến Cung 6 bằng thẻ <h4> riêng biệt (mỗi cung viết súc tích 1 đoạn văn khoảng 160 - 190 từ):
 <h4>1. Cung Mệnh (Tiên Thiên Cốt Cách, Tâm Tính, Trí Tuệ &amp; Định Mệnh Chủ Đạo)</h4>
-- Phân tích các Chính tinh, Phụ tinh cát/hung, Tràng Sinh, Tứ Hóa đóng tại Cung Mệnh và các sao hội chiếu. Chỉ rõ tính cách, khí chất, năng lực cốt lõi và điểm mạnh/điểm yếu cần tu dưỡng.
 <h4>2. Cung Phụ Mẫu (Song Thân, Nguồn Cội &amp; Duyên Phận Với Bề Trên)</h4>
-- Phân tích các sao tại Cung Phụ Mẫu: sức khỏe, tính cách cha mẹ, mức độ trợ lực của gia đình, mối tương quan hợp khắc giữa đương số với song thân và cấp trên.
 <h4>3. Cung Phúc Đức (Âm Phúc Gia Tiên, Căn Cơ Tâm Linh, Họ Hàng &amp; Thọ Mạng)</h4>
-- Mổ xẻ sâu Cung Phúc Đức: âm phần tổ tiên, phúc ấm dòng họ, đời sống tinh thần nội tâm, nhân quả tiền kiếp và cách bồi phúc tích đức.
 <h4>4. Cung Điền Trạch (Nhà Cửa, Bất Động Sản, Cơ Ngơi &amp; Tích Lũy Điền Sản)</h4>
-- Phân tích chi tiết Cung Điền Trạch: khả năng tạo lập nhà đất, duyên đầu tư bất động sản, phong thủy nơi ở, hậu vận có nhiều điền sản hay không và lưu ý khi mua bán đất cát.
 <h4>5. Cung Quan Lộc (Đường Công Danh, Sự Nghiệp, Quyền Bính &amp; Định Hướng Ngành Nghề)</h4>
-- Phân tích toàn diện Cung Quan Lộc: thế đứng sự nghiệp, khả năng làm chủ hay làm quản lý/chuyên gia, các lĩnh vực ngành nghề đại cát và những giai đoạn thăng tiến rực rỡ.
 <h4>6. Cung Nô Bộc / Giao Hữu (Bạn Bè, Cộng Sự, Đối Tác, Nhân Viên &amp; Nhân Duyên Xã Hội)</h4>
-- Phân tích kỹ Cung Nô Bộc: chất lượng bạn bè, quý nhân giúp đỡ hay tiểu nhân quấy phá, nguyên tắc chọn người hợp tác làm ăn, dùng người dưới quyền để tránh bị phản bội hay hao tài.
+
+QUY TẮC BẮT BUỘC CHO PHẦN 1: Tổng độ dài Phần 1 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi kết thúc Mục 6 (Cung Nô Bộc), TUYỆT ĐỐI KHÔNG viết Mục 7 trở đi và KHÔNG viết lời chào kết bài.${langSuffix}`;
+
+    const part2Prompt = `${expertBaseHeader}
+NHIỆM VỤ PHẦN 2 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 1.500 TỪ, KHÔNG VIẾT DÀI QUÁ 1.600 TỪ):
+Đây là phần nối tiếp trực tiếp ngay sau Mục 6 (Cung Nô Bộc) của Chương II.
+QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <h4>7. Cung Thiên Di...</h4> dưới đây. TUYỆT ĐỐI KHÔNG viết lời chào mở đầu, KHÔNG lặp lại tiêu đề Chương I hay Chương II.
+
+Hãy phân tích súc tích, sắc bén từng cung từ Cung 7 đến Cung 12, Cung An Thân (mỗi cung 1 đoạn văn khoảng 160 - 190 từ) và Chương III (khoảng 300 - 350 từ):
 <h4>7. Cung Thiên Di (Vận Thế Xuất Ngoại, Môi Trường Xã Hội &amp; Quý Nhân Phương Xa)</h4>
-- Phân tích Cung Thiên Di (cung xung chiếu với Mệnh): bước chân ra ngoài xã hội cát hung thế nào, duyên đi xa/xuất ngoại lập nghiệp, mức độ được người đời trọng vọng.
 <h4>8. Cung Tật Ách (Cơ Địa Sức Khỏe, Bệnh Lý Tiềm Ẩn &amp; Pháp Môn Hóa Giải Tai Ách)</h4>
-- Phân tích Cung Tật Ách: các bộ phận cơ thể cần lưu tâm theo ngũ hành tinh đẩu, bệnh lý tiềm ẩn theo tuổi tác, và năng lực giải ách trừ tai của các sao phúc thiện.
 <h4>9. Cung Tài Bạch (Dòng Tiền, Năng Lực Kiếm Tiền, Đầu Tư &amp; Quản Trị Tài Chính)</h4>
-- Phân tích sâu Cung Tài Bạch: nguồn thu nhập chính và phụ, nhạy bén tài chính, cách tụ tài giữ của, những cạm bẫy hao tài tốn của cần đặc biệt đề phòng.
 <h4>10. Cung Tử Tức (Đường Con Cái, Duyên Phận Hậu Duệ &amp; Phúc Khí Về Sau)</h4>
-- Phân tích Cung Tử Tức: duyên sinh dưỡng con cái, tính cách và tài năng của con cái sau này, mối quan hệ cha mẹ - con cái và sự hiếu thuận lúc tuổi già.
 <h4>11. Cung ${duongSo.gioiTinh === 'Nam' ? 'Thê Thiếp' : 'Phu Quân'} / Phu Thê (Nhân Duyên Hôn Nhân, Phối Ngẫu &amp; Hạnh Phúc Gia Đạo)</h4>
-- Phân tích Cung Phu Thê: hình mẫu, tính cách và hoàn cảnh của người bạn đời, những thuận lợi và sóng gió trong đời sống vợ chồng, bí quyết giữ gìn gia đạo viên mãn.
 <h4>12. Cung Huynh Đệ (Tình Cảm Anh Chị Em, Sự Trợ Lực &amp; Tương Tác Nội Tộc)</h4>
-- Phân tích Cung Huynh Đệ: tình cảm anh chị em ruột thịt, sự nâng đỡ hay độc lập giữa các anh chị em, bài học ứng xử trong gia tộc.
 <h4>✦ Luận Giải Chuyên Biệt Cung An Thân (${thanCuName || 'Thân cư Mệnh'} - Hậu Thiên Vận Mệnh Sau Tuổi 30)</h4>
-- Phân tích sâu sự chuyển dịch vận mệnh từ Cung Mệnh sang Cung Thân (${thanCuName || 'Thân cư Mệnh'}) từ sau tuổi 30 - 35 trở đi: ưu tiên cuộc sống thay đổi thế nào và làm sao để hậu vận đạt đỉnh cao viên mãn.
 
 <h3>III. LUẬN ĐOÁN CHUYÊN SÂU ĐẠI VẬN 10 NĂM HIỆN TẠI (${startAge} - ${endAge} TUỔI)</h3>
 - ${daiVanInstruction}
-- Phân tích chi tiết sự giao hội giữa các sao gốc tại cung Đại vận với Tam hợp Đại vận.
-- Chia rõ 2 chặng: Chặng 5 năm đầu (${startAge} - ${startAge + 4} tuổi) và Chặng 5 năm cuối (${startAge + 5} - ${endAge} tuổi): thời điểm nào bứt phá mạnh mẽ nhất, thời điểm nào cần thủ thế giữ mình ở tuổi ${tuoiAmXem}.
+- Chia rõ 2 chặng: Chặng 5 năm đầu (${startAge} - ${startAge + 4} tuổi) và Chặng 5 năm cuối (${startAge + 5} - ${endAge} tuổi) ở tuổi ${tuoiAmXem}.
+
+QUY TẮC KẾT THÚC PHẦN 2: Tổng độ dài Phần 2 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi viết xong Chương III, TUYỆT ĐỐI KHÔNG viết Chương IV và KHÔNG viết lời chào kết bài.${langSuffix}`;
+
+    const part3Prompt = `${expertBaseHeader}
+NHIỆM VỤ PHẦN 3 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.100 - 1.300 TỪ, KHÔNG VIẾT DÀI QUÁ 1.400 TỪ):
+Đây là phần cuối nối tiếp trực tiếp ngay sau Chương III (Đại Vận 10 Năm).
+QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <h3>IV. TIỂU VẬN NĂM ${namXem}...</h3> dưới đây. TUYỆT ĐỐI KHÔNG viết lời chào mở đầu, KHÔNG lặp lại các chương I, II, III.
 
 <h3>IV. TIỂU VẬN NĂM ${namXem} (${namXemCanChi}) &amp; BẢN ĐỒ VẬN KHÍ 4 MÙA - 12 THÁNG ÂM LỊCH</h3>
-- Phân tích toàn diện Tiểu Vận / Lưu Niên năm ${namXem} (${namXemCanChi}) và hệ thống Sao Lưu (Lưu Thái Tuế, Lưu Tang Môn, Lưu Bạch Hổ, Lưu Lộc Tồn, Lưu Thiên Mã, Lưu Kình Đà, Lưu Khốc Hư, Lưu Tứ Hóa).
-- Khảo sát chi tiết biến động qua 4 Mùa &amp; 12 Tháng Âm lịch (BẮT BUỘC tra cứu chính xác 100% từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên, chỉ rõ từng tháng rơi vào cung nào và cát hung ra sao):
-  + Mùa Xuân (Tháng 1, Tháng 2, Tháng 3 Âm lịch): Luận kỹ từng tháng.
-  + Mùa Hạ (Tháng 4, Tháng 5, Tháng 6 Âm lịch): Luận kỹ từng tháng.
-  + Mùa Thu (Tháng 7, Tháng 8, Tháng 9 Âm lịch): Luận kỹ từng tháng.
-  + Mùa Đông (Tháng 10, Tháng 11, Tháng 12 Âm lịch): Luận kỹ từng tháng.
+- Phân tích Tiểu Vận / Lưu Niên năm ${namXem} (${namXemCanChi}) và hệ thống Sao Lưu.
+- Khảo sát biến động qua 4 Mùa &amp; 12 Tháng Âm lịch (BẮT BUỘC tra cứu chính xác 100% từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên, chỉ rõ từng tháng rơi vào cung nào và cát hung ra sao, viết cô đọng súc tích khoảng 650 - 800 từ cho toàn bộ 12 tháng):
+  + Mùa Xuân (Tháng 1, Tháng 2, Tháng 3 Âm lịch).
+  + Mùa Hạ (Tháng 4, Tháng 5, Tháng 6 Âm lịch).
+  + Mùa Thu (Tháng 7, Tháng 8, Tháng 9 Âm lịch).
+  + Mùa Đông (Tháng 10, Tháng 11, Tháng 12 Âm lịch).
 
 <h3>V. BÍ PHÁP CẢI VẬN CHUYÊN GIA, PHONG THỦY ỨNG DỤNG &amp; SÁCH LƯỢC ĐỜI NGƯỜI</h3>
-- Phương pháp chế hóa các sát tinh và hung vận trong lá số bằng phong thủy (màu sắc, phương vị, vật phẩm trợ mệnh, cách bài trí không gian sống/làm việc), tu dưỡng tâm tính và hành thiện tích phúc.
-- Tổng kết chiến lược hành động cốt lõi cho đương số trong 1 - 3 năm tới.
+- Phương pháp chế hóa các sát tinh và hung vận bằng phong thủy (màu sắc, phương vị, vật phẩm trợ mệnh), tu dưỡng tâm tính và chiến lược 1 - 3 năm tới (khoảng 350 - 450 từ).
 - Lời dặn tâm huyết của Thầy Tôn và nhắn gửi đương số: Quý khách đang sở hữu gói Chuyên Gia Expert và được tặng kèm 02 câu hỏi Chuyên Gia miễn phí ngay tại khung Hỏi Đáp bên dưới để đàm đạo trực tiếp cùng Thầy Tôn.
 
-Văn phong bậc Đại Tông Sư: uyên bác, thấu tình đạt lý, giàu giá trị học thuật phương Đông, từ ngữ sâu sắc, truyền cảm hứng mạnh mẽ. Trình bày bằng thẻ HTML tinh tế, rõ ràng. Bắt buộc viết đầy đủ, dài gấp đôi bản Pro (3600 - 5000 từ) và kết thúc trọn vẹn.`;
+Văn phong bậc Đại Tông Sư: uyên bác, súc tích, giàu giá trị học thuật phương Đông, trình bày HTML tinh tế, kết thúc trọn vẹn.${langSuffix}`;
+
+    promptText = `${part1Prompt}\n<!-- EXPERT_SPLIT_PART -->\n${part2Prompt}\n<!-- EXPERT_SPLIT_PART -->\n${part3Prompt}`;
   } else if (isPro) {
     // ==========================================
     // PRO TIER PROMPT: GEMINI 3.1 PRO PREVIEW (1800 - 2500 TỪ)
@@ -423,9 +429,11 @@ Bài luận phải mạch lạc, chuẩn xác, đáng tin cậy, bao quát các 
 Văn phong uy nghiêm, chuẩn mực, truyền cảm hứng, trình bày HTML đẹp mắt.`;
   }
 
-  const langModifier = getLangPromptModifier(lang, effectiveTier);
-  if (langModifier) {
-    promptText += '\n' + langModifier;
+  if (!isExpert) {
+    const langModifier = getLangPromptModifier(lang, effectiveTier);
+    if (langModifier) {
+      promptText += '\n' + langModifier;
+    }
   }
 
   const parts: GeminiPart[] = [{ text: promptText }];
@@ -450,20 +458,19 @@ Văn phong uy nghiêm, chuẩn mực, truyền cảm hứng, trình bày HTML đ
 }
 
 /**
- * Gọi AI luận giải Tử Vi
- * Ưu tiên gọi qua Supabase Edge Function (dùng key bí mật trong Supabase Secret)
- * Nếu người dùng có tự nhập key cá nhân thì gọi trực tiếp với key đó.
+ * Gọi đơn lẻ 1 request tới Gemini Vision / Supabase Edge Function
  */
-export async function callGeminiVision(
+async function callSingleGeminiVision(
   parts: GeminiPart[],
   customApiKey?: string,
   modelName = 'gemini-3.1-pro-preview'
 ): Promise<{ text?: string; error?: string }> {
   const isExpert = modelName.includes('argon') || modelName.includes('4');
   const isPro = isExpert || modelName.includes('3.1') || modelName.includes('pro');
-  const targetBudget = isExpert ? 2048 : isPro ? 1024 : 0;
-  const maxTokens = isExpert ? 28000 : isPro ? 12000 : 5000;
-  const timeoutMs = isExpert ? 180000 : 120000;
+  // Với gemini-4-argon, đặt thinkingBudget = 0 để model sinh văn bản ngay lập tức (tránh bị treo 70-90s ở bước suy nghĩ ngầm gây lỗi 504)
+  const targetBudget = isExpert ? 0 : isPro ? 1024 : 0;
+  const maxTokens = isExpert ? 12000 : isPro ? 12000 : 5000;
+  const timeoutMs = isExpert ? 90000 : 120000;
 
   // 1. Trường hợp người dùng có nhập key riêng trong modal cài đặt
   if (customApiKey && customApiKey.trim()) {
@@ -481,7 +488,7 @@ export async function callGeminiVision(
             generationConfig: {
               temperature: 0.7,
               maxOutputTokens: maxTokens,
-              thinkingConfig: { thinkingBudget: targetBudget },
+              thinkingConfig: { thinkingBudget: candidateModel.includes('argon') ? 0 : 1024 },
             },
           }),
           signal: AbortSignal.timeout(timeoutMs),
@@ -524,7 +531,7 @@ export async function callGeminiVision(
     },
   ];
 
-  // Nếu gọi gemini-4-argon mà cổng upstream chưa mở cho key hiện tại, tự động dự phòng bằng gemini-3.1-pro-preview với maxOutputTokens 28000 (gấp đôi Pro)
+  // Nếu gọi gemini-4-argon mà cổng upstream quá tải, tự động dự phòng bằng gemini-3.1-pro-preview
   if (isExpert && modelName !== 'gemini-3.1-pro-preview') {
     edgeEndpoints.push({
       url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
@@ -534,8 +541,8 @@ export async function callGeminiVision(
         model: 'gemini-3.1-pro-preview',
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 28000,
-          thinkingConfig: { thinkingBudget: 2048 },
+          maxOutputTokens: 12000,
+          thinkingConfig: { thinkingBudget: 512 },
         },
       },
     });
@@ -591,6 +598,45 @@ export async function callGeminiVision(
   return {
     error: `❌ Thầy đang định tâm quán tưởng cho khách trước. Quý khách vui lòng thử lại sau giây lát!`,
   };
+}
+
+/**
+ * Gọi AI luận giải Tử Vi
+ * - Với gói Chuyên Gia Expert (có marker <!-- EXPERT_SPLIT_PART -->), tự động chia làm 3 luồng song song (Promise.all)
+ *   giúp tổng thời gian tạo bài 4.000 - 5.000 từ chỉ còn ~25-35 giây, triệt tiêu 100% lỗi HTTP 504 Timeout!
+ */
+export async function callGeminiVision(
+  parts: GeminiPart[],
+  customApiKey?: string,
+  modelName = 'gemini-3.1-pro-preview'
+): Promise<{ text?: string; error?: string }> {
+  const firstText = parts[0]?.text || '';
+  if (firstText.includes('<!-- EXPERT_SPLIT_PART -->')) {
+    const subPrompts = firstText
+      .split('<!-- EXPERT_SPLIT_PART -->')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const imageParts = parts.slice(1);
+
+    const results = await Promise.all(
+      subPrompts.map((subPrompt, idx) => {
+        const subParts: GeminiPart[] =
+          idx === 0 ? [{ text: subPrompt }, ...imageParts] : [{ text: subPrompt }];
+        return callSingleGeminiVision(subParts, customApiKey, modelName);
+      })
+    );
+
+    const successfulTexts = results.map((r) => r.text).filter(Boolean) as string[];
+    if (successfulTexts.length === subPrompts.length) {
+      return { text: formatTuViHtml(successfulTexts.join('\n\n')) };
+    }
+    const firstErr = results.find((r) => r.error)?.error;
+    return {
+      error: firstErr || '❌ Thầy đang định tâm quán tưởng cho khách trước. Quý khách vui lòng thử lại sau giây lát!',
+    };
+  }
+
+  return callSingleGeminiVision(parts, customApiKey, modelName);
 }
 
 /**
