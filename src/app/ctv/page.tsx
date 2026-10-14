@@ -455,10 +455,16 @@ export default function CTVPortalPage() {
                         <tr key={o.orderCode} className="hover:bg-slate-700/30">
                           <td className="py-3 px-4 font-mono font-bold text-white">{o.orderCode}</td>
                           <td className="py-3 px-4 text-xs">
-                            {o.paymentType === 'reading_vip'
-                              ? 'Bản VIP 119.000đ'
+                            {o.paymentType === 'reading_expert'
+                              ? 'Bản Expert 269.000đ'
+                              : o.paymentType === 'upgrade_expert'
+                              ? 'Nâng Cấp Expert 150.000đ'
+                              : o.paymentType === 'chat_expert'
+                              ? 'Chat Expert 129.000đ'
+                              : o.paymentType === 'reading_vip'
+                              ? 'Bản Pro 119.000đ'
                               : o.paymentType === 'chat_vip'
-                              ? 'Chat VIP 99.000đ'
+                              ? 'Chat Pro 99.000đ'
                               : 'Chat Cơ Bản 49.000đ'}
                           </td>
                           <td className="py-3 px-4 text-xs text-slate-400">

@@ -607,10 +607,16 @@ export default function AdminAffiliatesTable({
                     </td>
                     <td className="py-3 px-4">
                       <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                        {o.paymentType === 'reading_vip'
-                          ? 'Bản VIP 119k'
+                        {o.paymentType === 'reading_expert'
+                          ? 'Bản Expert 269k'
+                          : o.paymentType === 'upgrade_expert'
+                          ? 'Nâng Cấp Expert 150k'
+                          : o.paymentType === 'chat_expert'
+                          ? 'Chat Expert 129k'
+                          : o.paymentType === 'reading_vip'
+                          ? 'Bản Pro 119k'
                           : o.paymentType === 'chat_vip'
-                          ? 'Chat VIP 99k'
+                          ? 'Chat Pro 99k'
                           : 'Chat Cơ Bản 49k'}
                       </span>
                     </td>

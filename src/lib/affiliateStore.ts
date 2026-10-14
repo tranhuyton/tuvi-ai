@@ -189,6 +189,7 @@ export async function createAffiliate(data: {
     phone: data.phone?.trim() || undefined,
     email: data.email?.trim() || undefined,
     bankName: data.bankName?.trim() || undefined,
+    bankCode: inferBankCode(data.bankName?.trim()),
     bankAccountNumber: data.bankAccountNumber?.trim() || undefined,
     bankAccountName: data.bankAccountName?.trim() || undefined,
     commissionRate: data.commissionRate !== undefined ? Number(data.commissionRate) : 25,
@@ -215,6 +216,7 @@ export async function createAffiliate(data: {
       phone: newAff.phone || null,
       email: newAff.email || null,
       bank_name: newAff.bankName || null,
+      bank_code: newAff.bankCode || null,
       bank_account_number: newAff.bankAccountNumber || null,
       bank_account_name: newAff.bankAccountName || null,
       commission_rate: newAff.commissionRate,
@@ -252,6 +254,7 @@ export async function updateAffiliate(
     ...aff,
     ...data,
     code: data.code ? data.code.trim().toLowerCase() : aff.code,
+    bankCode: data.bankCode || inferBankCode(data.bankName ?? aff.bankName),
     updatedAt: now,
   };
 
@@ -267,6 +270,7 @@ export async function updateAffiliate(
         phone: updated.phone || null,
         email: updated.email || null,
         bank_name: updated.bankName || null,
+        bank_code: updated.bankCode || null,
         bank_account_number: updated.bankAccountNumber || null,
         bank_account_name: updated.bankAccountName || null,
         commission_rate: updated.commissionRate,
@@ -371,6 +375,13 @@ export async function recordAffiliateCommission(
         updated_at: aff.updatedAt,
       })
       .eq('id', aff.id);
+
+    if (orderCode) {
+      await supabase
+        .from('tuvi_orders')
+        .update({ commission_amount: commission })
+        .eq('order_code', orderCode.trim().toUpperCase());
+    }
   } catch (err) {
     console.warn('[AFFILIATE STORE] Lỗi ghi nhận hoa hồng Supabase:', err);
   }
@@ -450,6 +461,7 @@ export async function updateAffiliateBank(
       .from('tuvi_affiliates')
       .update({
         bank_name: aff.bankName,
+        bank_code: aff.bankCode || null,
         bank_account_number: aff.bankAccountNumber,
         bank_account_name: aff.bankAccountName,
         updated_at: aff.updatedAt,

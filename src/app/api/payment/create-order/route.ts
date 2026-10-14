@@ -29,6 +29,25 @@ export async function POST(req: Request) {
       else finalAmount = 49000;
     }
 
+    const cleanAffCode = affiliateCode ? String(affiliateCode).trim().toLowerCase() : undefined;
+    let expectedCommission = 0;
+    if (cleanAffCode) {
+      try {
+        const { getAffiliateByCode } = await import('@/lib/affiliateStore');
+        const aff = await getAffiliateByCode(cleanAffCode);
+        if (aff && aff.status === 'ACTIVE') {
+          if (aff.commissionFixed && aff.commissionFixed > 0) {
+            expectedCommission = aff.commissionFixed;
+          } else {
+            const rate = aff.commissionRate || 25;
+            expectedCommission = Math.round((finalAmount * rate) / 100);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     const order = await createOrder({
       paymentType,
       amount: finalAmount,
@@ -36,7 +55,8 @@ export async function POST(req: Request) {
       email,
       chartId,
       userId,
-      affiliateCode: affiliateCode ? String(affiliateCode).trim().toLowerCase() : undefined,
+      affiliateCode: cleanAffCode,
+      commissionAmount: expectedCommission,
     });
 
     // 1. Tạo Data URL tức thì (0ms, không phụ thuộc vào máy chủ ngoài img.vietqr.io)
