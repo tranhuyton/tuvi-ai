@@ -137,8 +137,16 @@ export default function SavedChartsModal({
               const hasReading = !!chart.reading_html;
               const msgCount = chart.message_count || 0;
               const ds = chart.duong_so_data;
-              const tier = ds?.tier || chart.laso_data?.tier || (chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO') ? 'pro' : 'free');
+              const tier =
+                ds?.tier ||
+                chart.laso_data?.tier ||
+                (chart.reading_html?.includes('Bản Expert') || chart.reading_html?.includes('CHUYÊN GIA EXPERT')
+                  ? 'expert'
+                  : chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO')
+                  ? 'pro'
+                  : 'free');
               const isPro = tier === 'pro';
+              const isExpert = tier === 'expert';
 
               return (
                 <div
@@ -167,12 +175,14 @@ export default function SavedChartsModal({
                       {hasReading && (
                         <span
                           className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                            isPro
+                            isExpert
+                              ? 'bg-purple-500/20 text-purple-300 border-purple-400/50'
+                              : isPro
                               ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
                               : 'bg-slate-800 text-slate-300 border-slate-700'
                           }`}
                         >
-                          {isPro ? '👑 Bản Pro' : '📜 Bản Miễn Phí'}
+                          {isExpert ? '💎 Bản Expert' : isPro ? '👑 Bản Pro' : '📜 Bản Miễn Phí'}
                         </span>
                       )}
                       {isActive && (
@@ -207,7 +217,7 @@ export default function SavedChartsModal({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {hasReading && !isPro && onUpgradeChart && (
+                    {hasReading && !isPro && !isExpert && onUpgradeChart && (
                       <button
                         type="button"
                         onClick={(e) => {

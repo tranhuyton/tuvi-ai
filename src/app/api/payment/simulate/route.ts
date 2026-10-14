@@ -41,8 +41,16 @@ export async function POST(req: Request) {
     }
 
     // Nâng cấp chart nếu có
-    if (order.paymentType === 'reading_vip') {
+    if (
+      order.paymentType === 'reading_vip' ||
+      order.paymentType === 'reading_expert' ||
+      order.paymentType === 'upgrade_expert'
+    ) {
       try {
+        const targetTier =
+          order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert'
+            ? 'expert'
+            : 'pro';
         let targetChartId = order.chartId;
 
         // Nếu order chưa có chartId, thử tìm lá số trùng tên của user để liên kết tự động
@@ -70,8 +78,8 @@ export async function POST(req: Request) {
             .maybeSingle();
 
           if (chartData) {
-            const updatedDuongSo = { ...chartData.duong_so_data, tier: 'pro' };
-            const updatedLaSo = { ...chartData.laso_data, tier: 'pro' };
+            const updatedDuongSo = { ...chartData.duong_so_data, tier: targetTier };
+            const updatedLaSo = { ...chartData.laso_data, tier: targetTier };
             await supabase
               .from('tuvi_charts')
               .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })

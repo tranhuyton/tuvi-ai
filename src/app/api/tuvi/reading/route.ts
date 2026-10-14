@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { LaSoData } from '@/types/tuvi';
 import { callGeminiVision, buildReadingParts } from '@/lib/gemini';
 
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { laSo, tier, thongTinThem, chieuCao, canNang, anhMat, anhTay, apiKey, model, lang, language } = body as {
       laSo: LaSoData;
-      tier?: 'free' | 'pro';
+      tier?: 'free' | 'pro' | 'expert';
       thongTinThem?: string;
       chieuCao?: number;
       canNang?: number;
@@ -26,7 +26,13 @@ export async function POST(req: NextRequest) {
     }
 
     const currentTier = tier || laSo.tier || 'free';
-    const targetModel = model || (currentTier === 'pro' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash');
+    const targetModel =
+      model ||
+      (currentTier === 'expert'
+        ? 'gemini-4-argon'
+        : currentTier === 'pro'
+        ? 'gemini-3.1-pro-preview'
+        : 'gemini-2.5-flash');
     const targetLang = lang || language || 'vi';
 
     const parts = buildReadingParts({

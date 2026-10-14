@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, AlertCircle, Crown, FileDown, RefreshCw, Compass, X } from 'lucide-react';
+import { Sparkles, Copy, Check, AlertCircle, Crown, Gem, FileDown, RefreshCw, Compass, X } from 'lucide-react';
 import { ServiceTier, DuLieuDuongSo, LaSoData } from '@/types/tuvi';
 import { useLanguage } from '@/context/LanguageContext';
 import { exportReadingToPdf } from '@/lib/pdfExport';
@@ -14,6 +14,7 @@ interface LuanGiaiAIProps {
   error?: string;
   tier?: ServiceTier;
   onUpgrade?: () => void;
+  onUpgradeToExpert?: () => void;
   isUpgrading?: boolean;
   duongSo?: DuLieuDuongSo;
   laSo?: LaSoData;
@@ -25,6 +26,7 @@ export default function LuanGiaiAI({
   error,
   tier = 'free',
   onUpgrade,
+  onUpgradeToExpert,
   isUpgrading,
   duongSo,
   laSo,
@@ -77,6 +79,7 @@ export default function LuanGiaiAI({
   };
 
   const isPro = tier === 'pro';
+  const isExpert = tier === 'expert';
 
   if (!safeReadingHtml && !isLoading && !error) {
     return null;
@@ -86,7 +89,12 @@ export default function LuanGiaiAI({
     <div className="w-full max-w-[1060px] mx-auto mt-10">
       <div className="text-center mb-6">
         <h2 className="text-2xl sm:text-3xl font-bold uppercase tracking-wider text-red-600 flex items-center justify-center gap-2 font-serif">
-          {isPro ? (
+          {isExpert ? (
+            <>
+              <Gem className="w-6 h-6 text-purple-400 inline" />
+              <span>{t('reading.expertTitle', 'Bình Giải Chuyên Gia Từ Thầy Tôn (Bản Expert)')}</span>
+            </>
+          ) : isPro ? (
             <>
               <Crown className="w-6 h-6 text-amber-500 inline" />
               <span>{t('reading.proTitle', 'Bình Giải Chuyên Sâu Từ Thầy Tôn (Bản Pro)')}</span>
@@ -101,17 +109,23 @@ export default function LuanGiaiAI({
         <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
           <span
             className={`text-xs sm:text-sm px-3 py-1 rounded-full font-semibold border ${
-              isPro
+              isExpert
+                ? 'bg-purple-500/20 text-purple-300 border-purple-400/50'
+                : isPro
                 ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                 : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
             }`}
           >
-            {isPro
+            {isExpert
+              ? t('reading.expertBadge', '💎 Bản Chuyên Gia Expert • Gemini 4 Argon')
+              : isPro
               ? t('reading.proBadge', '👑 Bản Chuyên Sâu Bí Truyền')
               : t('reading.freeBadge', '📜 Bản Luận Giải Khởi Nguyên')}
           </span>
           <p className="text-sm sm:text-base text-slate-300">
-            {isPro
+            {isExpert
+              ? t('reading.expertSubtitle', 'Luận giải trọn vẹn 12 Cung + Cung Thân (dài gấp 2 lần Bản Pro), Tướng Pháp & 12 Tháng Lưu Nguyệt')
+              : isPro
               ? t('reading.proSubtitle', 'Toàn diện Tử Vi Cổ Truyền, Tứ Hóa, Tướng Pháp & Hóa Giải 4 Mùa')
               : t('reading.freeSubtitle', 'Tổng quan Mệnh Cục, Tam Hợp Mệnh-Tài-Quan, Đại Vận & Tiểu Vận')}
           </p>
@@ -126,11 +140,18 @@ export default function LuanGiaiAI({
           </div>
           <h3 className="text-xl sm:text-2xl font-bold text-amber-400 tracking-wider uppercase font-serif">
             {isUpgrading
-              ? t('reading.loadingUpgrading', 'Thầy Đang Nâng Cấp Luận Giải Pro...')
+              ? isExpert
+                ? t('reading.loadingUpgradingExpert', 'Thầy Đang Nâng Cấp Luận Giải Chuyên Gia Expert...')
+                : t('reading.loadingUpgrading', 'Thầy Đang Nâng Cấp Luận Giải Pro...')
               : t('reading.loadingNormal', 'Thầy Đang Quán Tưởng...')}
           </h3>
           <p className="text-base text-slate-300 mt-2 max-w-lg leading-relaxed">
-            {isPro || isUpgrading
+            {isExpert
+              ? t(
+                  'reading.loadingExpertDesc',
+                  'Thầy Tôn đang vận dụng Siêu AI Gemini 4 Argon để luận giải thâm sâu toàn diện từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ). Quý khách vui lòng tịnh tâm đợi khoảng 45 - 90 giây!'
+                )
+              : isPro || isUpgrading
               ? t(
                   'reading.loadingProDesc',
                   'Thầy Tôn đang định tâm quán tưởng thâm sâu, soi rọi 14 Chính tinh, đối chiếu Tướng pháp và luận giải vận khí 4 mùa. Quý khách vui lòng tịnh tâm đợi trong giây lát!'
@@ -159,26 +180,58 @@ export default function LuanGiaiAI({
             <div className="flex items-center gap-2">
               <span
                 className={`text-xs sm:text-sm px-3 py-1 rounded-md font-bold ${
-                  isPro
+                  isExpert
+                    ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                    : isPro
                     ? 'bg-amber-100 text-amber-900 border border-amber-300'
                     : 'bg-slate-100 text-slate-700 border border-slate-300'
                 }`}
               >
-                {isPro ? t('form.proTitle', 'Bản Chuyên Sâu Pro') : t('form.freeTitle', '📜 Bản Miễn Phí')}
+                {isExpert
+                  ? t('form.expertTitle', '💎 Bản Chuyên Gia Expert')
+                  : isPro
+                  ? t('form.proTitle', 'Bản Chuyên Sâu Pro')
+                  : t('form.freeTitle', '📜 Bản Miễn Phí')}
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              {!isPro && onUpgrade && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {tier === 'free' && onUpgrade && (
                 <button
                   type="button"
                   onClick={onUpgrade}
                   disabled={isUpgrading}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-sm sm:text-xs font-bold shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-sm sm:text-xs font-bold shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
                   title="Nâng cấp xem luận giải chuyên sâu chi tiết gấp 2 lần"
                 >
                   <Sparkles className="w-4 h-4 fill-slate-950" />
-                  <span>{t('reading.topUpgradeBtn', '⚡ Nâng Cấp Bản Pro')}</span>
+                  <span>{t('reading.topUpgradeBtn', '⚡ Nâng Cấp Bản Pro (119K)')}</span>
+                </button>
+              )}
+
+              {tier === 'free' && onUpgradeToExpert && (
+                <button
+                  type="button"
+                  onClick={onUpgradeToExpert}
+                  disabled={isUpgrading}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white rounded-lg text-sm sm:text-xs font-bold shadow-md shadow-purple-500/20 transition transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
+                  title="Nâng cấp lên Bản Chuyên Gia Expert (Gemini 4 Argon - Đầy đủ 12 Cung)"
+                >
+                  <Gem className="w-4 h-4" />
+                  <span>{t('reading.topUpgradeExpertFromFreeBtn', '💎 Bản Expert (269K)')}</span>
+                </button>
+              )}
+
+              {tier === 'pro' && onUpgradeToExpert && (
+                <button
+                  type="button"
+                  onClick={onUpgradeToExpert}
+                  disabled={isUpgrading}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white rounded-lg text-sm sm:text-xs font-bold shadow-md shadow-purple-500/20 transition transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
+                  title="Ưu đãi nâng cấp từ Bản Pro lên Bản Chuyên Gia Expert chỉ 150.000đ"
+                >
+                  <Gem className="w-4 h-4" />
+                  <span>{t('reading.topUpgradeExpertFromProBtn', '💎 Nâng Cấp Bản Expert (150K)')}</span>
                 </button>
               )}
 
@@ -222,8 +275,8 @@ export default function LuanGiaiAI({
             dangerouslySetInnerHTML={{ __html: safeReadingHtml }}
           />
 
-          {!isPro && onUpgrade && (
-            <div className="mt-8 pt-6 border-t border-slate-200 bg-amber-50/70 p-4 sm:p-5 rounded-xl border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
+          {tier === 'free' && (onUpgrade || onUpgradeToExpert) && (
+            <div className="mt-8 pt-6 border-t border-slate-200 bg-amber-50/70 p-4 sm:p-5 rounded-xl border border-amber-200 flex flex-col lg:flex-row items-center justify-between gap-4 print:hidden">
               <div>
                 <h4 className="font-bold text-amber-900 text-base sm:text-lg font-serif flex items-center gap-1.5">
                   <Crown className="w-5 h-5 text-amber-600" />
@@ -232,16 +285,55 @@ export default function LuanGiaiAI({
                 <p className="text-sm sm:text-sm text-slate-700 mt-1 max-w-xl leading-relaxed">
                   {t(
                     'reading.upgradePromptDesc',
-                    'Bản Chuyên Sâu mở ra đại pháp bí truyền luận giải chi tiết gấp 2 lần, soi chiếu toàn diện Diện tướng/Chỉ tay, biến chuyển 4 mùa hạn vận và giải pháp hóa giải hung sát tinh.'
+                    'Nâng cấp lên Bản Pro (119.000đ) để luận giải chi tiết gấp 2 lần, hoặc chọn Bản Chuyên Gia Expert (269.000đ - Gemini 4 Argon) để mổ xẻ đầy đủ 12 Cung + Cung Thân với độ dài gấp 4 lần bản miễn phí!'
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                {onUpgrade && (
+                  <button
+                    type="button"
+                    onClick={onUpgrade}
+                    className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer"
+                  >
+                    {t('reading.upgradeBtn', '⚡ Bản Pro (119.000đ)')}
+                  </button>
+                )}
+                {onUpgradeToExpert && (
+                  <button
+                    type="button"
+                    onClick={onUpgradeToExpert}
+                    className="px-4 py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Gem className="w-4 h-4" />
+                    <span>{t('reading.upgradeExpertBtn', '💎 Bản Expert (269.000đ)')}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {tier === 'pro' && onUpgradeToExpert && (
+            <div className="mt-8 pt-6 border-t border-purple-200 bg-gradient-to-r from-purple-50 via-fuchsia-50/70 to-amber-50 p-4 sm:p-5 rounded-xl border border-purple-300 flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
+              <div>
+                <h4 className="font-bold text-purple-900 text-base sm:text-lg font-serif flex items-center gap-1.5">
+                  <Gem className="w-5 h-5 text-purple-600" />
+                  {t('reading.upgradeExpertPromptTitle', 'Đặc Quyền Nâng Cấp Lên Bản Chuyên Gia Expert (Gemini 4 Argon)')}
+                </h4>
+                <p className="text-sm sm:text-sm text-slate-700 mt-1 max-w-xl leading-relaxed">
+                  {t(
+                    'reading.upgradeExpertPromptDesc',
+                    'Quý khách đang dùng Bản Chuyên Sâu Pro nên được hưởng ưu đãi nâng cấp lên Bản Chuyên Gia Expert chỉ với 150.000đ (giá gốc 269.000đ). Luận giải kỹ lưỡng toàn diện từng cung trong 12 Cung + Cung Thân, độ dài tăng gấp 2 lần Bản Pro (~3.600 - 5.000 từ) và tặng thêm 02 câu hỏi Chuyên Gia miễn phí!'
                   )}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={onUpgrade}
-                className="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-md transition whitespace-nowrap cursor-pointer"
+                onClick={onUpgradeToExpert}
+                className="px-5 py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm sm:text-base shadow-md transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0"
               >
-                {t('reading.upgradeBtn', 'Nâng Cấp Bản Pro (119.000đ)')}
+                <Gem className="w-4 h-4" />
+                <span>{t('reading.upgradeProToExpertBtn', 'Nâng Cấp Bản Expert (150.000đ)')}</span>
               </button>
             </div>
           )}

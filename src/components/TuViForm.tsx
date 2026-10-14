@@ -3,7 +3,7 @@
 import React, { useState, ChangeEvent } from 'react';
 import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, PhoneCall, BookOpen } from 'lucide-react';
+import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, Gem, PhoneCall, BookOpen } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -197,18 +197,19 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
       tier: selectedTier,
     };
 
-    if (selectedTier === 'pro') {
+    if (selectedTier === 'pro' || selectedTier === 'expert') {
+      const tierLabel = selectedTier === 'expert' ? 'Bản Chuyên Gia Expert (269.000đ)' : 'Bản Pro (119.000đ)';
       if (!user) {
         if (onRequireAuth) {
           onRequireAuth(() => {
-            onSubmit(payload, 'pro');
-          }, 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản để hệ thống lưu giữ lá số vào Sổ Tay Số Mệnh và thanh toán Bản Pro (119.000đ).');
+            onSubmit(payload, selectedTier);
+          }, `Quý khách vui lòng đăng nhập hoặc tạo tài khoản để hệ thống lưu giữ lá số vào Sổ Tay Số Mệnh và thanh toán ${tierLabel}.`);
         } else {
-          alert('Quý khách vui lòng đăng nhập hoặc tạo tài khoản trước khi chọn Bản Pro!');
+          alert(`Quý khách vui lòng đăng nhập hoặc tạo tài khoản trước khi chọn ${tierLabel}!`);
         }
         return;
       }
-      onSubmit(payload, 'pro');
+      onSubmit(payload, selectedTier);
     } else {
       onSubmit(payload, 'free');
     }
@@ -632,6 +633,43 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 <span>{t('form.proQnA', 'Ưu đãi hỏi đáp VIP: Tặng 2 câu (Thêm: 99.000đ/2 câu)')}</span>
               </div>
             </div>
+
+            {/* Gói Chuyên Gia (Bản Expert - Gemini 4 Argon) */}
+            <div
+              onClick={() => setSelectedTier('expert')}
+              className={`sm:col-span-2 relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+                selectedTier === 'expert'
+                  ? 'bg-gradient-to-br from-purple-950/60 via-indigo-950/50 to-slate-900 border-purple-400 ring-2 ring-purple-400 shadow-lg shadow-purple-500/25'
+                  : 'bg-slate-950/70 border-purple-500/30 hover:border-purple-400/60 opacity-90 hover:opacity-100'
+              }`}
+            >
+              <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
+                {t('form.expertBadge', '💎 Đỉnh Cao AI • Gemini 4 Argon')}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                  <span className="font-bold text-base text-purple-300 flex items-center gap-1.5 font-serif">
+                    <Gem className="w-4 h-4 text-purple-400" />
+                    <span>{t('form.expertTitle', 'Bản Chuyên Gia Expert')}</span>
+                  </span>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/40">
+                    {t('form.expertPrice', '269.000 VNĐ')}
+                  </span>
+                </div>
+                <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
+                  {t(
+                    'form.expertDesc',
+                    'Siêu AI Gemini 4 Argon Mới Nhất. Luận giải chuyên sâu đầy đủ từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ), kết hợp Diện tướng/Chỉ tay, Đại Vận 10 năm & chi tiết 12 tháng Lưu Nguyệt.'
+                  )}
+                </p>
+              </div>
+              <div className="mt-3 pt-2 border-t border-purple-900/50 text-xs text-purple-300 flex items-center justify-between flex-wrap gap-1">
+                <span>{t('form.expertQnA', 'Ưu đãi hỏi đáp Chuyên Gia: Tặng 2 câu miễn phí (Thêm: 129.000đ/2 câu)')}</span>
+                <span className="text-[11px] text-amber-300/90 font-medium">
+                  {t('form.expertUpgradeHint', '*Khách đang dùng Bản Pro nâng cấp chỉ 150.000đ')}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -640,7 +678,9 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           type="submit"
           disabled={isLoading}
           className={`w-full mt-6 py-4 sm:py-3.5 px-6 font-bold rounded-xl tracking-wider uppercase text-base sm:text-lg shadow-lg transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer ${
-            selectedTier === 'pro'
+            selectedTier === 'expert'
+              ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-purple-950/60'
+              : selectedTier === 'pro'
               ? 'bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-slate-950 shadow-amber-950/50'
               : 'bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white shadow-red-950/50'
           }`}
@@ -654,6 +694,11 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
             <>
               <Sparkles className="w-5 h-5 text-amber-300" />
               <span>Cập Nhật &amp; An Lại Lá Số (Năm {namXem})</span>
+            </>
+          ) : selectedTier === 'expert' ? (
+            <>
+              <Gem className="w-5 h-5" />
+              <span>{t('form.btnSubmitExpert', 'Thanh Toán & Luận Giải Bản Expert (269K)')}</span>
             </>
           ) : selectedTier === 'pro' ? (
             <>

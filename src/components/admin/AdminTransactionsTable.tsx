@@ -6,6 +6,7 @@ import {
   DollarSign,
   BookOpen,
   Crown,
+  Gem,
   Sparkles,
   MessageSquare,
   Search,
@@ -90,7 +91,7 @@ export default function AdminTransactionsTable({
 }: AdminTransactionsTableProps) {
   const [subTab, setSubTab] = useState<'orders' | 'charts'>('orders');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterTier, setFilterTier] = useState<'all' | 'free' | 'pro'>('all');
+  const [filterTier, setFilterTier] = useState<'all' | 'free' | 'pro' | 'expert'>('all');
   const [filterOrderStatus, setFilterOrderStatus] = useState<'all' | 'PAID' | 'PENDING' | 'CANCELLED'>('PAID');
   const [previewChart, setPreviewChart] = useState<AdminChartItem | null>(null);
   const [previewReadingHtml, setPreviewReadingHtml] = useState<string | null>(null);
@@ -157,9 +158,11 @@ export default function AdminTransactionsTable({
 
   // Lọc danh sách lá số
   const filteredCharts = charts.filter((c) => {
+    const isExpert = c.duong_so_data?.tier === 'expert' || c.laso_data?.tier === 'expert';
     const isPro = c.duong_so_data?.tier === 'pro' || c.laso_data?.tier === 'pro';
-    if (filterTier === 'free' && isPro) return false;
+    if (filterTier === 'free' && (isPro || isExpert)) return false;
     if (filterTier === 'pro' && !isPro) return false;
+    if (filterTier === 'expert' && !isExpert) return false;
 
     const term = searchTerm.toLowerCase().trim();
     if (!term) return true;
@@ -188,9 +191,13 @@ export default function AdminTransactionsTable({
       (o.email && o.email.toLowerCase().includes(term)) ||
       (o.transactionId && o.transactionId.toLowerCase().includes(term)) ||
       String(o.amount).includes(term) ||
+      (term === '269k' && o.amount === 269000) ||
+      (term === '150k' && o.amount === 150000) ||
+      (term === '129k' && o.amount === 129000) ||
       (term === '119k' && o.amount === 119000) ||
       (term === '49k' && o.amount === 49000) ||
       (term === '99k' && o.amount === 99000) ||
+      (term.includes('expert') && o.paymentType.includes('expert')) ||
       (term.includes('vip') && (o.paymentType.includes('vip') || o.paymentType === 'reading_vip'))
     );
   });
@@ -480,7 +487,7 @@ export default function AdminTransactionsTable({
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
+          <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs flex-wrap">
             <button
               type="button"
               onClick={() => setFilterTier('all')}
@@ -491,6 +498,17 @@ export default function AdminTransactionsTable({
               }`}
             >
               Tất cả
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterTier('expert')}
+              className={`px-3 py-1 rounded-lg transition ${
+                filterTier === 'expert'
+                  ? 'bg-gradient-to-r from-purple-600 to-amber-500 text-white font-bold'
+                  : 'text-purple-300 hover:text-white'
+              }`}
+            >
+              💎 Bản Expert
             </button>
             <button
               type="button"
@@ -572,8 +590,11 @@ export default function AdminTransactionsTable({
                         : '—';
 
                       let serviceLabel = 'Luận Giải VIP (119k)';
-                      if (ord.paymentType === 'chat_vip') serviceLabel = 'Hỏi Thầy VIP (99k)';
-                      else if (ord.paymentType === 'chat_free') serviceLabel = 'Hỏi Thầy Thường (49k)';
+                      if (ord.paymentType === 'reading_expert') serviceLabel = '💎 Luận Giải Expert (269k)';
+                      else if (ord.paymentType === 'upgrade_expert') serviceLabel = '💎 Nâng Cấp Pro -> Expert (150k)';
+                      else if (ord.paymentType === 'chat_expert') serviceLabel = '💎 Hỏi Thầy Expert (129k)';
+                      else if (ord.paymentType === 'chat_vip') serviceLabel = '👑 Hỏi Thầy VIP (99k)';
+                      else if (ord.paymentType === 'chat_free') serviceLabel = '📜 Hỏi Thầy Thường (49k)';
 
                       return (
                         <tr key={ord.id} className="hover:bg-slate-800/40 transition">
@@ -637,7 +658,7 @@ export default function AdminTransactionsTable({
                             <div className="flex items-center justify-end gap-1.5">
                               {ord.status === 'PAID' ? (
                                 <>
-                                  {!ord.chartId && ord.paymentType === 'reading_vip' ? (
+                                  {!ord.chartId && (ord.paymentType === 'reading_vip' || ord.paymentType === 'reading_expert' || ord.paymentType === 'upgrade_expert') ? (
                                     <span
                                       className="inline-flex items-center gap-1 text-[11px] text-amber-300 font-medium bg-amber-950/70 px-2 py-0.5 rounded border border-amber-500/40"
                                       title="Khách đã thanh toán nhưng chưa có lá số trong hệ thống (chưa nhập ngày giờ sinh trên web)"
@@ -735,6 +756,7 @@ export default function AdminTransactionsTable({
                 <tbody className="divide-y divide-slate-800/60">
                   {filteredCharts.map((c) => {
                     const ds = c.duong_so_data || ({} as any);
+                    const isExpert = ds.tier === 'expert' || c.laso_data?.tier === 'expert';
                     const isPro = ds.tier === 'pro' || c.laso_data?.tier === 'pro';
                     const dateStr = c.created_at
                       ? new Date(c.created_at).toLocaleDateString('vi-VN', {
@@ -764,7 +786,12 @@ export default function AdminTransactionsTable({
                         </td>
 
                         <td className="py-3 px-4">
-                          {isPro ? (
+                          {isExpert ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/50 text-xs font-bold shadow-sm">
+                              <Gem className="w-3.5 h-3.5 text-purple-400" />
+                              <span>Bản Expert (269k)</span>
+                            </span>
+                          ) : isPro ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold shadow-sm">
                               <Crown className="w-3.5 h-3.5 text-amber-400" />
                               <span>Bản Pro VIP (119k)</span>
@@ -837,7 +864,9 @@ export default function AdminTransactionsTable({
                   </h3>
                   <p className="text-xs text-slate-400">
                     Gói:{' '}
-                    {previewChart.duong_so_data?.tier === 'pro'
+                    {previewChart.duong_so_data?.tier === 'expert' || previewChart.laso_data?.tier === 'expert'
+                      ? '💎 Bản Chuyên Gia Expert (269.000đ • Gemini 4 Argon)'
+                      : previewChart.duong_so_data?.tier === 'pro'
                       ? '👑 Bản Chuyên Sâu Pro (119.000đ)'
                       : '📜 Bản Miễn Phí'}
                   </p>
@@ -889,7 +918,9 @@ export default function AdminTransactionsTable({
                         Bản Luận Giải Thầy Tôn Đã Gửi Khách Hàng
                       </h4>
                       <p className="text-xs text-slate-400">
-                        {previewChart.duong_so_data?.tier === 'pro'
+                        {previewChart.duong_so_data?.tier === 'expert' || previewChart.laso_data?.tier === 'expert'
+                          ? '💎 Bản Luận Giải Chuyên Gia Expert (Gemini 4 Argon • Đầy đủ 12 Cung & Lưu Nguyệt)'
+                          : previewChart.duong_so_data?.tier === 'pro'
                           ? '👑 Bản Luận Giải Chuyên Sâu Pro (14 Chính Tinh, Tướng Pháp, Vận Hạn 4 Mùa)'
                           : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
                       </p>

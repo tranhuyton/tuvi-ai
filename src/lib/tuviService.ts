@@ -86,7 +86,13 @@ export async function getChartDetails(chartId: string): Promise<{
     const chatMessages: ChatMessage[] = (messages || []).map((m: any) => ({
       q: m.question,
       a: m.answer,
-      type: (m.message_type as 'basic' | 'vip') || (m.answer?.includes('Chuyên Sâu') || m.answer?.includes('VIP Pro') ? 'vip' : 'basic'),
+      type:
+        (m.message_type as 'basic' | 'vip' | 'expert') ||
+        (m.answer?.includes('Chuyên Gia') || m.answer?.includes('Expert')
+          ? 'expert'
+          : m.answer?.includes('Chuyên Sâu') || m.answer?.includes('VIP Pro')
+          ? 'vip'
+          : 'basic'),
     }));
 
     return { chart, chatMessages };
@@ -178,7 +184,7 @@ export async function saveChatMessage(
   chartId: string,
   question: string,
   answer: string,
-  type?: 'basic' | 'vip'
+  type?: 'basic' | 'vip' | 'expert'
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { data: { user } } = await supabase.auth.getUser();

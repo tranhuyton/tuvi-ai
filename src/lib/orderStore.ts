@@ -5,7 +5,14 @@ import { supabase } from './supabase';
 export interface OrderItem {
   id: string;
   orderCode: string; // e.g. "TV84920"
-  paymentType: 'reading_vip' | 'chat_free' | 'chat_vip' | string;
+  paymentType:
+    | 'reading_vip'
+    | 'reading_expert'
+    | 'upgrade_expert'
+    | 'chat_free'
+    | 'chat_vip'
+    | 'chat_expert'
+    | string;
   amount: number;
   hoTen: string;
   email?: string;

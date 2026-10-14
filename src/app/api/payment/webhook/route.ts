@@ -122,7 +122,18 @@ export async function POST(req: Request) {
       if (!order && matchedCode) {
         console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong DB, tự động khởi tạo để duyệt`);
         const { createOrder } = await import('@/lib/orderStore');
-        const pType = tx.amount >= 119000 ? 'reading_vip' : (tx.amount >= 99000 ? 'chat_vip' : 'chat_free');
+        const pType =
+          tx.amount >= 269000
+            ? 'reading_expert'
+            : tx.amount === 150000
+            ? 'upgrade_expert'
+            : tx.amount === 129000
+            ? 'chat_expert'
+            : tx.amount >= 119000
+            ? 'reading_vip'
+            : tx.amount >= 99000
+            ? 'chat_vip'
+            : 'chat_free';
         order = await createOrder({
           customCode: matchedCode,
           paymentType: pType,
@@ -157,9 +168,18 @@ export async function POST(req: Request) {
         }
       }
 
-      // Nếu đơn hàng có chartId, cập nhật luôn sang tier 'pro' trong Supabase nếu là reading_vip
-      if (order.chartId && order.paymentType === 'reading_vip') {
+      // Nếu đơn hàng có chartId, cập nhật luôn sang tier 'expert' hoặc 'pro' trong Supabase
+      if (
+        order.chartId &&
+        (order.paymentType === 'reading_vip' ||
+          order.paymentType === 'reading_expert' ||
+          order.paymentType === 'upgrade_expert')
+      ) {
         try {
+          const targetTier =
+            order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert'
+              ? 'expert'
+              : 'pro';
           // Lấy chart hiện tại
           const { data: chartData } = await supabase
             .from('tuvi_charts')
@@ -168,13 +188,13 @@ export async function POST(req: Request) {
             .maybeSingle();
 
           if (chartData) {
-            const updatedDuongSo = { ...chartData.duong_so_data, tier: 'pro' };
-            const updatedLaSo = { ...chartData.laso_data, tier: 'pro' };
+            const updatedDuongSo = { ...chartData.duong_so_data, tier: targetTier };
+            const updatedLaSo = { ...chartData.laso_data, tier: targetTier };
             await supabase
               .from('tuvi_charts')
               .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
               .eq('id', order.chartId);
-            console.log(`[PAYMENT WEBHOOK] Đã nâng cấp chart ${order.chartId} sang VIP Pro`);
+            console.log(`[PAYMENT WEBHOOK] Đã nâng cấp chart ${order.chartId} sang ${targetTier}`);
           }
         } catch (e) {
           console.warn('[PAYMENT WEBHOOK] Không thể cập nhật chart:', e);

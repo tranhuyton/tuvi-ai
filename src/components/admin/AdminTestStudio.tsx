@@ -221,9 +221,17 @@ export default function AdminTestStudio() {
       tier: item.duongSoData.tier || 'pro',
       namXem: resolvedNamXem,
     });
+    const savedTier = item.duongSoData.tier || 'pro';
     setClientNotes(item.notes || '');
     setChartTag(item.tag || 'offline');
-    setTestTier(item.duongSoData.tier || 'pro');
+    setTestTier(savedTier);
+    setTestModel(
+      savedTier === 'expert'
+        ? 'gemini-4-argon'
+        : savedTier === 'pro'
+        ? 'gemini-3.1-pro-preview'
+        : 'gemini-2.5-flash'
+    );
 
     if (item.readingHtml) {
       setReadingHtml(item.readingHtml);
@@ -442,7 +450,7 @@ export default function AdminTestStudio() {
     };
     const calculated = lapLaSoTuVi(cleanData, resolvedNamXem);
     calculated.tier = testTier;
-    calculated.quota = { basicAllowed: 999, proAllowed: 999 };
+    calculated.quota = { basicAllowed: 999, proAllowed: 999, expertAllowed: 999 };
     setLaSo(calculated);
 
     // Chuẩn bị raw prompt để xem trước
@@ -482,7 +490,7 @@ export default function AdminTestStudio() {
 
     const calculated = lapLaSoTuVi(cleanData, resolvedNamXem);
     calculated.tier = testTier;
-    calculated.quota = { basicAllowed: 999, proAllowed: 999 };
+    calculated.quota = { basicAllowed: 999, proAllowed: 999, expertAllowed: 999 };
     setLaSo(calculated);
 
     // Chuẩn bị raw prompt để debug
@@ -595,12 +603,17 @@ export default function AdminTestStudio() {
   };
 
   // Hỏi đáp trực tiếp không giới hạn lượt (Admin mode)
-  const handleAdminSendMessage = async (userQuestion: string, mode: 'basic' | 'vip' = 'vip') => {
+  const handleAdminSendMessage = async (userQuestion: string, mode: 'basic' | 'vip' | 'expert' = 'vip') => {
     if (!laSo) return;
     setIsLoadingChat(true);
 
     try {
-      const selectedModel = mode === 'vip' ? (testModel || 'gemini-3.1-pro-preview') : 'gemini-2.5-flash';
+      const selectedModel =
+        mode === 'expert'
+          ? 'gemini-4-argon'
+          : mode === 'vip'
+          ? (testModel || 'gemini-3.1-pro-preview')
+          : 'gemini-2.5-flash';
       const pin = typeof window !== 'undefined' ? (localStorage.getItem('tuvi_admin_pin') || 'thayton2026') : 'thayton2026';
       const res = await fetch('/api/tuvi/chat', {
         method: 'POST',
@@ -1249,7 +1262,7 @@ export default function AdminTestStudio() {
         <div className="flex flex-wrap items-center justify-between gap-4 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-xs font-bold text-slate-300">Gói kiểm thử:</span>
-            <div className="flex rounded-lg overflow-hidden border border-slate-700 p-0.5 bg-slate-900">
+            <div className="flex flex-wrap rounded-lg overflow-hidden border border-slate-700 p-0.5 bg-slate-900 gap-0.5">
               <button
                 type="button"
                 onClick={() => {
@@ -1278,6 +1291,20 @@ export default function AdminTestStudio() {
               >
                 👑 Bản Pro VIP (3.1 Pro)
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTestTier('expert');
+                  setTestModel('gemini-4-argon');
+                }}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${
+                  testTier === 'expert'
+                    ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 text-white'
+                    : 'text-purple-300 hover:text-white'
+                }`}
+              >
+                💎 Bản Expert (Gemini 4 Argon)
+              </button>
             </div>
 
             <div className="flex items-center gap-1.5 pl-2 border-l border-slate-700">
@@ -1287,7 +1314,8 @@ export default function AdminTestStudio() {
                 onChange={(e) => setTestModel(e.target.value)}
                 className="px-2.5 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-slate-200"
               >
-                <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Mạnh nhất)</option>
+                <option value="gemini-4-argon">gemini-4-argon (Chuyên Gia Expert - Mới nhất)</option>
+                <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Chuyên Sâu Pro)</option>
                 <option value="gemini-2.5-flash">gemini-2.5-flash (Nhanh &amp; chuẩn)</option>
               </select>
             </div>
@@ -1378,7 +1406,7 @@ export default function AdminTestStudio() {
           )}
           <div className="flex items-center gap-1.5 pl-4 border-l border-slate-700">
             <Zap className="w-4 h-4 text-amber-400" />
-            <span>Mô hình: <strong className="text-amber-300 font-bold">{testModel}</strong> ({testTier === 'pro' ? 'Bản Pro' : 'Bản Free'})</span>
+            <span>Mô hình: <strong className="text-amber-300 font-bold">{testModel}</strong> ({testTier === 'expert' ? '💎 Bản Expert' : testTier === 'pro' ? '👑 Bản Pro' : '📜 Bản Free'})</span>
           </div>
           <div className="flex items-center gap-1.5 pl-4 border-l border-slate-700">
             <span className="text-slate-400">Ngôn ngữ:</span>
@@ -1451,6 +1479,7 @@ export default function AdminTestStudio() {
               onSendMessage={handleAdminSendMessage}
               isLoading={isLoadingChat}
               tier={testTier}
+              quota={{ basicAllowed: 999, proAllowed: 999, expertAllowed: 999 }}
               questionsAllowed={999}
               onUnlockQuestions={() => {}}
             />

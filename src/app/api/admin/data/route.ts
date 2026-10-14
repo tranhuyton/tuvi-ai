@@ -23,7 +23,9 @@ export async function GET(req: NextRequest) {
         const { getAllOrders } = await import('@/lib/orderStore');
         const orders = await getAllOrders();
         const paidOrders = orders.filter((o) => o.status === 'PAID');
-        const paidProOrders = paidOrders.filter((o) => o.paymentType === 'reading_vip').length;
+        const paidProOrders = paidOrders.filter(
+          (o) => o.paymentType === 'reading_vip' || o.paymentType === 'reading_expert' || o.paymentType === 'upgrade_expert'
+        ).length;
         const actualRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
 
         const updatedStats = {
@@ -64,7 +66,14 @@ export async function GET(req: NextRequest) {
     const totalCharts = charts?.length || 0;
     const totalUsers = profiles?.length || 0;
     const totalMessages = messages?.length || 0;
-    const totalPro = charts?.filter((c) => c.duong_so_data?.tier === 'pro' || c.laso_data?.tier === 'pro').length || 0;
+    const totalPro =
+      charts?.filter(
+        (c) =>
+          c.duong_so_data?.tier === 'pro' ||
+          c.laso_data?.tier === 'pro' ||
+          c.duong_so_data?.tier === 'expert' ||
+          c.laso_data?.tier === 'expert'
+      ).length || 0;
     const totalFree = totalCharts - totalPro;
 
     const formattedUsers = (profiles || []).map((u) => ({
@@ -92,7 +101,9 @@ export async function GET(req: NextRequest) {
     const { getAllOrders } = await import('@/lib/orderStore');
     const orders = await getAllOrders();
     const paidOrders = orders.filter((o) => o.status === 'PAID');
-    const paidProOrders = paidOrders.filter((o) => o.paymentType === 'reading_vip').length;
+    const paidProOrders = paidOrders.filter(
+      (o) => o.paymentType === 'reading_vip' || o.paymentType === 'reading_expert' || o.paymentType === 'upgrade_expert'
+    ).length;
     const actualRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
 
     return NextResponse.json({

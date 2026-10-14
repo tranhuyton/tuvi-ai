@@ -60,38 +60,51 @@ serve(async (req) => {
     console.log(`[tuvi-interpreter] Calling model: ${targetModel}`);
 
     // Cấu hình tối ưu tốc độ phản hồi:
+    // - Với gemini-4-argon (Expert): maxOutputTokens 28000, thinkingBudget 2048
     // - Với gemini-3.1-pro-preview: Cần thinkingBudget tối thiểu (1024)
     // - Với gemini-2.5-flash: Dùng thinkingBudget 0 để phản hồi tức thì siêu tốc
-    const isProPreview = targetModel.includes('3.1') || targetModel.includes('pro');
-    const defaultBudget = isProPreview ? 1024 : 0;
+    const isExpertModel = targetModel.includes('argon') || targetModel.includes('4');
+    const isProPreview = isExpertModel || targetModel.includes('3.1') || targetModel.includes('pro');
+    const defaultBudget = isExpertModel ? 2048 : isProPreview ? 1024 : 0;
 
     const finalGenConfig = generationConfig || {
       temperature: 0.7,
-      maxOutputTokens: isProPreview ? 12000 : 6000,
+      maxOutputTokens: isExpertModel ? 28000 : isProPreview ? 12000 : 6000,
       thinkingConfig: {
         thinkingBudget: defaultBudget,
       },
     };
 
     if (finalGenConfig.thinkingConfig && isProPreview && finalGenConfig.thinkingConfig.thinkingBudget === 0) {
-      finalGenConfig.thinkingConfig.thinkingBudget = 1024;
+      finalGenConfig.thinkingConfig.thinkingBudget = defaultBudget;
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: requestContents,
-          generationConfig: finalGenConfig,
-        })
+    const candidateModels = isExpertModel && targetModel !== 'gemini-3.1-pro-preview'
+      ? [targetModel, 'gemini-3.1-pro-preview']
+      : [targetModel];
+
+    let data: any = null;
+    for (const candidateModel of candidateModels) {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${candidateModel}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: requestContents,
+            generationConfig: finalGenConfig,
+          })
+        }
+      );
+
+      data = await response.json();
+      if (!data.error) {
+        break;
       }
-    );
+      console.warn(`[tuvi-interpreter] Model ${candidateModel} returned error:`, data.error.message);
+    }
 
-    const data = await response.json();
-
-    if (data.error) {
+    if (data?.error) {
       console.error('[tuvi-interpreter] Gemini API error:', data.error);
       return new Response(JSON.stringify({ error: data.error.message || 'Gemini API error' }), {
         status: 400,
@@ -99,7 +112,7 @@ serve(async (req) => {
       });
     }
 
-    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     return new Response(JSON.stringify({ result: aiText }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -319,6 +319,7 @@ export async function exportReadingToPdf({
 }: ExportPdfOptions): Promise<void> {
   if (typeof window === 'undefined') return;
 
+  const isExpert = tier === 'expert' || duongSo?.tier === 'expert' || laSo?.tier === 'expert';
   const isPro = tier === 'pro' || duongSo?.tier === 'pro' || laSo?.tier === 'pro';
 
   onProgress?.('Đang chuẩn bị dữ liệu hồ sơ...');
@@ -772,10 +773,10 @@ export async function exportReadingToPdf({
         introBanner.style.background = '#ffffff';
         introBanner.innerHTML = `
           <div style="font-family: 'Times New Roman', Times, Georgia, serif; font-size: 19px; font-weight: 900; color: #000000; text-transform: uppercase;">
-            ${isPro ? 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ CHUYÊN SÂU' : 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ KHỞI NGUYÊN'}
+            ${isExpert ? 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ CHUYÊN GIA (EXPERT)' : isPro ? 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ CHUYÊN SÂU' : 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ KHỞI NGUYÊN'}
           </div>
           <div style="font-size: 12.5px; font-weight: 800; color: #000000; margin-top: 2px;">
-            ${isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Soi Chiếu Tinh Đẩu & Tướng Pháp' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
+            ${isExpert ? '💎 Bản Chuyên Gia Expert (Gemini 4 Argon) • Luận Giải Toàn Diện 12 Cung & Lưu Nguyệt' : isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Soi Chiếu Tinh Đẩu & Tướng Pháp' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
           </div>
         `;
         topContainer.appendChild(introBanner);

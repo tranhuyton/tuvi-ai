@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
       apiKey,
       mode,
       questionType,
+      model,
       lang,
       language,
       chartId,
@@ -40,8 +41,9 @@ export async function POST(req: NextRequest) {
       readingHtml?: string;
       chatHistory?: ChatMessage[];
       apiKey?: string;
-      mode?: 'basic' | 'vip';
-      questionType?: 'basic' | 'vip';
+      mode?: 'basic' | 'vip' | 'expert';
+      questionType?: 'basic' | 'vip' | 'expert';
+      model?: string;
       lang?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
       language?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
       chartId?: string;
@@ -51,7 +53,8 @@ export async function POST(req: NextRequest) {
     };
 
     const targetLang = lang || language || 'vi';
-    const activeMode: 'basic' | 'vip' = mode || questionType || 'vip';
+    const activeMode: 'basic' | 'vip' | 'expert' =
+      mode || questionType || (laSo?.tier === 'expert' ? 'expert' : 'vip');
 
     if (!userQuestion || !userQuestion.trim()) {
       return NextResponse.json({ error: 'Câu hỏi không được để trống' }, { status: 400 });
@@ -82,12 +85,14 @@ export async function POST(req: NextRequest) {
     // (Bỏ qua hoàn toàn đối với Admin trong Studio để đàm đạo không giới hạn)
     // =========================================================================
     let totalAllowed = 0;
+    let allowedExpert = 0;
     let allowedPro = 0;
     let allowedBasic = 0;
     let askedCount = 0;
 
     if (isAdmin) {
       totalAllowed = 999999;
+      allowedExpert = 999999;
       allowedPro = 999999;
       allowedBasic = 999999;
     } else if (chartId) {
@@ -116,6 +121,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (isTester) {
+        allowedExpert = testerMaxQuestions;
         allowedPro = testerMaxQuestions;
         totalAllowed = testerMaxQuestions;
       } else {
@@ -130,6 +136,9 @@ export async function POST(req: NextRequest) {
         const chartTier = dbChart?.duong_so_data?.tier || dbChart?.laso_data?.tier || laSo?.tier;
 
         // Kiểm tra các đơn hàng đã thanh toán (tuvi_orders)
+        let paidExpertOrders = 0;
+        let paidUpgradeExpertOrders = 0;
+        let paidChatExpertOrders = 0;
         let paidProOrders = 0;
         let paidChatVipOrders = 0;
         let paidChatBasicOrders = 0;
@@ -148,26 +157,36 @@ export async function POST(req: NextRequest) {
             .eq('status', 'PAID');
 
           (paidOrders || []).forEach((o) => {
-            if (o.payment_type === 'reading_vip') paidProOrders++;
+            if (o.payment_type === 'reading_expert') paidExpertOrders++;
+            else if (o.payment_type === 'upgrade_expert') paidUpgradeExpertOrders++;
+            else if (o.payment_type === 'chat_expert') paidChatExpertOrders++;
+            else if (o.payment_type === 'reading_vip') paidProOrders++;
             else if (o.payment_type === 'chat_vip') paidChatVipOrders++;
             else if (o.payment_type === 'chat_free') paidChatBasicOrders++;
           });
         }
 
         // Hạn mức tính từ đơn hàng
+        const orderExpertAllowed =
+          (paidExpertOrders > 0 ? 2 : 0) +
+          (paidUpgradeExpertOrders > 0 ? 2 : 0) +
+          (paidChatExpertOrders * 2);
         const orderProAllowed = (paidProOrders > 0 ? 2 : 0) + (paidChatVipOrders * 2);
         const orderBasicAllowed = paidChatBasicOrders * 2;
 
         // Hạn mức lưu trong laso_data (admin chỉnh tay hoặc khuyến mãi)
+        const quotaExpert = Number(dbChart?.laso_data?.quota?.expertAllowed || laSo?.quota?.expertAllowed || 0);
         const quotaPro = Number(dbChart?.laso_data?.quota?.proAllowed || laSo?.quota?.proAllowed || 0);
         const quotaBasic = Number(dbChart?.laso_data?.quota?.basicAllowed || laSo?.quota?.basicAllowed || 0);
 
-        // Mặc định gói Pro luôn có tối thiểu 2 câu VIP
+        // Mặc định gói Expert có tối thiểu 2 câu Expert, gói Pro có tối thiểu 2 câu Pro
+        const baseExpert = (chartTier === 'expert' || paidExpertOrders > 0 || paidUpgradeExpertOrders > 0) ? 2 : 0;
         const basePro = (chartTier === 'pro' || paidProOrders > 0) ? 2 : 0;
 
+        allowedExpert = Math.max(baseExpert, orderExpertAllowed, quotaExpert);
         allowedPro = Math.max(basePro, orderProAllowed, quotaPro);
         allowedBasic = Math.max(orderBasicAllowed, quotaBasic);
-        totalAllowed = allowedPro + allowedBasic;
+        totalAllowed = allowedExpert + allowedPro + allowedBasic;
       }
 
       // Chặn nếu chưa đăng ký gói
@@ -190,9 +209,13 @@ export async function POST(req: NextRequest) {
     } else {
       // Trường hợp khách chưa lưu lá số
       if (laSo && laSo.quota) {
+        allowedExpert = Number(laSo.quota.expertAllowed || 0);
         allowedPro = Number(laSo.quota.proAllowed || 0);
         allowedBasic = Number(laSo.quota.basicAllowed || 0);
-        totalAllowed = allowedPro + allowedBasic;
+        totalAllowed = allowedExpert + allowedPro + allowedBasic;
+      } else if (laSo?.tier === 'expert') {
+        allowedExpert = 2;
+        totalAllowed = 2;
       } else if (laSo?.tier === 'pro') {
         allowedPro = 2;
         totalAllowed = 2;
@@ -248,7 +271,7 @@ export async function POST(req: NextRequest) {
     if (chatHistory && chatHistory.length > 0) {
       historyText = 'LỊCH SỬ ĐÀM ĐẠO TRƯỚC ĐÓ:\n';
       chatHistory.forEach((c, idx) => {
-        const tag = c.type === 'vip' ? '[VIP Pro]' : '[Cơ Bản]';
+        const tag = c.type === 'expert' ? '[Chuyên Gia Expert]' : c.type === 'vip' ? '[VIP Pro]' : '[Cơ Bản]';
         historyText += `Lượt ${idx + 1} ${tag}:\n- Khách: ${c.q}\n- Thầy Tôn: ${c.a}\n`;
       });
       historyText += '\n';
@@ -257,11 +280,13 @@ export async function POST(req: NextRequest) {
     let readingContext = '';
     if (readingHtml && readingHtml.trim()) {
       const cleanReading = readingHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-      readingContext = `\nBÀI BÌNH GIẢI ĐÃ ĐƯỢC THẦY TÔN LUẬN GIẢI CHO ĐƯƠNG SỐ TRƯỚC ĐÓ (Bao gồm cả các dấu ấn Tướng pháp, Diện tướng, Chỉ tay nếu có):\n"${cleanReading.slice(0, 4500)}"\n(QUY TẮC: Khi khách hỏi về những nội dung liên quan đến bài bình giải cũ, đặc biệt là tướng mạo, đường chỉ tay, vết đứt gãy cung mệnh hay những lời khuyên đã dặn trước đó, bạn hãy bám sát và kế thừa chuẩn xác những gì đã luận giải ở trên để trả lời nhất quán và sâu sắc).\n`;
+      readingContext = `\nBÀI BÌNH GIẢI ĐÃ ĐƯỢC THẦY TÔN LUẬN GIẢI CHO ĐƯƠNG SỐ TRƯỚC ĐÓ (Bao gồm cả các dấu ấn Tướng pháp, Diện tướng, Chỉ tay nếu có):\n"${cleanReading.slice(0, 6000)}"\n(QUY TẮC: Khi khách hỏi về những nội dung liên quan đến bài bình giải cũ, đặc biệt là tướng mạo, đường chỉ tay, vết đứt gãy cung mệnh hay những lời khuyên đã dặn trước đó, bạn hãy bám sát và kế thừa chuẩn xác những gì đã luận giải ở trên để trả lời nhất quán và sâu sắc).\n`;
     }
 
     const requirementText =
-      activeMode === 'vip'
+      activeMode === 'expert'
+        ? `YÊU CẦU LUẬN GIẢI CHUYÊN GIA EXPERT (GEMINI 4 ARGON): Trả lời uyên bác bậc Đại Tông Sư, cực kỳ sâu sắc, toàn diện 600-900 chữ. Phân tích thấu triệt mối tương quan giữa toàn bộ các cung liên quan trong 12 cung, 14 Chính tinh, bộ Phụ tinh cát/hung, Tứ Hóa (Lộc - Quyền - Khoa - Kỵ), Tuần/Triệt, Đại Vận 10 năm hiện tại, Tiểu Vận và Lưu Nguyệt 12 tháng. Chỉ rõ căn nguyên, thời điểm ứng kỳ và đưa ra sách lược hành động thực chiến cụ thể nhất để đón cát tránh hung. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>, <ul>, <li>). KHÔNG dùng markdown **.`
+        : activeMode === 'vip'
         ? `YÊU CẦU LUẬN GIẢI CHUYÊN SÂU VIP PRO: Trả lời uyên bác, thấu đáo 400-600 chữ. Phân tích cặn kẽ tương quan 14 Chính tinh, các phụ tinh đắc hãm, Tứ Hóa (Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ), Tuần/Triệt ảnh hưởng, Đại Vận 10 năm hiện tại và lưu niên năm nay. Đưa ra sách lược cụ thể, chỉ dẫn hóa giải điều hung đón điều cát. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>, <ul>, <li>). KHÔNG dùng markdown **.`
         : `YÊU CẦU LUẬN GIẢI CƠ BẢN: Trả lời 250-350 chữ cô đọng, dễ hiểu, ân cần, giải đáp thẳng thắn và chính xác vào trọng tâm câu hỏi của khách (về công danh, tài lộc, tình cảm hoặc gia đạo) dựa trên cung vị liên quan. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>). KHÔNG dùng markdown **.`;
 
@@ -276,7 +301,14 @@ export async function POST(req: NextRequest) {
       langInstruction = '\n\n【LANGUAGE DIRECTIVE】：Answer 100% in refined and eloquent English! Refer to yourself as "Master Ton" and address the seeker respectfully. Use standard Western Zi Wei Dou Shu astrology terminology and valid HTML tags (<p>, <b>, <ul>, <li>). Do NOT use markdown **.';
     }
 
-    const chatPrompt = `${readingContext}${historyText}Khách hỏi câu mới (${activeMode === 'vip' ? 'Gói Chuyên Sâu VIP Pro' : 'Gói Cơ Bản'}): '${userQuestion.trim()}'
+    const modeLabel =
+      activeMode === 'expert'
+        ? 'Gói Chuyên Gia Expert - Gemini 4 Argon'
+        : activeMode === 'vip'
+        ? 'Gói Chuyên Sâu VIP Pro'
+        : 'Gói Cơ Bản';
+
+    const chatPrompt = `${readingContext}${historyText}Khách hỏi câu mới (${modeLabel}): '${userQuestion.trim()}'
 Đương số: ${laSo.duongSo?.hoTen || 'Quý khách'} (${laSo.duongSo?.gioiTinh || 'Nam'}, sinh năm ${namCanChi || ''} - ${amDuongTxt || ''}).
 Mệnh: ${banMenh || ''}, Cục: ${tenCuc || ''}, Sinh khắc: ${sinhKhac || ''}.
 Âm Dương: ${thuanNghichLy || ''} (Bắt buộc khẳng định đúng thế "${thuanNghichLy}", tuyệt đối không nói ngược).
@@ -289,8 +321,13 @@ QUY TẮC BẮT BUỘC VỀ NGUYỆT VẬN (LƯU NGUYỆT / THÁNG ÂM LỊCH):
 - Nếu câu hỏi của khách có nhắc đến tháng nào trong năm (ví dụ tháng Giêng, tháng 5, tháng 8, tháng 10...), bạn BẮT BUỘC phải tra cứu chính xác theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên để biết tháng đó rơi vào cung nào, có các chính tinh, phụ tinh và đặc biệt là các SAO LƯU nào thủ hoặc chiếu (L.Thái Tuế, L.Tang Môn, L.Bạch Hổ, L.Kình Dương, L.Đà La, L.Thiên Mã, L.Lộc Tồn, L.Thiên Khốc, L.Thiên Hư, L.Đẩu Quân, L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị...). Dựa vào đó để chỉ rõ hung cát, tháng nào phát tài, tháng nào có biến chuyển đi lại, tháng nào cần phòng tai tiếng, thị phi. Tuyệt đối KHÔNG được tự suy đoán hay nói nhầm sang cung khác.
 ${requirementText}${langInstruction}`;
 
-
-    const modelToUse = activeMode === 'vip' ? 'gemini-3.1-pro-preview' : 'gemini-2.5-flash';
+    const modelToUse =
+      model ||
+      (activeMode === 'expert'
+        ? 'gemini-4-argon'
+        : activeMode === 'vip'
+        ? 'gemini-3.1-pro-preview'
+        : 'gemini-2.5-flash');
     const result = await callGeminiVision([{ text: chatPrompt }], apiKey, modelToUse);
 
     if (result.error) {

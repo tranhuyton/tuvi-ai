@@ -22,7 +22,13 @@ import { useAuth } from '@/context/AuthContext';
 import { generateVietQrDataUrl, buildVietQrString } from '@/lib/vietqr';
 import QRCode from 'qrcode';
 
-export type PaymentPurpose = 'reading_vip' | 'chat_free' | 'chat_vip';
+export type PaymentPurpose =
+  | 'reading_vip'
+  | 'reading_expert'
+  | 'upgrade_expert'
+  | 'chat_free'
+  | 'chat_vip'
+  | 'chat_expert';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -93,19 +99,49 @@ export default function PaymentModal({
   let subtitle = customDescription;
   let benefits: string[] = [];
 
-  if (paymentType === 'reading_vip') {
+  if (paymentType === 'reading_expert') {
+    finalPrice = finalPrice ?? 269000;
+    title = title || 'Kích Hoạt Bản Chuyên Gia Expert (Gemini 4 Argon)';
+    subtitle = subtitle || 'Siêu phẩm luận giải chuyên sâu toàn diện 12 Cung - Gấp 2 lần Bản Pro';
+    benefits = [
+      'Ứng dụng siêu mô hình AI mới nhất Gemini 4 Argon với chiều sâu mệnh lý vượt trội.',
+      'Độ dài bài luận tăng gấp 2 lần Bản Pro (~3.600 - 5.000 từ), mổ xẻ cặn kẽ.',
+      'Phân tích đầy đủ, tách biệt từng cung một trong trọn bộ 12 Cung & Cung Thân.',
+      'Soi chiếu Diện Tướng, Thủ Tướng, Đại Vận 10 năm & 12 tháng Lưu Nguyệt.',
+      'Tặng kèm 02 câu hỏi Chuyên Gia miễn phí trực tiếp cùng Thầy Tôn.',
+    ];
+  } else if (paymentType === 'upgrade_expert') {
+    finalPrice = finalPrice ?? 150000;
+    title = title || 'Nâng Cấp Từ Bản Pro Lên Bản Chuyên Gia Expert';
+    subtitle = subtitle || 'Mở khóa luận giải chi tiết trọn vẹn 12 Cung gấp 2 lần bằng Gemini 4 Argon';
+    benefits = [
+      'Ưu đãi đặc biệt dành riêng cho quý khách đang sử dụng Bản Chuyên Sâu Pro.',
+      'Biên soạn mới toàn bộ bài luận giải cấp độ Chuyên Gia Expert (~3.600 - 5.000 từ).',
+      'Khảo sát kỹ lưỡng từng cung vị trong đủ 12 Cung (Mệnh, Phụ, Phúc, Điền, Quan, Nô, Di, Tật, Tài, Tử, Thê, Huynh).',
+      'Tặng thêm 02 câu hỏi Chuyên Gia miễn phí (bằng siêu AI Gemini 4 Argon).',
+    ];
+  } else if (paymentType === 'chat_expert') {
+    finalPrice = finalPrice ?? 129000;
+    title = title || 'Thỉnh Giáo Chuyên Gia Cùng Thầy Tôn (Bản Expert)';
+    subtitle = subtitle || 'Đàm đạo mệnh lý cấp cao bằng siêu mô hình Gemini 4 Argon (02 câu hỏi)';
+    benefits = [
+      '02 lượt thỉnh giáo cấp độ Chuyên Gia Expert (phản hồi sâu sắc 600 - 900 từ/câu).',
+      'Luận giải thấu suốt tương quan 12 Cung, Tứ Hóa, Đại Vận & Lưu Nguyệt 12 tháng.',
+      'Đưa ra sách lược hành động thực chiến, đón cát tránh hung chuẩn xác nhất.',
+    ];
+  } else if (paymentType === 'reading_vip') {
     finalPrice = finalPrice ?? 119000;
-    title = title || 'Kích Hoạt Luận Giải Chuyên Sâu (Bản VIP)';
+    title = title || 'Kích Hoạt Luận Giải Chuyên Sâu (Bản Pro)';
     subtitle = subtitle || 'Khai mở Đại Pháp Luận Giải Bí Truyền chuyên sâu đa tầng từ Thầy Tôn';
     benefits = [
-      'Bài luận sâu gấp 2 lần (~1800 - 2500 từ) sắc bén, tỉ mỉ từng cung vị.',
+      'Bài luận sâu gấp 2 lần bản miễn phí (~1800 - 2500 từ) sắc bén, tỉ mỉ.',
       'Khảo sát 14 Chính tinh, đối chiếu Diện Tướng (khuôn mặt) & Thủ Tướng (chỉ tay).',
       'Chi tiết Đại Vận 10 năm từng chặng 5 năm & 4 mùa Xuân - Hạ - Thu - Đông.',
       'Tặng kèm 02 câu hỏi đàm đạo chuyên sâu trực tiếp cùng Thầy Tôn.',
     ];
   } else if (paymentType === 'chat_vip') {
     finalPrice = finalPrice ?? 99000;
-    title = title || 'Thỉnh Giáo Chuyên Sâu Cùng Thầy Tôn (Bản VIP)';
+    title = title || 'Thỉnh Giáo Chuyên Sâu Cùng Thầy Tôn (Bản Pro)';
     subtitle = subtitle || 'Đặc quyền thỉnh giáo chuyên sâu đa tầng, giải khai mọi khúc mắc';
     benefits = [
       '02 lượt thỉnh giáo chuyên sâu trực tiếp cùng Thầy Tôn.',

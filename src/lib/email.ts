@@ -167,12 +167,24 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
     return { success: false, error: 'Email không hợp lệ' };
   }
 
-  let serviceTitle = 'Luận Giải Tử Vi Chuyên Sâu (Bản VIP)';
+  let serviceTitle = 'Luận Giải Tử Vi Chuyên Sâu (Bản Pro)';
   let serviceDesc =
     'Bản luận giải đại pháp chuyên sâu đa tầng của Thầy Tôn (14 chính tinh, Diện tướng, Thủ tướng, Đại vận 10 năm và 4 mùa) đã được kích hoạt thành công trên lá số của quý khách.';
 
-  if (paymentType === 'chat_vip') {
-    serviceTitle = '02 Câu Hỏi Thỉnh Giáo Chuyên Sâu Cùng Thầy Tôn (Bản VIP)';
+  if (paymentType === 'reading_expert') {
+    serviceTitle = 'Luận Giải Tử Vi Bản Chuyên Gia Expert (Gemini 4 Argon)';
+    serviceDesc =
+      'Bản luận giải Chuyên Gia Expert cao cấp nhất (khảo sát chi tiết toàn diện 12 Cung, độ dài gấp 2 lần Bản Pro, kèm 02 câu hỏi Chuyên Gia miễn phí) đã được kích hoạt thành công trên lá số của quý khách.';
+  } else if (paymentType === 'upgrade_expert') {
+    serviceTitle = 'Nâng Cấp Bản Chuyên Gia Expert (Từ Bản Pro -> Expert)';
+    serviceDesc =
+      'Lá số của quý khách đã được nâng cấp thành công từ Bản Pro lên Bản Chuyên Gia Expert (luận giải kỹ trọn bộ 12 Cung gấp 2 lần và tặng thêm 02 câu hỏi Chuyên Gia cùng Thầy Tôn).';
+  } else if (paymentType === 'chat_expert') {
+    serviceTitle = '02 Câu Hỏi Thỉnh Giáo Chuyên Gia Cùng Thầy Tôn (Bản Expert)';
+    serviceDesc =
+      'Quý khách đã được cộng thêm 02 lượt đàm đạo cấp độ Chuyên Gia Expert (sử dụng siêu mô hình Gemini 4 Argon) trực tiếp cùng Thầy Tôn.';
+  } else if (paymentType === 'chat_vip') {
+    serviceTitle = '02 Câu Hỏi Thỉnh Giáo Chuyên Sâu Cùng Thầy Tôn (Bản Pro)';
     serviceDesc =
       'Quý khách đã được cộng thêm 02 lượt hỏi đáp chuyên sâu trực tiếp cùng Thầy Tôn trên hệ thống Tử Vi.';
   } else if (paymentType === 'chat_free') {

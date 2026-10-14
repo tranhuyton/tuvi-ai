@@ -7,7 +7,7 @@ export interface NgayThangNamSinh {
   gioSinhVal: string; // '0_0', '1', '2', ..., '11', '0_23'
 }
 
-export type ServiceTier = 'free' | 'pro';
+export type ServiceTier = 'free' | 'pro' | 'expert';
 
 export interface DuLieuDuongSo extends NgayThangNamSinh {
   hoTen: string;
@@ -88,10 +88,12 @@ export interface ChatMessage {
   q: string;
   a: string;
   isError?: boolean;
-  type?: 'basic' | 'vip';
+  type?: 'basic' | 'vip' | 'expert';
 }
 
 export interface QuestionsQuota {
   basicAllowed: number;
   proAllowed: number;
+  expertAllowed?: number;
 }
+
