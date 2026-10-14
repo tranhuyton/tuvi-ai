@@ -40,55 +40,84 @@ export async function POST(req: Request) {
       }
     }
 
-    // Nâng cấp chart nếu có
-    if (
-      order.paymentType === 'reading_vip' ||
-      order.paymentType === 'reading_expert' ||
-      order.paymentType === 'upgrade_expert'
-    ) {
-      try {
-        const targetTier =
-          order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert'
-            ? 'expert'
-            : 'pro';
-        let targetChartId = order.chartId;
+    // Nâng cấp chart & cập nhật quota câu hỏi nếu có
+    try {
+      let targetChartId = order.chartId;
 
-        // Nếu order chưa có chartId, thử tìm lá số trùng tên của user để liên kết tự động
-        if (!targetChartId && (order.userId || order.email)) {
-          let query = supabase.from('tuvi_charts').select('id, duong_so_data, laso_data');
-          if (order.userId) {
-            query = query.eq('user_id', order.userId);
-          }
-          const { data: userCharts } = await query;
-          const matched = (userCharts || []).find(
-            (c: any) => c.duong_so_data?.hoTen?.trim().toLowerCase() === order.hoTen?.trim().toLowerCase()
-          );
-          if (matched) {
-            targetChartId = matched.id;
-            order.chartId = matched.id;
-            await supabase.from('tuvi_orders').update({ chart_id: matched.id }).eq('order_code', order.orderCode);
-          }
+      // Nếu order chưa có chartId, thử tìm lá số trùng tên của user để liên kết tự động
+      if (!targetChartId && (order.userId || order.email)) {
+        let query = supabase.from('tuvi_charts').select('id, duong_so_data, laso_data');
+        if (order.userId) {
+          query = query.eq('user_id', order.userId);
         }
-
-        if (targetChartId) {
-          const { data: chartData } = await supabase
-            .from('tuvi_charts')
-            .select('duong_so_data, laso_data')
-            .eq('id', targetChartId)
-            .maybeSingle();
-
-          if (chartData) {
-            const updatedDuongSo = { ...chartData.duong_so_data, tier: targetTier };
-            const updatedLaSo = { ...chartData.laso_data, tier: targetTier };
-            await supabase
-              .from('tuvi_charts')
-              .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
-              .eq('id', targetChartId);
-          }
+        const { data: userCharts } = await query;
+        const matched = (userCharts || []).find(
+          (c: any) => c.duong_so_data?.hoTen?.trim().toLowerCase() === order.hoTen?.trim().toLowerCase()
+        );
+        if (matched) {
+          targetChartId = matched.id;
+          order.chartId = matched.id;
+          await supabase.from('tuvi_orders').update({ chart_id: matched.id }).eq('order_code', order.orderCode);
         }
-      } catch (e) {
-        console.warn('[SIMULATE] Không thể cập nhật chart:', e);
       }
+
+      if (targetChartId) {
+        const { data: chartData } = await supabase
+          .from('tuvi_charts')
+          .select('duong_so_data, laso_data')
+          .eq('id', targetChartId)
+          .maybeSingle();
+
+        if (chartData) {
+          const prevQuota = chartData.laso_data?.quota || {
+            basicAllowed: 0,
+            proAllowed: 0,
+            expertAllowed: 0,
+          };
+          const nextQuota = {
+            basicAllowed: Number(prevQuota.basicAllowed || 0),
+            proAllowed: Number(prevQuota.proAllowed || 0),
+            expertAllowed: Number(prevQuota.expertAllowed || 0),
+          };
+
+          let targetTier = chartData.duong_so_data?.tier || chartData.laso_data?.tier || 'free';
+          let needsReadingUpgrade = Boolean(chartData.laso_data?.needsReadingUpgrade);
+
+          if (order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert') {
+            if (targetTier !== 'expert') {
+              needsReadingUpgrade = true;
+            }
+            targetTier = 'expert';
+            nextQuota.expertAllowed += 2;
+          } else if (order.paymentType === 'reading_vip') {
+            if (targetTier === 'free') {
+              targetTier = 'pro';
+              needsReadingUpgrade = true;
+            }
+            nextQuota.proAllowed += 2;
+          } else if (order.paymentType === 'chat_expert') {
+            nextQuota.expertAllowed += 2;
+          } else if (order.paymentType === 'chat_vip') {
+            nextQuota.proAllowed += 2;
+          } else if (order.paymentType === 'chat_free') {
+            nextQuota.basicAllowed += 2;
+          }
+
+          const updatedDuongSo = { ...chartData.duong_so_data, tier: targetTier };
+          const updatedLaSo = {
+            ...chartData.laso_data,
+            tier: targetTier,
+            quota: nextQuota,
+            needsReadingUpgrade,
+          };
+          await supabase
+            .from('tuvi_charts')
+            .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
+            .eq('id', targetChartId);
+        }
+      }
+    } catch (e) {
+      console.warn('[SIMULATE] Không thể cập nhật chart:', e);
     }
 
     // Gửi email nếu có

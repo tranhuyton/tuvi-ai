@@ -168,37 +168,83 @@ export async function POST(req: Request) {
         }
       }
 
-      // Nếu đơn hàng có chartId, cập nhật luôn sang tier 'expert' hoặc 'pro' trong Supabase
-      if (
-        order.chartId &&
-        (order.paymentType === 'reading_vip' ||
-          order.paymentType === 'reading_expert' ||
-          order.paymentType === 'upgrade_expert')
-      ) {
-        try {
-          const targetTier =
-            order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert'
-              ? 'expert'
-              : 'pro';
-          // Lấy chart hiện tại
+      // Nếu đơn hàng có chartId (hoặc tìm thấy lá số trùng tên của user), cập nhật tier & quota trong Supabase
+      try {
+        let targetChartId = order.chartId;
+        if (!targetChartId && (order.userId || order.email)) {
+          let query = supabase.from('tuvi_charts').select('id, duong_so_data, laso_data');
+          if (order.userId) {
+            query = query.eq('user_id', order.userId);
+          }
+          const { data: userCharts } = await query;
+          const matched = (userCharts || []).find(
+            (c: any) => c.duong_so_data?.hoTen?.trim().toLowerCase() === order.hoTen?.trim().toLowerCase()
+          );
+          if (matched) {
+            targetChartId = matched.id;
+            order.chartId = matched.id;
+            await supabase.from('tuvi_orders').update({ chart_id: matched.id }).eq('order_code', order.orderCode);
+          }
+        }
+
+        if (targetChartId) {
           const { data: chartData } = await supabase
             .from('tuvi_charts')
             .select('duong_so_data, laso_data')
-            .eq('id', order.chartId)
+            .eq('id', targetChartId)
             .maybeSingle();
 
           if (chartData) {
+            const prevQuota = chartData.laso_data?.quota || {
+              basicAllowed: 0,
+              proAllowed: 0,
+              expertAllowed: 0,
+            };
+            const nextQuota = {
+              basicAllowed: Number(prevQuota.basicAllowed || 0),
+              proAllowed: Number(prevQuota.proAllowed || 0),
+              expertAllowed: Number(prevQuota.expertAllowed || 0),
+            };
+
+            let targetTier = chartData.duong_so_data?.tier || chartData.laso_data?.tier || 'free';
+            let needsReadingUpgrade = Boolean(chartData.laso_data?.needsReadingUpgrade);
+
+            if (order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert') {
+              if (targetTier !== 'expert') {
+                needsReadingUpgrade = true;
+              }
+              targetTier = 'expert';
+              nextQuota.expertAllowed += 2;
+            } else if (order.paymentType === 'reading_vip') {
+              if (targetTier === 'free') {
+                targetTier = 'pro';
+                needsReadingUpgrade = true;
+              }
+              nextQuota.proAllowed += 2;
+            } else if (order.paymentType === 'chat_expert') {
+              nextQuota.expertAllowed += 2;
+            } else if (order.paymentType === 'chat_vip') {
+              nextQuota.proAllowed += 2;
+            } else if (order.paymentType === 'chat_free') {
+              nextQuota.basicAllowed += 2;
+            }
+
             const updatedDuongSo = { ...chartData.duong_so_data, tier: targetTier };
-            const updatedLaSo = { ...chartData.laso_data, tier: targetTier };
+            const updatedLaSo = {
+              ...chartData.laso_data,
+              tier: targetTier,
+              quota: nextQuota,
+              needsReadingUpgrade,
+            };
             await supabase
               .from('tuvi_charts')
               .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
-              .eq('id', order.chartId);
-            console.log(`[PAYMENT WEBHOOK] Đã nâng cấp chart ${order.chartId} sang ${targetTier}`);
+              .eq('id', targetChartId);
+            console.log(`[PAYMENT WEBHOOK] Đã cập nhật chart ${targetChartId}: tier=${targetTier}, quota=`, nextQuota);
           }
-        } catch (e) {
-          console.warn('[PAYMENT WEBHOOK] Không thể cập nhật chart:', e);
         }
+      } catch (e) {
+        console.warn('[PAYMENT WEBHOOK] Không thể cập nhật chart:', e);
       }
 
       // Gửi email thông báo cho khách hàng nếu có email

@@ -160,15 +160,23 @@ export default function PaymentModal({
     ];
   }
 
+  const customerEmailRef = useRef<string>('');
+  useEffect(() => {
+    customerEmailRef.current = customerEmail;
+  }, [customerEmail]);
+
   // Khởi tạo email từ tài khoản hoặc localStorage khi mở modal
   useEffect(() => {
     if (isOpen) {
       const email =
-        customerEmail ||
+        customerEmailRef.current ||
         user?.email ||
         profile?.email ||
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
-      if (email && !customerEmail) setCustomerEmail(email);
+      if (email && !customerEmailRef.current) {
+        customerEmailRef.current = email;
+        setCustomerEmail(email);
+      }
 
       // Đảm bảo cuộn lên đầu để thấy ngay mã QR mà không bị đẩy xuống dưới
       setTimeout(() => {
@@ -177,7 +185,7 @@ export default function PaymentModal({
         }
       }, 50);
     }
-  }, [isOpen, user, profile, customerEmail]);
+  }, [isOpen, user, profile]);
 
   // Hàm tạo hoặc lấy lại đơn hàng
   const createOrFetchOrder = useCallback(async (isRefresh = false) => {
@@ -187,7 +195,7 @@ export default function PaymentModal({
 
     try {
       const initialEmail =
-        customerEmail ||
+        customerEmailRef.current ||
         user?.email ||
         profile?.email ||
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
@@ -248,12 +256,11 @@ export default function PaymentModal({
     } finally {
       setIsCreatingOrder(false);
     }
-  }, [customerEmail, user, profile, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
+  }, [user?.id, user?.email, profile?.email, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
 
   // Tạo đơn hàng khi modal mở ra (tái sử dụng đơn pending nếu cùng gói để không sinh mã rác và hiện QR tức thì)
   useEffect(() => {
     if (!isOpen) {
-      if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
       if (orderStatus !== 'PENDING') {
         setOrderStatus('IDLE');
         activeOrderKeyRef.current = null;
@@ -268,10 +275,6 @@ export default function PaymentModal({
     }
 
     createOrFetchOrder();
-
-    return () => {
-      if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
-    };
   }, [isOpen, paymentType, finalPrice, hoTen, chartId, orderCode, orderStatus, createOrFetchOrder]);
 
   // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s)

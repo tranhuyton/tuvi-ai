@@ -81,6 +81,7 @@ export interface LaSoData {
   tuoiAmXem: number;
   tier?: ServiceTier;
   quota?: QuestionsQuota;
+  needsReadingUpgrade?: boolean;
   cungs: CungLaSo[];
 }
 

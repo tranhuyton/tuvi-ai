@@ -54,6 +54,33 @@ export default function HomePage() {
   const [isRestoringSession, setIsRestoringSession] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
+  // Refs đồng bộ tức thì để các hàm callback thanh toán không bao giờ dính stale closure
+  const laSoRef = useRef<LaSoData | null>(null);
+  const duongSoRef = useRef<DuLieuDuongSo | null>(null);
+  const chartIdRef = useRef<string | null>(null);
+  const tierRef = useRef<ServiceTier>('free');
+  const quotaRef = useRef<QuestionsQuota>({
+    basicAllowed: 0,
+    proAllowed: 0,
+    expertAllowed: 0,
+  });
+
+  useEffect(() => {
+    laSoRef.current = laSo;
+  }, [laSo]);
+  useEffect(() => {
+    duongSoRef.current = currentDuongSo;
+  }, [currentDuongSo]);
+  useEffect(() => {
+    chartIdRef.current = currentChartId;
+  }, [currentChartId]);
+  useEffect(() => {
+    tierRef.current = currentTier;
+  }, [currentTier]);
+  useEffect(() => {
+    quotaRef.current = questionsQuota;
+  }, [questionsQuota]);
+
   const getChartStorageKey = (duongSo?: DuLieuDuongSo | null, chartId?: string | null) =>
     chartId || (duongSo ? `${duongSo.hoTen}_${duongSo.namDuong}` : 'default');
 
@@ -95,12 +122,15 @@ export default function HomePage() {
   ) => {
     setQuestionsQuota((prev) => {
       const next = typeof val === 'function' ? val(prev) : val;
+      quotaRef.current = next;
+      const activeChartId = chartIdRef.current || currentChartId;
+      const activeDuongSo = duongSoRef.current || currentDuongSo;
       if (typeof window !== 'undefined') {
-        if (currentChartId) {
-          localStorage.setItem(`tuvi_quota_${currentChartId}`, JSON.stringify(next));
+        if (activeChartId) {
+          localStorage.setItem(`tuvi_quota_${activeChartId}`, JSON.stringify(next));
         }
-        if (currentDuongSo) {
-          localStorage.setItem(`tuvi_quota_${currentDuongSo.hoTen}_${currentDuongSo.namDuong}`, JSON.stringify(next));
+        if (activeDuongSo) {
+          localStorage.setItem(`tuvi_quota_${activeDuongSo.hoTen}_${activeDuongSo.namDuong}`, JSON.stringify(next));
         }
       }
       return next;
@@ -131,6 +161,7 @@ export default function HomePage() {
           const normalized: QuestionsQuota = { basicAllowed: bAllowed, proAllowed: pAllowed, expertAllowed: eAllowed };
           if (chartIdKey) localStorage.setItem(chartIdKey, JSON.stringify(normalized));
           if (duongSoKey) localStorage.setItem(duongSoKey, JSON.stringify(normalized));
+          quotaRef.current = normalized;
           setQuestionsQuota(normalized);
           return;
         } catch {
@@ -152,6 +183,7 @@ export default function HomePage() {
         };
         if (chartIdKey) localStorage.setItem(chartIdKey, JSON.stringify(initial));
         if (duongSoKey) localStorage.setItem(duongSoKey, JSON.stringify(initial));
+        quotaRef.current = initial;
         setQuestionsQuota(initial);
         return;
       }
@@ -165,18 +197,20 @@ export default function HomePage() {
         };
         if (chartIdKey) localStorage.setItem(chartIdKey, JSON.stringify(initial));
         if (duongSoKey) localStorage.setItem(duongSoKey, JSON.stringify(initial));
+        quotaRef.current = initial;
         setQuestionsQuota(initial);
         return;
       }
 
       // Mặc định
-      if (currentTier === 'expert') {
-        setQuestionsQuota({ basicAllowed: 0, proAllowed: 0, expertAllowed: 2 });
-      } else if (currentTier === 'pro') {
-        setQuestionsQuota({ basicAllowed: 0, proAllowed: 2, expertAllowed: 0 });
-      } else {
-        setQuestionsQuota({ basicAllowed: 0, proAllowed: 0, expertAllowed: 0 });
-      }
+      const defaultQuota: QuestionsQuota =
+        currentTier === 'expert'
+          ? { basicAllowed: 0, proAllowed: 0, expertAllowed: 2 }
+          : currentTier === 'pro'
+          ? { basicAllowed: 0, proAllowed: 2, expertAllowed: 0 }
+          : { basicAllowed: 0, proAllowed: 0, expertAllowed: 0 };
+      quotaRef.current = defaultQuota;
+      setQuestionsQuota(defaultQuota);
   }, [laSo, currentDuongSo, currentTier, currentChartId]);
 
   // Modals & Payment
@@ -211,22 +245,25 @@ export default function HomePage() {
     setAuthModalNotice('');
 
     // Nếu đã có lá số trên màn hình nhưng chưa có chartId trong database (khách lập khi chưa đăng nhập)
-    let activeChartId = currentChartId;
-    if (laSo && currentDuongSo && !activeChartId) {
+    let activeChartId = chartIdRef.current || currentChartId;
+    const activeLaSo = laSoRef.current || laSo;
+    const activeDuongSo = duongSoRef.current || currentDuongSo;
+    if (activeLaSo && activeDuongSo && !activeChartId) {
       try {
         const cleanDuongSo = {
-          ...currentDuongSo,
-          anhMat: currentDuongSo.anhMat ? '[Ảnh khuôn mặt đã tải lên]' : undefined,
-          anhTay: currentDuongSo.anhTay ? '[Ảnh bàn tay đã tải lên]' : undefined,
+          ...activeDuongSo,
+          anhMat: activeDuongSo.anhMat ? '[Ảnh khuôn mặt đã tải lên]' : undefined,
+          anhTay: activeDuongSo.anhTay ? '[Ảnh bàn tay đã tải lên]' : undefined,
         };
         const saveRes = await saveOrUpdateChart({
-          title: `${currentDuongSo.hoTen} (${currentDuongSo.gioiTinh} - ${currentDuongSo.namDuong})`,
+          title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
           duongSoData: cleanDuongSo,
-          lasoData: laSo,
+          lasoData: activeLaSo,
           readingHtml: readingHtml,
         });
         if (saveRes.chartId) {
           activeChartId = saveRes.chartId;
+          chartIdRef.current = saveRes.chartId;
           setCurrentChartId(saveRes.chartId);
         }
       } catch (err) {
@@ -341,8 +378,13 @@ export default function HomePage() {
     return readingResult;
   };
 
-  // Xử lý khi nộp form lập lá số mới (chọn Free, Pro hoặc Expert)
+  // Xử lý khi nộp form lập lá số mới hoặc cập nhật lá số (chọn Free, Pro hoặc Expert)
   const handleFormSubmit = async (data: DuLieuDuongSo, tier: ServiceTier) => {
+    const previousTier = tierRef.current || currentTier;
+    const existingChartId = isEditing ? (chartIdRef.current || currentChartId) : null;
+    const existingReadingHtml = isEditing ? readingHtml : undefined;
+    const existingChatHistory = isEditing ? chatHistory : [];
+
     let effectiveTier = tier;
 
     // 1. Kiểm tra xem người dùng đã có đơn hàng nào đã thanh toán trước đó chưa (ví dụ: chuyển khoản trước, duyệt tay trước mà chưa có lá số)
@@ -373,11 +415,13 @@ export default function HomePage() {
       }
     }
 
-    // 2. Kiểm tra đặc quyền và hạn mức tài khoản Tester
+    // 2. Kiểm tra đặc quyền và hạn mức tài khoản Tester (Tester chỉ miễn phí gói VIP Pro, gói Expert vẫn cần thanh toán)
     if (testerInfo?.isTester) {
-      effectiveTier = tier === 'expert' ? 'expert' : 'pro';
+      if (tier !== 'expert') {
+        effectiveTier = 'pro';
+      }
 
-      if (user) {
+      if (user && !existingChartId) {
         try {
           const { charts } = await getUserCharts();
           const count = charts?.length || 0;
@@ -394,13 +438,22 @@ export default function HomePage() {
       }
     }
 
-    // Nếu người dùng chọn gói Pro hoặc Expert nhưng chưa thanh toán và không phải Tester, tạm lập bản Free và mở modal thanh toán kèm chartId
-    const requiresPayment = (tier === 'pro' || tier === 'expert') && !testerInfo?.isTester && !autoUnlockedFromPaidOrder;
+    // Nếu người dùng chọn gói cao hơn (Pro hoặc Expert) mà chưa thanh toán cho gói đó:
+    const isAlreadyAtSelectedTier =
+      (tier === 'expert' && previousTier === 'expert' && isEditing) ||
+      (tier === 'pro' && (previousTier === 'pro' || previousTier === 'expert') && isEditing);
+
+    const requiresPayment =
+      !isAlreadyAtSelectedTier &&
+      !autoUnlockedFromPaidOrder &&
+      (tier === 'expert' || (tier === 'pro' && !testerInfo?.isTester));
+
     if (requiresPayment) {
-      effectiveTier = 'free';
+      effectiveTier = isEditing && previousTier === 'pro' ? 'pro' : 'free';
     }
 
     setCurrentTier(effectiveTier);
+    tierRef.current = effectiveTier;
 
     // Tách riêng dữ liệu cơ bản của đương số (loại bỏ base64 ảnh khỏi lá số lưu trữ)
     const cleanDuongSo: DuLieuDuongSo = {
@@ -411,20 +464,22 @@ export default function HomePage() {
     };
 
     let initialQuota: QuestionsQuota = {
-      basicAllowed: 0,
-      proAllowed: effectiveTier === 'pro' ? 2 : 0,
-      expertAllowed: effectiveTier === 'expert' ? 2 : 0,
+      basicAllowed: isEditing ? quotaRef.current.basicAllowed : 0,
+      proAllowed: effectiveTier === 'pro' ? Math.max(2, isEditing ? quotaRef.current.proAllowed : 0) : (isEditing ? quotaRef.current.proAllowed : 0),
+      expertAllowed: effectiveTier === 'expert' ? Math.max(2, isEditing ? (quotaRef.current.expertAllowed || 0) : 0) : (isEditing ? (quotaRef.current.expertAllowed || 0) : 0),
     };
 
     if (testerInfo?.isTester) {
       initialQuota = {
         basicAllowed: 0,
-        proAllowed: effectiveTier === 'pro' ? testerInfo.maxQuestionsPerChart : 0,
-        expertAllowed: effectiveTier === 'expert' ? testerInfo.maxQuestionsPerChart : 0,
+        proAllowed: effectiveTier === 'pro' ? testerInfo.maxQuestionsPerChart : initialQuota.proAllowed,
+        expertAllowed: effectiveTier === 'expert' ? Math.max(2, initialQuota.expertAllowed || 0) : (initialQuota.expertAllowed || 0),
       };
     } else if (typeof window !== 'undefined') {
       const key = `${data.hoTen}_${data.namDuong}`;
-      const storedQuotaStr = localStorage.getItem(`tuvi_quota_${key}`);
+      const storedQuotaStr =
+        (existingChartId ? localStorage.getItem(`tuvi_quota_${existingChartId}`) : null) ||
+        localStorage.getItem(`tuvi_quota_${key}`);
       if (storedQuotaStr) {
         try {
           const parsed = JSON.parse(storedQuotaStr);
@@ -453,32 +508,68 @@ export default function HomePage() {
     calculatedLaSo.tier = effectiveTier;
     calculatedLaSo.quota = initialQuota;
 
+    // Đồng bộ cả state lẫn ref ngay lập tức để PaymentModal và onConfirm có sẵn dữ liệu mới nhất
+    laSoRef.current = calculatedLaSo;
+    duongSoRef.current = cleanDuongSo;
+    chartIdRef.current = existingChartId;
+    quotaRef.current = initialQuota;
+
     setLaSo(calculatedLaSo);
     setCurrentDuongSo(cleanDuongSo);
     setIsEditing(false);
-    setCurrentChartId(null);
-    setReadingHtml(undefined);
+    setCurrentChartId(existingChartId);
+    setReadingHtml(requiresPayment ? existingReadingHtml : undefined);
     setReadingError(undefined);
-    setChatHistory([]);
+    setChatHistory(existingChatHistory);
     setQuestionsQuota(initialQuota);
-    setIsLoadingReading(true);
+    setIsLoadingReading(!requiresPayment);
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    let createdChartId: string | null = null;
+    // Nếu cần thanh toán Bản Pro hoặc Bản Expert (khách chủ động bấm chọn trên form): Mở ngay modal thanh toán trong 0ms!
+    if (requiresPayment) {
+      if (tier === 'expert') {
+        openUpgradeExpertModal(isEditing && previousTier === 'pro' ? 'pro' : 'free');
+      } else {
+        openUpgradeModal();
+      }
+
+      // Lưu ngầm lá số vào database (nếu đã đăng nhập) để gắn chartId cho đơn hàng
+      if (user) {
+        saveOrUpdateChart({
+          id: existingChartId || undefined,
+          title: `${data.hoTen} (${data.gioiTinh} - ${data.namDuong})`,
+          duongSoData: cleanDuongSo,
+          lasoData: calculatedLaSo,
+          readingHtml: existingReadingHtml,
+        })
+          .then((saveRes) => {
+            if (saveRes.chartId) {
+              chartIdRef.current = saveRes.chartId;
+              setCurrentChartId(saveRes.chartId);
+            }
+          })
+          .catch((e) => console.warn('Lỗi tự động lưu lá số:', e));
+      }
+      return;
+    }
+
+    let createdChartId: string | null = existingChartId;
 
     // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database ngay lập tức để không bao giờ bị mất
     if (user) {
       try {
         const saveRes = await saveOrUpdateChart({
+          id: existingChartId || undefined,
           title: `${data.hoTen} (${data.gioiTinh} - ${data.namDuong})`,
           duongSoData: cleanDuongSo,
           lasoData: calculatedLaSo,
         });
         if (saveRes.chartId) {
           createdChartId = saveRes.chartId;
+          chartIdRef.current = saveRes.chartId;
           setCurrentChartId(saveRes.chartId);
-          if (testerInfo?.isTester) {
+          if (testerInfo?.isTester && !existingChartId) {
             setTesterChartsCount((prev) => prev + 1);
             refreshTesterInfo();
           }
@@ -500,17 +591,6 @@ export default function HomePage() {
       }
     }
 
-    // Nếu cần thanh toán Bản Pro hoặc Bản Expert (khách chủ động bấm chọn trên form): Mở ngay modal thanh toán có gắn chartId
-    if (requiresPayment) {
-      setIsLoadingReading(false);
-      if (tier === 'expert') {
-        openUpgradeExpertModal('free');
-      } else {
-        openUpgradeModal();
-      }
-      return;
-    }
-
     // Gọi AI Thầy Tôn bình giải
     try {
       const readingResult = await generateReading(calculatedLaSo, data, effectiveTier);
@@ -530,14 +610,19 @@ export default function HomePage() {
 
   // Xử lý nâng cấp lên Bản Pro Chuyên Sâu cho lá số đang xem
   const handleConfirmUpgradeToPro = async () => {
-    if (!laSo || !currentDuongSo) return;
+    const activeLaSo = laSoRef.current || laSo;
+    const activeDuongSo = duongSoRef.current || currentDuongSo;
+    const activeChartId = chartIdRef.current || currentChartId;
+    const activeQuota = quotaRef.current || questionsQuota;
+    if (!activeLaSo || !activeDuongSo) return;
 
     setCurrentTier('pro');
+    tierRef.current = 'pro';
     // Khi nâng cấp lên Pro: Luôn cộng thêm 2 câu hỏi chuyên sâu VIP Pro!
     const newQuota: QuestionsQuota = {
-      basicAllowed: questionsQuota.basicAllowed,
-      proAllowed: questionsQuota.proAllowed + 2,
-      expertAllowed: questionsQuota.expertAllowed || 0,
+      basicAllowed: activeQuota.basicAllowed,
+      proAllowed: activeQuota.proAllowed + 2,
+      expertAllowed: activeQuota.expertAllowed || 0,
     };
     updateQuestionsQuota(newQuota);
     setIsUpgrading(true);
@@ -545,25 +630,34 @@ export default function HomePage() {
     setReadingError(undefined);
 
     const updatedCleanDuongSo: DuLieuDuongSo = {
-      ...currentDuongSo,
+      ...activeDuongSo,
       tier: 'pro',
       anhMat: undefined,
       anhTay: undefined,
     };
 
-    const updatedLaSo = { ...laSo, tier: 'pro' as ServiceTier, quota: newQuota };
+    const updatedLaSo: LaSoData = {
+      ...activeLaSo,
+      tier: 'pro' as ServiceTier,
+      quota: newQuota,
+      needsReadingUpgrade: false,
+    };
+    laSoRef.current = updatedLaSo;
+    duongSoRef.current = updatedCleanDuongSo;
     setLaSo(updatedLaSo);
+    setCurrentDuongSo(updatedCleanDuongSo);
 
     try {
-      const readingResult = await generateReading(updatedLaSo, currentDuongSo, 'pro');
+      const readingResult = await generateReading(updatedLaSo, activeDuongSo, 'pro');
       if (readingResult) {
         setReadingHtml(readingResult);
-        if (currentChartId) {
+        const targetChartId = chartIdRef.current || activeChartId;
+        if (targetChartId) {
           // Cập nhật cả bài bình giải và tier mới vào database
-          await updateChartReading(currentChartId, readingResult);
+          await updateChartReading(targetChartId, readingResult);
           await saveOrUpdateChart({
-            id: currentChartId,
-            title: `${currentDuongSo.hoTen} (${currentDuongSo.gioiTinh} - ${currentDuongSo.namDuong})`,
+            id: targetChartId,
+            title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
             duongSoData: updatedCleanDuongSo,
             lasoData: updatedLaSo,
             readingHtml: readingResult,
@@ -579,16 +673,21 @@ export default function HomePage() {
     }
   };
 
-  // Xử lý nâng cấp lên Bản Chuyên Gia Expert (Gemini 4 Argon) cho lá số đang xem
+  // Xử lý nâng cấp lên Bản Chuyên Gia Expert cho lá số đang xem
   const handleConfirmUpgradeToExpert = async () => {
-    if (!laSo || !currentDuongSo) return;
+    const activeLaSo = laSoRef.current || laSo;
+    const activeDuongSo = duongSoRef.current || currentDuongSo;
+    const activeChartId = chartIdRef.current || currentChartId;
+    const activeQuota = quotaRef.current || questionsQuota;
+    if (!activeLaSo || !activeDuongSo) return;
 
     setCurrentTier('expert');
+    tierRef.current = 'expert';
     // Khi nâng cấp lên Expert: Luôn cộng thêm 2 câu hỏi Chuyên Gia Expert miễn phí!
     const newQuota: QuestionsQuota = {
-      basicAllowed: questionsQuota.basicAllowed,
-      proAllowed: questionsQuota.proAllowed,
-      expertAllowed: (questionsQuota.expertAllowed || 0) + 2,
+      basicAllowed: activeQuota.basicAllowed,
+      proAllowed: activeQuota.proAllowed,
+      expertAllowed: (activeQuota.expertAllowed || 0) + 2,
     };
     updateQuestionsQuota(newQuota);
     setIsUpgrading(true);
@@ -596,24 +695,33 @@ export default function HomePage() {
     setReadingError(undefined);
 
     const updatedCleanDuongSo: DuLieuDuongSo = {
-      ...currentDuongSo,
+      ...activeDuongSo,
       tier: 'expert',
       anhMat: undefined,
       anhTay: undefined,
     };
 
-    const updatedLaSo = { ...laSo, tier: 'expert' as ServiceTier, quota: newQuota };
+    const updatedLaSo: LaSoData = {
+      ...activeLaSo,
+      tier: 'expert' as ServiceTier,
+      quota: newQuota,
+      needsReadingUpgrade: false,
+    };
+    laSoRef.current = updatedLaSo;
+    duongSoRef.current = updatedCleanDuongSo;
     setLaSo(updatedLaSo);
+    setCurrentDuongSo(updatedCleanDuongSo);
 
     try {
-      const readingResult = await generateReading(updatedLaSo, currentDuongSo, 'expert');
+      const readingResult = await generateReading(updatedLaSo, activeDuongSo, 'expert');
       if (readingResult) {
         setReadingHtml(readingResult);
-        if (currentChartId) {
-          await updateChartReading(currentChartId, readingResult);
+        const targetChartId = chartIdRef.current || activeChartId;
+        if (targetChartId) {
+          await updateChartReading(targetChartId, readingResult);
           await saveOrUpdateChart({
-            id: currentChartId,
-            title: `${currentDuongSo.hoTen} (${currentDuongSo.gioiTinh} - ${currentDuongSo.namDuong})`,
+            id: targetChartId,
+            title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
             duongSoData: updatedCleanDuongSo,
             lasoData: updatedLaSo,
             readingHtml: readingResult,
@@ -629,140 +737,124 @@ export default function HomePage() {
     }
   };
 
-  // Mở modal thanh toán nâng cấp Bản Pro
+  // Mở modal thanh toán nâng cấp Bản Pro (mở ngay mã QR VietQR 0ms, không bắt đăng nhập trước)
   const openUpgradeModal = () => {
     if (testerInfo?.isTester) {
       alert('Tài khoản Tester của bạn đã được mở khóa toàn bộ quyền lợi VIP Pro!');
       return;
     }
 
-    const proceedToPayment = () => {
-      setPaymentModalConfig({
-        isOpen: true,
-        type: 'reading_vip',
-        price: 119000,
-        onConfirm: () => {
-          handleConfirmUpgradeToPro();
-        },
-      });
-    };
-
-    if (!user) {
-      pendingPostAuthActionRef.current = proceedToPayment;
-      setAuthModalNotice(
-        'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán nâng cấp Bản Pro.'
-      );
-      setIsAuthModalOpen(true);
-      return;
-    }
-
-    proceedToPayment();
+    setPaymentModalConfig({
+      isOpen: true,
+      type: 'reading_vip',
+      price: 119000,
+      onConfirm: () => {
+        handleConfirmUpgradeToPro();
+      },
+    });
   };
 
   // Mở modal thanh toán Bản Chuyên Gia Expert (269.000đ nếu từ Free, hoặc 150.000đ nếu nâng cấp từ Pro)
   const openUpgradeExpertModal = (fromTierOverride?: ServiceTier) => {
-    if (testerInfo?.isTester) {
-      handleConfirmUpgradeToExpert();
-      return;
-    }
-
-    const baseTier = fromTierOverride || currentTier;
+    const baseTier = fromTierOverride || tierRef.current || currentTier;
     const isUpgradingFromPro = baseTier === 'pro';
     const paymentType: PaymentPurpose = isUpgradingFromPro ? 'upgrade_expert' : 'reading_expert';
     const price = isUpgradingFromPro ? 150000 : 269000;
 
-    const proceedToPayment = () => {
-      setPaymentModalConfig({
-        isOpen: true,
-        type: paymentType,
-        price,
-        onConfirm: () => {
-          handleConfirmUpgradeToExpert();
-        },
-      });
-    };
-
-    if (!user) {
-      pendingPostAuthActionRef.current = proceedToPayment;
-      setAuthModalNotice(
-        isUpgradingFromPro
-          ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để mở mã QR thanh toán nâng cấp từ Bản Pro lên Bản Chuyên Gia Expert (150.000đ).'
-          : 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Gia Expert (269.000đ).'
-      );
-      setIsAuthModalOpen(true);
-      return;
-    }
-
-    proceedToPayment();
+    setPaymentModalConfig({
+      isOpen: true,
+      type: paymentType,
+      price,
+      onConfirm: () => {
+        handleConfirmUpgradeToExpert();
+      },
+    });
   };
 
-  // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp)
+  // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp - mở ngay mã QR VietQR 0ms)
   const handleUnlockQuestions = (mode?: 'basic' | 'vip' | 'expert') => {
-    if (testerInfo?.isTester) {
+    const activeTier = tierRef.current || currentTier;
+    const targetMode = mode || (activeTier === 'expert' ? 'expert' : activeTier === 'pro' ? 'vip' : 'basic');
+
+    if (testerInfo?.isTester && targetMode !== 'expert') {
       alert(
         `Tài khoản Tester của bạn đã sử dụng hết ${testerInfo.maxQuestionsPerChart} câu hỏi cho lá số này.\n\nBạn có thể mở một lá số khác để tiếp tục kiểm thử hoặc liên hệ Admin nếu cần tăng thêm hạn mức câu hỏi.`
       );
       return;
     }
 
-    const targetMode = mode || (currentTier === 'expert' ? 'expert' : currentTier === 'pro' ? 'vip' : 'basic');
-    const proceedToPayment = () => {
-      if (targetMode === 'expert') {
-        setPaymentModalConfig({
-          isOpen: true,
-          type: 'chat_expert',
-          price: 129000,
-          onConfirm: () => {
-            const validExpertAsked = chatHistory.filter((c) => !c.isError && c.type === 'expert').length;
-            updateQuestionsQuota((prev) => ({
-              ...prev,
-              expertAllowed: Math.max(prev.expertAllowed || 0, validExpertAsked) + 2,
-            }));
-          },
-        });
-      } else if (targetMode === 'vip') {
-        setPaymentModalConfig({
-          isOpen: true,
-          type: 'chat_vip',
-          price: 99000,
-          onConfirm: () => {
-            const validVipAsked = chatHistory.filter((c) => !c.isError && c.type === 'vip').length;
-            updateQuestionsQuota((prev) => ({
-              ...prev,
-              proAllowed: Math.max(prev.proAllowed, validVipAsked) + 2,
-            }));
-          },
-        });
-      } else {
-        setPaymentModalConfig({
-          isOpen: true,
-          type: 'chat_free',
-          price: 49000,
-          onConfirm: () => {
-            const validBasicAsked = chatHistory.filter((c) => !c.isError && (c.type === 'basic' || !c.type)).length;
-            updateQuestionsQuota((prev) => ({
-              ...prev,
-              basicAllowed: Math.max(prev.basicAllowed, validBasicAsked) + 2,
-            }));
-          },
-        });
+    const persistQuotaToDb = (nextQuota: QuestionsQuota) => {
+      const activeLaSo = laSoRef.current || laSo;
+      const activeDuongSo = duongSoRef.current || currentDuongSo;
+      const activeChartId = chartIdRef.current || currentChartId;
+      if (activeLaSo) {
+        const updatedLaSo = { ...activeLaSo, quota: nextQuota };
+        laSoRef.current = updatedLaSo;
+        setLaSo(updatedLaSo);
+        if (activeChartId && activeDuongSo) {
+          saveOrUpdateChart({
+            id: activeChartId,
+            title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
+            duongSoData: activeDuongSo,
+            lasoData: updatedLaSo,
+            readingHtml,
+          }).catch(() => {});
+        }
       }
     };
 
-    if (!user) {
-      pendingPostAuthActionRef.current = proceedToPayment;
-      setAuthModalNotice(
-        targetMode === 'expert'
-          ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi Chuyên Gia Expert (129.000đ).'
-          : targetMode === 'vip'
-          ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi Chuyên Sâu.'
-          : 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi cùng Thầy Tôn.'
-      );
-      setIsAuthModalOpen(true);
-      return;
+    if (targetMode === 'expert') {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: 'chat_expert',
+        price: 129000,
+        onConfirm: () => {
+          const validExpertAsked = chatHistory.filter((c) => !c.isError && c.type === 'expert').length;
+          updateQuestionsQuota((prev) => {
+            const next = {
+              ...prev,
+              expertAllowed: Math.max(prev.expertAllowed || 0, validExpertAsked) + 2,
+            };
+            persistQuotaToDb(next);
+            return next;
+          });
+        },
+      });
+    } else if (targetMode === 'vip') {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: 'chat_vip',
+        price: 99000,
+        onConfirm: () => {
+          const validVipAsked = chatHistory.filter((c) => !c.isError && c.type === 'vip').length;
+          updateQuestionsQuota((prev) => {
+            const next = {
+              ...prev,
+              proAllowed: Math.max(prev.proAllowed, validVipAsked) + 2,
+            };
+            persistQuotaToDb(next);
+            return next;
+          });
+        },
+      });
+    } else {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: 'chat_free',
+        price: 49000,
+        onConfirm: () => {
+          const validBasicAsked = chatHistory.filter((c) => !c.isError && (c.type === 'basic' || !c.type)).length;
+          updateQuestionsQuota((prev) => {
+            const next = {
+              ...prev,
+              basicAllowed: Math.max(prev.basicAllowed, validBasicAsked) + 2,
+            };
+            persistQuotaToDb(next);
+            return next;
+          });
+        },
+      });
     }
-
-    proceedToPayment();
   };
 
   // Mở modal Sổ tay số mệnh (danh sách lá số đã lưu)
@@ -899,18 +991,25 @@ export default function HomePage() {
                ? 'pro'
                : 'free'));
 
-      // Tự động kiểm tra hóa đơn thanh toán trong tuvi_orders (Cơ chế Self-Healing)
+      // Tự động kiểm tra hóa đơn thanh toán trong tuvi_orders (Cơ chế Self-Healing chỉ khớp đúng lá số này)
       if (detectedTier !== 'expert') {
         try {
           const { data: paidOrders } = await supabase
             .from('tuvi_orders')
-            .select('id, payment_type, status')
+            .select('id, payment_type, status, chart_id, ho_ten')
             .or(`chart_id.eq.${chartId},user_id.eq.${chart.user_id || user?.id}`)
             .eq('status', 'PAID')
             .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip']);
 
-          if (paidOrders && paidOrders.length > 0) {
-            const hasExpert = paidOrders.some(
+          const matchingOrders = (paidOrders || []).filter(
+            (o) =>
+              o.chart_id === chartId ||
+              (!o.chart_id &&
+                o.ho_ten?.trim().toLowerCase() === chart.duong_so_data?.hoTen?.trim().toLowerCase())
+          );
+
+          if (matchingOrders.length > 0) {
+            const hasExpert = matchingOrders.some(
               (o) => o.payment_type === 'reading_expert' || o.payment_type === 'upgrade_expert'
             );
             if (hasExpert) {
@@ -925,6 +1024,7 @@ export default function HomePage() {
       }
 
       setCurrentTier(detectedTier);
+      tierRef.current = detectedTier;
       // Tự động an sao lại theo thuật toán mới nhất để đảm bảo định dạng chuẩn (Thê Thiếp cho Nam, đầy đủ sao, màu sắc chuẩn)
       let activeLaSo = chart.laso_data;
       if (chart.duong_so_data) {
@@ -933,10 +1033,14 @@ export default function HomePage() {
           activeLaSo = lapLaSoTuVi(chart.duong_so_data, resolvedNamXem);
           activeLaSo.tier = detectedTier;
           if (chart.laso_data?.quota) activeLaSo.quota = chart.laso_data.quota;
+          if (chart.laso_data?.needsReadingUpgrade) activeLaSo.needsReadingUpgrade = true;
         } catch (calcErr) {
           console.warn('Lỗi tính toán lại lá số đã lưu:', calcErr);
         }
       }
+      laSoRef.current = activeLaSo;
+      duongSoRef.current = chart.duong_so_data;
+      chartIdRef.current = chart.id;
       setLaSo(activeLaSo);
       setCurrentDuongSo(chart.duong_so_data);
       setCurrentChartId(chart.id);
@@ -1022,9 +1126,10 @@ export default function HomePage() {
         if (chart.id) localStorage.setItem(`tuvi_quota_${chart.id}`, JSON.stringify(loadedQuota));
         if (chart.duong_so_data) localStorage.setItem(`tuvi_quota_${chart.duong_so_data.hoTen}_${chart.duong_so_data.namDuong}`, JSON.stringify(loadedQuota));
       }
+      quotaRef.current = loadedQuota;
       setQuestionsQuota(loadedQuota);
 
-      // Tự động nâng cấp lên Pro hoặc Expert nếu phát hiện có đơn PAID nhưng database chưa lưu hoặc chưa có bài luận
+      // Tự động nâng cấp lên Pro hoặc Expert nếu phát hiện có đơn PAID nhưng database chưa lưu hoặc cần sinh bài luận mới
       if (detectedTier === 'pro' || detectedTier === 'expert') {
         const cleanDuongSo: DuLieuDuongSo = {
           ...chart.duong_so_data,
@@ -1032,10 +1137,20 @@ export default function HomePage() {
           anhMat: undefined,
           anhTay: undefined,
         };
-        const updatedLaSo = { ...chart.laso_data, tier: detectedTier, quota: loadedQuota };
+        const updatedLaSo: LaSoData = {
+          ...activeLaSo,
+          tier: detectedTier,
+          quota: loadedQuota,
+          needsReadingUpgrade: false,
+        };
 
-        if (!chart.reading_html) {
-          // Chỉ gọi AI sinh bài mới khi chưa có bài bình giải nào
+        const needsNewReading =
+          !chart.reading_html ||
+          Boolean(chart.laso_data?.needsReadingUpgrade) ||
+          (detectedTier === 'expert' && chart.duong_so_data?.tier !== 'expert' && !chart.reading_html?.includes('CHUYÊN GIA EXPERT'));
+
+        if (needsNewReading) {
+          setIsLoadingReading(true);
           generateReading(updatedLaSo, chart.duong_so_data, detectedTier)
             .then(async (readingResult) => {
               if (readingResult) {
@@ -1050,15 +1165,16 @@ export default function HomePage() {
                 });
               }
             })
-            .catch(console.error);
+            .catch(console.error)
+            .finally(() => setIsLoadingReading(false));
         } else if (chart.duong_so_data?.tier !== detectedTier) {
-          // Nếu đã có bài luận giải rồi, chỉ cập nhật tier mà TUYỆT ĐỐI KHÔNG sinh lại bài làm mất bài cũ
+          // Nếu đã có bài luận giải đúng cấp độ rồi, chỉ cập nhật tier mà không sinh lại bài
           saveOrUpdateChart({
             id: chart.id,
             title: chart.title,
             duongSoData: cleanDuongSo,
             lasoData: updatedLaSo,
-            readingHtml: finalReadingHtml || chart.reading_html,
+            readingHtml: finalReadingHtml || chart.reading_html || undefined,
           }).catch(console.error);
         }
       }
@@ -1083,6 +1199,11 @@ export default function HomePage() {
       localStorage.removeItem('tuvi_active_session');
       window.history.replaceState(null, '', '/');
     }
+    laSoRef.current = null;
+    duongSoRef.current = null;
+    chartIdRef.current = null;
+    tierRef.current = 'free';
+    quotaRef.current = { basicAllowed: 0, proAllowed: 0, expertAllowed: 0 };
     setLaSo(null);
     setCurrentDuongSo(null);
     setCurrentChartId(null);
@@ -1115,12 +1236,17 @@ export default function HomePage() {
     }, 600);
   };
 
-  // Lắng nghe khi người dùng đăng xuất hoặc chuyển đổi tài khoản: Tự động dọn dẹp sạch toàn bộ lá số và bình giải cũ
+  // Lắng nghe khi người dùng đăng xuất hoặc chuyển đổi sang một tài khoản khác: Tự động dọn dẹp sạch toàn bộ lá số cũ
+  // (Nếu đăng nhập từ trạng thái khách chưa đăng nhập thì giữ nguyên lá số đang xem để không làm ngắt luồng thanh toán)
   const prevUserRef = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     if (prevUserRef.current !== undefined) {
       const currentUserId = user ? user.id : null;
-      if (prevUserRef.current !== currentUserId) {
+      const wasLoggedIn = Boolean(prevUserRef.current);
+      const isLoggingOut = wasLoggedIn && !currentUserId;
+      const isSwitchingUser = wasLoggedIn && Boolean(currentUserId) && prevUserRef.current !== currentUserId;
+
+      if (isLoggingOut || isSwitchingUser) {
         isLoggingOutRef.current = true;
         handleReset();
         setTimeout(() => {
@@ -1147,9 +1273,8 @@ export default function HomePage() {
         const session = JSON.parse(savedSessionStr);
         if (session && session.laSo && session.duongSo) {
           // BẢO VỆ TÍNH ĐỘC LẬP TÀI KHOẢN:
-          // 1. Nếu đang có tài khoản đăng nhập: Session chỉ hợp lệ nếu thuộc về đúng tài khoản đó.
-          //    Nếu session không có userId hoặc userId khác user.id -> Xóa sạch, không khôi phục!
-          if (user && session.userId !== user.id) {
+          // 1. Nếu đang có tài khoản đăng nhập và session cũ thuộc về một tài khoản KHÁC (session.userId có giá trị nhưng khác user.id) -> Xóa sạch!
+          if (user && session.userId && session.userId !== user.id) {
             localStorage.removeItem('tuvi_active_session');
             window.history.replaceState(null, '', '/');
             setIsRestoringSession(false);
@@ -1176,13 +1301,19 @@ export default function HomePage() {
                 try {
                   localStorage.setItem(
                     'tuvi_active_session',
-                    JSON.stringify({ ...session, laSo: activeLaSo })
+                    JSON.stringify({ ...session, userId: user ? user.id : session.userId, laSo: activeLaSo })
                   );
                 } catch {}
               } catch (calcErr) {
                 console.warn('Lỗi tính toán lại phiên làm việc:', calcErr);
               }
             }
+            laSoRef.current = activeLaSo;
+            duongSoRef.current = session.duongSo;
+            chartIdRef.current = session.chartId || null;
+            tierRef.current = session.tier || 'free';
+            if (session.quota) quotaRef.current = session.quota;
+
             setLaSo(activeLaSo);
             setCurrentDuongSo(session.duongSo);
             setCurrentChartId(session.chartId || null);
@@ -1208,18 +1339,25 @@ export default function HomePage() {
                         ? 'pro'
                         : session.tier || 'free');
 
-                    // Kiểm tra Self-Healing từ tuvi_orders
+                    // Kiểm tra Self-Healing từ tuvi_orders (chỉ khớp đúng lá số này)
                     if (detectedTier !== 'expert') {
                       try {
                         const { data: paidOrders } = await supabase
                           .from('tuvi_orders')
-                          .select('id, payment_type, status')
+                          .select('id, payment_type, status, chart_id, ho_ten')
                           .or(`chart_id.eq.${session.chartId},user_id.eq.${user.id}`)
                           .eq('status', 'PAID')
                           .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip']);
 
-                        if (paidOrders && paidOrders.length > 0) {
-                          const hasExpert = paidOrders.some(
+                        const matchingOrders = (paidOrders || []).filter(
+                          (o) =>
+                            o.chart_id === session.chartId ||
+                            (!o.chart_id &&
+                              o.ho_ten?.trim().toLowerCase() === chart.duong_so_data?.hoTen?.trim().toLowerCase())
+                        );
+
+                        if (matchingOrders.length > 0) {
+                          const hasExpert = matchingOrders.some(
                             (o) => o.payment_type === 'reading_expert' || o.payment_type === 'upgrade_expert'
                           );
                           if (hasExpert) {
@@ -1231,9 +1369,10 @@ export default function HomePage() {
                       } catch (err) {}
                     }
 
+                    tierRef.current = detectedTier;
                     setCurrentTier(detectedTier);
 
-                    // Tự động nâng cấp nếu phát hiện đơn hàng đã thanh toán
+                    // Tự động nâng cấp nếu phát hiện đơn hàng đã thanh toán hoặc cần sinh bài luận mới
                     if (detectedTier === 'pro' || detectedTier === 'expert') {
                       const cleanDuongSo: DuLieuDuongSo = {
                         ...chart.duong_so_data,
@@ -1241,18 +1380,36 @@ export default function HomePage() {
                         anhMat: undefined,
                         anhTay: undefined,
                       };
-                      const updatedLaSo = {
+                      const syncedQuota: QuestionsQuota = {
+                        basicAllowed: Number(chart.laso_data?.quota?.basicAllowed || quotaRef.current.basicAllowed || 0),
+                        proAllowed:
+                          detectedTier === 'pro'
+                            ? Math.max(2, Number(chart.laso_data?.quota?.proAllowed || quotaRef.current.proAllowed || 0))
+                            : Number(chart.laso_data?.quota?.proAllowed || quotaRef.current.proAllowed || 0),
+                        expertAllowed:
+                          detectedTier === 'expert'
+                            ? Math.max(2, Number(chart.laso_data?.quota?.expertAllowed || quotaRef.current.expertAllowed || 0))
+                            : Number(chart.laso_data?.quota?.expertAllowed || quotaRef.current.expertAllowed || 0),
+                      };
+                      quotaRef.current = syncedQuota;
+                      setQuestionsQuota(syncedQuota);
+
+                      const updatedLaSo: LaSoData = {
                         ...chart.laso_data,
                         tier: detectedTier,
-                        quota: {
-                          basicAllowed: 0,
-                          proAllowed: detectedTier === 'pro' ? 2 : 0,
-                          expertAllowed: detectedTier === 'expert' ? 2 : 0,
-                        },
+                        quota: syncedQuota,
+                        needsReadingUpgrade: false,
                       };
 
-                      if (!chart.reading_html) {
-                        // Chỉ sinh bài mới khi chưa có bài bình giải nào
+                      const needsNewReading =
+                        !chart.reading_html ||
+                        Boolean(chart.laso_data?.needsReadingUpgrade) ||
+                        (detectedTier === 'expert' &&
+                          chart.duong_so_data?.tier !== 'expert' &&
+                          !chart.reading_html?.includes('CHUYÊN GIA EXPERT'));
+
+                      if (needsNewReading) {
+                        setIsLoadingReading(true);
                         generateReading(updatedLaSo, chart.duong_so_data, detectedTier)
                           .then(async (readingResult) => {
                             if (readingResult) {
@@ -1267,15 +1424,16 @@ export default function HomePage() {
                               });
                             }
                           })
-                          .catch(console.error);
+                          .catch(console.error)
+                          .finally(() => setIsLoadingReading(false));
                       } else if (chart.duong_so_data?.tier !== detectedTier) {
-                        // Nếu đã có bài luận giải rồi, chỉ cập nhật tier, tuyệt đối không ghi đè bài cũ
+                        // Nếu đã có bài luận giải đúng cấp độ rồi, chỉ cập nhật tier, tuyệt đối không ghi đè bài cũ
                         saveOrUpdateChart({
                           id: chart.id,
                           title: chart.title,
                           duongSoData: cleanDuongSo,
                           lasoData: updatedLaSo,
-                          readingHtml: chart.reading_html,
+                          readingHtml: chart.reading_html || undefined,
                         }).catch(console.error);
                       }
                     }
@@ -1571,9 +1729,13 @@ export default function HomePage() {
         onClose={() => setIsSavedChartsModalOpen(false)}
         onSelectChart={handleSelectSavedChart}
         onNewChart={handleReset}
-        onUpgradeChart={(chartId) => {
-          handleSelectSavedChart(chartId);
+        onUpgradeChart={async (chartId) => {
+          await handleSelectSavedChart(chartId);
           openUpgradeModal();
+        }}
+        onUpgradeExpertChart={async (chartId, fromTier) => {
+          await handleSelectSavedChart(chartId);
+          openUpgradeExpertModal(fromTier);
         }}
         activeChartId={currentChartId}
       />

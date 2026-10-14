@@ -197,22 +197,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
       tier: selectedTier,
     };
 
-    if (selectedTier === 'pro' || selectedTier === 'expert') {
-      const tierLabel = selectedTier === 'expert' ? 'Bản Chuyên Gia Expert (269.000đ)' : 'Bản Pro (119.000đ)';
-      if (!user) {
-        if (onRequireAuth) {
-          onRequireAuth(() => {
-            onSubmit(payload, selectedTier);
-          }, `Quý khách vui lòng đăng nhập hoặc tạo tài khoản để hệ thống lưu giữ lá số vào Sổ Tay Số Mệnh và thanh toán ${tierLabel}.`);
-        } else {
-          alert(`Quý khách vui lòng đăng nhập hoặc tạo tài khoản trước khi chọn ${tierLabel}!`);
-        }
-        return;
-      }
-      onSubmit(payload, selectedTier);
-    } else {
-      onSubmit(payload, 'free');
-    }
+    onSubmit(payload, selectedTier);
   };
 
   return (
@@ -690,7 +675,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               <span>{t('form.btnLoading', 'Thầy Đang Quán Tưởng...')}</span>
             </>
-          ) : initialData ? (
+          ) : initialData && selectedTier === (initialData.tier || 'free') ? (
             <>
               <Sparkles className="w-5 h-5 text-amber-300" />
               <span>Cập Nhật &amp; An Lại Lá Số (Năm {namXem})</span>
@@ -698,7 +683,11 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           ) : selectedTier === 'expert' ? (
             <>
               <Gem className="w-5 h-5" />
-              <span>{t('form.btnSubmitExpert', 'Thanh Toán & Luận Giải Bản Expert (269K)')}</span>
+              <span>
+                {initialData?.tier === 'pro'
+                  ? t('form.btnUpgradeProToExpert', 'Thanh Toán & Nâng Cấp Bản Expert (150K)')
+                  : t('form.btnSubmitExpert', 'Thanh Toán & Luận Giải Bản Expert (269K)')}
+              </span>
             </>
           ) : selectedTier === 'pro' ? (
             <>

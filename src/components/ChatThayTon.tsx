@@ -447,7 +447,7 @@ export default function ChatThayTon({
 
         {/* 1. CHƯA THANH TOÁN */}
         {flowStep === 'unpaid' && (
-          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-4 sm:p-6 text-center space-y-3 shadow-xl">
+          <div className="bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-4 sm:p-6 text-center space-y-4 shadow-xl">
             <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
               <Lock className="w-6 h-6" />
             </div>
@@ -463,24 +463,91 @@ export default function ChatThayTon({
               </p>
             </div>
 
-            <div className="pt-2 flex flex-col items-center">
-              <button
-                type="button"
-                onClick={() => onUnlockQuestions(isExpert ? 'expert' : isPro ? 'vip' : 'basic')}
-                className="px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 fill-slate-950" />
-                <span>
-                  {t(
-                    'chat.unpaidBtn',
-                    `⚡ Quét Mã Thanh Toán (${isExpert ? '129.000đ' : isPro ? '99.000đ' : '49.000đ'} / 2 câu hỏi)`,
-                    {
-                      price: isExpert ? '129.000đ' : isPro ? '99.000đ' : '49.000đ',
-                    }
+            <div className="pt-1 flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
+              {isExpert ? (
+                <button
+                  type="button"
+                  onClick={() => onUnlockQuestions('expert')}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-purple-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
+                >
+                  <Gem className="w-4 h-4" />
+                  <span>💎 Quét Mã Thanh Toán (129.000đ / 2 câu Chuyên Gia Expert)</span>
+                </button>
+              ) : isPro ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('vip')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span>⚡ Quét Mã Thanh Toán (99.000đ / 2 câu Chuyên Sâu)</span>
+                  </button>
+                  {onUpgradeToExpert && (
+                    <button
+                      type="button"
+                      onClick={onUpgradeToExpert}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-4 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-purple-500/25 transition transform hover:-translate-y-0.5 cursor-pointer"
+                    >
+                      <Gem className="w-4 h-4" />
+                      <span>💎 Nâng Cấp Bản Expert (150.000đ - Tặng 2 câu Chuyên Gia)</span>
+                    </button>
                   )}
-                </span>
-              </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('basic')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold rounded-xl text-sm sm:text-base border border-slate-600 transition cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>📜 Mua 2 Câu Cơ Bản (49.000đ)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('vip')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-semibold rounded-xl text-sm sm:text-base border border-amber-500/40 transition cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    <span>⚡ Mua 2 Câu Chuyên Sâu (99.000đ)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onUnlockQuestions('expert')}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-200 font-semibold rounded-xl text-sm sm:text-base border border-purple-500/40 transition cursor-pointer"
+                  >
+                    <Gem className="w-4 h-4 text-purple-300" />
+                    <span>💎 Mua 2 Câu Chuyên Gia (129.000đ)</span>
+                  </button>
+                </>
+              )}
             </div>
+
+            {!isExpert && (onUpgradeToPro || onUpgradeToExpert) && !isPro && (
+              <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-center gap-2.5 flex-wrap">
+                {onUpgradeToPro && (
+                  <button
+                    type="button"
+                    onClick={onUpgradeToPro}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition cursor-pointer"
+                  >
+                    <Crown className="w-4 h-4" />
+                    <span>👑 Mở Khóa Trọn Gói Bản Pro (119.000đ - Tặng 2 câu VIP)</span>
+                  </button>
+                )}
+                {onUpgradeToExpert && (
+                  <button
+                    type="button"
+                    onClick={onUpgradeToExpert}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-purple-500/25 transition cursor-pointer"
+                  >
+                    <Gem className="w-4 h-4" />
+                    <span>💎 Mở Khóa Trọn Gói Bản Expert (269.000đ - Tặng 2 câu Chuyên Gia)</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 

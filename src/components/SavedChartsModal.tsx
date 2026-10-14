@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SavedChart, getUserCharts, deleteChart } from '@/lib/tuviService';
-import { X, BookOpen, Trash2, Calendar, MessageSquare, Sparkles, Search, PlusCircle } from 'lucide-react';
+import { X, BookOpen, Trash2, Calendar, MessageSquare, Sparkles, Gem, Search, PlusCircle } from 'lucide-react';
 
 interface SavedChartsModalProps {
   isOpen: boolean;
@@ -10,6 +10,7 @@ interface SavedChartsModalProps {
   onSelectChart: (chartId: string) => void;
   onNewChart: () => void;
   onUpgradeChart?: (chartId: string) => void;
+  onUpgradeExpertChart?: (chartId: string, fromTier: 'free' | 'pro') => void;
   activeChartId?: string | null;
 }
 
@@ -19,6 +20,7 @@ export default function SavedChartsModal({
   onSelectChart,
   onNewChart,
   onUpgradeChart,
+  onUpgradeExpertChart,
   activeChartId,
 }: SavedChartsModalProps) {
   const [charts, setCharts] = useState<SavedChart[]>([]);
@@ -216,16 +218,16 @@ export default function SavedChartsModal({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {hasReading && !isPro && !isExpert && onUpgradeChart && (
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                    {!isPro && !isExpert && onUpgradeChart && (
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           onUpgradeChart(chart.id);
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-lg text-xs shadow transition transform hover:-translate-y-0.5"
-                        title="Nâng cấp lên Bản Pro Chuyên Sâu"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-lg text-xs shadow transition transform hover:-translate-y-0.5 cursor-pointer"
+                        title="Nâng cấp lên Bản Pro Chuyên Sâu (119.000đ)"
                       >
                         <Sparkles className="w-3 h-3 fill-slate-950" />
                         <span className="hidden sm:inline">Nâng cấp Pro</span>
@@ -233,11 +235,33 @@ export default function SavedChartsModal({
                       </button>
                     )}
 
+                    {!isExpert && onUpgradeExpertChart && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpgradeExpertChart(chart.id, isPro ? 'pro' : 'free');
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-lg text-xs shadow transition transform hover:-translate-y-0.5 cursor-pointer"
+                        title={
+                          isPro
+                            ? 'Nâng cấp từ Bản Pro lên Bản Chuyên Gia Expert (150.000đ)'
+                            : 'Nâng cấp lên Bản Chuyên Gia Expert (269.000đ)'
+                        }
+                      >
+                        <Gem className="w-3 h-3" />
+                        <span className="hidden sm:inline">
+                          {isPro ? 'Lên Expert (150K)' : 'Bản Expert'}
+                        </span>
+                        <span className="sm:hidden">Expert</span>
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={(e) => handleDelete(e, chart.id, ds?.hoTen || chart.title)}
                       disabled={deletingId === chart.id}
-                      className="p-2 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-800 transition"
+                      className="p-2 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-800 transition cursor-pointer"
                       title="Xóa lá số này"
                     >
                       <Trash2 className="w-4 h-4" />

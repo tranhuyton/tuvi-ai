@@ -152,18 +152,26 @@ export async function POST(req: NextRequest) {
 
           const { data: paidOrders } = await adminSupabase
             .from('tuvi_orders')
-            .select('payment_type, status')
+            .select('payment_type, status, chart_id, ho_ten')
             .or(filterQuery)
             .eq('status', 'PAID');
 
-          (paidOrders || []).forEach((o) => {
-            if (o.payment_type === 'reading_expert') paidExpertOrders++;
-            else if (o.payment_type === 'upgrade_expert') paidUpgradeExpertOrders++;
-            else if (o.payment_type === 'chat_expert') paidChatExpertOrders++;
-            else if (o.payment_type === 'reading_vip') paidProOrders++;
-            else if (o.payment_type === 'chat_vip') paidChatVipOrders++;
-            else if (o.payment_type === 'chat_free') paidChatBasicOrders++;
-          });
+          const targetHoTen = (dbChart?.duong_so_data?.hoTen || laSo?.duongSo?.hoTen || '').trim().toLowerCase();
+
+          (paidOrders || [])
+            .filter(
+              (o) =>
+                (chartId && o.chart_id === chartId) ||
+                (!o.chart_id && (!targetHoTen || o.ho_ten?.trim().toLowerCase() === targetHoTen))
+            )
+            .forEach((o) => {
+              if (o.payment_type === 'reading_expert') paidExpertOrders++;
+              else if (o.payment_type === 'upgrade_expert') paidUpgradeExpertOrders++;
+              else if (o.payment_type === 'chat_expert') paidChatExpertOrders++;
+              else if (o.payment_type === 'reading_vip') paidProOrders++;
+              else if (o.payment_type === 'chat_vip') paidChatVipOrders++;
+              else if (o.payment_type === 'chat_free') paidChatBasicOrders++;
+            });
         }
 
         // Hạn mức tính từ đơn hàng

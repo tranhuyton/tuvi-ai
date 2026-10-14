@@ -146,7 +146,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'reading.exportingPdf': 'Đang tạo PDF...',
     'reading.topUpgradeBtn': '⚡ Nâng Cấp Bản Pro',
     'reading.upgradePromptTitle': 'Bạn muốn tìm hiểu sâu sắc hơn về lá số này?',
-    'reading.upgradePromptDesc': 'Bản Chuyên Sâu mở ra đại pháp bí truyền luận giải chi tiết gấp 2 lần, soi chiếu toàn diện Diện tướng/Chỉ tay, biến chuyển 4 mùa hạn vận và giải pháp hóa giải hung sát tinh.',
+    'reading.upgradePromptDesc': 'Bản Chuyên Sâu Pro và Bản Chuyên Gia Expert mở ra đại pháp bí truyền luận giải chi tiết gấp 2 - 4 lần, soi chiếu toàn diện 12 cung, Diện tướng/Chỉ tay, biến chuyển 4 mùa hạn vận và giải pháp hóa giải hung sát tinh.',
     'reading.upgradeBtn': 'Nâng Cấp Bản Pro (119.000đ)',
 
     // Chat AI
@@ -179,17 +179,17 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'chat.modeBasicBtn': 'Cơ Bản',
     'chat.activeModePro': 'Đang chọn: Chuyên Sâu',
     'chat.activeModeBasic': 'Đang chọn: Cơ Bản',
-    'chat.deductProHint': '(Trừ 1 câu VIP Pro)',
+    'chat.deductProHint': '(Trừ 1 câu cao cấp)',
     'chat.buyMoreBasicBtn': '+ Mua 2 câu Cơ Bản (49k)',
     'chat.inputPlaceholderVip': 'Nhập câu hỏi chuyên sâu...',
     'chat.inputPlaceholderBasic': 'Nhập câu hỏi cơ bản...',
     'chat.sendBtn': 'Gửi Thầy',
     'chat.exhaustedTitle': 'Quý khách có muốn thỉnh giáo thêm câu hỏi không?',
-    'chat.exhaustedDescPro': 'Quý khách đã sử dụng hết toàn bộ số lượt câu hỏi. Quý khách có thể gia hạn thêm câu hỏi chuyên sâu hoặc câu hỏi cơ bản.',
-    'chat.exhaustedDescFree': 'Quý khách đã sử dụng hết toàn bộ số lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro.',
+    'chat.exhaustedDescPro': 'Quý khách đã sử dụng hết toàn bộ số lượt câu hỏi. Quý khách có thể gia hạn thêm câu hỏi chuyên sâu (99.000đ), nâng cấp lên Bản Chuyên Gia Expert (150.000đ) hoặc mua câu hỏi cơ bản (49.000đ).',
+    'chat.exhaustedDescFree': 'Quý khách đã sử dụng hết toàn bộ số lượt câu hỏi. Quý khách có thể mua thêm câu hỏi cơ bản hoặc nâng cấp lên Bản Pro (119.000đ) / Bản Chuyên Gia Expert (269.000đ).',
     'chat.buyProMoreBtn': '⚡ Nạp Tiếp (99.000đ / 2 câu chuyên sâu)',
     'chat.buyBasicMoreBtn': '⚡ Mua 2 Câu Cơ Bản (49.000đ)',
-    'chat.upgradeProChatBtn': '👑 Nâng Cấp Luận Giải Pro (119.000đ - Tặng 2 câu chuyên sâu)',
+    'chat.upgradeProChatBtn': '👑 Nâng Cấp Bản Pro (119.000đ - Tặng 2 câu VIP)',
 
     // Booking Banner
     'booking.title': 'Đặt Lịch Luận Giải Cùng Thầy Tôn (Xem Online & Offline 1-1)',

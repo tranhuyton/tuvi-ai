@@ -81,7 +81,7 @@ export default function LuanGiaiAI({
   const isPro = tier === 'pro';
   const isExpert = tier === 'expert';
 
-  if (!safeReadingHtml && !isLoading && !error) {
+  if (!safeReadingHtml && !isLoading && !error && !onUpgrade && !onUpgradeToExpert) {
     return null;
   }
 
@@ -170,6 +170,53 @@ export default function LuanGiaiAI({
           <div>
             <h4 className="font-semibold text-red-300 text-base">{t('reading.errorTitle', 'Thông báo từ Thầy Tôn:')}</h4>
             <p className="text-base sm:text-sm mt-1 whitespace-pre-wrap leading-relaxed">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {!safeReadingHtml && !isLoading && !error && (onUpgrade || onUpgradeToExpert) && (
+        <div className="bg-slate-900/90 border border-purple-500/40 rounded-2xl p-6 sm:p-8 text-center space-y-4 shadow-2xl backdrop-blur-md">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-purple-500/20 to-amber-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300">
+            <Gem className="w-7 h-7" />
+          </div>
+          <div>
+            <h3 className="text-xl sm:text-2xl font-bold text-amber-300 font-serif">
+              {t('reading.unlockCardTitle', 'Khai Mở Luận Giải Chuyên Sâu & Chuyên Gia Expert')}
+            </h3>
+            <p className="text-sm sm:text-base text-slate-300 mt-1.5 max-w-2xl mx-auto leading-relaxed">
+              {t(
+                'reading.unlockCardDesc',
+                'Lá số đã được an sao hoàn tất. Quý khách vui lòng chọn gói bình giải bên dưới để mở mã QR thanh toán và kích hoạt bài luận giải từ Thầy Tôn (tự động mở khóa ngay sau khi chuyển khoản):'
+              )}
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 flex-wrap">
+            {onUpgradeToExpert && (
+              <button
+                type="button"
+                onClick={onUpgradeToExpert}
+                disabled={isUpgrading}
+                className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-purple-500/30 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Gem className="w-5 h-5" />
+                <span>
+                  {isPro
+                    ? t('reading.upgradeProToExpertBtn', '💎 Nâng Cấp Bản Expert (150.000đ - Tặng 2 câu hỏi)')
+                    : t('reading.upgradeExpertBtnFull', '💎 Thanh Toán Bản Chuyên Gia Expert (269.000đ)')}
+                </span>
+              </button>
+            )}
+            {!isPro && !isExpert && onUpgrade && (
+              <button
+                type="button"
+                onClick={onUpgrade}
+                disabled={isUpgrading}
+                className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Crown className="w-5 h-5" />
+                <span>{t('reading.upgradeBtnFull', '👑 Thanh Toán Bản Chuyên Sâu Pro (119.000đ)')}</span>
+              </button>
+            )}
           </div>
         </div>
       )}
