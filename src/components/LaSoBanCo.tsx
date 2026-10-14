@@ -169,12 +169,20 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
 
         const fileName = `La_So_Tu_Vi_${duongSo.hoTen.replace(/\s+/g, '_')}.png`;
 
+        // Chuyển dataUrl sang Blob đồng bộ (không qua fetch) để giữ nguyên User Gesture trên iOS Safari
+        const parts = dataUrl.split(',');
+        const byteString = atob(parts[1] || '');
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: 'image/png' });
+
         // Chỉ mở Share Sheet trên điện thoại (để người dùng bấm "Lưu hình ảnh" vào Photos)
         const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
         if (isMobile && typeof navigator !== 'undefined' && navigator.share) {
           try {
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
             const file = new File([blob], fileName, { type: 'image/png' });
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -187,15 +195,19 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
             }
           } catch (shareErr: any) {
             // Nếu người dùng chỉ bấm Hủy (AbortError) thì kết thúc bình thường
-            if (shareErr.name === 'AbortError') return;
+            if (shareErr?.name === 'AbortError') return;
           }
         }
 
-        // Tải file trực tiếp nếu là Desktop hoặc trình duyệt không hỗ trợ Share Sheet
+        // Tải file trực tiếp với Blob URL giữ sống 2 phút (tránh lỗi WebKitBlobResource 1 trên iOS)
+        const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.download = fileName;
-        link.href = dataUrl;
+        link.href = blobUrl;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
       }
     } catch (err) {
       console.error('Lỗi xuất ảnh lá số:', err);

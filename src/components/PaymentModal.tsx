@@ -452,7 +452,7 @@ export default function PaymentModal({
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
           })
           .catch(() => {
             window.open(downloadSrc, '_blank');

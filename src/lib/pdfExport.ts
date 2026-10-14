@@ -976,10 +976,20 @@ export async function exportReadingToPdf({
     const pdfBlob: Blob = pdfDoc.output('blob');
     const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-    // Chỉ mở Share Sheet trên thiết bị di động (iOS / Android) nếu là trình duyệt chuẩn (không phải in-app webview như Zalo)
-    const isMobile = typeof navigator !== 'undefined' && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    const isIOS =
+      /iPhone|iPad|iPod/i.test(ua) ||
+      (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isMobile = isIOS || /Mobi|Android/i.test(ua);
     const inApp = isInAppBrowser();
-    if (!inApp && isMobile && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+    const canNativeShareFile =
+      !inApp &&
+      isMobile &&
+      typeof navigator !== 'undefined' &&
+      typeof navigator.canShare === 'function' &&
+      navigator.canShare({ files: [file] });
+
+    if (canNativeShareFile) {
       try {
         await navigator.share({
           files: [file],
@@ -991,19 +1001,122 @@ export async function exportReadingToPdf({
         if ((shareErr as { name?: string })?.name === 'AbortError') {
           return;
         }
-        console.warn('Lỗi Share Sheet di động:', shareErr);
+        console.warn('Share Sheet tự động hết hạn gesture sau khi render PDF, chuyển sang hộp thoại xác nhận:', shareErr);
       }
     }
 
-    // Tự động tải về máy trực tiếp
+    // Giữ Blob URL sống 10 phút (600,000ms) thay vì 5 giây để tránh lỗi "WebKitBlobResource error 1" trên iOS Safari
     const downloadUrl = URL.createObjectURL(pdfBlob);
+    setTimeout(() => URL.revokeObjectURL(downloadUrl), 600000);
+
+    // Trên iPhone / iPad (iOS Safari hoặc In-App Browser):
+    // Quá trình kết xuất PDF dài 10-15s làm hết hạn User Activation (5s) của WebKit,
+    // nếu tự gọi a.click() vào blob: URL hoặc thu hồi blob sớm sẽ gây lỗi "Lỗi WebKitBlobResource 1".
+    // Giải pháp chuẩn: Hiển thị nút bấm xác nhận trực tiếp để lấy lại User Gesture mới tinh 100%.
+    if (isIOS || (isMobile && inApp)) {
+      await new Promise<void>((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText =
+          'position:fixed;inset:0;z-index:999999;background:rgba(2,6,23,0.82);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;font-family:system-ui,-apple-system,sans-serif;';
+
+        const card = document.createElement('div');
+        card.style.cssText =
+          'width:100%;max-width:380px;background:linear-gradient(145deg,#0f172a,#1e1b4b);border:1px solid rgba(245,158,11,0.45);border-radius:20px;padding:24px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.6);color:#f8fafc;';
+
+        const iconWrap = document.createElement('div');
+        iconWrap.style.cssText =
+          'width:56px;height:56px;margin:0 auto 12px;border-radius:50%;background:rgba(245,158,11,0.18);border:1px solid rgba(245,158,11,0.45);display:flex;align-items:center;justify-content:center;font-size:26px;';
+        iconWrap.textContent = '📜';
+
+        const title = document.createElement('h3');
+        title.style.cssText = 'margin:0 0 6px;font-size:18px;font-weight:700;color:#fbbf24;';
+        title.textContent = 'Đã Tạo Xong File PDF!';
+
+        const desc = document.createElement('p');
+        desc.style.cssText = 'margin:0 0 18px;font-size:13.5px;line-height:1.5;color:#cbd5e1;word-break:break-word;';
+        desc.textContent = inApp
+          ? `File "${fileName}" đã sẵn sàng. Bấm nút bên dưới để mở/lưu file (hoặc mở trang bằng Safari để lưu vào Tệp dễ nhất).`
+          : `File "${fileName}" đã sẵn sàng. Bấm nút bên dưới để Lưu vào Tệp (Files), gửi qua Zalo hoặc tải về máy.`;
+
+        const cleanup = () => {
+          if (document.body.contains(overlay)) {
+            document.body.removeChild(overlay);
+          }
+          resolve();
+        };
+
+        if (canNativeShareFile) {
+          const shareBtn = document.createElement('button');
+          shareBtn.type = 'button';
+          shareBtn.style.cssText =
+            'width:100%;padding:13px 16px;margin-bottom:10px;border:none;border-radius:12px;background:linear-gradient(90deg,#f59e0b,#d97706);color:#0f172a;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(245,158,11,0.35);';
+          shareBtn.textContent = '📲 Lưu vào Máy / Gửi qua Zalo';
+          shareBtn.onclick = async () => {
+            try {
+              await navigator.share({
+                files: [file],
+                title: `Lá số Tử Vi Thầy Tôn - ${hoTen}`,
+                text: `Bản bình giải Tử Vi Đẩu Số dành cho ${hoTen} từ Tử Vi Phong Thủy Thầy Tôn (tuvithayton.vn)`,
+              });
+              cleanup();
+              return;
+            } catch (err: unknown) {
+              if ((err as { name?: string })?.name === 'AbortError') {
+                return;
+              }
+              // Nếu vẫn lỗi thì mở link tải trực tiếp
+              const a = document.createElement('a');
+              a.href = downloadUrl;
+              a.download = fileName;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              cleanup();
+            }
+          };
+          card.appendChild(iconWrap);
+          card.appendChild(title);
+          card.appendChild(desc);
+          card.appendChild(shareBtn);
+        } else {
+          card.appendChild(iconWrap);
+          card.appendChild(title);
+          card.appendChild(desc);
+        }
+
+        const directLink = document.createElement('a');
+        directLink.href = downloadUrl;
+        directLink.download = fileName;
+        directLink.style.cssText = canNativeShareFile
+          ? 'display:block;width:100%;box-sizing:border-box;padding:11px 16px;margin-bottom:10px;border-radius:12px;background:rgba(30,41,59,0.9);border:1px solid rgba(148,163,184,0.3);color:#e2e8f0;font-size:14px;font-weight:600;text-decoration:none;'
+          : 'display:block;width:100%;box-sizing:border-box;padding:13px 16px;margin-bottom:10px;border-radius:12px;background:linear-gradient(90deg,#f59e0b,#d97706);color:#0f172a;font-size:15px;font-weight:700;text-decoration:none;';
+        directLink.textContent = '⬇️ Tải Trực Tiếp Về Trình Duyệt';
+        directLink.onclick = () => {
+          setTimeout(cleanup, 800);
+        };
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.style.cssText =
+          'width:100%;padding:9px 16px;border:none;border-radius:10px;background:transparent;color:#94a3b8;font-size:13px;font-weight:500;cursor:pointer;';
+        closeBtn.textContent = 'Đóng';
+        closeBtn.onclick = cleanup;
+
+        card.appendChild(directLink);
+        card.appendChild(closeBtn);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+      });
+      return;
+    }
+
+    // Tự động tải về máy trực tiếp (Desktop / Android Chrome)
     const a = document.createElement('a');
     a.href = downloadUrl;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
   } finally {
     if (document.body.contains(host)) {
       document.body.removeChild(host);
