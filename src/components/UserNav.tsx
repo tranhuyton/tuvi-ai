@@ -178,6 +178,9 @@ export default function UserNav({
                     {user?.email && (
                       <p className="text-[10.5px] text-slate-400 truncate leading-tight mt-0.5">{user.email}</p>
                     )}
+                    {profile?.phone && (
+                      <p className="text-[10.5px] text-amber-300/80 truncate leading-tight mt-0.5">📞 {profile.phone}</p>
+                    )}
                   </div>
                 </div>
 
@@ -198,7 +201,7 @@ export default function UserNav({
                     </button>
                   )}
 
-                  {/* Đổi Mật Khẩu */}
+                  {/* Thông Tin & Đổi Mật Khẩu */}
                   {onOpenChangePassword && (
                     <button
                       type="button"
@@ -209,7 +212,7 @@ export default function UserNav({
                       className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs text-slate-300 hover:text-amber-300 hover:bg-slate-800/80 transition cursor-pointer text-left"
                     >
                       <KeyRound className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span>{t('nav.changePassword', 'Đổi Mật Khẩu')}</span>
+                      <span>{t('nav.changePassword', 'Thông Tin & Đổi Mật Khẩu')}</span>
                     </button>
                   )}
                 </div>

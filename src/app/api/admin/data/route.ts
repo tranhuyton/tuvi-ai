@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     // Cách 2: Truy vấn trực tiếp các bảng
     const { data: profiles } = await supabase
       .from('tuvi_profiles')
-      .select('id, email, full_name, created_at')
+      .select('*')
       .order('created_at', { ascending: false });
 
     const { data: charts } = await supabase
@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
       id: u.id,
       email: u.email,
       full_name: u.full_name,
+      phone: u.phone || '',
       created_at: u.created_at,
       charts_count: charts?.filter((c) => c.user_id === u.id).length || 0,
       messages_count: messages?.filter((m) => m.user_id === u.id).length || 0,

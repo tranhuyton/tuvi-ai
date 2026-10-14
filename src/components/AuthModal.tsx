@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { X, Lock, Mail, User, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, KeyRound } from 'lucide-react';
+import { X, Lock, Mail, User, Phone, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, KeyRound } from 'lucide-react';
 
 export type AuthModalTab = 'signin' | 'signup' | 'forgot' | 'update_password';
 
@@ -21,13 +21,14 @@ export default function AuthModal({
   customNotice,
   onSuccess,
 }: AuthModalProps) {
-  const { signIn, signUp, resetPasswordForEmail, updatePassword, setIsPasswordRecovery } = useAuth();
+  const { user, profile, isPasswordRecovery, signIn, signUp, resetPasswordForEmail, updatePassword, setIsPasswordRecovery } = useAuth();
   const [tab, setTab] = useState<AuthModalTab>(defaultTab);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -39,8 +40,14 @@ export default function AuthModal({
       setErrorMsg('');
       setSuccessMsg('');
       setIsLoading(false);
+      if (defaultTab === 'update_password' && user) {
+        setFullName(profile?.full_name || user.user_metadata?.full_name || '');
+        setPhone(profile?.phone || user.user_metadata?.phone || '');
+        setPassword('');
+        setConfirmPassword('');
+      }
     }
-  }, [isOpen, defaultTab]);
+  }, [isOpen, defaultTab, user, profile]);
 
   if (!isOpen) return null;
 
@@ -89,7 +96,7 @@ export default function AuthModal({
         return;
       }
 
-      const res = await signUp(email, password, fullName);
+      const res = await signUp(email, password, fullName, phone);
       if (res.error) {
         if (res.error.includes('already registered')) {
           setErrorMsg('Email này đã được đăng ký tài khoản.');
@@ -131,38 +138,47 @@ export default function AuthModal({
       return;
     }
 
-    // 4. Luồng Cập Nhật / Đặt Lại Mật Khẩu Mới
+    // 4. Luồng Cập Nhật Thông Tin Tài Khoản / Đặt Lại Mật Khẩu Mới
     if (tab === 'update_password') {
-      if (password.length < 6) {
-        setErrorMsg('Mật khẩu mới cần tối thiểu 6 ký tự.');
-        setIsLoading(false);
-        return;
-      }
-      if (password !== confirmPassword) {
-        setErrorMsg('Xác nhận mật khẩu mới không khớp.');
-        setIsLoading(false);
-        return;
+      const hasPasswordInput = password.trim().length > 0 || confirmPassword.trim().length > 0;
+      if (isPasswordRecovery || hasPasswordInput) {
+        if (password.length < 6) {
+          setErrorMsg('Mật khẩu mới cần tối thiểu 6 ký tự.');
+          setIsLoading(false);
+          return;
+        }
+        if (password !== confirmPassword) {
+          setErrorMsg('Xác nhận mật khẩu mới không khớp.');
+          setIsLoading(false);
+          return;
+        }
       }
 
-      const res = await updatePassword(password);
+      const res = await updatePassword(
+        hasPasswordInput ? password : undefined,
+        fullName,
+        phone
+      );
       setIsLoading(false);
       if (res.error) {
         setErrorMsg(res.error);
       } else {
-        setSuccessMsg('Đặt lại mật khẩu thành công! Bạn đã có thể tiếp tục sử dụng hệ thống.');
+        setSuccessMsg(
+          res.message || 'Cập nhật thông tin tài khoản thành công!'
+        );
         setPassword('');
         setConfirmPassword('');
         setTimeout(() => {
           handleClose();
           if (onSuccess) onSuccess();
-        }, 1500);
+        }, 1200);
       }
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl text-slate-200">
+      <div className="relative w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl text-slate-200 max-h-[92vh] overflow-y-auto">
         {/* Nút đóng */}
         <button
           onClick={handleClose}
@@ -184,13 +200,15 @@ export default function AuthModal({
             {tab === 'signin' && 'Đăng Nhập Tài Khoản'}
             {tab === 'signup' && 'Đăng Ký Thành Viên'}
             {tab === 'forgot' && 'Khôi Phục Mật Khẩu'}
-            {tab === 'update_password' && 'Đặt Lại Mật Khẩu Mới'}
+            {tab === 'update_password' && (isPasswordRecovery ? 'Đặt Lại Mật Khẩu Mới' : 'Thông Tin & Đổi Mật Khẩu')}
           </h2>
           <p className="text-sm sm:text-xs text-slate-300 mt-1">
             {tab === 'forgot'
               ? 'Nhập email tài khoản để nhận liên kết đặt lại mật khẩu an toàn'
               : tab === 'update_password'
-              ? 'Thiết lập mật khẩu mới để bảo mật tài khoản của quý khách'
+              ? isPasswordRecovery
+                ? 'Thiết lập mật khẩu mới để bảo mật tài khoản của quý khách'
+                : 'Cập nhật họ tên, số điện thoại liên hệ hoặc đổi mật khẩu tài khoản'
               : 'Lưu giữ trọn vẹn lá số, lời bình giải và lịch sử đàm đạo cùng Thầy Tôn'}
           </p>
         </div>
@@ -273,20 +291,38 @@ export default function AuthModal({
         {/* Form nhập liệu */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {tab === 'signup' && (
-            <div>
-              <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Họ và tên của bạn</label>
-              <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  placeholder="Ví dụ: Trần Văn An"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
-                />
+            <>
+              <div>
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Họ và tên của bạn</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ví dụ: Trần Văn An"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+                  />
+                </div>
               </div>
-            </div>
+
+              <div>
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
+                  Số điện thoại <span className="text-slate-400 font-normal">(Không bắt buộc)</span>
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    placeholder="Ví dụ: 0912 345 678"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           {tab !== 'update_password' && (
@@ -341,13 +377,51 @@ export default function AuthModal({
           {tab === 'update_password' && (
             <>
               <div>
-                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Mật khẩu mới</label>
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Họ và tên của bạn</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Trần Văn An"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
+                  Số điện thoại <span className="text-slate-400 font-normal">(Không bắt buộc)</span>
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    placeholder="Ví dụ: 0912 345 678"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-800/80">
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
+                  {isPasswordRecovery ? (
+                    'Mật khẩu mới'
+                  ) : (
+                    <>
+                      Mật khẩu mới <span className="text-slate-400 font-normal">(Bỏ trống nếu không đổi)</span>
+                    </>
+                  )}
+                </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
-                    required
-                    placeholder="Tối thiểu 6 ký tự"
+                    required={isPasswordRecovery}
+                    placeholder={isPasswordRecovery ? 'Tối thiểu 6 ký tự' : 'Nhập mật khẩu mới nếu muốn thay đổi'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -356,12 +430,14 @@ export default function AuthModal({
               </div>
 
               <div>
-                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Xác nhận mật khẩu mới</label>
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
+                  Xác nhận mật khẩu mới
+                </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
-                    required
+                    required={isPasswordRecovery || password.length > 0}
                     placeholder="Nhập lại mật khẩu mới"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -385,7 +461,9 @@ export default function AuthModal({
               ? 'Tạo Tài Khoản Mới'
               : tab === 'forgot'
               ? 'Gửi Link Đặt Lại Mật Khẩu'
-              : 'Lưu Mật Khẩu Mới'}
+              : isPasswordRecovery
+              ? 'Lưu Mật Khẩu Mới'
+              : 'Lưu Thông Tin Tài Khoản'}
           </button>
 
           {tab === 'forgot' && (

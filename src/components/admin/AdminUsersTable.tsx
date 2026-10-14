@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Search, Calendar, BookOpen, MessageSquare, Mail, RefreshCw, X, MessageCircle, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Search, Calendar, BookOpen, MessageSquare, Mail, Phone, RefreshCw, X, MessageCircle, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export interface AdminUser {
   id: string;
   email: string;
   full_name?: string;
+  phone?: string;
   created_at: string;
   charts_count: number;
   messages_count: number;
@@ -43,6 +44,7 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
     return (
       (u.full_name && u.full_name.toLowerCase().includes(term)) ||
       (u.email && u.email.toLowerCase().includes(term)) ||
+      (u.phone && u.phone.toLowerCase().includes(term)) ||
       u.id.toLowerCase().includes(term)
     );
   });
@@ -68,7 +70,7 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo tên hoặc email..."
+              placeholder="Tìm theo tên, SĐT hoặc email..."
               className="w-full pl-9 pr-3 py-1.5 bg-slate-950/70 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-amber-400"
             />
           </div>
@@ -101,7 +103,7 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
             <thead className="bg-slate-950/60 text-slate-400 uppercase text-[11px] font-semibold border-b border-slate-800">
               <tr>
                 <th className="py-3 px-4">Khách hàng</th>
-                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Email & SĐT</th>
                 <th className="py-3 px-4 text-center">Lá số đã lưu</th>
                 <th className="py-3 px-4 text-center">Lượt hỏi đáp</th>
                 <th className="py-3 px-4 text-right">Ngày tham gia</th>
@@ -135,9 +137,15 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
 
                     <td className="py-3 px-4 font-mono text-slate-400">
                       <div className="flex items-center gap-1">
-                        <Mail className="w-3 h-3 text-slate-500" />
+                        <Mail className="w-3 h-3 text-slate-500 shrink-0" />
                         <span>{u.email || '—'}</span>
                       </div>
+                      {u.phone && (
+                        <div className="flex items-center gap-1 text-amber-300/85 text-xs mt-1">
+                          <Phone className="w-3 h-3 text-amber-400 shrink-0" />
+                          <span>{u.phone}</span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3 px-4 text-center">

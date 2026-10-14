@@ -7,25 +7,25 @@ import { TesterConfig } from '@/types/tester';
 
 interface AuthContextType {
   user: User | null;
-  profile: { full_name?: string; email?: string } | null;
+  profile: { full_name?: string; email?: string; phone?: string } | null;
   testerInfo: TesterConfig | null;
   isLoading: boolean;
   isPasswordRecovery: boolean;
   setIsPasswordRecovery: (val: boolean) => void;
   signIn: (email: string, pass: string) => Promise<{ error?: string }>;
-  signUp: (email: string, pass: string, fullName: string) => Promise<{ error?: string; message?: string }>;
+  signUp: (email: string, pass: string, fullName: string, phone?: string) => Promise<{ error?: string; message?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshTesterInfo: () => Promise<void>;
   resetPasswordForEmail: (email: string) => Promise<{ error?: string; message?: string }>;
-  updatePassword: (newPass: string) => Promise<{ error?: string; message?: string }>;
+  updatePassword: (newPass?: string, fullName?: string, phone?: string) => Promise<{ error?: string; message?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<{ full_name?: string; email?: string } | null>(null);
+  const [profile, setProfile] = useState<{ full_name?: string; email?: string; phone?: string } | null>(null);
   const [testerInfo, setTesterInfo] = useState<TesterConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
@@ -54,23 +54,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase
         .from('tuvi_profiles')
-        .select('full_name, email')
+        .select('*')
         .eq('id', currentUser.id)
         .single();
 
       if (!error && data) {
-        setProfile(data);
+        setProfile({
+          full_name: data.full_name || currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0],
+          email: data.email || currentUser.email,
+          phone: data.phone || currentUser.user_metadata?.phone || '',
+        });
       } else {
         // Dự phòng lấy từ metadata
         setProfile({
           full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0],
           email: currentUser.email,
+          phone: currentUser.user_metadata?.phone || '',
         });
       }
     } catch {
       setProfile({
         full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0],
         email: currentUser.email,
+        phone: currentUser.user_metadata?.phone || '',
       });
     }
 
@@ -147,15 +153,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, pass: string, fullName: string) => {
+  const signUp = async (email: string, pass: string, fullName: string, phone?: string) => {
     try {
       const trimmedEmail = email.trim();
+      const trimmedName = fullName.trim();
+      const trimmedPhone = phone?.trim() || '';
       const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password: pass,
         options: {
           data: {
-            full_name: fullName.trim(),
+            full_name: trimmedName,
+            ...(trimmedPhone ? { phone: trimmedPhone } : {}),
             app: 'tuvi',
           },
         },
@@ -166,13 +175,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.user) {
-        // Tự động lưu vào bảng tuvi_profiles
-        await supabase.from('tuvi_profiles').upsert({
+        // Tự động lưu vào bảng tuvi_profiles (thử kèm phone, nếu cột phone chưa có thì fallback)
+        const { error: upsertErr } = await supabase.from('tuvi_profiles').upsert({
           id: data.user.id,
           email: trimmedEmail,
-          full_name: fullName.trim(),
+          full_name: trimmedName,
+          ...(trimmedPhone ? { phone: trimmedPhone } : {}),
           updated_at: new Date().toISOString(),
         });
+        if (upsertErr) {
+          await supabase.from('tuvi_profiles').upsert({
+            id: data.user.id,
+            email: trimmedEmail,
+            full_name: trimmedName,
+            updated_at: new Date().toISOString(),
+          });
+        }
 
         setUser(data.user);
         await fetchProfile(data.user);
@@ -249,24 +267,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updatePassword = async (newPass: string) => {
+  const updatePassword = async (newPass?: string, fullName?: string, phone?: string) => {
     try {
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPass,
-      });
+      const updatePayload: { password?: string; data?: Record<string, any> } = {};
+      if (newPass && newPass.trim().length > 0) {
+        updatePayload.password = newPass;
+      }
+      if (fullName !== undefined || phone !== undefined) {
+        updatePayload.data = {
+          ...(user?.user_metadata || {}),
+          ...(fullName !== undefined ? { full_name: fullName.trim() } : {}),
+          ...(phone !== undefined ? { phone: phone.trim() } : {}),
+        };
+      }
+
+      const { data, error } = await supabase.auth.updateUser(updatePayload);
 
       if (error) {
         return { error: error.message };
       }
 
       if (data.user) {
+        const updatedName = fullName !== undefined ? fullName.trim() : (data.user.user_metadata?.full_name || profile?.full_name || '');
+        const updatedPhone = phone !== undefined ? phone.trim() : (data.user.user_metadata?.phone || profile?.phone || '');
+
+        const { error: upsertErr } = await supabase.from('tuvi_profiles').upsert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: updatedName,
+          phone: updatedPhone,
+          updated_at: new Date().toISOString(),
+        });
+        if (upsertErr) {
+          await supabase.from('tuvi_profiles').upsert({
+            id: data.user.id,
+            email: data.user.email,
+            full_name: updatedName,
+            updated_at: new Date().toISOString(),
+          });
+        }
+
         setUser(data.user);
         await fetchProfile(data.user);
       }
       setIsPasswordRecovery(false);
-      return { message: 'Mật khẩu đã được cập nhật thành công!' };
+      return {
+        message:
+          newPass && newPass.trim().length > 0
+            ? 'Cập nhật thông tin và mật khẩu thành công!'
+            : 'Cập nhật thông tin tài khoản thành công!',
+      };
     } catch (err: any) {
-      return { error: err.message || 'Lỗi cập nhật mật khẩu' };
+      return { error: err.message || 'Lỗi cập nhật thông tin tài khoản' };
     }
   };
 
