@@ -1228,6 +1228,7 @@ export default function HomePage() {
         const needsNewReading =
           !chart.reading_html ||
           Boolean(chart.laso_data?.needsReadingUpgrade) ||
+          (detectedTier === 'pro' && (!chart.duong_so_data?.tier || chart.duong_so_data?.tier === 'free') && !chart.reading_html?.includes('Bản Pro') && !chart.reading_html?.includes('CHUYÊN SÂU')) ||
           (detectedTier === 'expert' && chart.duong_so_data?.tier !== 'expert' && !chart.reading_html?.includes('CHUYÊN GIA EXPERT'));
 
         if (needsNewReading) {
@@ -1491,6 +1492,10 @@ export default function HomePage() {
                       const needsNewReading =
                         !chart.reading_html ||
                         Boolean(chart.laso_data?.needsReadingUpgrade) ||
+                        (detectedTier === 'pro' &&
+                          (!chart.duong_so_data?.tier || chart.duong_so_data?.tier === 'free') &&
+                          !chart.reading_html?.includes('Bản Pro') &&
+                          !chart.reading_html?.includes('CHUYÊN SÂU')) ||
                         (detectedTier === 'expert' &&
                           chart.duong_so_data?.tier !== 'expert' &&
                           !chart.reading_html?.includes('CHUYÊN GIA EXPERT'));
