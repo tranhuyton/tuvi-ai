@@ -287,11 +287,12 @@ export default function HomePage() {
   };
 
 
-  // Hàm gọi tạo bài bình giải (API Route hoặc Supabase Edge direct fallback)
+  // Hàm gọi tạo bài bình giải (API Route tự động lưu vào DB trên server + Supabase Edge direct fallback)
   const generateReading = async (
     calculatedLaSo: LaSoData,
     duongSoData: DuLieuDuongSo,
-    tier: ServiceTier
+    tier: ServiceTier,
+    explicitChartId?: string | null
   ): Promise<string | null> => {
     const selectedModel =
       tier === 'expert'
@@ -299,52 +300,52 @@ export default function HomePage() {
         : tier === 'pro'
         ? 'gemini-3.1-pro-preview'
         : 'gemini-2.5-flash';
+    const targetChartId = explicitChartId || chartIdRef.current || currentChartId || undefined;
     let readingResult: string | null = null;
     let lastErrMsg: string | null = null;
 
-    // Bước 1: Gọi qua Next.js API Route (Với gói Expert độ dài gấp đôi, ưu tiên đi thẳng qua cổng Supabase Edge 3 luồng để không vướng giới hạn 60s của Vercel)
-    if (tier !== 'expert') {
-      try {
-        const res = await fetch('/api/tuvi/reading', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            laSo: calculatedLaSo,
-            tier,
-            thongTinThem: duongSoData.thongTinThem,
-            chieuCao: duongSoData.chieuCao,
-            canNang: duongSoData.canNang,
-            anhMat: duongSoData.anhMat,
-            anhTay: duongSoData.anhTay,
-            model: selectedModel,
-            lang: language,
-          }),
-        });
+    // Bước 1: Gọi qua Next.js API Route (Server sẽ tự lưu kết quả vào DB ngay khi AI xong, dù khách tắt cửa sổ giữa chừng)
+    try {
+      const res = await fetch('/api/tuvi/reading', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          laSo: calculatedLaSo,
+          tier,
+          thongTinThem: duongSoData.thongTinThem,
+          chieuCao: duongSoData.chieuCao,
+          canNang: duongSoData.canNang,
+          anhMat: duongSoData.anhMat,
+          anhTay: duongSoData.anhTay,
+          model: selectedModel,
+          lang: language,
+          chartId: targetChartId,
+        }),
+      });
 
-        if (res.ok) {
-          const json = await res.json();
-          if (json.reading) {
-            readingResult = json.reading;
-          } else if (json.error) {
-            lastErrMsg = json.error;
-          }
-        } else {
-          const rawText = await res.text().catch(() => '');
-          let parsedError = rawText;
-          try {
-            const parsed = JSON.parse(rawText);
-            if (parsed.error) parsedError = parsed.error;
-          } catch {
-            // ignore
-          }
-          if (res.status === 413 || parsedError.includes('Request Entity Too Large')) {
-            parsedError = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
-          }
-          lastErrMsg = parsedError || `Lỗi máy chủ (HTTP ${res.status})`;
+      if (res.ok) {
+        const json = await res.json();
+        if (json.reading) {
+          readingResult = json.reading;
+        } else if (json.error) {
+          lastErrMsg = json.error;
         }
-      } catch (fetchErr) {
-        console.warn('API route gặp sự cố mạng hoặc timeout, chuyển sang cổng trực tiếp Supabase Edge...', fetchErr);
+      } else {
+        const rawText = await res.text().catch(() => '');
+        let parsedError = rawText;
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed.error) parsedError = parsed.error;
+        } catch {
+          // ignore
+        }
+        if (res.status === 413 || parsedError.includes('Request Entity Too Large')) {
+          parsedError = 'Kích thước ảnh gửi lên quá lớn. Vui lòng chọn ảnh có dung lượng nhỏ hơn để Thầy xem tướng nhé!';
+        }
+        lastErrMsg = parsedError || `Lỗi máy chủ (HTTP ${res.status})`;
       }
+    } catch (fetchErr) {
+      console.warn('API route gặp sự cố mạng hoặc timeout, chuyển sang cổng trực tiếp Supabase Edge...', fetchErr);
     }
 
     // Bước 2: Fallback trực tiếp Supabase Edge Function từ trình duyệt nếu Vercel bị timeout
@@ -596,7 +597,7 @@ export default function HomePage() {
 
     // Gọi AI Thầy Tôn bình giải
     try {
-      const readingResult = await generateReading(calculatedLaSo, data, effectiveTier);
+      const readingResult = await generateReading(calculatedLaSo, data, effectiveTier, createdChartId);
       if (readingResult) {
         setReadingHtml(readingResult);
         if (createdChartId) {
@@ -630,6 +631,7 @@ export default function HomePage() {
     updateQuestionsQuota(newQuota);
     setIsUpgrading(true);
     setIsLoadingReading(true);
+    setReadingHtml(undefined);
     setReadingError(undefined);
 
     const updatedCleanDuongSo: DuLieuDuongSo = {
@@ -639,22 +641,37 @@ export default function HomePage() {
       anhTay: undefined,
     };
 
-    const updatedLaSo: LaSoData = {
+    const pendingLaSo: LaSoData = {
       ...activeLaSo,
       tier: 'pro' as ServiceTier,
       quota: newQuota,
-      needsReadingUpgrade: false,
+      needsReadingUpgrade: true,
     };
-    laSoRef.current = updatedLaSo;
+    laSoRef.current = pendingLaSo;
     duongSoRef.current = updatedCleanDuongSo;
-    setLaSo(updatedLaSo);
+    setLaSo(pendingLaSo);
     setCurrentDuongSo(updatedCleanDuongSo);
 
+    const targetChartId = chartIdRef.current || activeChartId;
+    if (targetChartId) {
+      saveOrUpdateChart({
+        id: targetChartId,
+        title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
+        duongSoData: updatedCleanDuongSo,
+        lasoData: pendingLaSo,
+      }).catch(() => {});
+    }
+
     try {
-      const readingResult = await generateReading(updatedLaSo, activeDuongSo, 'pro');
+      const readingResult = await generateReading(pendingLaSo, activeDuongSo, 'pro', targetChartId);
       if (readingResult) {
+        const completedLaSo: LaSoData = {
+          ...pendingLaSo,
+          needsReadingUpgrade: false,
+        };
+        laSoRef.current = completedLaSo;
+        setLaSo(completedLaSo);
         setReadingHtml(readingResult);
-        const targetChartId = chartIdRef.current || activeChartId;
         if (targetChartId) {
           // Cập nhật cả bài bình giải và tier mới vào database
           await updateChartReading(targetChartId, readingResult);
@@ -662,7 +679,7 @@ export default function HomePage() {
             id: targetChartId,
             title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
             duongSoData: updatedCleanDuongSo,
-            lasoData: updatedLaSo,
+            lasoData: completedLaSo,
             readingHtml: readingResult,
           });
         }
@@ -695,6 +712,7 @@ export default function HomePage() {
     updateQuestionsQuota(newQuota);
     setIsUpgrading(true);
     setIsLoadingReading(true);
+    setReadingHtml(undefined);
     setReadingError(undefined);
 
     const updatedCleanDuongSo: DuLieuDuongSo = {
@@ -704,29 +722,44 @@ export default function HomePage() {
       anhTay: undefined,
     };
 
-    const updatedLaSo: LaSoData = {
+    const pendingLaSo: LaSoData = {
       ...activeLaSo,
       tier: 'expert' as ServiceTier,
       quota: newQuota,
-      needsReadingUpgrade: false,
+      needsReadingUpgrade: true,
     };
-    laSoRef.current = updatedLaSo;
+    laSoRef.current = pendingLaSo;
     duongSoRef.current = updatedCleanDuongSo;
-    setLaSo(updatedLaSo);
+    setLaSo(pendingLaSo);
     setCurrentDuongSo(updatedCleanDuongSo);
 
+    const targetChartId = chartIdRef.current || activeChartId;
+    if (targetChartId) {
+      saveOrUpdateChart({
+        id: targetChartId,
+        title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
+        duongSoData: updatedCleanDuongSo,
+        lasoData: pendingLaSo,
+      }).catch(() => {});
+    }
+
     try {
-      const readingResult = await generateReading(updatedLaSo, activeDuongSo, 'expert');
+      const readingResult = await generateReading(pendingLaSo, activeDuongSo, 'expert', targetChartId);
       if (readingResult) {
+        const completedLaSo: LaSoData = {
+          ...pendingLaSo,
+          needsReadingUpgrade: false,
+        };
+        laSoRef.current = completedLaSo;
+        setLaSo(completedLaSo);
         setReadingHtml(readingResult);
-        const targetChartId = chartIdRef.current || activeChartId;
         if (targetChartId) {
           await updateChartReading(targetChartId, readingResult);
           await saveOrUpdateChart({
             id: targetChartId,
             title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
             duongSoData: updatedCleanDuongSo,
-            lasoData: updatedLaSo,
+            lasoData: completedLaSo,
             readingHtml: readingResult,
           });
         }
@@ -1199,7 +1232,7 @@ export default function HomePage() {
 
         if (needsNewReading) {
           setIsLoadingReading(true);
-          generateReading(updatedLaSo, chart.duong_so_data, detectedTier)
+          generateReading(updatedLaSo, chart.duong_so_data, detectedTier, chart.id)
             .then(async (readingResult) => {
               if (readingResult) {
                 setReadingHtml(readingResult);
@@ -1464,7 +1497,7 @@ export default function HomePage() {
 
                       if (needsNewReading) {
                         setIsLoadingReading(true);
-                        generateReading(updatedLaSo, chart.duong_so_data, detectedTier)
+                        generateReading(updatedLaSo, chart.duong_so_data, detectedTier, chart.id)
                           .then(async (readingResult) => {
                             if (readingResult) {
                               setReadingHtml(readingResult);
