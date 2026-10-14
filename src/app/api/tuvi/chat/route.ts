@@ -325,7 +325,8 @@ Năm nay: ${namXemCanChi}, ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
 12 CUNG & NGUYỆT VẬN:
 ${cungDataStr}
 
-QUY TẮC BẮT BUỘC VỀ NGUYỆT VẬN (LƯU NGUYỆT / THÁNG ÂM LỊCH):
+QUY TẮC BẮT BUỘC VỀ CUNG VÔ CHÍNH DIỆU & NGUYỆT VẬN (LƯU NGUYỆT / THÁNG ÂM LỊCH):
+- Khi luận giải bất kỳ cung nào không có chính tinh (Vô Chính Diệu), bạn BẮT BUỘC phải nhìn và kết hợp các Chính tinh + Phụ tinh hội chiếu từ Tam Phương Tứ Chính (đặc biệt là mượn Chính tinh của Cung Xung Chiếu kết hợp 2 Cung Tam Hợp và Tuần/Triệt tại bản cung) để phân tích sâu sắc, tuyệt đối không chỉ nhìn mỗi bản cung.
 - Nếu câu hỏi của khách có nhắc đến tháng nào trong năm (ví dụ tháng Giêng, tháng 5, tháng 8, tháng 10...), bạn BẮT BUỘC phải tra cứu chính xác theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên để biết tháng đó rơi vào cung nào, có các chính tinh, phụ tinh và đặc biệt là các SAO LƯU nào thủ hoặc chiếu (L.Thái Tuế, L.Tang Môn, L.Bạch Hổ, L.Kình Dương, L.Đà La, L.Thiên Mã, L.Lộc Tồn, L.Thiên Khốc, L.Thiên Hư, L.Đẩu Quân, L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị...). Dựa vào đó để chỉ rõ hung cát, tháng nào phát tài, tháng nào có biến chuyển đi lại, tháng nào cần phòng tai tiếng, thị phi. Tuyệt đối KHÔNG được tự suy đoán hay nói nhầm sang cung khác.
 ${requirementText}${langInstruction}`;
 

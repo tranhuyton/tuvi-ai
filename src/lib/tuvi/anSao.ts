@@ -627,8 +627,17 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
  * Kèm hệ thống Sao Lưu và Bảng Tra Cứu Nguyệt Vận 12 tháng chuẩn LySo
  */
 export function buildCungDataPrompt(laSo: LaSoData): string {
-  let res = '--- CHI TIẾT 12 CUNG TRÊN LÁ SỐ BÀN CỜ (KÈM SAO LƯU NĂM XEM) ---\n';
-  const { cungs, tuanGoc, trietGoc, namXemCanChi, namXem, tuoiAmXem } = laSo;
+  let res = '--- CHI TIẾT 12 CUNG TRÊN LÁ SỐ BÀN CỜ (KÈM SAO LƯU NĂM XEM & TAM PHƯƠNG TỨ CHÍNH CHO CUNG VÔ CHÍNH DIỆU) ---\n';
+  res += '(QUY TẮC TỬ VI BẮT BUỘC: Đối với bất kỳ cung nào là "Vô Chính Diệu" — không có chính tinh — bạn BẮT BUỘC phải mượn Chính tinh từ Cung Xung Chiếu và kết hợp toàn bộ các sao hội chiếu từ Tam Phương Tứ Chính [Xung Chiếu + 2 Cung Tam Hợp] kèm Tuần/Triệt để luận giải, tuyệt đối không luận sơ sài hoặc chỉ nhìn bản cung!)\n';
+  const { cungs, tuanGoc, trietGoc, namXemCanChi, namXem } = laSo;
+
+  const formatCungSummary = (idx: number) => {
+    const c = cungs[idx];
+    const ct = c.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Vô Chính Diệu';
+    const ptTot = c.phuTinhTot.filter((s) => !s.isLuu).map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Không';
+    const ptXau = c.phuTinhXau.filter((s) => !s.isLuu).map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Không';
+    return `Cung ${c.chi} (${c.cungName}): Chính tinh [${ct}] | Cát tinh [${ptTot}] | Hung tinh [${ptXau}]`;
+  };
 
   for (let i = 0; i < 12; i++) {
     const cung = cungs[i];
@@ -648,7 +657,10 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
     if (i === tuanGoc || i === (tuanGoc + 1) % 12) phuXau.push('Tuần Không');
     if (i === trietGoc || i === (trietGoc + 1) % 12) phuXau.push('Triệt Không');
 
-    const chinhStr = chinhStars.length > 0 ? chinhStars.join(', ') : 'Vô Chính Diệu';
+    const isVoChinhDieu = chinhStars.length === 0;
+    const chinhStr = !isVoChinhDieu
+      ? chinhStars.join(', ')
+      : 'Vô Chính Diệu (BẮT BUỘC nhìn Chính tinh & Phụ tinh từ Tam Phương Tứ Chính hội chiếu bên dưới để kết hợp luận giải)';
     const cName = cung.cungName + (cung.isThan ? ' (Thân Cư)' : '');
 
     const tieuVanStr = cung.tieuVan ? (cung.tieuVan.startsWith('năm') ? cung.tieuVan : `năm ${cung.tieuVan}`) : '';
@@ -656,8 +668,17 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
 
     res += `- Cung ${cung.chi} (${cName}) [Đại vận: ${cung.daiVan} | Tiểu vận: ${tieuVanStr} | Nguyệt hạn: ${nguyetVanStr}]:\n`;
     res += `  + Chính tinh: ${chinhStr}\n`;
-    res += `  + Cát tinh cố định: ${phuTot.length > 0 ? phuTot.join(', ') : 'Không có'}\n`;
-    res += `  + Hung sát tinh cố định: ${phuXau.length > 0 ? phuXau.join(', ') : 'Không có'}\n`;
+    if (isVoChinhDieu) {
+      const doiIdx = (i + 6) % 12;
+      const th1Idx = (i + 4) % 12;
+      const th2Idx = (i + 8) % 12;
+      res += `  + TAM PHƯƠNG TỨ CHÍNH HỘI CHIẾU VÀO CUNG VÔ CHÍNH DIỆU NÀY (Bắt buộc dùng để luận giải):\n`;
+      res += `    * Xung Chiếu (Tứ Chính - Mượn chính tinh trực tiếp): ${formatCungSummary(doiIdx)}\n`;
+      res += `    * Tam Hợp 1: ${formatCungSummary(th1Idx)}\n`;
+      res += `    * Tam Hợp 2: ${formatCungSummary(th2Idx)}\n`;
+    }
+    res += `  + Cát tinh cố định bản cung: ${phuTot.length > 0 ? phuTot.join(', ') : 'Không có'}\n`;
+    res += `  + Hung sát tinh cố định bản cung: ${phuXau.length > 0 ? phuXau.join(', ') : 'Không có'}\n`;
     res += `  + SAO LƯU NĂM ${namXemCanChi} (${namXem}): ${saoLuuList.length > 0 ? saoLuuList.join(', ') : 'Không có'}\n`;
   }
 
@@ -685,13 +706,19 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
 
     if (cungThang) {
       const cName = cungThang.cungName + (cungThang.isThan ? ' (Thân Cư)' : '');
-      const ctStr = cungThang.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Vô Chính Diệu';
-      const saoLuuTaiCung = (cungThang.saoLuu || []).map((s) => s.ten).join(', ') || 'Không có';
-
-      // Cung xung chiếu và tam hợp
       const doiCung = cungs[(cungThang.cungId + 6) % 12];
       const tamHop1 = cungs[(cungThang.cungId + 4) % 12];
       const tamHop2 = cungs[(cungThang.cungId + 8) % 12];
+
+      const isThangVCD = cungThang.chinhTinh.length === 0;
+      const doiChinhStr = doiCung.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Vô Chính Diệu';
+      const th1ChinhStr = tamHop1.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Vô Chính Diệu';
+      const th2ChinhStr = tamHop2.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Vô Chính Diệu';
+
+      const ctStr = !isThangVCD
+        ? cungThang.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ')
+        : `Vô Chính Diệu (Mượn chính tinh Xung Chiếu từ ${doiCung.chi}: [${doiChinhStr}] & Tam Hợp từ ${tamHop1.chi}: [${th1ChinhStr}], ${tamHop2.chi}: [${th2ChinhStr}])`;
+      const saoLuuTaiCung = (cungThang.saoLuu || []).map((s) => s.ten).join(', ') || 'Không có';
 
       const saoLuuChieu: string[] = [];
       [doiCung, tamHop1, tamHop2].forEach((related) => {

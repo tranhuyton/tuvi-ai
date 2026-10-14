@@ -224,6 +224,7 @@ LƯU Ý QUAN TRỌNG: Hiện tại năm ${namXem} đương số đúng ${tuoiAmX
 Đang thực hiện BẢN LUẬN GIẢI CHUYÊN GIA ĐẶC BIỆT (EXPERT EDITION) cho đương số: ${duongSo.hoTen}, Giới tính: ${duongSo.gioiTinh}.
 XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số là 'quý khách' hoặc tên '${duongSo.hoTen}'. TUYỆT ĐỐI KHÔNG xưng AI, KHÔNG nhắc tên model AI, KHÔNG dùng bát tự tử bình.
 ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
+QUY TẮC BẮT BUỘC VỀ CUNG VÔ CHÍNH DIỆU: Khi luận giải bất kỳ cung nào không có chính tinh (Vô Chính Diệu), bạn BẮT BUỘC phải nhìn và nêu rõ các Chính tinh + Phụ tinh hội chiếu từ Tam Phương Tứ Chính (đặc biệt là mượn Chính tinh của Cung Xung Chiếu kết hợp 2 Cung Tam Hợp và Tuần/Triệt tại bản cung) để phân tích sâu sắc, tuyệt đối không luận sơ sài hay chỉ nhìn bản cung!
 
 THÔNG TIN LÁ SỐ:
 - Họ tên đương số: ${duongSo.hoTen} (${duongSo.gioiTinh}).
@@ -250,7 +251,7 @@ ${cungDataStr}
 
     const part1Prompt = `${expertBaseHeader}
 NHIỆM VỤ PHẦN 1 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 1.500 TỪ, KHÔNG VIẾT DÀI QUÁ 1.600 TỪ):
-Hãy viết thật sâu sắc, uyên bác nhưng súc tích CHƯƠNG I (khoảng 350 từ) và NỬA ĐẦU CHƯƠNG II từ Cung số 1 đến Cung số 6 (mỗi cung viết cô đọng khoảng 160 - 190 từ, đi thẳng vào trọng tâm tinh đẩu và cát hung):
+Hãy viết thật sâu sắc, uyên bác nhưng súc tích CHƯƠNG I (khoảng 350 từ) và NỬA ĐẦU CHƯƠNG II từ Cung số 1 đến Cung số 6 (mỗi cung viết cô đọng khoảng 160 - 190 từ, đi thẳng vào trọng tâm tinh đẩu và cát hung; nếu cung nào Vô Chính Diệu thì bắt buộc lấy sao từ Tam Phương Tứ Chính hội chiếu để luận):
 
 <h3>I. ĐẠI CƯƠNG BẢN MỆNH, CỤC SỐ, ÂM DƯƠNG &amp; ĐỐI CHIẾU TƯỚNG PHÁP CHUYÊN GIA</h3>
 - Phân tích chuyên sâu Mệnh (${banMenh}), Cục (${tenCuc}), quan hệ Sinh khắc Mệnh - Cục (${sinhKhac}), ý nghĩa sao Mệnh Chủ (${menhChu}) và Thân Chủ (${thanChu}).
@@ -263,7 +264,7 @@ Hãy viết thật sâu sắc, uyên bác nhưng súc tích CHƯƠNG I (khoảng
 - NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) hoặc thông số Chiều cao/Cân nặng gửi kèm: Phân tích Tam Đình, Ngũ Quan và các đường chỉ tay chính (Sinh đạo, Trí đạo, Tâm đạo theo nguyên tắc Nam tả Nữ hữu) đối chiếu với các sao trên lá số.
 
 <h3>II. LUẬN GIẢI CHUYÊN SÂU &amp; TOÀN DIỆN ĐỦ 12 CUNG TRÊN LÁ SỐ (KHẢO SÁT TỪNG CUNG VỊ)</h3>
-Phân tích từng cung từ Cung 1 đến Cung 6 bằng thẻ <h4> riêng biệt (mỗi cung viết súc tích 1 đoạn văn khoảng 160 - 190 từ):
+Phân tích từng cung từ Cung 1 đến Cung 6 bằng thẻ <h4> riêng biệt (mỗi cung viết súc tích 1 đoạn văn khoảng 160 - 190 từ; với cung Vô Chính Diệu bắt buộc xét kỹ Chính tinh và Phụ tinh từ Tam Phương Tứ Chính hội chiếu):
 <h4>1. Cung Mệnh (Tiên Thiên Cốt Cách, Tâm Tính, Trí Tuệ &amp; Định Mệnh Chủ Đạo)</h4>
 <h4>2. Cung Phụ Mẫu (Song Thân, Nguồn Cội &amp; Duyên Phận Với Bề Trên)</h4>
 <h4>3. Cung Phúc Đức (Âm Phúc Gia Tiên, Căn Cơ Tâm Linh, Họ Hàng &amp; Thọ Mạng)</h4>
@@ -278,7 +279,7 @@ NHIỆM VỤ PHẦN 2 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 
 Đây là phần nối tiếp trực tiếp ngay sau Mục 6 (Cung Nô Bộc) của Chương II.
 QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <h4>7. Cung Thiên Di...</h4> dưới đây. TUYỆT ĐỐI KHÔNG viết lời chào mở đầu, KHÔNG lặp lại tiêu đề Chương I hay Chương II.
 
-Hãy phân tích súc tích, sắc bén từng cung từ Cung 7 đến Cung 12, Cung An Thân (mỗi cung 1 đoạn văn khoảng 160 - 190 từ) và Chương III (khoảng 300 - 350 từ):
+Hãy phân tích súc tích, sắc bén từng cung từ Cung 7 đến Cung 12, Cung An Thân (mỗi cung 1 đoạn văn khoảng 160 - 190 từ; với cung Vô Chính Diệu bắt buộc xét kỹ Chính tinh và Phụ tinh từ Tam Phương Tứ Chính hội chiếu) và Chương III (khoảng 300 - 350 từ):
 <h4>7. Cung Thiên Di (Vận Thế Xuất Ngoại, Môi Trường Xã Hội &amp; Quý Nhân Phương Xa)</h4>
 <h4>8. Cung Tật Ách (Cơ Địa Sức Khỏe, Bệnh Lý Tiềm Ẩn &amp; Pháp Môn Hóa Giải Tai Ách)</h4>
 <h4>9. Cung Tài Bạch (Dòng Tiền, Năng Lực Kiếm Tiền, Đầu Tư &amp; Quản Trị Tài Chính)</h4>
@@ -288,7 +289,7 @@ Hãy phân tích súc tích, sắc bén từng cung từ Cung 7 đến Cung 12, 
 <h4>✦ Luận Giải Chuyên Biệt Cung An Thân (${thanCuName || 'Thân cư Mệnh'} - Hậu Thiên Vận Mệnh Sau Tuổi 30)</h4>
 
 <h3>III. LUẬN ĐOÁN CHUYÊN SÂU ĐẠI VẬN 10 NĂM HIỆN TẠI (${startAge} - ${endAge} TUỔI)</h3>
-- ${daiVanInstruction}
+- ${daiVanInstruction} (Nếu cung Đại Vận là Vô Chính Diệu thì bắt buộc xét các sao từ Tam Phương Tứ Chính chiếu về cung Đại Vận).
 - Chia rõ 2 chặng: Chặng 5 năm đầu (${startAge} - ${startAge + 4} tuổi) và Chặng 5 năm cuối (${startAge + 5} - ${endAge} tuổi) ở tuổi ${tuoiAmXem}.
 
 QUY TẮC KẾT THÚC PHẦN 2: Tổng độ dài Phần 2 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi viết xong Chương III, TUYỆT ĐỐI KHÔNG viết Chương IV và KHÔNG viết lời chào kết bài.${langSuffix}`;
@@ -299,7 +300,7 @@ NHIỆM VỤ PHẦN 3 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.100 - 
 QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <h3>IV. TIỂU VẬN NĂM ${namXem}...</h3> dưới đây. TUYỆT ĐỐI KHÔNG viết lời chào mở đầu, KHÔNG lặp lại các chương I, II, III.
 
 <h3>IV. TIỂU VẬN NĂM ${namXem} (${namXemCanChi}) &amp; BẢN ĐỒ VẬN KHÍ 4 MÙA - 12 THÁNG ÂM LỊCH</h3>
-- Phân tích Tiểu Vận / Lưu Niên năm ${namXem} (${namXemCanChi}) và hệ thống Sao Lưu.
+- Phân tích Tiểu Vận / Lưu Niên năm ${namXem} (${namXemCanChi}) và hệ thống Sao Lưu (nếu cung Lưu Niên hoặc cung tháng nào Vô Chính Diệu thì bắt buộc kết hợp các sao từ Tam Phương Tứ Chính hội chiếu để luận).
 - Khảo sát biến động qua 4 Mùa &amp; 12 Tháng Âm lịch (BẮT BUỘC tra cứu chính xác 100% từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên, chỉ rõ từng tháng rơi vào cung nào và cát hung ra sao, viết cô đọng súc tích khoảng 650 - 800 từ cho toàn bộ 12 tháng):
   + Mùa Xuân (Tháng 1, Tháng 2, Tháng 3 Âm lịch).
   + Mùa Hạ (Tháng 4, Tháng 5, Tháng 6 Âm lịch).
@@ -321,6 +322,7 @@ Văn phong bậc Đại Tông Sư: uyên bác, súc tích, giàu giá trị họ
 Đang luận giải cho đương số: ${duongSo.hoTen}, Giới tính: ${duongSo.gioiTinh}.
 XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số là 'quý khách' hoặc tên '${duongSo.hoTen}'. TUYỆT ĐỐI KHÔNG xưng AI, KHÔNG dùng bát tự tử bình.
 ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
+QUY TẮC BẮT BUỘC VỀ CUNG VÔ CHÍNH DIỆU: Khi luận giải bất kỳ cung nào không có chính tinh (Vô Chính Diệu), bạn BẮT BUỘC phải nhìn và kết hợp các Chính tinh + Phụ tinh từ Tam Phương Tứ Chính (mượn Chính tinh từ Cung Xung Chiếu và xét 2 Cung Tam Hợp hội chiếu kèm Tuần/Triệt) để luận giải chuẩn xác!
 
 THÔNG TIN LÁ SỐ:
 - Họ tên đương số: ${duongSo.hoTen} (${duongSo.gioiTinh}).
@@ -343,7 +345,7 @@ ${cungDataStr}
 
     promptText += `
 YÊU CẦU ĐẶC BIỆT DÀNH CHO BẢN CHUYÊN SÂU PRO (ĐỘ DÀI KHOẢNG 1800 - 2500 TỪ):
-Bài luận phải cực kỳ sâu sắc, phân tích đa tầng, giải nghĩa rành mạch căn nguyên cát hung theo 5 phần lớn sau:
+Bài luận phải cực kỳ sâu sắc, phân tích đa tầng, giải nghĩa rành mạch căn nguyên cát hung theo 5 phần lớn sau (Lưu ý: Với mọi cung Vô Chính Diệu, bắt buộc phải mượn Chính tinh từ Cung Xung Chiếu và kết hợp các sao từ Tam Phương Tứ Chính để luận giải):
 
 <h3>I. ĐẠI CƯƠNG BẢN MỆNH &amp; CHÂN TƯỚNG HUYỀN CƠ</h3>
 - Phân tích Mệnh Cục và Âm Dương: BẮT BUỘC khẳng định và giải nghĩa chuẩn xác theo đúng thế "${thuanNghichLy}" của lá số: ${
@@ -351,23 +353,23 @@ Bài luận phải cực kỳ sâu sắc, phân tích đa tầng, giải nghĩa 
     ? 'Khẳng định rõ ràng đương số là "Âm Dương thuận lý", biểu trưng cho người được trời đất và hoàn cảnh ưu ái, đắc thiên thời địa lợi, gặp nhiều may mắn, lúc khó khăn luôn có quý nhân trợ lực, mưu sự dễ thành.'
     : 'Khẳng định rõ ràng đương số là "Âm Dương nghịch lý", biểu trưng cho người phải tự lực cánh sinh, cuộc đời nhiều thử thách chông gai lúc ban đầu trước khi tôi luyện thành tựu.'
 } Kết hợp phân tích Sinh khắc Mệnh Cục (${sinhKhac}) và Cung Thân (${thanCuName || 'Thân cư Mệnh'}).
-- Phân tích cặn kẽ 14 Chính tinh thủ và chiếu Mệnh/Thân, sự giao hội của Tứ Hóa (Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ).
-- NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) gửi kèm: Hãy đối chiếu trực tiếp các nét tướng mạo (ấn đường, chuẩn đầu, cung điền trạch, các gò chỉ tay, đường sinh đạo, trí đạo, tâm đạo theo quy tắc Nam tay trái, Nữ tay phải) với các sao thủ Mệnh để xác tín độ chính xác giờ sinh và thế mạnh thiên bẩm.
+- Phân tích cặn kẽ 14 Chính tinh thủ và chiếu Mệnh/Thân (nếu Mệnh hoặc Thân Vô Chính Diệu thì bắt buộc phân tích Chính tinh và Phụ tinh từ Tam Phương Tứ Chính hội chiếu), sự giao hội của Tứ Hóa (Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ).
+- NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) gửi kèm: Hãy đối chiếu trực tiếp các nét tướng mạo (ấn đường, chuẩn đầu, cung điền trạch, các gò chỉ tay, đường sinh đạo, trí đạo, tâm đạo theo quy tắc Nam tay trái, Nữ tay phải) với các sao thủ/chiếu Mệnh để xác tín độ chính xác giờ sinh và thế mạnh thiên bẩm.
 
 <h3>II. TỨ TRỤ MỆNH SỐ: MỆNH - THÂN - TÀI - QUAN - PHU THÊ</h3>
-- Phân tích thế đứng Tam hợp Mệnh - Tài - Quan và cung Thiên Di (Tam Phương Tứ Chính).
+- Phân tích thế đứng Tam hợp Mệnh - Tài - Quan và cung Thiên Di (Tam Phương Tứ Chính). Cung nào Vô Chính Diệu thì bắt buộc lấy sao từ Tam Phương Tứ Chính hội chiếu để luận.
 - Đường Quan Lộc &amp; Sự nghiệp: Phù hợp ngành nghề nào, thế bứt phá công danh, đối tác làm ăn hợp mệnh.
 - Đường Tài Bạch &amp; Tiền của: Cung Tài đắc cách ra sao, cách tụ tài, những năm tháng dễ hao tán tiền bạc cần phòng bị.
 - Cung Phu Thê &amp; Gia đạo: Nhân duyên tiền định, tính cách bạn đời, phương pháp giữ gìn lửa ấm hạnh phúc.
 
 <h3>III. CHI TIẾT ĐẠI VẬN HIỆN TẠI (${startAge} - ${endAge} TUỔI)</h3>
-- ${daiVanInstruction}
+- ${daiVanInstruction} (Nếu cung Đại Vận là Vô Chính Diệu, bắt buộc xét các sao từ Tam Phương Tứ Chính hội chiếu về cung Đại Vận).
 - Mổ xẻ chi tiết 2 chặng: 5 năm đầu đại vận và 5 năm cuối đại vận.
 - Cơ hội phát triển vượt bậc ở giai đoạn nào, và những cạm bẫy hung tinh (Kình, Đà, Hỏa, Linh, Không, Kiếp...) cần phải né tránh ở tuổi ${tuoiAmXem}.
 
 <h3>IV. TIỂU VẬN NĂM ${namXem} &amp; BẢN ĐỒ 4 MÙA VẬN KHÍ</h3>
 - Tọa độ cung Lưu Niên năm ${namXem} (${namXemCanChi}) và tác động của các Lưu Tinh (Lưu Thái Tuế, Lưu Lộc Tồn, Lưu Kình Đà...).
-- Khảo sát biến động qua 4 mùa (QUY TẮC BẮT BUỘC: Tra cứu chính xác tọa độ các cung cho từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo đúng 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên, tuyệt đối không đoán mò hay nhầm cung vị):
+- Khảo sát biến động qua 4 mùa (QUY TẮC BẮT BUỘC: Tra cứu chính xác tọa độ các cung cho từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo đúng 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên; tháng nào rơi vào cung Vô Chính Diệu thì bắt buộc xét các sao từ Tam Phương Tứ Chính hội chiếu):
   + Mùa Xuân (Tháng 1, 2, 3 Âm): Khởi sắc hay trì trệ, việc nên mở màn (đối chiếu đúng các cung của Tháng 1, 2, 3 theo Bảng tra cứu Nguyệt Vận).
   + Mùa Hạ (Tháng 4, 5, 6 Âm): Đỉnh cao tài lộc hay thử thách quan hệ (đối chiếu đúng các cung của Tháng 4, 5, 6 theo Bảng tra cứu Nguyệt Vận).
   + Mùa Thu (Tháng 7, 8, 9 Âm): Biến động công việc, gia đạo, sức khỏe (đối chiếu đúng các cung của Tháng 7, 8, 9 theo Bảng tra cứu Nguyệt Vận).
@@ -386,6 +388,7 @@ Văn phong uyên bác, giàu chất văn hóa phương Đông, từ ngữ đắt
 Đang luận giải Bản Cơ Bản cho đương số: ${duongSo.hoTen}, Giới tính: ${duongSo.gioiTinh}.
 XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số là 'quý khách' hoặc tên '${duongSo.hoTen}'. TUYỆT ĐỐI KHÔNG xưng AI, KHÔNG dùng bát tự tử bình.
 ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
+QUY TẮC BẮT BUỘC VỀ CUNG VÔ CHÍNH DIỆU: Khi luận giải bất kỳ cung nào không có chính tinh (Vô Chính Diệu), bạn BẮT BUỘC phải nhìn các sao từ Tam Phương Tứ Chính (mượn Chính tinh từ Cung Xung Chiếu và xét 2 Cung Tam Hợp hội chiếu) để kết hợp luận giải!
 
 THÔNG TIN LÁ SỐ:
 - Họ tên: ${duongSo.hoTen} (${duongSo.gioiTinh}).
@@ -408,14 +411,14 @@ ${cungDataStr}
 
     promptText += `
 YÊU CẦU BẢN LUẬN GIẢI CƠ BẢN (ĐỘ DÀI KHOẢNG 800 - 1000 TỪ):
-Bài luận phải mạch lạc, chuẩn xác, đáng tin cậy, bao quát các phương diện chính yếu sau:
+Bài luận phải mạch lạc, chuẩn xác, đáng tin cậy, bao quát các phương diện chính yếu sau (Lưu ý: Nếu cung Mệnh, Tài, Quan hay Đại Vận là Vô Chính Diệu thì bắt buộc mượn Chính tinh từ Cung Xung Chiếu và kết hợp các sao từ Tam Phương Tứ Chính để luận giải):
 
 <h3>I. TỔNG QUAN BẢN MỆNH &amp; CÁ TÍNH TIỀM NĂNG</h3>
-- Phân tích Bản Mệnh, Cục, Âm Dương (BẮT BUỘC luận đúng là "${thuanNghichLy}") và tính cách nổi trội của đương số dựa trên các Chính tinh thủ Cung Mệnh.
+- Phân tích Bản Mệnh, Cục, Âm Dương (BẮT BUỘC luận đúng là "${thuanNghichLy}") và tính cách nổi trội của đương số dựa trên các Chính tinh thủ/chiếu Cung Mệnh (nếu Mệnh Vô Chính Diệu thì xét Tam Phương Tứ Chính).
 - Ưu điểm thiên bẩm và khuyết điểm cần tiết chế trong cách đối nhân xử thế.
 
 <h3>II. ĐIỂM SÁNG TAM HỢP MỆNH - TÀI - QUAN</h3>
-- Phân tích trục công danh sự nghiệp (Cung Quan Lộc) và xu hướng tài vận kiếm tiền (Cung Tài Bạch).
+- Phân tích trục công danh sự nghiệp (Cung Quan Lộc) và xu hướng tài vận kiếm tiền (Cung Tài Bạch), kết hợp các sao từ Tam Phương Tứ Chính nếu gặp cung Vô Chính Diệu.
 - Đánh giá khả năng bứt phá công việc và hướng đi hợp bản mệnh.
 
 <h3>III. ĐẠI VẬN HIỆN TẠI (${startAge} - ${endAge} TUỔI) &amp; TIỂU VẬN NĂM ${namXem}</h3>
