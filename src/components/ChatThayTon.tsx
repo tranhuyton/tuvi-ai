@@ -499,7 +499,7 @@ export default function ChatThayTon({
                   <>
                     {t(
                       'chat.paidSuccessDescExpert',
-                      `Hệ thống đã kích hoạt ${expertRemaining} câu hỏi Chuyên Gia Expert (Gemini 4 Argon) trực tiếp cùng AI Thầy Tôn (Tổng: ${totalRemaining} lượt).`,
+                      `Hệ thống đã kích hoạt ${expertRemaining} câu hỏi Chuyên Gia Expert trực tiếp cùng Thầy Tôn (Tổng: ${totalRemaining} lượt).`,
                       { count: expertRemaining, total: totalRemaining }
                     )}
                   </>
@@ -678,7 +678,7 @@ export default function ChatThayTon({
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder={
                   selectedMode === 'expert'
-                    ? t('chat.inputPlaceholderExpert', 'Nhập câu hỏi Chuyên Gia Expert (Gemini 4 Argon)...')
+                    ? t('chat.inputPlaceholderExpert', 'Nhập câu hỏi Chuyên Gia Expert...')
                     : selectedMode === 'vip'
                     ? t('chat.inputPlaceholderVip', 'Nhập câu hỏi chuyên sâu...')
                     : t('chat.inputPlaceholderBasic', 'Nhập câu hỏi cơ bản...')

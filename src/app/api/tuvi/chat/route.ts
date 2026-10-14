@@ -285,7 +285,7 @@ export async function POST(req: NextRequest) {
 
     const requirementText =
       activeMode === 'expert'
-        ? `YÊU CẦU LUẬN GIẢI CHUYÊN GIA EXPERT (GEMINI 4 ARGON): Trả lời uyên bác bậc Đại Tông Sư, cực kỳ sâu sắc, toàn diện 600-900 chữ. Phân tích thấu triệt mối tương quan giữa toàn bộ các cung liên quan trong 12 cung, 14 Chính tinh, bộ Phụ tinh cát/hung, Tứ Hóa (Lộc - Quyền - Khoa - Kỵ), Tuần/Triệt, Đại Vận 10 năm hiện tại, Tiểu Vận và Lưu Nguyệt 12 tháng. Chỉ rõ căn nguyên, thời điểm ứng kỳ và đưa ra sách lược hành động thực chiến cụ thể nhất để đón cát tránh hung. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>, <ul>, <li>). KHÔNG dùng markdown **.`
+        ? `YÊU CẦU LUẬN GIẢI CHUYÊN GIA EXPERT: Trả lời uyên bác bậc Đại Tông Sư, cực kỳ sâu sắc, toàn diện 600-900 chữ. Phân tích thấu triệt mối tương quan giữa toàn bộ các cung liên quan trong 12 cung, 14 Chính tinh, bộ Phụ tinh cát/hung, Tứ Hóa (Lộc - Quyền - Khoa - Kỵ), Tuần/Triệt, Đại Vận 10 năm hiện tại, Tiểu Vận và Lưu Nguyệt 12 tháng. Chỉ rõ căn nguyên, thời điểm ứng kỳ và đưa ra sách lược hành động thực chiến cụ thể nhất để đón cát tránh hung. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>, <ul>, <li>). KHÔNG dùng markdown **.`
         : activeMode === 'vip'
         ? `YÊU CẦU LUẬN GIẢI CHUYÊN SÂU VIP PRO: Trả lời uyên bác, thấu đáo 400-600 chữ. Phân tích cặn kẽ tương quan 14 Chính tinh, các phụ tinh đắc hãm, Tứ Hóa (Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ), Tuần/Triệt ảnh hưởng, Đại Vận 10 năm hiện tại và lưu niên năm nay. Đưa ra sách lược cụ thể, chỉ dẫn hóa giải điều hung đón điều cát. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>, <ul>, <li>). KHÔNG dùng markdown **.`
         : `YÊU CẦU LUẬN GIẢI CƠ BẢN: Trả lời 250-350 chữ cô đọng, dễ hiểu, ân cần, giải đáp thẳng thắn và chính xác vào trọng tâm câu hỏi của khách (về công danh, tài lộc, tình cảm hoặc gia đạo) dựa trên cung vị liên quan. Xưng là Thầy Tôn. Định dạng bằng HTML chuẩn (<p>, <b>). KHÔNG dùng markdown **.`;
@@ -303,7 +303,7 @@ export async function POST(req: NextRequest) {
 
     const modeLabel =
       activeMode === 'expert'
-        ? 'Gói Chuyên Gia Expert - Gemini 4 Argon'
+        ? 'Gói Chuyên Gia Expert'
         : activeMode === 'vip'
         ? 'Gói Chuyên Sâu VIP Pro'
         : 'Gói Cơ Bản';

@@ -1275,7 +1275,7 @@ export default function AdminTestStudio() {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                📜 Bản Free (Flash)
+                📜 Bản Miễn Phí
               </button>
               <button
                 type="button"
@@ -1289,7 +1289,7 @@ export default function AdminTestStudio() {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                👑 Bản Pro VIP (3.1 Pro)
+                👑 Bản Chuyên Sâu Pro
               </button>
               <button
                 type="button"
@@ -1303,7 +1303,7 @@ export default function AdminTestStudio() {
                     : 'text-purple-300 hover:text-white'
                 }`}
               >
-                💎 Bản Expert (Gemini 4 Argon)
+                💎 Bản Chuyên Gia Expert
               </button>
             </div>
 

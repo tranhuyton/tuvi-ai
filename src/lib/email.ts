@@ -172,7 +172,7 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
     'Bản luận giải đại pháp chuyên sâu đa tầng của Thầy Tôn (14 chính tinh, Diện tướng, Thủ tướng, Đại vận 10 năm và 4 mùa) đã được kích hoạt thành công trên lá số của quý khách.';
 
   if (paymentType === 'reading_expert') {
-    serviceTitle = 'Luận Giải Tử Vi Bản Chuyên Gia Expert (Gemini 4 Argon)';
+    serviceTitle = 'Luận Giải Tử Vi Bản Chuyên Gia Expert';
     serviceDesc =
       'Bản luận giải Chuyên Gia Expert cao cấp nhất (khảo sát chi tiết toàn diện 12 Cung, độ dài gấp 2 lần Bản Pro, kèm 02 câu hỏi Chuyên Gia miễn phí) đã được kích hoạt thành công trên lá số của quý khách.';
   } else if (paymentType === 'upgrade_expert') {
@@ -182,7 +182,7 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
   } else if (paymentType === 'chat_expert') {
     serviceTitle = '02 Câu Hỏi Thỉnh Giáo Chuyên Gia Cùng Thầy Tôn (Bản Expert)';
     serviceDesc =
-      'Quý khách đã được cộng thêm 02 lượt đàm đạo cấp độ Chuyên Gia Expert (sử dụng siêu mô hình Gemini 4 Argon) trực tiếp cùng Thầy Tôn.';
+      'Quý khách đã được cộng thêm 02 lượt đàm đạo cấp độ Chuyên Gia Expert trực tiếp cùng Thầy Tôn.';
   } else if (paymentType === 'chat_vip') {
     serviceTitle = '02 Câu Hỏi Thỉnh Giáo Chuyên Sâu Cùng Thầy Tôn (Bản Pro)';
     serviceDesc =

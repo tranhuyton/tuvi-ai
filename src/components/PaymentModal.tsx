@@ -101,10 +101,10 @@ export default function PaymentModal({
 
   if (paymentType === 'reading_expert') {
     finalPrice = finalPrice ?? 269000;
-    title = title || 'Kích Hoạt Bản Chuyên Gia Expert (Gemini 4 Argon)';
-    subtitle = subtitle || 'Siêu phẩm luận giải chuyên sâu toàn diện 12 Cung - Gấp 2 lần Bản Pro';
+    title = title || 'Kích Hoạt Bản Chuyên Gia Expert';
+    subtitle = subtitle || 'Tuyệt học luận giải chuyên sâu toàn diện 12 Cung - Gấp 2 lần Bản Pro';
     benefits = [
-      'Ứng dụng siêu mô hình AI mới nhất Gemini 4 Argon với chiều sâu mệnh lý vượt trội.',
+      'Tuyệt học mệnh lý cấp Đại Tông Sư với chiều sâu phân tích vượt trội.',
       'Độ dài bài luận tăng gấp 2 lần Bản Pro (~3.600 - 5.000 từ), mổ xẻ cặn kẽ.',
       'Phân tích đầy đủ, tách biệt từng cung một trong trọn bộ 12 Cung & Cung Thân.',
       'Soi chiếu Diện Tướng, Thủ Tướng, Đại Vận 10 năm & 12 tháng Lưu Nguyệt.',
@@ -113,17 +113,17 @@ export default function PaymentModal({
   } else if (paymentType === 'upgrade_expert') {
     finalPrice = finalPrice ?? 150000;
     title = title || 'Nâng Cấp Từ Bản Pro Lên Bản Chuyên Gia Expert';
-    subtitle = subtitle || 'Mở khóa luận giải chi tiết trọn vẹn 12 Cung gấp 2 lần bằng Gemini 4 Argon';
+    subtitle = subtitle || 'Mở khóa luận giải chi tiết trọn vẹn 12 Cung với độ dài gấp 2 lần Bản Pro';
     benefits = [
       'Ưu đãi đặc biệt dành riêng cho quý khách đang sử dụng Bản Chuyên Sâu Pro.',
       'Biên soạn mới toàn bộ bài luận giải cấp độ Chuyên Gia Expert (~3.600 - 5.000 từ).',
       'Khảo sát kỹ lưỡng từng cung vị trong đủ 12 Cung (Mệnh, Phụ, Phúc, Điền, Quan, Nô, Di, Tật, Tài, Tử, Thê, Huynh).',
-      'Tặng thêm 02 câu hỏi Chuyên Gia miễn phí (bằng siêu AI Gemini 4 Argon).',
+      'Tặng thêm 02 câu hỏi Chuyên Gia miễn phí trực tiếp cùng Thầy Tôn.',
     ];
   } else if (paymentType === 'chat_expert') {
     finalPrice = finalPrice ?? 129000;
     title = title || 'Thỉnh Giáo Chuyên Gia Cùng Thầy Tôn (Bản Expert)';
-    subtitle = subtitle || 'Đàm đạo mệnh lý cấp cao bằng siêu mô hình Gemini 4 Argon (02 câu hỏi)';
+    subtitle = subtitle || 'Đàm đạo mệnh lý cấp cao chuyên sâu toàn diện 12 Cung (02 câu hỏi)';
     benefits = [
       '02 lượt thỉnh giáo cấp độ Chuyên Gia Expert (phản hồi sâu sắc 600 - 900 từ/câu).',
       'Luận giải thấu suốt tương quan 12 Cung, Tứ Hóa, Đại Vận & Lưu Nguyệt 12 tháng.',

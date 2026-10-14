@@ -776,7 +776,7 @@ export async function exportReadingToPdf({
             ${isExpert ? 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ CHUYÊN GIA (EXPERT)' : isPro ? 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ CHUYÊN SÂU' : 'BẢN BÌNH GIẢI TỬ VI ĐẨU SỐ KHỞI NGUYÊN'}
           </div>
           <div style="font-size: 12.5px; font-weight: 800; color: #000000; margin-top: 2px;">
-            ${isExpert ? '💎 Bản Chuyên Gia Expert (Gemini 4 Argon) • Luận Giải Toàn Diện 12 Cung & Lưu Nguyệt' : isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Soi Chiếu Tinh Đẩu & Tướng Pháp' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
+            ${isExpert ? '💎 Bản Chuyên Gia Expert • Luận Giải Toàn Diện 12 Cung & Lưu Nguyệt' : isPro ? '👑 Bản Chuyên Sâu Bí Truyền • Soi Chiếu Tinh Đẩu & Tướng Pháp' : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
           </div>
         `;
         topContainer.appendChild(introBanner);

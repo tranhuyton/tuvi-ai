@@ -117,7 +117,7 @@ export default function LuanGiaiAI({
             }`}
           >
             {isExpert
-              ? t('reading.expertBadge', '💎 Bản Chuyên Gia Expert • Gemini 4 Argon')
+              ? t('reading.expertBadge', '💎 Bản Chuyên Gia Expert • Đỉnh Cao Mệnh Lý')
               : isPro
               ? t('reading.proBadge', '👑 Bản Chuyên Sâu Bí Truyền')
               : t('reading.freeBadge', '📜 Bản Luận Giải Khởi Nguyên')}
@@ -149,7 +149,7 @@ export default function LuanGiaiAI({
             {isExpert
               ? t(
                   'reading.loadingExpertDesc',
-                  'Thầy Tôn đang vận dụng Siêu AI Gemini 4 Argon để luận giải thâm sâu toàn diện từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ). Quý khách vui lòng tịnh tâm đợi khoảng 45 - 90 giây!'
+                  'Thầy Tôn đang định tâm quán tưởng thâm sâu toàn diện từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ). Quý khách vui lòng tịnh tâm đợi khoảng 45 - 90 giây!'
                 )
               : isPro || isUpgrading
               ? t(
@@ -215,7 +215,7 @@ export default function LuanGiaiAI({
                   onClick={onUpgradeToExpert}
                   disabled={isUpgrading}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white rounded-lg text-sm sm:text-xs font-bold shadow-md shadow-purple-500/20 transition transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
-                  title="Nâng cấp lên Bản Chuyên Gia Expert (Gemini 4 Argon - Đầy đủ 12 Cung)"
+                  title="Nâng cấp lên Bản Chuyên Gia Expert (Luận giải đầy đủ 12 Cung)"
                 >
                   <Gem className="w-4 h-4" />
                   <span>{t('reading.topUpgradeExpertFromFreeBtn', '💎 Bản Expert (269K)')}</span>
@@ -285,7 +285,7 @@ export default function LuanGiaiAI({
                 <p className="text-sm sm:text-sm text-slate-700 mt-1 max-w-xl leading-relaxed">
                   {t(
                     'reading.upgradePromptDesc',
-                    'Nâng cấp lên Bản Pro (119.000đ) để luận giải chi tiết gấp 2 lần, hoặc chọn Bản Chuyên Gia Expert (269.000đ - Gemini 4 Argon) để mổ xẻ đầy đủ 12 Cung + Cung Thân với độ dài gấp 4 lần bản miễn phí!'
+                    'Nâng cấp lên Bản Pro (119.000đ) để luận giải chi tiết gấp 2 lần, hoặc chọn Bản Chuyên Gia Expert (269.000đ) để mổ xẻ đầy đủ 12 Cung + Cung Thân với độ dài gấp 4 lần bản miễn phí!'
                   )}
                 </p>
               </div>
@@ -318,7 +318,7 @@ export default function LuanGiaiAI({
               <div>
                 <h4 className="font-bold text-purple-900 text-base sm:text-lg font-serif flex items-center gap-1.5">
                   <Gem className="w-5 h-5 text-purple-600" />
-                  {t('reading.upgradeExpertPromptTitle', 'Đặc Quyền Nâng Cấp Lên Bản Chuyên Gia Expert (Gemini 4 Argon)')}
+                  {t('reading.upgradeExpertPromptTitle', 'Đặc Quyền Nâng Cấp Lên Bản Chuyên Gia Expert')}
                 </h4>
                 <p className="text-sm sm:text-sm text-slate-700 mt-1 max-w-xl leading-relaxed">
                   {t(

@@ -644,7 +644,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               }`}
             >
               <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
-                {t('form.expertBadge', '💎 Đỉnh Cao AI • Gemini 4 Argon')}
+                {t('form.expertBadge', '💎 Đỉnh Cao Bí Truyền • Đầy Đủ 12 Cung')}
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
@@ -659,7 +659,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
                   {t(
                     'form.expertDesc',
-                    'Siêu AI Gemini 4 Argon Mới Nhất. Luận giải chuyên sâu đầy đủ từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ), kết hợp Diện tướng/Chỉ tay, Đại Vận 10 năm & chi tiết 12 tháng Lưu Nguyệt.'
+                    'Tuyệt Học Mệnh Lý Đại Tông Sư. Luận giải chuyên sâu đầy đủ từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ), kết hợp Diện tướng/Chỉ tay, Đại Vận 10 năm & chi tiết 12 tháng Lưu Nguyệt.'
                   )}
                 </p>
               </div>

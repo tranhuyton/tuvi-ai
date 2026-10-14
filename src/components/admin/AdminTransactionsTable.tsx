@@ -865,7 +865,7 @@ export default function AdminTransactionsTable({
                   <p className="text-xs text-slate-400">
                     Gói:{' '}
                     {previewChart.duong_so_data?.tier === 'expert' || previewChart.laso_data?.tier === 'expert'
-                      ? '💎 Bản Chuyên Gia Expert (269.000đ • Gemini 4 Argon)'
+                      ? '💎 Bản Chuyên Gia Expert (269.000đ)'
                       : previewChart.duong_so_data?.tier === 'pro'
                       ? '👑 Bản Chuyên Sâu Pro (119.000đ)'
                       : '📜 Bản Miễn Phí'}
@@ -919,7 +919,7 @@ export default function AdminTransactionsTable({
                       </h4>
                       <p className="text-xs text-slate-400">
                         {previewChart.duong_so_data?.tier === 'expert' || previewChart.laso_data?.tier === 'expert'
-                          ? '💎 Bản Luận Giải Chuyên Gia Expert (Gemini 4 Argon • Đầy đủ 12 Cung & Lưu Nguyệt)'
+                          ? '💎 Bản Luận Giải Chuyên Gia Expert (Đầy đủ 12 Cung & Lưu Nguyệt)'
                           : previewChart.duong_so_data?.tier === 'pro'
                           ? '👑 Bản Luận Giải Chuyên Sâu Pro (14 Chính Tinh, Tướng Pháp, Vận Hạn 4 Mùa)'
                           : '📜 Bản Luận Giải Khởi Nguyên Cơ Bản'}
