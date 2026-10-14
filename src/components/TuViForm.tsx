@@ -174,6 +174,9 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
     }
   };
 
+  const onSubmitRef = React.useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hoTen.trim()) {
@@ -196,6 +199,19 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
       anhTay: anhTayBase64,
       tier: selectedTier,
     };
+
+    if (!user && onRequireAuth) {
+      const notice =
+        selectedTier === 'expert'
+          ? 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản (chỉ 5 giây) để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Gia Expert (269.000đ).'
+          : selectedTier === 'pro'
+          ? 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản (chỉ 5 giây) để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Sâu Pro.'
+          : 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản (chỉ 5 giây) để hệ thống lập lá số và tự động lưu trữ vào Sổ Tay Số Mệnh của quý khách.';
+      onRequireAuth(() => {
+        onSubmitRef.current(payload, selectedTier);
+      }, notice);
+      return;
+    }
 
     onSubmit(payload, selectedTier);
   };

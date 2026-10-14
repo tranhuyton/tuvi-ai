@@ -218,6 +218,10 @@ export default function HomePage() {
   const [authModalTab, setAuthModalTab] = useState<AuthModalTab>('signin');
   const [authModalNotice, setAuthModalNotice] = useState('');
   const pendingPostAuthActionRef = useRef<(() => void) | null>(null);
+  const isAuthenticatedRef = useRef<boolean>(Boolean(user));
+  useEffect(() => {
+    isAuthenticatedRef.current = Boolean(user);
+  }, [user]);
 
   // Lắng nghe khi người dùng bấm vào link khôi phục mật khẩu từ email
   useEffect(() => {
@@ -241,6 +245,7 @@ export default function HomePage() {
 
   // Xử lý khi đăng nhập / đăng ký tài khoản thành công
   const handleAuthSuccess = async () => {
+    isAuthenticatedRef.current = true;
     setIsAuthModalOpen(false);
     setAuthModalNotice('');
 
@@ -385,18 +390,32 @@ export default function HomePage() {
     const existingReadingHtml = isEditing ? readingHtml : undefined;
     const existingChatHistory = isEditing ? chatHistory : [];
 
+    // Lấy user hiện tại (hỗ trợ cả trường hợp vừa đăng nhập xong qua AuthModal mà React state chưa kịp re-render)
+    let activeUser = user;
+    if (!activeUser) {
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user) {
+          activeUser = authData.user;
+          isAuthenticatedRef.current = true;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     let effectiveTier = tier;
 
     // 1. Kiểm tra xem người dùng đã có đơn hàng nào đã thanh toán trước đó chưa (ví dụ: chuyển khoản trước, duyệt tay trước mà chưa có lá số)
     let autoUnlockedFromPaidOrder = false;
     let matchedPaidOrderCode: string | null = null;
 
-    if (user) {
+    if (activeUser) {
       try {
         const { data: unlinkedPaidOrders } = await supabase
           .from('tuvi_orders')
           .select('id, order_code, payment_type, status, chart_id')
-          .eq('user_id', user.id)
+          .eq('user_id', activeUser.id)
           .eq('status', 'PAID')
           .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip'])
           .is('chart_id', null)
@@ -421,7 +440,7 @@ export default function HomePage() {
         effectiveTier = 'pro';
       }
 
-      if (user && !existingChartId) {
+      if (activeUser && !existingChartId) {
         try {
           const { charts } = await getUserCharts();
           const count = charts?.length || 0;
@@ -526,44 +545,17 @@ export default function HomePage() {
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Nếu cần thanh toán Bản Pro hoặc Bản Expert (khách chủ động bấm chọn trên form): Mở ngay modal thanh toán trong 0ms!
-    if (requiresPayment) {
-      if (tier === 'expert') {
-        openUpgradeExpertModal(isEditing && previousTier === 'pro' ? 'pro' : 'free');
-      } else {
-        openUpgradeModal();
-      }
-
-      // Lưu ngầm lá số vào database (nếu đã đăng nhập) để gắn chartId cho đơn hàng
-      if (user) {
-        saveOrUpdateChart({
-          id: existingChartId || undefined,
-          title: `${data.hoTen} (${data.gioiTinh} - ${data.namDuong})`,
-          duongSoData: cleanDuongSo,
-          lasoData: calculatedLaSo,
-          readingHtml: existingReadingHtml,
-        })
-          .then((saveRes) => {
-            if (saveRes.chartId) {
-              chartIdRef.current = saveRes.chartId;
-              setCurrentChartId(saveRes.chartId);
-            }
-          })
-          .catch((e) => console.warn('Lỗi tự động lưu lá số:', e));
-      }
-      return;
-    }
-
     let createdChartId: string | null = existingChartId;
 
-    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database ngay lập tức để không bao giờ bị mất
-    if (user) {
+    // Nếu người dùng đã đăng nhập, tự động lưu lá số vào database ngay lập tức để gắn chartId trước khi mở bảng thanh toán
+    if (activeUser) {
       try {
         const saveRes = await saveOrUpdateChart({
           id: existingChartId || undefined,
           title: `${data.hoTen} (${data.gioiTinh} - ${data.namDuong})`,
           duongSoData: cleanDuongSo,
           lasoData: calculatedLaSo,
+          readingHtml: requiresPayment ? existingReadingHtml : undefined,
         });
         if (saveRes.chartId) {
           createdChartId = saveRes.chartId;
@@ -589,6 +581,17 @@ export default function HomePage() {
       } catch (e) {
         console.warn('Lỗi tự động lưu lá số:', e);
       }
+    }
+
+    // Nếu cần thanh toán Bản Pro hoặc Bản Expert (khách chủ động bấm chọn trên form): Mở ngay modal thanh toán có gắn chartId
+    if (requiresPayment) {
+      setIsLoadingReading(false);
+      if (tier === 'expert') {
+        openUpgradeExpertModal(isEditing && previousTier === 'pro' ? 'pro' : 'free');
+      } else {
+        openUpgradeModal();
+      }
+      return;
     }
 
     // Gọi AI Thầy Tôn bình giải
@@ -737,21 +740,34 @@ export default function HomePage() {
     }
   };
 
-  // Mở modal thanh toán nâng cấp Bản Pro (mở ngay mã QR VietQR 0ms, không bắt đăng nhập trước)
+  // Mở modal thanh toán nâng cấp Bản Pro (Bắt buộc đăng nhập để lưu lá số và tra cứu lại)
   const openUpgradeModal = () => {
     if (testerInfo?.isTester) {
       alert('Tài khoản Tester của bạn đã được mở khóa toàn bộ quyền lợi VIP Pro!');
       return;
     }
 
-    setPaymentModalConfig({
-      isOpen: true,
-      type: 'reading_vip',
-      price: 119000,
-      onConfirm: () => {
-        handleConfirmUpgradeToPro();
-      },
-    });
+    const proceedToPayment = () => {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: 'reading_vip',
+        price: 119000,
+        onConfirm: () => {
+          handleConfirmUpgradeToPro();
+        },
+      });
+    };
+
+    if (!user && !isAuthenticatedRef.current) {
+      pendingPostAuthActionRef.current = proceedToPayment;
+      setAuthModalNotice(
+        'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán nâng cấp Bản Pro.'
+      );
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    proceedToPayment();
   };
 
   // Mở modal thanh toán Bản Chuyên Gia Expert (269.000đ nếu từ Free, hoặc 150.000đ nếu nâng cấp từ Pro)
@@ -761,17 +777,32 @@ export default function HomePage() {
     const paymentType: PaymentPurpose = isUpgradingFromPro ? 'upgrade_expert' : 'reading_expert';
     const price = isUpgradingFromPro ? 150000 : 269000;
 
-    setPaymentModalConfig({
-      isOpen: true,
-      type: paymentType,
-      price,
-      onConfirm: () => {
-        handleConfirmUpgradeToExpert();
-      },
-    });
+    const proceedToPayment = () => {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: paymentType,
+        price,
+        onConfirm: () => {
+          handleConfirmUpgradeToExpert();
+        },
+      });
+    };
+
+    if (!user && !isAuthenticatedRef.current) {
+      pendingPostAuthActionRef.current = proceedToPayment;
+      setAuthModalNotice(
+        isUpgradingFromPro
+          ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để mở mã QR thanh toán nâng cấp từ Bản Pro lên Bản Chuyên Gia Expert (150.000đ).'
+          : 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Gia Expert (269.000đ).'
+      );
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    proceedToPayment();
   };
 
-  // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp - mở ngay mã QR VietQR 0ms)
+  // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp - bắt buộc đăng nhập để lưu lịch sử hỏi đáp)
   const handleUnlockQuestions = (mode?: 'basic' | 'vip' | 'expert') => {
     const activeTier = tierRef.current || currentTier;
     const targetMode = mode || (activeTier === 'expert' ? 'expert' : activeTier === 'pro' ? 'vip' : 'basic');
@@ -803,58 +834,75 @@ export default function HomePage() {
       }
     };
 
-    if (targetMode === 'expert') {
-      setPaymentModalConfig({
-        isOpen: true,
-        type: 'chat_expert',
-        price: 129000,
-        onConfirm: () => {
-          const validExpertAsked = chatHistory.filter((c) => !c.isError && c.type === 'expert').length;
-          updateQuestionsQuota((prev) => {
-            const next = {
-              ...prev,
-              expertAllowed: Math.max(prev.expertAllowed || 0, validExpertAsked) + 2,
-            };
-            persistQuotaToDb(next);
-            return next;
-          });
-        },
-      });
-    } else if (targetMode === 'vip') {
-      setPaymentModalConfig({
-        isOpen: true,
-        type: 'chat_vip',
-        price: 99000,
-        onConfirm: () => {
-          const validVipAsked = chatHistory.filter((c) => !c.isError && c.type === 'vip').length;
-          updateQuestionsQuota((prev) => {
-            const next = {
-              ...prev,
-              proAllowed: Math.max(prev.proAllowed, validVipAsked) + 2,
-            };
-            persistQuotaToDb(next);
-            return next;
-          });
-        },
-      });
-    } else {
-      setPaymentModalConfig({
-        isOpen: true,
-        type: 'chat_free',
-        price: 49000,
-        onConfirm: () => {
-          const validBasicAsked = chatHistory.filter((c) => !c.isError && (c.type === 'basic' || !c.type)).length;
-          updateQuestionsQuota((prev) => {
-            const next = {
-              ...prev,
-              basicAllowed: Math.max(prev.basicAllowed, validBasicAsked) + 2,
-            };
-            persistQuotaToDb(next);
-            return next;
-          });
-        },
-      });
+    const proceedToPayment = () => {
+      if (targetMode === 'expert') {
+        setPaymentModalConfig({
+          isOpen: true,
+          type: 'chat_expert',
+          price: 129000,
+          onConfirm: () => {
+            const validExpertAsked = chatHistory.filter((c) => !c.isError && c.type === 'expert').length;
+            updateQuestionsQuota((prev) => {
+              const next = {
+                ...prev,
+                expertAllowed: Math.max(prev.expertAllowed || 0, validExpertAsked) + 2,
+              };
+              persistQuotaToDb(next);
+              return next;
+            });
+          },
+        });
+      } else if (targetMode === 'vip') {
+        setPaymentModalConfig({
+          isOpen: true,
+          type: 'chat_vip',
+          price: 99000,
+          onConfirm: () => {
+            const validVipAsked = chatHistory.filter((c) => !c.isError && c.type === 'vip').length;
+            updateQuestionsQuota((prev) => {
+              const next = {
+                ...prev,
+                proAllowed: Math.max(prev.proAllowed, validVipAsked) + 2,
+              };
+              persistQuotaToDb(next);
+              return next;
+            });
+          },
+        });
+      } else {
+        setPaymentModalConfig({
+          isOpen: true,
+          type: 'chat_free',
+          price: 49000,
+          onConfirm: () => {
+            const validBasicAsked = chatHistory.filter((c) => !c.isError && (c.type === 'basic' || !c.type)).length;
+            updateQuestionsQuota((prev) => {
+              const next = {
+                ...prev,
+                basicAllowed: Math.max(prev.basicAllowed, validBasicAsked) + 2,
+              };
+              persistQuotaToDb(next);
+              return next;
+            });
+          },
+        });
+      }
+    };
+
+    if (!user && !isAuthenticatedRef.current) {
+      pendingPostAuthActionRef.current = proceedToPayment;
+      setAuthModalNotice(
+        targetMode === 'expert'
+          ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi Chuyên Gia Expert (129.000đ).'
+          : targetMode === 'vip'
+          ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi Chuyên Sâu.'
+          : 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán 02 câu hỏi cùng Thầy Tôn.'
+      );
+      setIsAuthModalOpen(true);
+      return;
     }
+
+    proceedToPayment();
   };
 
   // Mở modal Sổ tay số mệnh (danh sách lá số đã lưu)
@@ -1219,6 +1267,7 @@ export default function HomePage() {
 
   const handleSignOutClean = async () => {
     isLoggingOutRef.current = true;
+    isAuthenticatedRef.current = false;
     handleReset();
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tuvi_active_session');
@@ -1261,6 +1310,11 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window === 'undefined' || isAuthLoading) return;
     if (isLoggingOutRef.current) return;
+    // Nếu vừa lập lá số hoặc vừa đăng nhập từ bảng yêu cầu đăng nhập để lập lá số/thanh toán, không ghi đè bằng lá số cũ
+    if (laSoRef.current || pendingPostAuthActionRef.current) {
+      setIsRestoringSession(false);
+      return;
+    }
 
     const urlParams = new URLSearchParams(window.location.search);
     const urlChartId = urlParams.get('chartId');
@@ -1456,10 +1510,10 @@ export default function HomePage() {
     }
 
     // Nếu người dùng đã đăng nhập và chưa mở lá số nào: Tự động mở lá số gần nhất trong Sổ tay trên Supabase
-    if (!hasRestored && user) {
+    if (!hasRestored && user && !laSoRef.current && !pendingPostAuthActionRef.current) {
       getUserCharts()
         .then(({ charts }) => {
-          if (charts && charts.length > 0) {
+          if (charts && charts.length > 0 && !laSoRef.current && !pendingPostAuthActionRef.current) {
             handleSelectSavedChart(charts[0].id).finally(() => {
               setIsRestoringSession(false);
             });
