@@ -214,6 +214,34 @@ LƯU Ý QUAN TRỌNG: Hiện tại năm ${namXem} đương số đúng ${tuoiAmX
     tieuVanPromptStr = `\nTIỂU VẬN / LƯU NIÊN NĂM ${namXem} (${namXemCanChi}): Đóng tại Cung ${cungLuuNien.chi} (${cungLuuNien.cungName}).\n`;
   }
 
+  const hasAnhMat = Boolean(anhMat && anhMat.includes(';base64,'));
+  const hasAnhTay = Boolean(anhTay && anhTay.includes(';base64,'));
+
+  let tuongPhapInstruction = '';
+  if (hasAnhMat || hasAnhTay) {
+    const uploadedList = [
+      hasAnhMat ? 'Ảnh Diện Tướng (khuôn mặt thực tế)' : '',
+      hasAnhTay ? 'Ảnh Thủ Tướng (lòng bàn tay thực tế)' : '',
+    ]
+      .filter(Boolean)
+      .join(' và ');
+    tuongPhapInstruction = `- PHÂN TÍCH TRỰC TIẾP ẢNH TƯỚNG PHÁP ĐÍNH KÈM (${uploadedList}): BẮT BUỘC quan sát kỹ hình ảnh thực tế được gửi kèm${
+      hasAnhMat
+        ? ' — nhận diện rõ Tam Đình (Thượng - Trung - Hạ đình), Ngũ Quan (vầng trán, ấn đường, chân mày, ánh mắt, sống mũi & chuẩn đầu, nhân trung, đôi môi, cằm, thần khí khuôn mặt)'
+        : ''
+    }${
+      hasAnhTay
+        ? `${hasAnhMat ? '; đồng thời ' : ' — '}quan sát kỹ lòng bàn tay thực tế trên ảnh (hình dáng bàn tay, ngón tay, các gò bàn tay như gò Kim Tinh, Thái Âm, Mộc Tinh, Thủy Tinh và độ sâu, độ cong, hướng chạy thực tế của 3 đường chỉ tay chính: Sinh đạo, Trí đạo, Tâm đạo)`
+        : ''
+    }${
+      chieuCao && canNang ? ` kết hợp hình thể (${chieuCao} cm, ${canNang} kg)` : ''
+    } để đối chiếu sắc bén với các sao trên lá số.`;
+  } else if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
+    tuongPhapInstruction = `- Đối chiếu hình thể thực tế (Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg) với nạp âm Bản Mệnh (${banMenh}) và các sao thủ/chiếu Mệnh. (LƯU Ý NGHIÊM NGẶT: Đương số KHÔNG gửi kèm ảnh khuôn mặt hay ảnh bàn tay, nên TUYỆT ĐỐI KHÔNG tự suy đoán hay mô tả các đường chỉ tay Sinh đạo, Trí đạo, Tâm đạo hay nét mặt cụ thể như thể đã xem ảnh!).`;
+  } else {
+    tuongPhapInstruction = `- Khảo sát khí chất tiên thiên qua nạp âm Bản Mệnh (${banMenh}) và các sao thủ/chiếu Mệnh. (LƯU Ý NGHIÊM NGẶT: Đương số KHÔNG gửi kèm ảnh khuôn mặt hay ảnh bàn tay, nên TUYỆT ĐỐI KHÔNG tự suy đoán hay mô tả các đường chỉ tay Sinh đạo, Trí đạo, Tâm đạo hay nét mặt cụ thể!).`;
+  }
+
   let promptText = '';
 
   if (isExpert) {
@@ -240,7 +268,7 @@ ${cungDataStr}
 `;
 
     if (thongTinThem && thongTinThem.trim()) {
-      expertBaseHeader += `\nHOÀN CẢNH & NGUYỆN VỌNG THỰC TẾ: ${thongTinThem.trim()}.\n`;
+      expertBaseHeader += `\nHOÀN CẢNH & DỮ LIỆU CÁ NHÂN THỰC TẾ CỦA ĐƯƠNG SỐ: ${thongTinThem.trim()} (BẮT BUỘC lồng ghép và đối chiếu sát sao hoàn cảnh thực tế này khi luận giải Cung Mệnh, Cung Quan Lộc, Cung Tài Bạch, Cung Phu Thê/Gia Đạo, Cung Tử Tức và Đại Vận/Tiểu Vận!).\n`;
     }
     if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
       expertBaseHeader += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
@@ -251,7 +279,7 @@ ${cungDataStr}
 
     const part1Prompt = `${expertBaseHeader}
 NHIỆM VỤ PHẦN 1 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 1.500 TỪ, KHÔNG VIẾT DÀI QUÁ 1.600 TỪ):
-Hãy viết thật sâu sắc, uyên bác nhưng súc tích CHƯƠNG I (khoảng 350 từ) và NỬA ĐẦU CHƯƠNG II từ Cung số 1 đến Cung số 6 (mỗi cung viết cô đọng khoảng 160 - 190 từ, đi thẳng vào trọng tâm tinh đẩu và cát hung; nếu cung nào Vô Chính Diệu thì bắt buộc lấy sao từ Tam Phương Tứ Chính hội chiếu để luận):
+Hãy viết thật sâu sắc, uyên bác nhưng súc tích CHƯƠNG I (khoảng 350 - 400 từ) và NỬA ĐẦU CHƯƠNG II từ Cung số 1 đến Cung số 6 (mỗi cung viết cô đọng khoảng 160 - 190 từ, đi thẳng vào trọng tâm tinh đẩu và cát hung; nếu cung nào Vô Chính Diệu thì bắt buộc lấy sao từ Tam Phương Tứ Chính hội chiếu để luận):
 
 <h3>I. ĐẠI CƯƠNG BẢN MỆNH, CỤC SỐ, ÂM DƯƠNG &amp; ĐỐI CHIẾU TƯỚNG PHÁP CHUYÊN GIA</h3>
 - Phân tích chuyên sâu Mệnh (${banMenh}), Cục (${tenCuc}), quan hệ Sinh khắc Mệnh - Cục (${sinhKhac}), ý nghĩa sao Mệnh Chủ (${menhChu}) và Thân Chủ (${thanChu}).
@@ -261,7 +289,7 @@ Hãy viết thật sâu sắc, uyên bác nhưng súc tích CHƯƠNG I (khoảng
         : 'Khẳng định rõ ràng đương số là "Âm Dương nghịch lý", biểu trưng cho người có ý chí phi thường, vượt nghịch cảnh mà lập nên cơ nghiệp lớn, tiền vận rèn luyện hậu vận hiển vinh.'
     }
 - Đánh giá tổng thể cách cục lớn của lá số (Tam Phương Tứ Chính, Tứ Hóa Lộc - Quyền - Khoa - Kỵ, Tuần/Triệt).
-- NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) hoặc thông số Chiều cao/Cân nặng gửi kèm: Phân tích Tam Đình, Ngũ Quan và các đường chỉ tay chính (Sinh đạo, Trí đạo, Tâm đạo theo nguyên tắc Nam tả Nữ hữu) đối chiếu với các sao trên lá số.
+${tuongPhapInstruction}
 
 <h3>II. LUẬN GIẢI CHUYÊN SÂU &amp; TOÀN DIỆN ĐỦ 12 CUNG TRÊN LÁ SỐ (KHẢO SÁT TỪNG CUNG VỊ)</h3>
 Phân tích từng cung từ Cung 1 đến Cung 6 bằng thẻ <h4> riêng biệt (mỗi cung viết súc tích 1 đoạn văn khoảng 160 - 190 từ; với cung Vô Chính Diệu bắt buộc xét kỹ Chính tinh và Phụ tinh từ Tam Phương Tứ Chính hội chiếu):
@@ -337,7 +365,7 @@ ${cungDataStr}
 `;
 
     if (thongTinThem && thongTinThem.trim()) {
-      promptText += `\nHOÀN CẢNH & NGUYỆN VỌNG THỰC TẾ: ${thongTinThem.trim()}.\n`;
+      promptText += `\nHOÀN CẢNH & DỮ LIỆU CÁ NHÂN THỰC TẾ CỦA ĐƯƠNG SỐ: ${thongTinThem.trim()} (BẮT BUỘC lồng ghép và đối chiếu sát sao hoàn cảnh thực tế này khi luận giải!).\n`;
     }
     if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
       promptText += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
@@ -354,7 +382,7 @@ Bài luận phải cực kỳ sâu sắc, phân tích đa tầng, giải nghĩa 
     : 'Khẳng định rõ ràng đương số là "Âm Dương nghịch lý", biểu trưng cho người phải tự lực cánh sinh, cuộc đời nhiều thử thách chông gai lúc ban đầu trước khi tôi luyện thành tựu.'
 } Kết hợp phân tích Sinh khắc Mệnh Cục (${sinhKhac}) và Cung Thân (${thanCuName || 'Thân cư Mệnh'}).
 - Phân tích cặn kẽ 14 Chính tinh thủ và chiếu Mệnh/Thân (nếu Mệnh hoặc Thân Vô Chính Diệu thì bắt buộc phân tích Chính tinh và Phụ tinh từ Tam Phương Tứ Chính hội chiếu), sự giao hội của Tứ Hóa (Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ).
-- NẾU CÓ ẢNH DIỆN TƯỚNG (mặt) hoặc THỦ TƯỚNG (chỉ tay) gửi kèm: Hãy đối chiếu trực tiếp các nét tướng mạo (ấn đường, chuẩn đầu, cung điền trạch, các gò chỉ tay, đường sinh đạo, trí đạo, tâm đạo theo quy tắc Nam tay trái, Nữ tay phải) với các sao thủ/chiếu Mệnh để xác tín độ chính xác giờ sinh và thế mạnh thiên bẩm.
+${tuongPhapInstruction}
 
 <h3>II. TỨ TRỤ MỆNH SỐ: MỆNH - THÂN - TÀI - QUAN - PHU THÊ</h3>
 - Phân tích thế đứng Tam hợp Mệnh - Tài - Quan và cung Thiên Di (Tam Phương Tứ Chính). Cung nào Vô Chính Diệu thì bắt buộc lấy sao từ Tam Phương Tứ Chính hội chiếu để luận.

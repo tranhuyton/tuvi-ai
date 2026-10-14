@@ -475,12 +475,10 @@ export default function HomePage() {
     setCurrentTier(effectiveTier);
     tierRef.current = effectiveTier;
 
-    // Tách riêng dữ liệu cơ bản của đương số (loại bỏ base64 ảnh khỏi lá số lưu trữ)
+    // Giữ nguyên dữ liệu đương số (bao gồm cả ảnh diện tướng/chỉ tay đã nén ~60KB để dùng sau khi quét QR và lưu DB)
     const cleanDuongSo: DuLieuDuongSo = {
       ...data,
       tier: effectiveTier,
-      anhMat: undefined,
-      anhTay: undefined,
     };
 
     let initialQuota: QuestionsQuota = {
@@ -524,7 +522,10 @@ export default function HomePage() {
 
     const resolvedNamXem = cleanDuongSo.namXem || new Date().getFullYear();
     cleanDuongSo.namXem = resolvedNamXem;
-    const calculatedLaSo = lapLaSoTuVi(cleanDuongSo, resolvedNamXem);
+    const calculatedLaSo = lapLaSoTuVi(
+      { ...cleanDuongSo, anhMat: undefined, anhTay: undefined },
+      resolvedNamXem
+    );
     calculatedLaSo.tier = effectiveTier;
     calculatedLaSo.quota = initialQuota;
 
@@ -637,8 +638,6 @@ export default function HomePage() {
     const updatedCleanDuongSo: DuLieuDuongSo = {
       ...activeDuongSo,
       tier: 'pro',
-      anhMat: undefined,
-      anhTay: undefined,
     };
 
     const pendingLaSo: LaSoData = {
@@ -718,8 +717,6 @@ export default function HomePage() {
     const updatedCleanDuongSo: DuLieuDuongSo = {
       ...activeDuongSo,
       tier: 'expert',
-      anhMat: undefined,
-      anhTay: undefined,
     };
 
     const pendingLaSo: LaSoData = {
@@ -1215,8 +1212,6 @@ export default function HomePage() {
         const cleanDuongSo: DuLieuDuongSo = {
           ...chart.duong_so_data,
           tier: detectedTier,
-          anhMat: undefined,
-          anhTay: undefined,
         };
         const updatedLaSo: LaSoData = {
           ...activeLaSo,
@@ -1465,8 +1460,6 @@ export default function HomePage() {
                       const cleanDuongSo: DuLieuDuongSo = {
                         ...chart.duong_so_data,
                         tier: detectedTier,
-                        anhMat: undefined,
-                        anhTay: undefined,
                       };
                       const syncedQuota: QuestionsQuota = {
                         basicAllowed: Number(chart.laso_data?.quota?.basicAllowed || quotaRef.current.basicAllowed || 0),

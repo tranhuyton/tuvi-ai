@@ -105,21 +105,26 @@ export default function AdminTransactionsTable({
     setPreviewReadingHtml(chart.reading_html || null);
     setCopiedReading(false);
 
-    if (!chart.reading_html) {
-      setIsLoadingPreviewReading(true);
-      try {
-        const res = await fetch(`/api/admin/chart-reading?id=${chart.id}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.reading_html) {
-            setPreviewReadingHtml(data.reading_html);
-          }
+    setIsLoadingPreviewReading(!chart.reading_html);
+    try {
+      const res = await fetch(`/api/admin/chart-reading?id=${chart.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.reading_html) {
+          setPreviewReadingHtml(data.reading_html);
         }
-      } catch (err) {
-        console.warn('Lỗi tải lời bình giải:', err);
-      } finally {
-        setIsLoadingPreviewReading(false);
+        if (data.duong_so_data) {
+          setPreviewChart((prev) =>
+            prev && prev.id === chart.id
+              ? { ...prev, duong_so_data: data.duong_so_data, laso_data: data.laso_data || prev.laso_data }
+              : prev
+          );
+        }
       }
+    } catch (err) {
+      console.warn('Lỗi tải lời bình giải:', err);
+    } finally {
+      setIsLoadingPreviewReading(false);
     }
   };
 
@@ -783,6 +788,33 @@ export default function AdminTransactionsTable({
                               Khách: {c.user_email}
                             </div>
                           )}
+                          {(ds.anhMat || ds.anhTay || ds.thongTinThem || (ds.chieuCao && ds.canNang)) && (
+                            <div className="flex flex-wrap items-center gap-1 mt-1">
+                              {ds.anhMat && (
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px]">
+                                  📸 Ảnh mặt
+                                </span>
+                              )}
+                              {ds.anhTay && (
+                                <span className="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[10px]">
+                                  ✋ Ảnh tay
+                                </span>
+                              )}
+                              {ds.chieuCao && ds.canNang && (
+                                <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[10px]">
+                                  📏 {ds.chieuCao}cm • {ds.canNang}kg
+                                </span>
+                              )}
+                              {ds.thongTinThem && (
+                                <span
+                                  className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] max-w-[220px] truncate"
+                                  title={ds.thongTinThem}
+                                >
+                                  📝 {ds.thongTinThem}
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </td>
 
                         <td className="py-3 px-4">
@@ -885,13 +917,71 @@ export default function AdminTransactionsTable({
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto space-y-8">
+              {/* Hồ sơ Dữ liệu cá nhân & Ảnh tướng pháp của khách hàng */}
+              {(previewChart.duong_so_data?.anhMat ||
+                previewChart.duong_so_data?.anhTay ||
+                previewChart.duong_so_data?.thongTinThem ||
+                (previewChart.duong_so_data?.chieuCao && previewChart.duong_so_data?.canNang)) && (
+                <div className="p-4 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3">
+                  <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Hồ Sơ Dữ Liệu Cá Nhân &amp; Ảnh Tướng Pháp Đương Số</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="space-y-1.5">
+                      {previewChart.duong_so_data?.chieuCao && previewChart.duong_so_data?.canNang && (
+                        <div className="text-slate-300">
+                          <span className="text-slate-400">Hình thể:</span>{' '}
+                          <b className="text-amber-300">
+                            Cao {previewChart.duong_so_data.chieuCao} cm • Nặng {previewChart.duong_so_data.canNang} kg
+                          </b>
+                        </div>
+                      )}
+                      {previewChart.duong_so_data?.thongTinThem && (
+                        <div className="text-slate-300">
+                          <span className="text-slate-400">Hoàn cảnh / Ghi chú cá nhân:</span>{' '}
+                          <span className="text-emerald-300 font-medium">{previewChart.duong_so_data.thongTinThem}</span>
+                        </div>
+                      )}
+                    </div>
+                    {(previewChart.duong_so_data?.anhMat || previewChart.duong_so_data?.anhTay) && (
+                      <div className="flex items-center gap-4">
+                        {previewChart.duong_so_data?.anhMat && (
+                          <div className="flex flex-col items-center gap-1">
+                            <img
+                              src={previewChart.duong_so_data.anhMat}
+                              alt="Ảnh khuôn mặt"
+                              className="w-20 h-24 object-cover rounded-xl border border-emerald-500/40 shadow"
+                            />
+                            <span className="text-[10px] text-emerald-300 font-medium">📸 Ảnh Diện Tướng</span>
+                          </div>
+                        )}
+                        {previewChart.duong_so_data?.anhTay && (
+                          <div className="flex flex-col items-center gap-1">
+                            <img
+                              src={previewChart.duong_so_data.anhTay}
+                              alt="Ảnh bàn tay"
+                              className="w-20 h-24 object-cover rounded-xl border border-sky-500/40 shadow"
+                            />
+                            <span className="text-[10px] text-sky-300 font-medium">✋ Ảnh Thủ Tướng</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Bàn Cờ Lá Số */}
               {previewChart.laso_data || previewChart.duong_so_data ? (
                 <LaSoBanCo
                   laSo={
                     previewChart.duong_so_data
                       ? {
-                          ...lapLaSoTuVi(previewChart.duong_so_data, 2026),
+                          ...lapLaSoTuVi(
+                            { ...previewChart.duong_so_data, anhMat: undefined, anhTay: undefined },
+                            previewChart.duong_so_data.namXem || 2026
+                          ),
                           tier: previewChart.duong_so_data.tier || previewChart.laso_data?.tier,
                           quota: previewChart.laso_data?.quota,
                         }
