@@ -340,7 +340,7 @@ export default function AdminAffiliatesTable({
             placeholder="Tìm theo tên, mã ref, SĐT, STK..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>
 
@@ -666,7 +666,7 @@ export default function AdminAffiliatesTable({
               <span>{editingAffiliate ? 'Cập Nhật Cộng Tác Viên' : 'Thêm Cộng Tác Viên Mới'}</span>
             </h3>
 
-            <form onSubmit={handleSubmitForm} className="space-y-4">
+            <form onSubmit={handleSubmitForm} className="space-y-4 text-slate-900">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -678,9 +678,9 @@ export default function AdminAffiliatesTable({
                     placeholder="ví dụ: diep93, nam88"
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase().replace(/\s/g, '') })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
-                  <span className="text-[10px] text-slate-400">Viết liền không dấu</span>
+                  <span className="text-[10px] text-slate-500">Viết liền không dấu</span>
                 </div>
 
                 <div>
@@ -693,7 +693,7 @@ export default function AdminAffiliatesTable({
                     placeholder="ví dụ: Trần Thị Điệp"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 placeholder:text-slate-400 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -706,7 +706,7 @@ export default function AdminAffiliatesTable({
                     placeholder="0912..."
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 placeholder:text-slate-400 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
 
@@ -717,7 +717,7 @@ export default function AdminAffiliatesTable({
                     placeholder="ctv@gmail.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 placeholder:text-slate-400 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -730,36 +730,36 @@ export default function AdminAffiliatesTable({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Tên Ngân Hàng</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Tên Ngân Hàng</label>
                     <input
                       type="text"
                       placeholder="MB, VCB, VPBank..."
                       value={formData.bankName}
                       onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Số Tài Khoản (STK)</label>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">Số Tài Khoản (STK)</label>
                     <input
                       type="text"
                       placeholder="0123456789..."
                       value={formData.bankAccountNumber}
                       onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Tên Chủ Tài Khoản</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tên Chủ Tài Khoản</label>
                   <input
                     type="text"
                     placeholder="TRAN THI DIEP (viết hoa không dấu)"
                     value={formData.bankAccountName}
                     onChange={(e) => setFormData({ ...formData, bankAccountName: e.target.value.toUpperCase() })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm uppercase focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 placeholder:text-slate-400 placeholder:font-normal uppercase focus:ring-2 focus:ring-amber-500 focus:outline-none bg-white"
                   />
                 </div>
               </div>
@@ -774,9 +774,9 @@ export default function AdminAffiliatesTable({
                       max="100"
                       value={formData.commissionRate}
                       onChange={(e) => setFormData({ ...formData, commissionRate: Number(e.target.value) })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-indigo-700 focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-indigo-700 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
                   </div>
                   <span className="text-[10px] text-slate-500">Mặc định 25% - 30%</span>
                 </div>
@@ -788,7 +788,7 @@ export default function AdminAffiliatesTable({
                     placeholder="ví dụ: 35000"
                     value={formData.commissionFixed}
                     onChange={(e) => setFormData({ ...formData, commissionFixed: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                   />
                   <span className="text-[10px] text-slate-500">Nếu nhập, sẽ ưu tiên tính tiền cố định</span>
                 </div>
@@ -801,7 +801,7 @@ export default function AdminAffiliatesTable({
                   placeholder="Ghi chú thêm về CTV này..."
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 placeholder:text-slate-400 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
               </div>
 
@@ -894,7 +894,7 @@ export default function AdminAffiliatesTable({
                   required
                   value={payoutAmount}
                   onChange={(e) => setPayoutAmount(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-bold text-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-lg font-bold text-emerald-700 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -905,7 +905,7 @@ export default function AdminAffiliatesTable({
                   placeholder="Ví dụ: Chuyển khoản ngày 26/09"
                   value={payoutNote}
                   onChange={(e) => setPayoutNote(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-900 placeholder:text-slate-400 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 />
               </div>
 
