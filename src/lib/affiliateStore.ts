@@ -2,9 +2,16 @@ import fs from 'fs';
 import path from 'path';
 import { supabase } from './supabase';
 
-import { AffiliateItem, inferBankCode } from '@/types/affiliate';
+import {
+  AffiliateItem,
+  AffiliateTierCommissions,
+  CommissionMode,
+  DEFAULT_TIER_COMMISSIONS,
+  calculateAffiliateCommission,
+  inferBankCode,
+} from '@/types/affiliate';
 export type { AffiliateItem };
-export { inferBankCode };
+export { inferBankCode, calculateAffiliateCommission };
 
 // Global cache trong runtime Node
 declare global {
@@ -66,6 +73,20 @@ loadFromFile();
 function rowToAffiliateItem(row: any): AffiliateItem {
   const bName = row.bank_name || undefined;
   const bCode = row.bank_code || inferBankCode(bName);
+  const fixedVal = row.commission_fixed ? Number(row.commission_fixed) : undefined;
+  const tiersVal: AffiliateTierCommissions | undefined =
+    row.commission_tiers && typeof row.commission_tiers === 'object'
+      ? { ...DEFAULT_TIER_COMMISSIONS, ...row.commission_tiers }
+      : undefined;
+
+  const mode: CommissionMode =
+    row.commission_mode === 'tier' || row.commission_mode === 'fixed' || row.commission_mode === 'percent'
+      ? row.commission_mode
+      : tiersVal
+      ? 'tier'
+      : fixedVal && fixedVal > 0
+      ? 'fixed'
+      : 'percent';
 
   return {
     id: row.id,
@@ -77,8 +98,10 @@ function rowToAffiliateItem(row: any): AffiliateItem {
     bankCode: bCode,
     bankAccountNumber: row.bank_account_number || undefined,
     bankAccountName: row.bank_account_name || undefined,
+    commissionMode: mode,
     commissionRate: Number(row.commission_rate ?? 25),
-    commissionFixed: row.commission_fixed ? Number(row.commission_fixed) : undefined,
+    commissionFixed: fixedVal,
+    commissionTiers: tiersVal,
     status: row.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
     totalClicks: Number(row.total_clicks || 0),
     totalOrders: Number(row.total_orders || 0),
@@ -174,13 +197,19 @@ export async function createAffiliate(data: {
   bankName?: string;
   bankAccountNumber?: string;
   bankAccountName?: string;
+  commissionMode?: CommissionMode;
   commissionRate?: number;
   commissionFixed?: number;
+  commissionTiers?: AffiliateTierCommissions;
   notes?: string;
 }): Promise<AffiliateItem> {
   const cleanCode = data.code.trim().toLowerCase();
   const id = `aff_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const now = new Date().toISOString();
+
+  const mode: CommissionMode =
+    data.commissionMode ||
+    (data.commissionTiers ? 'tier' : data.commissionFixed && data.commissionFixed > 0 ? 'fixed' : 'percent');
 
   const newAff: AffiliateItem = {
     id,
@@ -192,8 +221,13 @@ export async function createAffiliate(data: {
     bankCode: inferBankCode(data.bankName?.trim()),
     bankAccountNumber: data.bankAccountNumber?.trim() || undefined,
     bankAccountName: data.bankAccountName?.trim() || undefined,
+    commissionMode: mode,
     commissionRate: data.commissionRate !== undefined ? Number(data.commissionRate) : 25,
     commissionFixed: data.commissionFixed !== undefined ? Number(data.commissionFixed) : undefined,
+    commissionTiers:
+      mode === 'tier'
+        ? { ...DEFAULT_TIER_COMMISSIONS, ...(data.commissionTiers || {}) }
+        : data.commissionTiers,
     status: 'ACTIVE',
     totalClicks: 0,
     totalOrders: 0,
@@ -219,8 +253,10 @@ export async function createAffiliate(data: {
       bank_code: newAff.bankCode || null,
       bank_account_number: newAff.bankAccountNumber || null,
       bank_account_name: newAff.bankAccountName || null,
+      commission_mode: newAff.commissionMode || 'percent',
       commission_rate: newAff.commissionRate,
       commission_fixed: newAff.commissionFixed || null,
+      commission_tiers: newAff.commissionTiers || null,
       status: newAff.status,
       total_clicks: 0,
       total_orders: 0,
@@ -273,8 +309,10 @@ export async function updateAffiliate(
         bank_code: updated.bankCode || null,
         bank_account_number: updated.bankAccountNumber || null,
         bank_account_name: updated.bankAccountName || null,
+        commission_mode: updated.commissionMode || 'percent',
         commission_rate: updated.commissionRate,
         commission_fixed: updated.commissionFixed || null,
+        commission_tiers: updated.commissionTiers || null,
         status: updated.status,
         total_clicks: updated.totalClicks,
         total_orders: updated.totalOrders,
@@ -343,19 +381,14 @@ export async function recordAffiliateClick(code: string): Promise<void> {
 export async function recordAffiliateCommission(
   code: string,
   orderAmount: number,
-  orderCode: string
+  orderCode: string,
+  paymentType?: string
 ): Promise<number> {
   const aff = await getAffiliateByCode(code);
   if (!aff) return 0;
 
-  // Tính tiền hoa hồng
-  let commission = 0;
-  if (aff.commissionFixed && aff.commissionFixed > 0) {
-    commission = aff.commissionFixed;
-  } else {
-    const rate = aff.commissionRate || 25;
-    commission = Math.round((orderAmount * rate) / 100);
-  }
+  // Tính tiền hoa hồng theo cấu hình của CTV (% / Đồng giá / Theo từng gói)
+  const commission = calculateAffiliateCommission(aff, orderAmount, paymentType);
 
   aff.totalOrders = (aff.totalOrders || 0) + 1;
   aff.totalRevenue = (aff.totalRevenue || 0) + orderAmount;

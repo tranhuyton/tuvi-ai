@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     const { action } = body;
 
     if (action === 'create') {
-      const { code, name, phone, email, bankName, bankAccountNumber, bankAccountName, commissionRate, commissionFixed, notes } = body;
+      const { code, name, phone, email, bankName, bankAccountNumber, bankAccountName, commissionMode, commissionRate, commissionFixed, commissionTiers, notes } = body;
       if (!code || !name) {
         return NextResponse.json({ error: 'Mã giới thiệu và Tên CTV là bắt buộc' }, { status: 400 });
       }
@@ -66,8 +66,10 @@ export async function POST(req: NextRequest) {
         bankName,
         bankAccountNumber,
         bankAccountName,
+        commissionMode,
         commissionRate: commissionRate !== undefined ? Number(commissionRate) : 25,
         commissionFixed: commissionFixed ? Number(commissionFixed) : undefined,
+        commissionTiers,
         notes,
       });
 

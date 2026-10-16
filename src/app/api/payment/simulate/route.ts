@@ -34,7 +34,12 @@ export async function POST(req: Request) {
     if (order.affiliateCode) {
       try {
         const { recordAffiliateCommission } = await import('@/lib/affiliateStore');
-        await recordAffiliateCommission(order.affiliateCode, order.amount, order.orderCode);
+        await recordAffiliateCommission(
+          order.affiliateCode,
+          order.amount,
+          order.orderCode,
+          order.paymentType
+        );
       } catch (affErr) {
         console.warn('[SIMULATE] Lỗi ghi nhận hoa hồng CTV:', affErr);
       }

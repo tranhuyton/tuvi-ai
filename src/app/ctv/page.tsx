@@ -271,10 +271,20 @@ export default function CTVPortalPage() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-1">
-                    Mã CTV: <b className="text-amber-400 font-mono">{affInfo.code}</b> | Mức hoa hồng:{' '}
-                    <b className="text-amber-300">
-                      {affInfo.commissionFixed ? `${affInfo.commissionFixed.toLocaleString('vi-VN')}đ / đơn` : `${affInfo.commissionRate}%`}
-                    </b>
+                    Mã CTV: <b className="text-amber-400 font-mono">{affInfo.code}</b> | Chính sách hoa hồng:{' '}
+                    {affInfo.commissionMode === 'tier' && affInfo.commissionTiers ? (
+                      <span className="text-emerald-300 font-semibold">
+                        Gói Pro: {(affInfo.commissionTiers.reading_vip ?? 50000).toLocaleString('vi-VN')}đ • Gói Expert:{' '}
+                        {(affInfo.commissionTiers.reading_expert ?? 100000).toLocaleString('vi-VN')}đ • Hỏi 2 câu:{' '}
+                        {(affInfo.commissionTiers.chat_free ?? 20000).toLocaleString('vi-VN')}đ
+                      </span>
+                    ) : (
+                      <b className="text-amber-300">
+                        {affInfo.commissionMode === 'fixed' && affInfo.commissionFixed
+                          ? `${affInfo.commissionFixed.toLocaleString('vi-VN')}đ / đơn`
+                          : `${affInfo.commissionRate}% / đơn`}
+                      </b>
+                    )}
                   </p>
                 </div>
 

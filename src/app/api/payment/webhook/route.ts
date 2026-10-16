@@ -161,7 +161,12 @@ export async function POST(req: Request) {
       if (order.affiliateCode) {
         try {
           const { recordAffiliateCommission } = await import('@/lib/affiliateStore');
-          const comm = await recordAffiliateCommission(order.affiliateCode, order.amount, order.orderCode);
+          const comm = await recordAffiliateCommission(
+            order.affiliateCode,
+            order.amount,
+            order.orderCode,
+            order.paymentType
+          );
           console.log(`[PAYMENT WEBHOOK] Đã cộng hoa hồng ${comm.toLocaleString('vi-VN')}đ cho CTV ${order.affiliateCode}`);
         } catch (affErr) {
           console.warn('[PAYMENT WEBHOOK] Lỗi ghi nhận hoa hồng CTV:', affErr);

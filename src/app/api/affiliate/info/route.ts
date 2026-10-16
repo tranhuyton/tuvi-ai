@@ -35,8 +35,10 @@ export async function GET(req: NextRequest) {
       affiliate: {
         code: aff.code,
         name: aff.name,
+        commissionMode: aff.commissionMode,
         commissionRate: aff.commissionRate,
         commissionFixed: aff.commissionFixed,
+        commissionTiers: aff.commissionTiers,
         totalClicks: aff.totalClicks,
         totalOrders: aff.totalOrders,
         totalRevenue: aff.totalRevenue,

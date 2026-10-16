@@ -33,15 +33,10 @@ export async function POST(req: Request) {
     let expectedCommission = 0;
     if (cleanAffCode) {
       try {
-        const { getAffiliateByCode } = await import('@/lib/affiliateStore');
+        const { getAffiliateByCode, calculateAffiliateCommission } = await import('@/lib/affiliateStore');
         const aff = await getAffiliateByCode(cleanAffCode);
         if (aff && aff.status === 'ACTIVE') {
-          if (aff.commissionFixed && aff.commissionFixed > 0) {
-            expectedCommission = aff.commissionFixed;
-          } else {
-            const rate = aff.commissionRate || 25;
-            expectedCommission = Math.round((finalAmount * rate) / 100);
-          }
+          expectedCommission = calculateAffiliateCommission(aff, finalAmount, paymentType);
         }
       } catch {
         // ignore

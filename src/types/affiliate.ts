@@ -1,3 +1,23 @@
+export type CommissionMode = 'percent' | 'fixed' | 'tier';
+
+export interface AffiliateTierCommissions {
+  reading_vip: number;     // Gói Chuyên Sâu Pro (119k) -> mặc định 50,000đ
+  reading_expert: number;  // Gói Chuyên Gia Expert (269k) -> mặc định 100,000đ
+  upgrade_expert: number;  // Nâng cấp Pro lên Expert (150k) -> mặc định 50,000đ
+  chat_free: number;       // Hỏi 2 câu Cơ Bản (49k) -> mặc định 20,000đ
+  chat_vip: number;        // Hỏi 2 câu Pro (99k) -> mặc định 40,000đ
+  chat_expert: number;     // Hỏi 2 câu Expert (129k) -> mặc định 50,000đ
+}
+
+export const DEFAULT_TIER_COMMISSIONS: AffiliateTierCommissions = {
+  reading_vip: 50000,
+  reading_expert: 100000,
+  upgrade_expert: 50000,
+  chat_free: 20000,
+  chat_vip: 40000,
+  chat_expert: 50000,
+};
+
 export interface AffiliateItem {
   id: string;
   code: string; // Mã ref (ví dụ: diep93, nam88, thayton...), viết thường không dấu
@@ -8,8 +28,10 @@ export interface AffiliateItem {
   bankCode?: string;
   bankAccountNumber?: string;
   bankAccountName?: string;
+  commissionMode?: CommissionMode; // 'percent' | 'fixed' | 'tier'
   commissionRate: number; // % hoa hồng (mặc định 25 - 30%)
-  commissionFixed?: number; // Hoặc số tiền cố định VND/đơn
+  commissionFixed?: number; // Hoặc số tiền cố định VND/đơn (đồng giá mọi đơn)
+  commissionTiers?: AffiliateTierCommissions; // Hoặc cố định theo từng gói sản phẩm
   status: 'ACTIVE' | 'INACTIVE';
   totalClicks: number;
   totalOrders: number;
@@ -21,6 +43,45 @@ export interface AffiliateItem {
   createdAt: string;
   updatedAt: string;
   notes?: string;
+}
+
+/**
+ * Hàm tính tiền hoa hồng chuẩn xác cho 1 đơn hàng dựa trên cấu hình của CTV
+ */
+export function calculateAffiliateCommission(
+  aff: Pick<AffiliateItem, 'commissionMode' | 'commissionRate' | 'commissionFixed' | 'commissionTiers'>,
+  orderAmount: number,
+  paymentType?: string
+): number {
+  const mode: CommissionMode =
+    aff.commissionMode ||
+    (aff.commissionTiers ? 'tier' : aff.commissionFixed && aff.commissionFixed > 0 ? 'fixed' : 'percent');
+
+  if (mode === 'tier') {
+    const tiers = {
+      ...DEFAULT_TIER_COMMISSIONS,
+      ...(aff.commissionTiers || {}),
+    };
+
+    if (paymentType && paymentType in tiers) {
+      return Number(tiers[paymentType as keyof AffiliateTierCommissions] || 0);
+    }
+
+    // Fallback suy luận từ số tiền nếu không có paymentType
+    if (orderAmount >= 250000) return Number(tiers.reading_expert);
+    if (orderAmount === 150000) return Number(tiers.upgrade_expert);
+    if (orderAmount === 129000) return Number(tiers.chat_expert);
+    if (orderAmount === 119000) return Number(tiers.reading_vip);
+    if (orderAmount === 99000) return Number(tiers.chat_vip);
+    return Number(tiers.chat_free);
+  }
+
+  if (mode === 'fixed' && aff.commissionFixed && aff.commissionFixed > 0) {
+    return Number(aff.commissionFixed);
+  }
+
+  const rate = aff.commissionRate || 25;
+  return Math.round((orderAmount * rate) / 100);
 }
 
 export const VIETNAMESE_BANKS = [

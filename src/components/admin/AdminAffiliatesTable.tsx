@@ -24,7 +24,14 @@ import {
   Landmark,
   AlertCircle,
 } from 'lucide-react';
-import { AffiliateItem, inferBankCode, VIETNAMESE_BANKS } from '@/types/affiliate';
+import {
+  AffiliateItem,
+  AffiliateTierCommissions,
+  CommissionMode,
+  DEFAULT_TIER_COMMISSIONS,
+  inferBankCode,
+  VIETNAMESE_BANKS,
+} from '@/types/affiliate';
 import { AdminOrderItem } from './AdminTransactionsTable';
 
 interface AdminAffiliatesTableProps {
@@ -46,7 +53,20 @@ export default function AdminAffiliatesTable({
   // Modal thêm / sửa CTV
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingAffiliate, setEditingAffiliate] = useState<AffiliateItem | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    code: string;
+    name: string;
+    phone: string;
+    email: string;
+    bankName: string;
+    bankAccountNumber: string;
+    bankAccountName: string;
+    commissionMode: CommissionMode;
+    commissionRate: number;
+    commissionFixed: string;
+    commissionTiers: AffiliateTierCommissions;
+    notes: string;
+  }>({
     code: '',
     name: '',
     phone: '',
@@ -54,8 +74,10 @@ export default function AdminAffiliatesTable({
     bankName: '',
     bankAccountNumber: '',
     bankAccountName: '',
+    commissionMode: 'tier',
     commissionRate: 25,
     commissionFixed: '',
+    commissionTiers: { ...DEFAULT_TIER_COMMISSIONS },
     notes: '',
   });
 
@@ -105,8 +127,10 @@ export default function AdminAffiliatesTable({
       bankName: '',
       bankAccountNumber: '',
       bankAccountName: '',
+      commissionMode: 'tier',
       commissionRate: 25,
       commissionFixed: '',
+      commissionTiers: { ...DEFAULT_TIER_COMMISSIONS },
       notes: '',
     });
     setIsFormModalOpen(true);
@@ -115,6 +139,10 @@ export default function AdminAffiliatesTable({
   // Mở modal sửa
   const handleOpenEditModal = (aff: AffiliateItem) => {
     setEditingAffiliate(aff);
+    const inferredMode: CommissionMode =
+      aff.commissionMode ||
+      (aff.commissionTiers ? 'tier' : aff.commissionFixed && aff.commissionFixed > 0 ? 'fixed' : 'percent');
+
     setFormData({
       code: aff.code,
       name: aff.name,
@@ -123,8 +151,13 @@ export default function AdminAffiliatesTable({
       bankName: aff.bankName || '',
       bankAccountNumber: aff.bankAccountNumber || '',
       bankAccountName: aff.bankAccountName || '',
+      commissionMode: inferredMode,
       commissionRate: aff.commissionRate ?? 25,
       commissionFixed: aff.commissionFixed ? String(aff.commissionFixed) : '',
+      commissionTiers: {
+        ...DEFAULT_TIER_COMMISSIONS,
+        ...(aff.commissionTiers || {}),
+      },
       notes: aff.notes || '',
     });
     setIsFormModalOpen(true);
@@ -149,8 +182,23 @@ export default function AdminAffiliatesTable({
         bankName: formData.bankName.trim() || undefined,
         bankAccountNumber: formData.bankAccountNumber.trim() || undefined,
         bankAccountName: formData.bankAccountName.trim() || undefined,
+        commissionMode: formData.commissionMode,
         commissionRate: Number(formData.commissionRate || 25),
-        commissionFixed: formData.commissionFixed ? Number(formData.commissionFixed) : undefined,
+        commissionFixed:
+          formData.commissionMode === 'fixed' && formData.commissionFixed
+            ? Number(formData.commissionFixed)
+            : undefined,
+        commissionTiers:
+          formData.commissionMode === 'tier'
+            ? {
+                reading_vip: Number(formData.commissionTiers.reading_vip || 0),
+                reading_expert: Number(formData.commissionTiers.reading_expert || 0),
+                upgrade_expert: Number(formData.commissionTiers.upgrade_expert || 0),
+                chat_free: Number(formData.commissionTiers.chat_free || 0),
+                chat_vip: Number(formData.commissionTiers.chat_vip || 0),
+                chat_expert: Number(formData.commissionTiers.chat_expert || 0),
+              }
+            : undefined,
         notes: formData.notes.trim() || undefined,
       };
 
@@ -458,13 +506,25 @@ export default function AdminAffiliatesTable({
 
                       {/* Cột 4: Mức Hoa Hồng */}
                       <td className="py-3 px-4 text-center">
-                        {aff.commissionFixed && aff.commissionFixed > 0 ? (
-                          <span className="font-bold text-amber-700 text-xs bg-amber-50 px-2 py-1 rounded">
-                            {aff.commissionFixed.toLocaleString('vi-VN')}đ / đơn
+                        {(aff.commissionMode === 'tier' || (!aff.commissionMode && aff.commissionTiers)) ? (
+                          <div className="inline-block text-left bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg text-[11px] space-y-0.5">
+                            <div className="font-bold text-emerald-800 uppercase text-[10px] tracking-wide">
+                              Theo Từng Gói
+                            </div>
+                            <div className="text-slate-700">
+                              Pro: <b className="text-emerald-700">{((aff.commissionTiers?.reading_vip ?? DEFAULT_TIER_COMMISSIONS.reading_vip) / 1000).toFixed(0)}k</b> • Expert: <b className="text-purple-700">{((aff.commissionTiers?.reading_expert ?? DEFAULT_TIER_COMMISSIONS.reading_expert) / 1000).toFixed(0)}k</b>
+                            </div>
+                            <div className="text-slate-600 text-[10px]">
+                              Hỏi: <b>{((aff.commissionTiers?.chat_free ?? DEFAULT_TIER_COMMISSIONS.chat_free) / 1000).toFixed(0)}k</b> / <b>{((aff.commissionTiers?.chat_vip ?? DEFAULT_TIER_COMMISSIONS.chat_vip) / 1000).toFixed(0)}k</b> / <b>{((aff.commissionTiers?.chat_expert ?? DEFAULT_TIER_COMMISSIONS.chat_expert) / 1000).toFixed(0)}k</b>
+                            </div>
+                          </div>
+                        ) : (aff.commissionMode === 'fixed' || (!aff.commissionMode && aff.commissionFixed && aff.commissionFixed > 0)) ? (
+                          <span className="font-bold text-amber-700 text-xs bg-amber-50 border border-amber-200 px-2 py-1 rounded">
+                            {(aff.commissionFixed || 0).toLocaleString('vi-VN')}đ / đơn
                           </span>
                         ) : (
-                          <span className="font-bold text-indigo-700 text-xs bg-indigo-50 px-2.5 py-1 rounded">
-                            {aff.commissionRate}%
+                          <span className="font-bold text-indigo-700 text-xs bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded">
+                            {aff.commissionRate}% doanh thu
                           </span>
                         )}
                       </td>
@@ -653,7 +713,7 @@ export default function AdminAffiliatesTable({
       {/* 5. MODAL THÊM / SỬA CỘNG TÁC VIÊN */}
       {isFormModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl relative border border-slate-200">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-6 shadow-xl relative border border-slate-200">
             <button
               onClick={() => setIsFormModalOpen(false)}
               className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg"
@@ -764,34 +824,228 @@ export default function AdminAffiliatesTable({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Tỷ Lệ Hoa Hồng (%)</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={formData.commissionRate}
-                      onChange={(e) => setFormData({ ...formData, commissionRate: Number(e.target.value) })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-indigo-700 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
+              {/* CHẾ ĐỘ TÍNH HOA HỒNG */}
+              <div className="p-3.5 bg-amber-50/60 rounded-xl border border-amber-200/80 space-y-3">
+                <div className="text-xs font-bold text-slate-800 uppercase flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="w-4 h-4 text-amber-600" />
+                    <span>Chính Sách Trả Hoa Hồng</span>
                   </div>
-                  <span className="text-[10px] text-slate-500">Mặc định 25% - 30%</span>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Hoặc Cố Định (VND/đơn)</label>
-                  <input
-                    type="number"
-                    placeholder="ví dụ: 35000"
-                    value={formData.commissionFixed}
-                    onChange={(e) => setFormData({ ...formData, commissionFixed: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                  />
-                  <span className="text-[10px] text-slate-500">Nếu nhập, sẽ ưu tiên tính tiền cố định</span>
+                {/* Bộ chọn 3 chế độ */}
+                <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-200/70 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, commissionMode: 'tier' })}
+                    className={`py-1.5 px-2 rounded-md text-xs font-bold transition-all ${
+                      formData.commissionMode === 'tier'
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-white/60'
+                    }`}
+                  >
+                    Theo Từng Gói
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, commissionMode: 'percent' })}
+                    className={`py-1.5 px-2 rounded-md text-xs font-bold transition-all ${
+                      formData.commissionMode === 'percent'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-white/60'
+                    }`}
+                  >
+                    Theo % Đơn
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, commissionMode: 'fixed' })}
+                    className={`py-1.5 px-2 rounded-md text-xs font-bold transition-all ${
+                      formData.commissionMode === 'fixed'
+                        ? 'bg-amber-600 text-white shadow-sm'
+                        : 'text-slate-700 hover:bg-white/60'
+                    }`}
+                  >
+                    Đồng Giá / Đơn
+                  </button>
                 </div>
+
+                {/* 1. Chế độ: Cố định theo từng gói */}
+                {formData.commissionMode === 'tier' && (
+                  <div className="space-y-2.5 pt-1">
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Gói Pro Chuyên Sâu <span className="text-slate-400 font-normal">(119k)</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="1000"
+                            min="0"
+                            value={formData.commissionTiers.reading_vip}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                commissionTiers: { ...formData.commissionTiers, reading_vip: Number(e.target.value) },
+                              })
+                            }
+                            className="w-full pl-2.5 pr-7 py-1.5 border border-slate-300 rounded-lg text-sm font-bold text-emerald-700 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">đ</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Gói Expert Chuyên Gia <span className="text-slate-400 font-normal">(269k)</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="1000"
+                            min="0"
+                            value={formData.commissionTiers.reading_expert}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                commissionTiers: { ...formData.commissionTiers, reading_expert: Number(e.target.value) },
+                              })
+                            }
+                            className="w-full pl-2.5 pr-7 py-1.5 border border-slate-300 rounded-lg text-sm font-bold text-emerald-700 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">đ</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Hỏi 2 Câu Cơ Bản <span className="text-slate-400 font-normal">(49k)</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="1000"
+                            min="0"
+                            value={formData.commissionTiers.chat_free}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                commissionTiers: { ...formData.commissionTiers, chat_free: Number(e.target.value) },
+                              })
+                            }
+                            className="w-full pl-2.5 pr-7 py-1.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">đ</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Nâng Cấp Pro &rarr; Expert <span className="text-slate-400 font-normal">(150k)</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="1000"
+                            min="0"
+                            value={formData.commissionTiers.upgrade_expert}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                commissionTiers: { ...formData.commissionTiers, upgrade_expert: Number(e.target.value) },
+                              })
+                            }
+                            className="w-full pl-2.5 pr-7 py-1.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">đ</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                          Hỏi 2 Câu Pro <span className="text-slate-400 font-normal">(99k)</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="1000"
+                            min="0"
+                            value={formData.commissionTiers.chat_vip}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                commissionTiers: { ...formData.commissionTiers, chat_vip: Number(e.target.value) },
+                              })
+                            }
+                            className="w-full pl-2.5 pr-7 py-1.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">đ</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                          Hỏi 2 Câu Expert <span className="text-slate-400 font-normal">(129k)</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="1000"
+                            min="0"
+                            value={formData.commissionTiers.chat_expert}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                commissionTiers: { ...formData.commissionTiers, chat_expert: Number(e.target.value) },
+                              })
+                            }
+                            className="w-full pl-2.5 pr-7 py-1.5 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-bold">đ</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 font-medium">
+                      💡 Hệ thống sẽ tự động cộng đúng số tiền tương ứng với gói mà khách mua.
+                    </p>
+                  </div>
+                )}
+
+                {/* 2. Chế độ: Theo % Doanh Thu */}
+                {formData.commissionMode === 'percent' && (
+                  <div className="pt-1">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Tỷ Lệ Hoa Hồng (% Doanh Thu)</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={formData.commissionRate}
+                        onChange={(e) => setFormData({ ...formData, commissionRate: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-indigo-700 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
+                    </div>
+                    <span className="text-[11px] text-slate-500">Mặc định 25% - 30% giá trị mọi đơn hàng</span>
+                  </div>
+                )}
+
+                {/* 3. Chế độ: Đồng giá cố định mọi đơn */}
+                {formData.commissionMode === 'fixed' && (
+                  <div className="pt-1">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Số Tiền Cố Định Cho Mọi Đơn (VND/đơn)</label>
+                    <input
+                      type="number"
+                      step="1000"
+                      placeholder="ví dụ: 50000"
+                      value={formData.commissionFixed}
+                      onChange={(e) => setFormData({ ...formData, commissionFixed: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                    />
+                    <span className="text-[11px] text-slate-500">Mọi đơn hàng bất kể gói nào đều cộng số tiền này</span>
+                  </div>
+                )}
               </div>
 
               <div>
