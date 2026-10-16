@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, amount } = body;
+    const { code, phone, amount } = body;
 
     if (!code || !amount || Number(amount) <= 0) {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const numAmount = Number(amount);
-    const result = await requestWithdrawal(code, numAmount);
+    const result = await requestWithdrawal(code, numAmount, phone);
 
     if (!result.success) {
       return NextResponse.json(

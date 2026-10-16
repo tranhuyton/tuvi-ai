@@ -35,15 +35,23 @@ interface RecentOrder {
   commissionAmount?: number;
 }
 
+function maskBankAccount(acc?: string): string {
+  if (!acc) return '';
+  const clean = acc.trim();
+  if (clean.length <= 6) return clean;
+  return `${clean.slice(0, 4)} •••• ${clean.slice(-4)}`;
+}
+
 export default function CTVPortalPage() {
-  const [searchInput, setSearchInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [codeInput, setCodeInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [affInfo, setAffInfo] = useState<AffiliateInfo | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // Modal cập nhật tài khoản ngân hàng
+  // Modal cập nhật tài khoản ngân hàng (chỉ mở khi chưa có STK)
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [bankFormData, setBankFormData] = useState({
     bankCode: 'MB',
@@ -62,12 +70,17 @@ export default function CTVPortalPage() {
     ? (affInfo.remainingCommission ?? (affInfo.totalCommission - affInfo.paidCommission))
     : 0;
 
-  const fetchAffiliateDetails = async (identifier: string) => {
+  const fetchAffiliateDetails = async (phoneVal: string, codeVal?: string) => {
     setIsLoading(true);
     setErrorMsg('');
 
     try {
-      const res = await fetch(`/api/affiliate/info?q=${encodeURIComponent(identifier.trim())}`);
+      const params = new URLSearchParams();
+      params.set('phone', phoneVal.trim());
+      if (codeVal && codeVal.trim()) {
+        params.set('code', codeVal.trim());
+      }
+      const res = await fetch(`/api/affiliate/info?${params.toString()}`);
       const data = await res.json();
 
       if (!res.ok || !data.success) {
@@ -77,18 +90,6 @@ export default function CTVPortalPage() {
       } else {
         setAffInfo(data.affiliate);
         setRecentOrders(data.recentOrders || []);
-        // Đồng bộ form ngân hàng
-        if (data.affiliate.bankName) {
-          const matched = VIETNAMESE_BANKS.find(
-            (b) => b.code === data.affiliate.bankCode || b.name === data.affiliate.bankName
-          );
-          setBankFormData({
-            bankCode: data.affiliate.bankCode || matched?.code || 'MB',
-            bankName: data.affiliate.bankName || matched?.name || 'MBBank (Quân Đội)',
-            bankAccountNumber: data.affiliate.bankAccountNumber || '',
-            bankAccountName: data.affiliate.bankAccountName || '',
-          });
-        }
       }
     } catch (err: any) {
       setErrorMsg('Lỗi kết nối máy chủ: ' + err.message);
@@ -99,8 +100,12 @@ export default function CTVPortalPage() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchInput.trim()) return;
-    await fetchAffiliateDetails(searchInput.trim());
+    const digits = phoneInput.replace(/\D/g, '');
+    if (digits.length < 9) {
+      setErrorMsg('Vui lòng nhập đúng Số điện thoại đã đăng ký của Cộng tác viên để tra cứu bảo mật.');
+      return;
+    }
+    await fetchAffiliateDetails(phoneInput.trim(), codeInput.trim());
   };
 
   const handleCopyLink = () => {
@@ -112,7 +117,7 @@ export default function CTVPortalPage() {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
-  // Lưu thông tin ngân hàng
+  // Lưu thông tin ngân hàng (chỉ cho phép nhập lần đầu)
   const handleSaveBank = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!affInfo) return;
@@ -122,6 +127,11 @@ export default function CTVPortalPage() {
       return;
     }
 
+    const confirmed = window.confirm(
+      `Xác nhận khóa bảo mật tài khoản nhận hoa hồng:\n\n• Ngân hàng: ${bankFormData.bankName}\n• STK: ${bankFormData.bankAccountNumber.trim()}\n• Chủ TK: ${bankFormData.bankAccountName.trim().toUpperCase()}\n\nLưu ý: Sau khi lưu, STK sẽ được khóa cố định để bảo vệ hoa hồng của bạn (chỉ Admin mới sửa được). Bạn chắc chắn thông tin đã chính xác?`
+    );
+    if (!confirmed) return;
+
     setIsSavingBank(true);
     try {
       const res = await fetch('/api/affiliate/update-bank', {
@@ -129,6 +139,7 @@ export default function CTVPortalPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: affInfo.code,
+          phone: phoneInput.trim(),
           bankCode: bankFormData.bankCode,
           bankName: bankFormData.bankName,
           bankAccountNumber: bankFormData.bankAccountNumber.trim(),
@@ -139,8 +150,8 @@ export default function CTVPortalPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setIsBankModalOpen(false);
-        await fetchAffiliateDetails(affInfo.code);
-        alert('Cập nhật tài khoản ngân hàng thành công!');
+        await fetchAffiliateDetails(phoneInput.trim(), affInfo.code);
+        alert('Đã lưu và khóa bảo mật tài khoản ngân hàng thành công!');
       } else {
         alert(data.error || 'Lỗi cập nhật');
       }
@@ -175,6 +186,7 @@ export default function CTVPortalPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: affInfo.code,
+          phone: phoneInput.trim(),
           amount,
         }),
       });
@@ -183,8 +195,8 @@ export default function CTVPortalPage() {
       if (res.ok && data.success) {
         setIsWithdrawModalOpen(false);
         setWithdrawAmount('');
-        await fetchAffiliateDetails(affInfo.code);
-        alert('Đã gửi yêu cầu rút tiền thành công! Thầy Tôn sẽ quét mã VietQR và chuyển tiền cho bạn trong thời gian sớm nhất.');
+        await fetchAffiliateDetails(phoneInput.trim(), affInfo.code);
+        alert('Đã gửi yêu cầu rút tiền thành công! Thầy Tôn sẽ quét mã VietQR và chuyển tiền về tài khoản đã đăng ký của bạn trong thời gian sớm nhất.');
       } else {
         alert(data.error || 'Lỗi gửi yêu cầu rút tiền');
       }
@@ -224,23 +236,33 @@ export default function CTVPortalPage() {
             Tra Cứu Doanh Thu &amp; Rút Hoa Hồng
           </h1>
           <p className="text-slate-400 text-sm">
-            Nhập Mã giới thiệu hoặc Số điện thoại để theo dõi đơn hàng, cập nhật tài khoản ngân hàng nhận tiền và yêu cầu rút hoa hồng.
+            Nhập <b className="text-amber-300">Số điện thoại đã đăng ký</b> của Cộng tác viên để tra cứu doanh thu và yêu cầu rút hoa hồng bảo mật.
           </p>
 
-          <form onSubmit={handleSearch} className="pt-2 flex gap-2 max-w-md mx-auto">
+          <form onSubmit={handleSearch} className="pt-2 flex flex-col sm:flex-row gap-2 max-w-lg mx-auto">
             <div className="relative flex-1">
               <input
-                type="text"
-                placeholder="Nhập Mã CTV (vd: diep93) hoặc SĐT..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                type="tel"
+                required
+                placeholder="Số điện thoại CTV đã đăng ký (bắt buộc)..."
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
                 className="w-full pl-4 pr-3 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+              />
+            </div>
+            <div className="relative sm:w-40">
+              <input
+                type="text"
+                placeholder="Mã CTV (tùy chọn)"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value)}
+                className="w-full px-3 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
               />
             </div>
             <button
               type="submit"
-              disabled={isLoading || !searchInput.trim()}
-              className="px-5 py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-amber-900/30 disabled:opacity-50 flex items-center gap-2 shrink-0"
+              disabled={isLoading || !phoneInput.trim()}
+              className="px-5 py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-amber-900/30 disabled:opacity-50 flex items-center justify-center gap-2 shrink-0"
             >
               <Search className="w-4 h-4" />
               <span>{isLoading ? 'Đang tra...' : 'Tra Cứu'}</span>
@@ -248,7 +270,7 @@ export default function CTVPortalPage() {
           </form>
 
           {errorMsg && (
-            <div className="p-3 bg-red-950/40 border border-red-800/50 rounded-xl text-red-300 text-xs flex items-center justify-center gap-2 max-w-md mx-auto">
+            <div className="p-3 bg-red-950/40 border border-red-800/50 rounded-xl text-red-300 text-xs flex items-center justify-center gap-2 max-w-lg mx-auto">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -379,17 +401,22 @@ export default function CTVPortalPage() {
                   <span className="font-bold text-sm text-white">Tài Khoản Nhận Hoa Hồng (VietQR)</span>
                 </div>
                 {affInfo.bankAccountNumber ? (
-                  <div className="text-xs text-slate-300 space-x-2">
-                    <span>Ngân hàng: <b className="text-white">{affInfo.bankName}</b></span>
-                    <span>•</span>
-                    <span>STK: <b className="font-mono text-amber-300 text-sm">{affInfo.bankAccountNumber}</b></span>
-                    <span>•</span>
-                    <span>Chủ TK: <b className="text-white uppercase">{affInfo.bankAccountName}</b></span>
+                  <div className="space-y-1">
+                    <div className="text-xs text-slate-300 space-x-2">
+                      <span>Ngân hàng: <b className="text-white">{affInfo.bankName}</b></span>
+                      <span>•</span>
+                      <span>STK: <b className="font-mono text-amber-300 text-sm">{maskBankAccount(affInfo.bankAccountNumber)}</b></span>
+                      <span>•</span>
+                      <span>Chủ TK: <b className="text-white uppercase">{affInfo.bankAccountName}</b></span>
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      🔒 Tài khoản nhận hoa hồng đã được khóa cố định bảo mật. Nếu cần đổi ngân hàng khác, vui lòng nhắn Zalo báo Admin.
+                    </div>
                   </div>
                 ) : (
                   <div className="text-xs text-amber-300 flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Bạn chưa cập nhật tài khoản ngân hàng. Hãy bấm nút bên cạnh để thêm STK nhận tiền.</span>
+                    <span>Bạn chưa cập nhật tài khoản ngân hàng. Hãy bấm nút bên cạnh để khai báo STK nhận tiền (chỉ nhập 1 lần).</span>
                   </div>
                 )}
 
@@ -402,13 +429,22 @@ export default function CTVPortalPage() {
               </div>
 
               <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
-                <button
-                  onClick={() => setIsBankModalOpen(true)}
-                  className="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  <span>{affInfo.bankAccountNumber ? 'Đổi STK' : 'Thêm STK Ngân Hàng'}</span>
-                </button>
+                {!affInfo.bankAccountNumber ? (
+                  <button
+                    onClick={() => setIsBankModalOpen(true)}
+                    className="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Thêm STK Ngân Hàng</span>
+                  </button>
+                ) : (
+                  <span
+                    className="px-3 py-2 bg-slate-900/80 border border-slate-700 text-slate-400 rounded-xl text-xs font-semibold flex items-center gap-1.5 select-none"
+                    title="Số tài khoản đã được khóa cố định để bảo vệ hoa hồng của bạn"
+                  >
+                    <span>🔒 Đã Khóa STK</span>
+                  </span>
+                )}
 
                 <button
                   disabled={remainingCommission < 50000 || !affInfo.bankAccountNumber}

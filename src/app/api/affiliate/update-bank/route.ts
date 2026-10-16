@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, bankCode, bankName, bankAccountNumber, bankAccountName } = body;
+    const { code, phone, bankCode, bankName, bankAccountNumber, bankAccountName } = body;
 
     if (!code || !bankName || !bankAccountNumber || !bankAccountName) {
       return NextResponse.json(
@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
       bankName,
       bankAccountNumber,
       bankAccountName,
+      phone,
     });
 
     if (!updated) {
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: err?.message || 'Lỗi cập nhật tài khoản' },
-      { status: 500 }
+      { status: 403 }
     );
   }
 }

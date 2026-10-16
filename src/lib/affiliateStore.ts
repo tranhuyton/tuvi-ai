@@ -173,17 +173,64 @@ export async function getAffiliateByCode(code: string): Promise<AffiliateItem | 
 }
 
 /**
- * Tìm CTV theo Mã hoặc Số điện thoại (dành cho trang tra cứu cá nhân /ctv)
+ * Tìm CTV theo Mã hoặc Số điện thoại
  */
 export async function getAffiliateByPhoneOrCode(identifier: string): Promise<AffiliateItem | null> {
   const clean = identifier.trim().toLowerCase();
   if (!clean) return null;
 
   const all = await getAllAffiliates();
+  const digits = clean.replace(/\D/g, '');
   const found = all.find(
-    (a) => a.code.toLowerCase() === clean || (a.phone && a.phone.replace(/\D/g, '') === clean.replace(/\D/g, ''))
+    (a) =>
+      a.code.toLowerCase() === clean ||
+      (digits.length >= 9 && a.phone && a.phone.replace(/\D/g, '') === digits)
   );
   return found || null;
+}
+
+/**
+ * Xác thực bảo mật CTV bằng Số điện thoại đăng ký (kèm Mã CTV tùy chọn)
+ * Không cho phép tra cứu chỉ bằng Mã CTV công khai trên link ref
+ */
+export async function verifyAffiliateByPhone(
+  phoneInput: string,
+  codeInput?: string
+): Promise<{ affiliate?: AffiliateItem; error?: string }> {
+  const phoneDigits = (phoneInput || '').replace(/\D/g, '');
+  if (phoneDigits.length < 9) {
+    return {
+      error: 'Vui lòng nhập Số điện thoại đã đăng ký của Cộng tác viên để tra cứu bảo mật.',
+    };
+  }
+
+  const all = await getAllAffiliates();
+  const cleanCode = (codeInput || '').trim().toLowerCase();
+
+  if (cleanCode) {
+    const affByCode = all.find((a) => a.code.toLowerCase() === cleanCode);
+    if (!affByCode) {
+      return { error: `Không tìm thấy Mã CTV "${cleanCode}" trong hệ thống.` };
+    }
+    const storedDigits = (affByCode.phone || '').replace(/\D/g, '');
+    if (!storedDigits) {
+      return {
+        error:
+          'Mã CTV này chưa được gắn Số điện thoại bảo mật. Vui lòng nhắn Admin (Thầy Tôn) cập nhật SĐT của bạn.',
+      };
+    }
+    if (storedDigits !== phoneDigits) {
+      return { error: 'Số điện thoại không khớp với Mã CTV này. Vui lòng kiểm tra lại.' };
+    }
+    return { affiliate: affByCode };
+  }
+
+  const affByPhone = all.find((a) => a.phone && a.phone.replace(/\D/g, '') === phoneDigits);
+  if (!affByPhone) {
+    return { error: 'Không tìm thấy Cộng tác viên nào đăng ký với Số điện thoại này.' };
+  }
+
+  return { affiliate: affByPhone };
 }
 
 /**
@@ -464,7 +511,7 @@ export async function payoutAffiliate(
 }
 
 /**
- * CTV tự cập nhật tài khoản ngân hàng từ trang /ctv
+ * CTV tự cập nhật tài khoản ngân hàng từ trang /ctv (Chỉ cho phép khai báo lần đầu khi chưa có STK)
  */
 export async function updateAffiliateBank(
   codeOrPhone: string,
@@ -473,10 +520,27 @@ export async function updateAffiliateBank(
     bankName: string;
     bankAccountNumber: string;
     bankAccountName: string;
+    phone?: string;
   }
 ): Promise<AffiliateItem | null> {
-  const aff = await getAffiliateByPhoneOrCode(codeOrPhone);
+  let aff: AffiliateItem | null = null;
+  if (bankData.phone) {
+    const verified = await verifyAffiliateByPhone(bankData.phone, codeOrPhone);
+    if (verified.error || !verified.affiliate) {
+      throw new Error(verified.error || 'Xác thực Số điện thoại không hợp lệ');
+    }
+    aff = verified.affiliate;
+  } else {
+    aff = await getAffiliateByPhoneOrCode(codeOrPhone);
+  }
   if (!aff) return null;
+
+  // PHƯƠNG ÁN 2: Khóa cứng STK sau khi đã có (chỉ Admin mới sửa được trong /admin)
+  if (aff.bankAccountNumber && aff.bankAccountNumber.trim().length > 0) {
+    throw new Error(
+      'Tài khoản ngân hàng của bạn đã được khóa cố định để bảo vệ an toàn hoa hồng. Nếu cần đổi sang ngân hàng khác, vui lòng nhắn Zalo báo Admin (Thầy Tôn) hỗ trợ cập nhật.'
+    );
+  }
 
   const bCode = bankData.bankCode || inferBankCode(bankData.bankName);
 
@@ -512,9 +576,20 @@ export async function updateAffiliateBank(
  */
 export async function requestWithdrawal(
   codeOrPhone: string,
-  amount: number
+  amount: number,
+  phone?: string
 ): Promise<{ success: boolean; message?: string; affiliate?: AffiliateItem }> {
-  const aff = await getAffiliateByPhoneOrCode(codeOrPhone);
+  let aff: AffiliateItem | null = null;
+  if (phone) {
+    const verified = await verifyAffiliateByPhone(phone, codeOrPhone);
+    if (verified.error || !verified.affiliate) {
+      return { success: false, message: verified.error || 'Xác thực Số điện thoại không hợp lệ' };
+    }
+    aff = verified.affiliate;
+  } else {
+    aff = await getAffiliateByPhoneOrCode(codeOrPhone);
+  }
+
   if (!aff) {
     return { success: false, message: 'Không tìm thấy thông tin CTV' };
   }
@@ -551,4 +626,5 @@ export async function requestWithdrawal(
 
   return { success: true, affiliate: aff };
 }
+
 
