@@ -333,6 +333,23 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
     transferNote
   )}&accountName=${encodeURIComponent(cleanAccName)}`;
 
+  // Tạo link xác nhận 1-Click ngay trong Email (phòng trường hợp chuyển từ ngân hàng không gắn SePay)
+  const reqId = String(Date.now());
+  const secret =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    'tuvi_thay_ton_payout_secret';
+  const crypto = await import('crypto');
+  const sig = crypto
+    .createHmac('sha256', secret)
+    .update(`${affiliateCode.toLowerCase()}:${amount}:${reqId}`)
+    .digest('hex')
+    .slice(0, 20);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tuvithayton.vn';
+  const oneClickConfirmUrl = `${baseUrl}/api/affiliate/confirm-payout?code=${encodeURIComponent(
+    affiliateCode
+  )}&amount=${amount}&reqId=${reqId}&sig=${sig}`;
+
   const htmlContent = `
 <!DOCTYPE html>
 <html lang="vi">
@@ -361,7 +378,8 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
     .qr-title { color: #fbbf24; font-size: 13px; font-weight: bold; margin-bottom: 14px; letter-spacing: 0.5px; }
     .qr-img { display: block; margin: 0 auto; border-radius: 10px; background: #ffffff; padding: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.6); max-width: 230px; width: 100%; height: auto; }
     .qr-sub { color: #94a3b8; font-size: 12px; margin-top: 12px; margin-bottom: 0; line-height: 1.5; }
-    .cta-btn { display: block; width: fit-content; margin: 24px auto 16px auto; padding: 14px 32px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0b0f19 !important; text-decoration: none; font-weight: bold; font-size: 15px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35); }
+    .confirm-btn { display: block; width: fit-content; margin: 20px auto 12px auto; padding: 14px 28px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff !important; text-decoration: none; font-weight: bold; font-size: 15px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35); }
+    .cta-btn { display: block; width: fit-content; margin: 12px auto 16px auto; padding: 10px 24px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24 !important; text-decoration: none; font-weight: bold; font-size: 13px; border-radius: 10px; text-align: center; }
     .footer { background: #0a0e17; padding: 18px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #1e293b; }
   </style>
 </head>
@@ -426,12 +444,17 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
         </p>
       </div>
 
-      <a href="https://tuvithayton.vn/admin" class="cta-btn">
-        Mở Trang Quản Trị Admin Duyệt Rút ➜
+      <a href="${oneClickConfirmUrl}" class="confirm-btn">
+        ✅ Xác Nhận Đã Chuyển Khoản (Trừ Số Dư CTV Ngay)
       </a>
 
-      <p style="text-align: center; font-size: 12px; color: #94a3b8; margin: 0;">
-        Sau khi chuyển khoản thành công, Thầy bấm nút <strong>"Xác nhận đã chuyển"</strong> trong Admin để hệ thống trừ số dư ví CTV.
+      <a href="${baseUrl}/admin" class="cta-btn">
+        Mở Trang Quản Trị Admin ➜
+      </a>
+
+      <p style="text-align: center; font-size: 12px; color: #94a3b8; margin: 0; line-height: 1.5;">
+        • <b>Tự động 100%:</b> Nếu Thầy quét QR bằng tài khoản ngân hàng đã kết nối SePay (có bật báo biến động tiền ra), hệ thống sẽ tự động bắt nội dung <code>${transferNote}</code> và trừ số dư CTV ngay khi tiền đi.<br/>
+        • <b>Hoặc 1-Click:</b> Nếu Thầy quét QR từ tài khoản ngân hàng cá nhân khác, chỉ cần bấm nút <b>"Xác Nhận Đã Chuyển Khoản"</b> màu xanh ngay trên email này là xong!
       </p>
     </div>
 

@@ -86,7 +86,33 @@ export async function POST(req: Request) {
     const results = [];
 
     for (const tx of txList) {
-      // Tìm mã đơn TVxxxxx (hỗ trợ có khoảng trắng, gạch nối: TV49354, TV 49354, TV-49354, TV: 49354)
+      // 0. Kiểm tra nếu đây là giao dịch Admin quét QR trả hoa hồng cho CTV (Nội dung: HOA HONG <MÃ_CTV>)
+      const payoutMatch = tx.codeCandidate.match(/HOA\s*HONG\s*[:\-_]?\s*([A-Z0-9_-]{2,25})/i);
+      if (payoutMatch && tx.amount > 0) {
+        const affCode = payoutMatch[1].toLowerCase();
+        const { getAffiliateByCode, payoutAffiliate } = await import('@/lib/affiliateStore');
+        const aff = await getAffiliateByCode(affCode);
+        if (aff) {
+          const txMarker = `tx#${tx.txId}`;
+          if (aff.notes && aff.notes.includes(txMarker)) {
+            console.log(`[PAYMENT WEBHOOK] Giao dịch chi trả hoa hồng ${txMarker} cho CTV ${affCode} đã được xử lý trước đó.`);
+            results.push({ code: `PAYOUT_${affCode.toUpperCase()}`, status: 'ALREADY_PROCESSED' });
+            continue;
+          }
+
+          await payoutAffiliate(aff.id, tx.amount, `Tự động trừ số dư qua VietQR (${txMarker})`);
+          console.log(`[PAYMENT WEBHOOK] ĐÃ TỰ ĐỘNG TRỪ SỐ DƯ RÚT TIỀN ${tx.amount.toLocaleString('vi-VN')}đ CHO CTV ${affCode}`);
+          results.push({
+            code: `PAYOUT_${affCode.toUpperCase()}`,
+            affiliateCode: affCode,
+            amount: tx.amount,
+            status: 'PAYOUT_CONFIRMED',
+          });
+          continue;
+        }
+      }
+
+      // 1. Tìm mã đơn TVxxxxx (hỗ trợ có khoảng trắng, gạch nối: TV49354, TV 49354, TV-49354, TV: 49354)
       const match = tx.codeCandidate.match(/TV\s*[:\-_]?\s*(\d{4,8})/i);
       const matchedCode = match ? `TV${match[1]}`.toUpperCase() : null;
 
