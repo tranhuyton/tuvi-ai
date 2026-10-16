@@ -603,8 +603,8 @@ export async function requestWithdrawal(
     return { success: false, message: `Số dư hoa hồng khả dụng chỉ còn ${remaining.toLocaleString('vi-VN')}đ` };
   }
 
-  if (amount < 50000) {
-    return { success: false, message: 'Số tiền rút tối thiểu là 50.000đ' };
+  if (amount <= 0) {
+    return { success: false, message: 'Số tiền rút phải lớn hơn 0đ' };
   }
 
   aff.pendingWithdrawal = (aff.pendingWithdrawal || 0) + amount;

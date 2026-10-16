@@ -168,8 +168,8 @@ export default function CTVPortalPage() {
     if (!affInfo) return;
 
     const amount = Number(withdrawAmount);
-    if (!amount || amount < 50000) {
-      alert('Số tiền rút tối thiểu là 50.000đ');
+    if (!amount || amount <= 0) {
+      alert('Vui lòng nhập số tiền rút hợp lệ (> 0đ)');
       return;
     }
 
@@ -447,7 +447,7 @@ export default function CTVPortalPage() {
                 )}
 
                 <button
-                  disabled={remainingCommission < 50000 || !affInfo.bankAccountNumber}
+                  disabled={remainingCommission <= 0 || !affInfo.bankAccountNumber}
                   onClick={() => {
                     setWithdrawAmount(String(remainingCommission));
                     setIsWithdrawModalOpen(true);
@@ -456,8 +456,8 @@ export default function CTVPortalPage() {
                   title={
                     !affInfo.bankAccountNumber
                       ? 'Vui lòng thêm STK ngân hàng trước'
-                      : remainingCommission < 50000
-                      ? 'Số dư tối thiểu để rút là 50.000đ'
+                      : remainingCommission <= 0
+                      ? 'Chưa có số dư khả dụng để rút'
                       : 'Bấm để yêu cầu rút hoa hồng'
                   }
                 >
@@ -702,7 +702,7 @@ export default function CTVPortalPage() {
                 <div className="relative">
                   <input
                     type="number"
-                    min="50000"
+                    min="1000"
                     max={remainingCommission}
                     required
                     value={withdrawAmount}
@@ -717,7 +717,7 @@ export default function CTVPortalPage() {
                     Rút Hết
                   </button>
                 </div>
-                <span className="text-[10px] text-slate-500">Tối thiểu 50.000đ</span>
+                <span className="text-[10px] text-slate-500">Nhập số tiền muốn rút (tối đa {remainingCommission.toLocaleString('vi-VN')}đ)</span>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
