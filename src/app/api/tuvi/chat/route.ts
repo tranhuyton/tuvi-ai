@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LaSoData, ChatMessage } from '@/types/tuvi';
-import { buildCungDataPrompt } from '@/lib/tuvi/anSao';
+import { buildCungDataPrompt, getCurrentVietnamTimeInfo } from '@/lib/tuvi/anSao';
 import { callGeminiVision } from '@/lib/gemini';
 import { createClient } from '@supabase/supabase-js';
 
@@ -316,18 +316,32 @@ export async function POST(req: NextRequest) {
         ? 'Gói Chuyên Sâu VIP Pro'
         : 'Gói Cơ Bản';
 
+    const {
+      ngayDuong: curDayD,
+      thangDuong: curMonthD,
+      namDuong: curYearD,
+      ngayAm: curDayA,
+      thangAm: curMonthA,
+      namAm: curYearA,
+      isLeap: curIsLeap,
+      namAmCanChi: curNamCanChi,
+    } = getCurrentVietnamTimeInfo();
+    const curDateSummary = `Ngày ${curDayD}/${curMonthD}/${curYearD} Dương lịch — tức Ngày ${curDayA} Tháng ${curMonthA}${curIsLeap ? ' (Nhuận)' : ''} Âm lịch năm ${curNamCanChi} (${curYearA})`;
+
     const chatPrompt = `${readingContext}${historyText}Khách hỏi câu mới (${modeLabel}): '${userQuestion.trim()}'
+THỜI ĐIỂM HIỆN TẠI THỰC TẾ (GIỜ VIỆT NAM): Hôm nay là ${curDateSummary}. Hiện đang ở **Tháng ${curMonthA} Âm lịch** năm ${curNamCanChi} (${curYearA}).
 Đương số: ${laSo.duongSo?.hoTen || 'Quý khách'} (${laSo.duongSo?.gioiTinh || 'Nam'}, sinh năm ${namCanChi || ''} - ${amDuongTxt || ''}).
 Mệnh: ${banMenh || ''}, Cục: ${tenCuc || ''}, Sinh khắc: ${sinhKhac || ''}.
 Âm Dương: ${thuanNghichLy || ''} (Bắt buộc khẳng định đúng thế "${thuanNghichLy}", tuyệt đối không nói ngược).
 Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
-Năm nay: ${namXemCanChi}, ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
+Năm xem hạn: ${namXemCanChi} (${laSo.namXem || curYearA}), ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
 12 CUNG & NGUYỆT VẬN:
 ${cungDataStr}
 
-QUY TẮC BẮT BUỘC VỀ CUNG VÔ CHÍNH DIỆU & NGUYỆT VẬN (LƯU NGUYỆT / THÁNG ÂM LỊCH):
-- Khi luận giải bất kỳ cung nào không có chính tinh (Vô Chính Diệu), bạn BẮT BUỘC phải nhìn và kết hợp các Chính tinh + Phụ tinh hội chiếu từ Tam Phương Tứ Chính (đặc biệt là mượn Chính tinh của Cung Xung Chiếu kết hợp 2 Cung Tam Hợp và Tuần/Triệt tại bản cung) để phân tích sâu sắc, tuyệt đối không chỉ nhìn mỗi bản cung.
-- Nếu câu hỏi của khách có nhắc đến tháng nào trong năm (ví dụ tháng Giêng, tháng 5, tháng 8, tháng 10...), bạn BẮT BUỘC phải tra cứu chính xác theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên để biết tháng đó rơi vào cung nào, có các chính tinh, phụ tinh và đặc biệt là các SAO LƯU nào thủ hoặc chiếu (L.Thái Tuế, L.Tang Môn, L.Bạch Hổ, L.Kình Dương, L.Đà La, L.Thiên Mã, L.Lộc Tồn, L.Thiên Khốc, L.Thiên Hư, L.Đẩu Quân, L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị...). Dựa vào đó để chỉ rõ hung cát, tháng nào phát tài, tháng nào có biến chuyển đi lại, tháng nào cần phòng tai tiếng, thị phi. Tuyệt đối KHÔNG được tự suy đoán hay nói nhầm sang cung khác.
+QUY TẮC BẮT BUỘC VỀ THỜI GIAN THỰC TẾ, CUNG VÔ CHÍNH DIỆU & NGUYỆT VẬN (LƯU NGUYỆT / THÁNG ÂM LỊCH):
+- QUY TẮC SỐ 1 (THỜI GIAN THỰC TẾ HIỆN TẠI): Hôm nay là **${curDateSummary}**. Các tháng từ Tháng 1 đến Tháng ${curMonthA - 1} Âm lịch năm ${curYearA} ĐÃ TRÔI QUA TRONG QUÁ KHỨ! Bạn TUYỆT ĐỐI CẤM viết câu phỏng đoán mù mờ như "Hiện tại nếu đang ở Tháng 3 Âm lịch..." hay đoán mò tháng! Phải khẳng định chuẩn xác hiện tại đang ở **Tháng ${curMonthA} Âm lịch**. Mọi sự việc khách hỏi "hôm nay", "vừa mới", "hiện tại" phải được giải mã trực tiếp bằng Nguyệt vận **Tháng ${curMonthA} Âm lịch**; và mọi lộ trình/sách lược hành động sắp tới cho đương số BẮT BUỘC phải bắt đầu từ **Tháng ${curMonthA} Âm lịch hiện tại đến Tháng 12 Âm lịch năm ${curYearA}** (và nối tiếp sang các tháng đầu năm ${curYearA + 1} theo bảng dữ liệu nối tiếp ở trên nếu lộ trình kéo dài sang năm mới). TUYỆT ĐỐI CẤM khuyên khách lập kế hoạch tương lai vào các tháng đã qua (Tháng 1 đến Tháng ${curMonthA - 1} Âm lịch năm ${curYearA})!
+- QUY TẮC SỐ 2 (CUNG VÔ CHÍNH DIỆU): Khi luận giải bất kỳ cung nào không có chính tinh (Vô Chính Diệu), bạn BẮT BUỘC phải nhìn và kết hợp các Chính tinh + Phụ tinh hội chiếu từ Tam Phương Tứ Chính (đặc biệt là mượn Chính tinh của Cung Xung Chiếu kết hợp 2 Cung Tam Hợp và Tuần/Triệt tại bản cung) để phân tích sâu sắc, tuyệt đối không chỉ nhìn mỗi bản cung.
+- QUY TẮC SỐ 3 (TRA CỨU NGUYỆT VẬN CHUẨN 100%): Khi nhắc đến bất kỳ tháng Âm lịch nào, bạn BẮT BUỘC phải tra cứu chính xác theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên để biết tháng đó rơi vào cung nào, có các chính tinh, phụ tinh và đặc biệt là các SAO LƯU nào thủ hoặc chiếu (L.Thái Tuế, L.Tang Môn, L.Bạch Hổ, L.Kình Dương, L.Đà La, L.Thiên Mã, L.Lộc Tồn, L.Thiên Khốc, L.Thiên Hư, L.Đẩu Quân, L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị...). Tuyệt đối KHÔNG được tự suy đoán hay nói nhầm sang cung khác.
 ${requirementText}${langInstruction}`;
 
     const modelToUse =

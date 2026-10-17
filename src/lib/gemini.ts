@@ -186,8 +186,10 @@ export function buildReadingParts(options: {
     tuoiAmXem,
     cungs,
   } = laSo;
-  const { buildCungDataPrompt } = require('./tuvi/anSao');
+  const { buildCungDataPrompt, getCurrentVietnamTimeInfo } = require('./tuvi/anSao');
   const cungDataStr = buildCungDataPrompt(laSo);
+  const { ngayDuong: curDayD, thangDuong: curMonthD, namDuong: curYearD, ngayAm: curDayA, thangAm: curMonthA, namAm: curYearA, isLeap: curIsLeap, namAmCanChi: curNamCanChi } = getCurrentVietnamTimeInfo();
+  const curDateSummary = `Ngày ${curDayD}/${curMonthD}/${curYearD} Dương lịch (tức Ngày ${curDayA} Tháng ${curMonthA}${curIsLeap ? ' Nhuận' : ''} Âm lịch năm ${curNamCanChi} ${curYearA})`;
 
   // 1. Tính toán chính xác 100% Cung Đại Vận hiện tại theo Tuổi Âm
   const cungDaiVanHienTai = cungs.find(
@@ -261,6 +263,7 @@ THÔNG TIN LÁ SỐ:
 - Mệnh chủ: ${menhChu || '—'}. Thân chủ: ${thanChu || '—'}.
 - ÂM DƯƠNG THUẬN / NGHỊCH LÝ: ${thuanNghichLy} (LƯU Ý CỰC KỲ QUAN TRỌNG: Lá số này chuẩn xác 100% là "${thuanNghichLy}". TUYỆT ĐỐI BẮT BUỘC PHẢI LUẬN LÀ "${thuanNghichLy}", CẤM LUẬN NGƯỢC THÀNH ${thuanNghichLy === 'Âm Dương thuận lý' ? 'Âm Dương nghịch lý' : 'Âm Dương thuận lý'}!).
 - Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
+- THỜI ĐIỂM HIỆN TẠI THỰC TẾ: Hôm nay là ${curDateSummary}.
 - Xem hạn năm: ${namXemCanChi} (${namXem}), tuổi Âm lịch: ${tuoiAmXem} tuổi.
 ${daiVanPromptStr}${tieuVanPromptStr}
 CHI TIẾT 12 CUNG & TINH ĐẨU:
@@ -358,6 +361,7 @@ THÔNG TIN LÁ SỐ:
 - Bản mệnh: ${banMenh}. Cục: ${tenCuc}. Sinh khắc Mệnh Cục: ${sinhKhac}.
 - ÂM DƯƠNG THUẬN / NGHỊCH LÝ: ${thuanNghichLy} (LƯU Ý CỰC KỲ QUAN TRỌNG: Lá số này chuẩn xác 100% là "${thuanNghichLy}". TUYỆT ĐỐI BẮT BUỘC PHẢI LUẬN LÀ "${thuanNghichLy}", CẤM LUẬN NGƯỢC THÀNH ${thuanNghichLy === 'Âm Dương thuận lý' ? 'Âm Dương nghịch lý' : 'Âm Dương thuận lý'}!).
 - Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
+- THỜI ĐIỂM HIỆN TẠI THỰC TẾ: Hôm nay là ${curDateSummary}.
 - Xem hạn năm: ${namXemCanChi} (${namXem}), tuổi Âm lịch: ${tuoiAmXem} tuổi.
 ${daiVanPromptStr}${tieuVanPromptStr}
 CHI TIẾT 12 CUNG & TINH ĐẨU:
@@ -424,6 +428,7 @@ THÔNG TIN LÁ SỐ:
 - Bản mệnh: ${banMenh}, Cục: ${tenCuc}. Sinh khắc: ${sinhKhac}.
 - ÂM DƯƠNG: ${thuanNghichLy} (LƯU Ý QUAN TRỌNG: Lá số này là "${thuanNghichLy}". Bắt buộc phải luận đúng là "${thuanNghichLy}", không được luận ngược!).
 - Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
+- THỜI ĐIỂM HIỆN TẠI THỰC TẾ: Hôm nay là ${curDateSummary}.
 - Xem hạn năm: ${namXemCanChi} (${namXem}), ${tuoiAmXem} tuổi Âm.
 ${daiVanPromptStr}${tieuVanPromptStr}
 CHI TIẾT 12 CUNG & TINH ĐẨU:

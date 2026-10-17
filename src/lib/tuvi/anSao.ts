@@ -623,11 +623,85 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
 }
 
 /**
+ * Lấy thông tin thời gian thực tế hiện tại theo múi giờ Việt Nam (UTC+7)
+ * Gồm cả Dương lịch và Âm lịch chuẩn xác 100%
+ */
+export function getCurrentVietnamTimeInfo() {
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  const vnDate = new Date(utcMs + 7 * 3600000);
+  const ngayDuong = vnDate.getDate();
+  const thangDuong = vnDate.getMonth() + 1;
+  const namDuong = vnDate.getFullYear();
+  const [ngayAm, thangAm, namAm, isLeap] = solar2Lunar(ngayDuong, thangDuong, namDuong, 7.0);
+  const canNamIdx = (namAm + 6) % 10;
+  const chiNamIdx = (namAm + 8) % 12;
+  const namAmCanChi = `${CAN_ARR[canNamIdx]} ${CHI_ARR[chiNamIdx]}`;
+  return {
+    ngayDuong,
+    thangDuong,
+    namDuong,
+    ngayAm,
+    thangAm,
+    namAm,
+    isLeap,
+    namAmCanChi,
+  };
+}
+
+/**
+ * Tạo chuỗi nhắc nhở thời gian thực tế hiện tại cho AI Prompt
+ */
+export function buildCurrentTimePrompt(laSo: LaSoData): string {
+  const { ngayDuong, thangDuong, namDuong, ngayAm, thangAm, namAm, isLeap, namAmCanChi } =
+    getCurrentVietnamTimeInfo();
+  const { cungs, namXem, namXemCanChi } = laSo;
+  const leapTxt = isLeap ? ' (Nhuận)' : '';
+
+  const cungThangHienTai = cungs.find((c) => {
+    const nv = (c.nguyetVan || '').trim().toLowerCase();
+    return nv === `tháng ${thangAm}` || nv === `${thangAm}`;
+  });
+  const cungHienTaiStr = cungThangHienTai
+    ? `tại Cung ${cungThangHienTai.chi} (${cungThangHienTai.cungName}${cungThangHienTai.isThan ? ' - Thân Cư' : ''})`
+    : '';
+
+  let timePrompt = `\n=== MỐC THỜI GIAN THỰC TẾ HIỆN TẠI (GIỜ VIỆT NAM - BẮT BUỘC GHI NHỚ CHÍNH XÁC 100%) ===
+- Hôm nay thực tế là: Ngày ${ngayDuong}/${thangDuong}/${namDuong} Dương lịch — tức Ngày ${ngayAm} Tháng ${thangAm}${leapTxt} Âm lịch năm ${namAmCanChi} (${namAm}).
+- THÁNG ÂM LỊCH HIỆN TẠI ĐANG SỐNG: Đang là **Tháng ${thangAm}${leapTxt} Âm lịch** năm ${namAmCanChi} (${namAm})${namXem === namAm && cungHienTaiStr ? `, Nguyệt vận tháng hiện tại đóng ${cungHienTaiStr}` : ''}.\n`;
+
+  if (!namXem || namXem === namAm) {
+    const pastMonths =
+      thangAm > 1
+        ? Array.from({ length: thangAm - 1 }, (_, idx) => `Tháng ${idx + 1}`).join(', ')
+        : 'Chưa có (đang ở Tháng Giêng)';
+    const futureMonths =
+      thangAm < 12
+        ? Array.from({ length: 12 - thangAm }, (_, idx) => `Tháng ${thangAm + 1 + idx}`).join(', ')
+        : 'Đã ở tháng Chạp cuối năm (chuẩn bị bước sang năm mới)';
+
+    timePrompt += `- PHÂN ĐỊNH RÕ QUÁ KHỨ - HIỆN TẠI - TƯƠNG LAI TRONG NĂM ${namXemCanChi} (${namXem || namAm}):
+  + Các tháng Âm lịch ĐÃ TRÔI QUA (Quá khứ): ${pastMonths} Âm lịch. (LƯU Ý NGHIÊM NGẶT: Các tháng này ĐÃ QUA RỒI! Chỉ được dùng để nghiệm lý chuyện đã qua, TUYỆT ĐỐI CẤM đưa các tháng đã qua này vào kế hoạch hay lộ trình hành động sắp tới của đương số!).
+  + Tháng Âm lịch HIỆN TẠI (Đang diễn ra ngay lúc này): **Tháng ${thangAm}${leapTxt} Âm lịch** (${cungHienTaiStr}). Mọi sự việc đương số hỏi "hôm nay", "hiện tại", "vừa mới" đều đang chịu tác động trực tiếp của Tháng ${thangAm} Âm lịch này!
+  + Các tháng Âm lịch SẮP TỚI còn lại trong năm ${namXem || namAm} (Tương lai gần): ${futureMonths} Âm lịch (và nối tiếp sang các tháng đầu năm ${(namXem || namAm) + 1}).
+- QUY TẮC TỐI THƯỢNG VỀ THỜI GIAN:
+  1) TUYỆT ĐỐI CẤM viết câu phỏng đoán mù mờ như "Hiện tại nếu đang ở Tháng 3 Âm lịch..." hay đoán mò tháng! Phải khẳng định chuẩn xác hiện tại đang là **Tháng ${thangAm} Âm lịch (Tháng ${thangDuong}/${namDuong} Dương lịch)**.
+  2) Khi vạch sách lược / lộ trình hành động từ nay về sau cho đương số, BẮT BUỘC phải bắt đầu từ **Tháng ${thangAm} Âm lịch hiện tại trở đi đến Tháng 12 Âm lịch năm ${namXem || namAm}**, và nếu lộ trình kéo dài hơn (3-6 tháng) thì BẮT BUỘC nối tiếp sang các tháng đầu **Năm ${(namXem || namAm) + 1}** theo bảng tra cứu năm kế tiếp ở dưới!\n`;
+  } else {
+    timePrompt += `- Lưu ý: Thời điểm hiện tại là Ngày ${ngayAm}/${thangAm} Âm lịch năm ${namAm}, nhưng đương số đang chọn xem hạn riêng cho **Năm ${namXem} (${namXemCanChi})**.\n`;
+  }
+
+  return timePrompt;
+}
+
+/**
  * Hàm xuất dữ liệu text 12 cung để gửi vào AI Prompt
  * Kèm hệ thống Sao Lưu và Bảng Tra Cứu Nguyệt Vận 12 tháng chuẩn LySo
  */
 export function buildCungDataPrompt(laSo: LaSoData): string {
-  let res = '--- CHI TIẾT 12 CUNG TRÊN LÁ SỐ BÀN CỜ (KÈM SAO LƯU NĂM XEM & TAM PHƯƠNG TỨ CHÍNH CHO CUNG VÔ CHÍNH DIỆU) ---\n';
+  const { ngayAm, thangAm, namAm } = getCurrentVietnamTimeInfo();
+  let res = buildCurrentTimePrompt(laSo);
+  res += '\n--- CHI TIẾT 12 CUNG TRÊN LÁ SỐ BÀN CỜ (KÈM SAO LƯU NĂM XEM & TAM PHƯƠNG TỨ CHÍNH CHO CUNG VÔ CHÍNH DIỆU) ---\n';
   res += '(QUY TẮC TỬ VI BẮT BUỘC: Đối với bất kỳ cung nào là "Vô Chính Diệu" — không có chính tinh — bạn BẮT BUỘC phải mượn Chính tinh từ Cung Xung Chiếu và kết hợp toàn bộ các sao hội chiếu từ Tam Phương Tứ Chính [Xung Chiếu + 2 Cung Tam Hợp] kèm Tuần/Triệt để luận giải, tuyệt đối không luận sơ sài hoặc chỉ nhìn bản cung!)\n';
   const { cungs, tuanGoc, trietGoc, namXemCanChi, namXem } = laSo;
 
@@ -694,6 +768,7 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
 
   // Bảng tra cứu Nguyệt Vận (Lưu nguyệt) 12 tháng Âm lịch trong năm xem
   const namStr = namXemCanChi || (namXem ? `năm ${namXem}` : '');
+  const isCurrentYear = !namXem || namXem === namAm;
   res += `\n--- BẢNG TRA CỨU NGUYỆT VẬN (LƯU NGUYỆT 12 THÁNG ÂM LỊCH ${namStr}) ---\n`;
   res += `(QUY TẮC BẮT BUỘC: Khi luận giải vận hạn từng tháng Âm lịch trong năm xem, BẮT BUỘC tra cứu đúng cung và các Sao Lưu thủ/chiếu theo bảng dưới đây, TUYỆT ĐỐI KHÔNG TỰ SUY ĐOÁN NHẦM CUNG VỊ):\n`;
 
@@ -728,10 +803,55 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
       });
       const saoLuuChieuStr = saoLuuChieu.length > 0 ? saoLuuChieu.join(', ') : 'Không có';
 
-      res += `* THÁNG ${m} ÂM LỊCH: Tọa tại Cung ${cungThang.chi} (${cName}) | Tiểu vận: ${cungThang.tieuVan}\n`;
+      const statusTag = isCurrentYear
+        ? m < thangAm
+          ? ' [ĐÃ QUA TRONG QUÁ KHỨ - KHÔNG ĐƯA VÀO KẾ HOẠCH SẮP TỚI]'
+          : m === thangAm
+          ? ` [★ THÁNG HIỆN TẠI ĐANG DIỄN RA (Hôm nay: ${ngayAm}/${thangAm} Âm lịch)]`
+          : ` [THÁNG SẮP TỚI TRONG NĂM ${namXem || namAm}]`
+        : '';
+
+      res += `* THÁNG ${m} ÂM LỊCH${statusTag}: Tọa tại Cung ${cungThang.chi} (${cName}) | Tiểu vận: ${cungThang.tieuVan}\n`;
       res += `  - Chính tinh: ${ctStr}\n`;
       res += `  - Sao Lưu thủ cung: ${saoLuuTaiCung}\n`;
       res += `  - Sao Lưu tam phương tứ chính hội chiếu: ${saoLuuChieuStr}\n`;
+    }
+  }
+
+  // Bổ sung Bảng tra cứu 6 tháng đầu năm kế tiếp (để khi khách hỏi vào nửa cuối năm thì AI có dữ liệu chuẩn xác lập lộ trình vắt sang năm mới)
+  if (laSo.duongSo) {
+    try {
+      const nextYear = (namXem || namAm) + 1;
+      const nextLaSo = lapLaSoTuVi({ ...laSo.duongSo }, nextYear);
+      const nextLuuStars: string[] = [];
+      nextLaSo.cungs.forEach((c) => {
+        if (c.saoLuu && c.saoLuu.length > 0) {
+          nextLuuStars.push(`${c.saoLuu.map((s) => s.ten).join(', ')} tại Cung ${c.chi} (${c.cungName})`);
+        }
+      });
+
+      res += `\n--- DỮ LIỆU NỐI TIẾP SANG NĂM KẾ TIẾP: NĂM ${nextYear} (${nextLaSo.namXemCanChi} - ${nextLaSo.tuoiAmXem} TUỔI ÂM) ---\n`;
+      res += `(Dùng khi cần vạch lộ trình dài hạn từ cuối năm ${namXem || namAm} nối tiếp sang đầu năm ${nextYear}):\n`;
+      res += `- Tổng hợp Sao Lưu năm ${nextLaSo.namXemCanChi} (${nextYear}): ${nextLuuStars.join('; ')}.\n`;
+      for (let m = 1; m <= 6; m++) {
+        const mStr = `tháng ${m}`;
+        const cungNext = nextLaSo.cungs.find((c) => {
+          const nv = (c.nguyetVan || '').trim().toLowerCase();
+          return nv === mStr || nv === `${m}`;
+        });
+        if (cungNext) {
+          const cName = cungNext.cungName + (cungNext.isThan ? ' (Thân Cư)' : '');
+          const doiCung = nextLaSo.cungs[(cungNext.cungId + 6) % 12];
+          const isVCD = cungNext.chinhTinh.length === 0;
+          const ctStr = !isVCD
+            ? cungNext.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ')
+            : `Vô Chính Diệu (Mượn Xung Chiếu từ ${doiCung.chi}: [${doiCung.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'VCD'}])`;
+          const saoLuuTaiCung = (cungNext.saoLuu || []).map((s) => s.ten).join(', ') || 'Không có';
+          res += `  + Tháng ${m} Âm lịch năm ${nextYear} (${nextLaSo.namXemCanChi}): Tọa tại Cung ${cungNext.chi} (${cName}) | Chính tinh: ${ctStr} | Sao Lưu năm ${nextYear} tại cung: ${saoLuuTaiCung}\n`;
+        }
+      }
+    } catch {
+      // Bỏ qua nếu không tính được năm kế tiếp
     }
   }
 
