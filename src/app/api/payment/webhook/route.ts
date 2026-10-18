@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       amount: number;
       txId: string;
       rawContent: string;
+      transferType?: 'in' | 'out';
     }
 
     const txList: IncomingTx[] = [];
@@ -28,13 +29,14 @@ export async function POST(req: Request) {
       for (const item of payload.data) {
         txList.push({
           codeCandidate: item.description || '',
-          amount: Number(item.amount || 0),
+          amount: Math.abs(Number(item.amount || 0)),
           txId: String(item.id || item.tid || ''),
           rawContent: item.description || '',
+          transferType: Number(item.amount || 0) < 0 ? 'out' : 'in',
         });
       }
     }
-    // 2. Trường hợp SePay: { content, description, transferAmount, code, id, ... }
+    // 2. Trường hợp SePay: { content, description, transferAmount, transferType, code, id, ... }
     else if (
       payload.transferAmount !== undefined ||
       payload.amount !== undefined ||
@@ -57,6 +59,7 @@ export async function POST(req: Request) {
         amount: Number(payload.transferAmount || payload.amount || 0),
         txId: String(payload.id || payload.referenceCode || payload.tid || `sepay_${Date.now()}`),
         rawContent: fullContent,
+        transferType: payload.transferType === 'out' ? 'out' : 'in',
       });
     }
     // 3. Trường hợp PayOS: { data: { orderCode, amount, description, ... } }
@@ -67,6 +70,7 @@ export async function POST(req: Request) {
         amount: Number(pData.amount || 0),
         txId: String(pData.paymentLinkId || pData.reference || ''),
         rawContent: pData.description || '',
+        transferType: 'in',
       });
     }
     // 4. Trường hợp payload tùy chỉnh / Manual test: { orderCode, amount, transactionId }
@@ -76,6 +80,7 @@ export async function POST(req: Request) {
         amount: Number(payload.amount || 0),
         txId: String(payload.transactionId || `tx_${Date.now()}`),
         rawContent: payload.orderCode,
+        transferType: 'in',
       });
     }
 
@@ -110,6 +115,13 @@ export async function POST(req: Request) {
           });
           continue;
         }
+      }
+
+      // Nếu là giao dịch Tiền Ra (out) thông thường (không phải trả hoa hồng CTV), bỏ qua an toàn để không kích hoạt nhầm đơn hàng của khách
+      if (tx.transferType === 'out') {
+        console.log('[PAYMENT WEBHOOK] Bỏ qua giao dịch tiền ra thông thường:', tx.rawContent);
+        results.push({ code: tx.txId, status: 'IGNORED_OUTGOING_TX' });
+        continue;
       }
 
       // 1. Tìm mã đơn TVxxxxx (hỗ trợ có khoảng trắng, gạch nối: TV49354, TV 49354, TV-49354, TV: 49354)
