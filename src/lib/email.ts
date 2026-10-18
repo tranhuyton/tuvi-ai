@@ -317,7 +317,11 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
     requestedAt,
   } = details;
 
-  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL || 'tranhuyton@gmail.com';
+  const primaryAdminEmail =
+    process.env.ADMIN_NOTIFICATION_EMAIL || process.env.ADMIN_EMAIL || 'tranhuyton@gmail.com';
+  const adminEmail = Array.from(
+    new Set([primaryAdminEmail, 'diep.anh.12135@gmail.com'].map((e) => e.trim()).filter(Boolean))
+  );
   const formattedAmount = amount.toLocaleString('vi-VN') + ' đ';
   const remainingFormatted = remainingBalance.toLocaleString('vi-VN') + ' đ';
   const timeStr = requestedAt
@@ -466,12 +470,17 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
 </html>
   `;
 
-  // Gửi email cho Admin
-  const adminResult = await sendEmail({
-    to: adminEmail,
-    subject: `💸 [Tử Vi Thầy Tôn] Yêu cầu rút tiền hoa hồng: ${affiliateName} (${formattedAmount})`,
-    html: htmlContent,
-  });
+  // Gửi email cho Admin (Thầy Tôn + Chị Điệp quản lý TK SePay)
+  const adminResults = await Promise.all(
+    adminEmail.map((recipient) =>
+      sendEmail({
+        to: recipient,
+        subject: `💸 [Tử Vi Thầy Tôn] Yêu cầu rút tiền hoa hồng: ${affiliateName} (${formattedAmount})`,
+        html: htmlContent,
+      })
+    )
+  );
+  const adminResult = adminResults.find((r) => r.success) || adminResults[0];
 
   // Nếu CTV có email, gửi thêm 1 email xác nhận cho CTV
   if (email && email.includes('@')) {
