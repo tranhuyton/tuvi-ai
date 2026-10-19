@@ -15,8 +15,6 @@ import FloatingContact from '@/components/FloatingContact';
 import AboutThayTon from '@/components/AboutThayTon';
 import Testimonials from '@/components/Testimonials';
 import BookingBanner from '@/components/BookingBanner';
-import KnowledgeFunnelSection from '@/components/KnowledgeFunnelSection';
-import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import {
   saveOrUpdateChart,
@@ -1681,9 +1679,6 @@ export default function HomePage() {
 
                 {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
                 <Testimonials />
-
-                {/* Chuyên mục Cẩm Nang & Phễu Kiến Thức Tử Vi Thực Chứng (SEO & GEO) */}
-                <KnowledgeFunnelSection />
               </>
             )}
 
@@ -1773,9 +1768,6 @@ export default function HomePage() {
             {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
             <Testimonials />
 
-            {/* Chuyên mục Cẩm Nang & Phễu Kiến Thức Tử Vi Thực Chứng (SEO & GEO) */}
-            <KnowledgeFunnelSection />
-
             {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
             <BookingBanner />
           </div>
@@ -1841,10 +1833,6 @@ export default function HomePage() {
           <a href="#dich-vu-tu-vi-thay-ton" className="hover:text-amber-400 transition">
             Dịch Vụ & Bảng Giá
           </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <Link href="/bai-viet" className="text-amber-300 hover:text-amber-200 font-semibold transition">
-            Cẩm Nang Tử Vi
-          </Link>
           <span className="text-slate-600 hidden sm:inline">•</span>
           <a href="#cam-nhan-chuyen-gia" className="hover:text-amber-400 transition">
             {t('footer.testimonials')}
