@@ -217,31 +217,48 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto backdrop-blur-xl bg-slate-900/80 border border-amber-500/30 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100">
+    <div className="w-full max-w-xl mx-auto backdrop-blur-xl bg-slate-900/85 border border-amber-500/35 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100">
       <div className="mb-6 pb-4 border-b border-slate-800/80">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-wide text-amber-400 font-serif">
-            {t('form.title', 'LẬP LÁ SỐ TỬ VI')}
-          </h2>
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/35 text-[11px] sm:text-xs font-bold text-amber-300 uppercase tracking-wider">
+            <Sparkles className="w-3 h-3 text-amber-400" />
+            <span>{t('form.heroBadge', 'Tử Vi Cổ Truyền 108 Sao & Nhân Tướng Học Thực Chứng')}</span>
+          </span>
           {onOpenSavedCharts ? (
             <button
               type="button"
               onClick={onOpenSavedCharts}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs sm:text-sm font-bold transition cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition cursor-pointer shadow-sm"
               title="Xem danh sách các lá số đã lưu"
             >
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
               <span>{t('nav.savedCharts', 'Sổ Tay Số Mệnh')}</span>
             </button>
-          ) : (
-            <span className="text-sm sm:text-base text-amber-400/80 font-serif italic tracking-wide">
-              ✦ Khai mở thiên cơ
-            </span>
-          )}
+          ) : null}
         </div>
-        <p className="text-sm sm:text-base text-slate-300 mt-1">
-          {t('form.desc', 'An sao chính xác theo giờ sinh • Bình giải chuyên sâu đa phương thức')}
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-wide text-amber-400 font-serif">
+          {t('form.title', 'AN SAO & BÌNH GIẢI TỬ VI MIỄN PHÍ')}
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed">
+          {t(
+            'form.desc',
+            'Lập lá số bàn cờ 108 tinh đẩu chuẩn xác theo giờ sinh • Tặng ngay bài bình giải Khởi Nguyên miễn phí • Kết hợp độc quyền Diện Tướng Khuôn Mặt & Thủ Tướng Chỉ Tay từ Thầy Tôn'
+          )}
         </p>
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3 pt-2.5 border-t border-slate-800/70 text-[11px] sm:text-xs text-slate-300 font-medium">
+          <div className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2 py-1.5 text-emerald-300">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="truncate">{t('form.trustFree', 'An Sao & Luận Giải 0đ')}</span>
+          </div>
+          <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/25 rounded-lg px-2 py-1.5 text-amber-300">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="truncate">{t('form.trustFacePalm', 'Xem Mặt & Chỉ Tay')}</span>
+          </div>
+          <div className="flex items-center gap-1 bg-blue-500/10 border border-blue-500/25 rounded-lg px-2 py-1.5 text-blue-300">
+            <BookOpen className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span className="truncate">{t('form.trustPdf', 'Lưu Sổ & Tải PDF')}</span>
+          </div>
+        </div>
       </div>
 
       {initialData && (
@@ -576,14 +593,17 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               onClick={() => setSelectedTier('free')}
               className={`relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'free'
-                  ? 'bg-slate-800/95 border-amber-400 ring-2 ring-amber-400 shadow-md shadow-amber-500/10'
-                  : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 opacity-80 hover:opacity-100'
+                  ? 'bg-slate-800/95 border-emerald-400 ring-2 ring-emerald-400 shadow-md shadow-emerald-500/15'
+                  : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 opacity-85 hover:opacity-100'
               }`}
             >
+              <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
+                {t('form.freeBadge', '🎁 Trải Nghiệm Miễn Phí')}
+              </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-base text-slate-100 flex items-center gap-1.5 font-serif">
-                    <span>{t('form.freeTitle', '📜 Bản Miễn Phí')}</span>
+                    <span>{t('form.freeTitle', '📜 Bản Khởi Nguyên (Miễn Phí)')}</span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                     {t('form.freePrice', '0 VNĐ')}
@@ -592,12 +612,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 <p className="text-sm sm:text-xs text-slate-300 leading-relaxed">
                   {t(
                     'form.freeDesc',
-                    'Pháp môn Khởi Nguyên Căn Bản. Luận giải chuẩn mực, súc tích (~800 - 1000 từ), bao quát Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận & Tiểu Vận năm xem.'
+                    'Tặng miễn phí lá số 108 sao & bài bình giải Khởi Nguyên (~1.000 từ): Giải mã cốt cách Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận 10 năm & Tiểu Vận năm xem.'
                   )}
                 </p>
               </div>
-              <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-slate-400 flex items-center justify-between">
-                <span>{t('form.freeQnA', 'Hỏi đáp trực tiếp: 49.000đ / 2 câu')}</span>
+              <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-emerald-300/90 font-medium flex items-center justify-between">
+                <span>{t('form.freeQnA', '✓ An sao & Bình giải 0đ • Hỏi thêm: 49k/2 câu')}</span>
               </div>
             </div>
 
@@ -607,17 +627,17 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               className={`relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'pro'
                   ? 'bg-gradient-to-b from-amber-950/40 to-slate-900 border-amber-400 ring-2 ring-amber-400 shadow-lg shadow-amber-500/20'
-                  : 'bg-slate-950/60 border-slate-800 hover:border-amber-500/40 opacity-80 hover:opacity-100'
+                  : 'bg-slate-950/60 border-slate-800 hover:border-amber-500/40 opacity-85 hover:opacity-100'
               }`}
             >
               <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-red-600 to-amber-600 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
-                {t('form.proBadge', 'Khuyên Dùng')}
+                {t('form.proBadge', '🔥 Khuyên Dùng • Phổ Biến Nhất')}
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-base text-amber-300 flex items-center gap-1.5 font-serif">
                     <Crown className="w-4 h-4 text-amber-400" />
-                    <span>{t('form.proTitle', 'Bản Chuyên Sâu Pro')}</span>
+                    <span>{t('form.proTitle', 'Bản Chuyên Sâu VIP Pro')}</span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
                     {t('form.proPrice', '119.000 VNĐ')}
@@ -626,12 +646,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
                   {t(
                     'form.proDesc',
-                    'Đại Pháp Bí Truyền Chuyên Sâu. Luận giải chi tiết gấp 2 lần (~1800 - 2500 từ). Khảo sát sâu 14 Chính tinh, phối hợp Tướng Pháp (mặt/chỉ tay), Đại Vận 10 năm & Hóa Giải 4 Mùa.'
+                    'Đại Pháp Bí Truyền Chuyên Sâu (~2.500 từ, chi tiết gấp 2,5 lần). Mổ xẻ Tứ Trụ (Mệnh - Thân - Tài - Quan - Phu Thê), kết hợp soi Ảnh Khuôn Mặt & Chỉ Tay thực tế, Đại Vận 10 năm & Vận khí 4 Mùa.'
                   )}
                 </p>
               </div>
-              <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-amber-400 flex items-center justify-between">
-                <span>{t('form.proQnA', 'Ưu đãi hỏi đáp VIP: Tặng 2 câu (Thêm: 99.000đ/2 câu)')}</span>
+              <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-amber-400 font-medium flex items-center justify-between">
+                <span>{t('form.proQnA', '🎁 Tặng kèm 02 câu hỏi VIP (Mua thêm: 99k/2 câu)')}</span>
               </div>
             </div>
 
@@ -645,13 +665,13 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               }`}
             >
               <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
-                {t('form.expertBadge', '💎 Đỉnh Cao Bí Truyền • Đầy Đủ 12 Cung')}
+                {t('form.expertBadge', '💎 Đỉnh Cao Mệnh Lý • Luận Trọn Bộ 12 Cung')}
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
                   <span className="font-bold text-base text-purple-300 flex items-center gap-1.5 font-serif">
                     <Gem className="w-4 h-4 text-purple-400" />
-                    <span>{t('form.expertTitle', 'Bản Chuyên Gia Expert')}</span>
+                    <span>{t('form.expertTitle', 'Bản Chuyên Gia Đại Tông Sư (Expert)')}</span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/40">
                     {t('form.expertPrice', '269.000 VNĐ')}
@@ -660,12 +680,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
                   {t(
                     'form.expertDesc',
-                    'Tuyệt Học Mệnh Lý Đại Tông Sư. Luận giải chuyên sâu đầy đủ từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ), kết hợp Diện tướng/Chỉ tay, Đại Vận 10 năm & chi tiết 12 tháng Lưu Nguyệt.'
+                    'Tuyệt Học Mệnh Lý Toàn Diện Nhất (~4.500 - 5.000 từ, dài gấp đôi Bản Pro). Luận giải chuyên sâu KHÔNG BỎ SÓT bất kỳ cung nào trong đủ 12 Cung + Cung Thân, đối chiếu Diện tướng/Chỉ tay chuyên gia, Đại Vận 10 năm & Bản đồ Lưu Nguyệt chi tiết từng tháng (Tháng 1 - 12 Âm lịch).'
                   )}
                 </p>
               </div>
-              <div className="mt-3 pt-2 border-t border-purple-900/50 text-xs text-purple-300 flex items-center justify-between flex-wrap gap-1">
-                <span>{t('form.expertQnA', 'Ưu đãi hỏi đáp Chuyên Gia: Tặng 2 câu miễn phí (Thêm: 129.000đ/2 câu)')}</span>
+              <div className="mt-3 pt-2 border-t border-purple-900/50 text-xs text-purple-300 font-medium flex items-center justify-between flex-wrap gap-1">
+                <span>{t('form.expertQnA', '🎁 Tặng kèm 02 câu hỏi Chuyên Gia miễn phí (Thêm: 129k/2 câu)')}</span>
                 <span className="text-[11px] text-amber-300/90 font-medium">
                   {t('form.expertUpgradeHint', '*Khách đang dùng Bản Pro nâng cấp chỉ 150.000đ')}
                 </span>
@@ -708,12 +728,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           ) : selectedTier === 'pro' ? (
             <>
               <Crown className="w-5 h-5" />
-              <span>{t('form.btnSubmitPro', 'Thanh Toán & Luận Giải Bản Pro')}</span>
+              <span>{t('form.btnSubmitPro', 'Thanh Toán & Luận Giải Bản Pro (119K)')}</span>
             </>
           ) : (
             <>
               <Sparkles className="w-5 h-5" />
-              <span>{t('form.btnSubmitFree', 'Lập Lá Số & Luận Giải Miễn Phí')}</span>
+              <span>{t('form.btnSubmitFree', 'An Sao & Nhận Bình Giải Miễn Phí Ngay')}</span>
             </>
           )}
         </button>

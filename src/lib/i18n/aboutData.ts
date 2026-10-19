@@ -33,53 +33,53 @@ export interface AboutContent {
 
 export const ABOUT_DATA: Record<Language, AboutContent> = {
   vi: {
-    badge: 'Chân Dung Người Sáng Lập & Luận Giải',
+    badge: 'Chân Dung Chuyên Gia & Người Sáng Lập Hệ Thống',
     name: 'Thầy Tôn (Trần Huy Tôn)',
-    bio: 'Nhà nghiên cứu Mệnh lý học Dịch học cổ truyền, cựu chuyên gia Tài chính — Kiểm toán Quốc tế. Người tiên phong kết hợp Tư duy logic Toán học, Nhãn quan kinh tế thực chứng cùng Bát Bộ Thần Sát & Tướng Pháp Bí Truyền.',
+    bio: 'Chuyên gia Mệnh lý học & Dịch học thực chứng, Cựu Chuyên gia Tài chính — Kiểm toán Quốc tế tại Vương Quốc Anh. Người tiên phong ứng dụng Tư duy Toán học xác suất, Nhãn quan Kinh tế vĩ mô kết hợp Tử Vi Đẩu Số Cổ Truyền, Bát Bộ Thần Sát cùng Diện Tướng & Thủ Tướng (Chỉ Tay) thực chứng.',
     stats: [
-      { val: '18+ Năm', label: 'Nghiên cứu Tử Vi & Cổ thuật' },
-      { val: '7+ Năm', label: 'Học tập & làm việc tại Anh Quốc' },
-      { val: 'Top 5 UK', label: 'Đại học Lancaster (Tài chính)' },
-      { val: '15+ Năm', label: 'Giảng dạy & Nghiên cứu kinh tế' },
+      { val: '18+ Năm', label: 'Nghiên cứu Tử Vi & Tướng Pháp' },
+      { val: '7+ Năm', label: 'Du học & Làm việc tại Anh Quốc' },
+      { val: 'Top 5 UK', label: 'ĐH Lancaster (Tài chính - Kế toán)' },
+      { val: '15+ Năm', label: 'Giảng dạy & Cố vấn Chiến lược' },
     ],
     pillar1: {
-      title: 'Học Vấn & Vương Quốc Anh',
+      title: 'Nền Tảng Toán Học & Tinh Hoa Anh Quốc',
       points: [
-        'Cựu học sinh cấp ba lớp Toán - Tin, Trường Đại học Tổng Hợp Hà Nội.',
-        'Hơn 7 năm du học và làm việc tại Anh Quốc từ năm 16 tuổi.',
-        'Tốt nghiệp khoa Quản lý Tài chính Kế toán trường Đại học Lancaster — Top 5 trường đứng đầu về Accounting & Finance tại Vương Quốc Anh (UK).',
+        'Cựu học sinh Chuyên Toán - Tin, Khối Chuyên Trường Đại học Tổng Hợp Hà Nội (nay là ĐH Khoa học Tự nhiên - ĐHQGHN) với nền tảng tư duy logic và cấu trúc hệ thống sắc bén.',
+        'Hơn 7 năm du học và làm việc chuyên nghiệp tại Vương Quốc Anh (UK) từ năm 16 tuổi.',
+        'Tốt nghiệp Cử nhân Quản lý Tài chính & Kế toán tại Đại học Lancaster (Lancaster University) — Top 5 trường đại học hàng đầu Vương Quốc Anh về Tài chính, Kế toán & Quản trị.',
       ],
     },
     pillar2: {
-      title: 'Kiểm Toán & Kinh Tế Thực Chứng',
+      title: 'Kiểm Toán Quốc Tế & Kinh Tế Thực Chứng',
       points: [
-        'Kinh nghiệm làm việc thực chiến tại các công ty kiểm toán Quốc tế và các tổ chức tài chính doanh nghiệp.',
-        'Thâm niên hơn 15 năm nghiên cứu chuyên sâu và giảng dạy bộ môn ngôn ngữ Anh cùng các môn khoa học tài chính kinh tế cho các trường Quốc tế.',
+        'Kinh nghiệm thực chiến tại các hãng Kiểm toán Quốc tế và định chế Tài chính — Đầu tư doanh nghiệp tại Anh Quốc và Việt Nam.',
+        'Hơn 15 năm nghiên cứu học thuật và giảng dạy chuyên sâu Ngôn ngữ Anh, Kinh tế học & Tài chính cho các chương trình Quốc tế.',
         {
-          text: 'Chủ sáng lập nền tảng giáo dục học thuật ',
+          text: 'Nhà sáng lập nền tảng giáo dục học thuật uy tín ',
           linkText: 'TonyEnglish.vn',
           url: 'https://tonyenglish.vn/',
         },
-        'Tiếp tục tham gia nghiên cứu chuyên sâu về các lĩnh vực kinh tế thương mại, chu kỳ đầu tư tại Việt Nam.',
+        'Thường xuyên phân tích chuyên sâu về chu kỳ kinh tế vĩ mô, bất động sản, chứng khoán và quản trị rủi ro tài chính cá nhân.',
       ],
     },
     pillar3: {
-      title: '18 Năm Tử Vi & Cố Vấn Đương Số',
+      title: '18+ Năm Tử Vi Thực Chứng & Cố Vấn Cấp Cao',
       points: [
-        'Gần 18 năm nghiên cứu, khảo chứng và thực hành Tử Vi Đẩu Số, kết hợp Bát Bộ Thần Sát và Diện Tướng, Thủ Tướng.',
-        'Trực tiếp tham vấn và định hướng thời vận cho rất nhiều đối tượng: từ các nghệ sĩ, diễn viên tên tuổi, lãnh đạo tập đoàn, chủ doanh nghiệp lớn đến các nhà đầu tư tài chính.',
-        'Đồng hành cùng các bạn trẻ định hướng học tập, du học, chọn ngành nghề phù hợp bản mệnh, hóa giải trắc trở tình duyên và kiến tạo sự nghiệp.',
+        'Hơn 18 năm nghiên cứu, khảo chứng hàng chục ngàn lá số Tử Vi Đẩu Số thực tế, kết hợp Bát Bộ Thần Sát, Phi Tinh Tứ Hóa cùng Diện Tướng (khuôn mặt) và Thủ Tướng (chỉ tay).',
+        'Cố vấn định hướng thời vận 1-1 cho đông đảo chủ doanh nghiệp, lãnh đạo tập đoàn, nhà đầu tư tài chính, bác sĩ, kỹ sư và các nghệ sĩ, diễn viên tên tuổi.',
+        'Đồng hành cùng phụ huynh và thế hệ trẻ trong việc định hướng chọn ngành nghề, du học, khởi nghiệp, chọn năm kết hôn và hóa giải xung đột gia đạo.',
       ],
     },
     philosophy: {
       title: 'Triết Lý Luận Giải: Khoa Học — Thực Chứng — Không Mê Tín Dị Đoan',
-      desc: 'Khác biệt lớn nhất trong các bài bình giải của Thầy Tôn nằm ở tính hệ thống, logic khoa học chặt chẽ và sự tỉ mỉ. Dưới lăng kính của người làm toán học và tài chính quốc tế, Tử Vi là bản đồ phân tích chu kỳ nhân sinh và quản trị rủi ro cuộc đời — biến những điển tích cổ tự phức tạp thành những định hướng sắc bén, gần gũi, giúp quý đương số "Tri mệnh để thuận mệnh, nắm bắt thời cơ và hanh thông bản mệnh".',
+      desc: 'Khác biệt cốt lõi làm nên uy tín của Thầy Tôn nằm ở phương pháp luận giải khoa học, logic chặt chẽ, tuyệt đối không hù dọa hay mê tín dị đoan. Dưới lăng kính Toán học xác suất và Quản trị rủi ro Tài chính Quốc tế, mỗi lá số Tử Vi là một "bản đồ chiến lược nhân sinh" — giúp quý đương số thấu hiểu ưu nhược điểm bản thân, nắm bắt đúng "Thiên Thời - Địa Lợi - Nhân Hòa", kích hoạt tài lộc và chủ động hóa giải tai ương.',
       websiteBtn: 'Xem Website TonyEnglish',
-      contactBtn: 'Liên Hệ Đàm Đạo',
+      contactBtn: 'Đặt Lịch Cùng Thầy Tôn',
     },
-    addressLabel: 'Địa chỉ:',
+    addressLabel: 'Địa chỉ phòng xem trực tiếp:',
     addressValue: 'R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội',
-    contactLabel: 'Liên hệ:',
+    contactLabel: 'Hotline / Zalo đặt lịch:',
   },
 
   en: {

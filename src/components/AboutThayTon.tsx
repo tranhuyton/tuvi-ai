@@ -12,27 +12,123 @@ import {
   CheckCircle2,
   MapPin,
   Mail,
+  Gift,
+  Crown,
+  Gem,
+  Users,
+  HelpCircle,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { ABOUT_DATA } from '@/lib/i18n/aboutData';
+
+const SERVICE_HIGHLIGHTS_VI = [
+  {
+    badge: 'Trải Nghiệm Ngay • 0đ',
+    title: 'An Sao & Bình Giải Miễn Phí',
+    price: 'Miễn Phí 100%',
+    color: 'emerald',
+    icon: Gift,
+    desc: 'Lập lá số Tử Vi trọn đời chuẩn xác 110+ chính phụ tinh theo giờ sinh và nhận ngay bài Bình Giải Khởi Nguyên (~1.000 từ).',
+    bullets: [
+      'Giải mã Cốt cách Bản Mệnh, Cục & Âm Dương Thuận/Nghịch lý',
+      'Phân tích Tam Hợp Mệnh - Tài Bạch - Quan Lộc & cung Thân',
+      'Dự báo tổng quan Đại Vận 10 năm & Tiểu Vận năm xem hạn',
+      'Lưu lá số vào Sổ Tay Cá Nhân & Tải ảnh lá số / PDF miễn phí',
+    ],
+    ctaText: 'Lập Lá Số Miễn Phí Ngay',
+    ctaAction: 'scrollTop',
+  },
+  {
+    badge: 'Đông Khách Nhất',
+    title: 'Bản Chuyên Sâu VIP Pro',
+    price: '119.000 VNĐ',
+    color: 'amber',
+    icon: Crown,
+    desc: 'Đại pháp bí truyền chuyên sâu (~2.500 từ), kết hợp Tử Vi Đẩu Số, Bát Bộ Thần Sát cùng Diện Tướng & Chỉ Tay thực chứng.',
+    bullets: [
+      'Luận sâu 14 Chính tinh, Tứ Hóa & các bộ sao Đắc/Hãm địa',
+      'Kết hợp AI Thị Giác soi Diện Tướng (mặt) & Thủ Tướng (chỉ tay)',
+      'Luận giải chi tiết vận hạn 4 mùa Xuân - Hạ - Thu - Đông',
+      '🎁 Tặng kèm 02 câu hỏi VIP Chuyên Sâu (trị giá 99.000đ)',
+    ],
+    ctaText: 'Chọn Gói VIP Pro Trên Form',
+    ctaAction: 'scrollTop',
+  },
+  {
+    badge: 'Đỉnh Cao Toàn Diện',
+    title: 'Bản Chuyên Gia Đại Tông Sư (Expert)',
+    price: '269.000 VNĐ',
+    color: 'purple',
+    icon: Gem,
+    desc: 'Ấn phẩm luận giải Đại Tông Sư đồ sộ nhất (~4.500 – 6.000 từ), khảo sát không sót bất kỳ góc khuất nào trên lá số.',
+    bullets: [
+      'Bình giải chi tiết trọn vẹn TẤT CẢ 12 CUNG trên bàn cờ Tử Vi',
+      'Luận giải chi tiết TỪNG THÁNG (Tháng 1 đến Tháng 12 Âm lịch)',
+      'Đối chiếu chuyên sâu Tướng Mặt, Chỉ Tay & Phong Thủy Cải Vận',
+      '🎁 Tặng kèm 02 câu hỏi Chuyên Gia (Soi 12 cung & tháng hạn)',
+    ],
+    ctaText: 'Chọn Gói Expert Trên Form',
+    ctaAction: 'scrollTop',
+  },
+  {
+    badge: 'Tham Vấn Trực Tiếp 1-1',
+    title: 'Đặt Lịch Xem Cùng Thầy Tôn',
+    price: 'Online / Offline',
+    color: 'blue',
+    icon: Users,
+    desc: 'Đàm đạo riêng 1-1 trực tiếp cùng Thầy Tôn (Trần Huy Tôn) tại Royal City, Hà Nội hoặc qua Video Call Quốc tế.',
+    bullets: [
+      'Thẩm định giờ sinh chuẩn xác & đối chiếu biến cố quá khứ',
+      'Trực tiếp xem Diện Tướng, Thủ Tướng (chỉ tay) & bấm quẻ Dịch',
+      'Hoạch định chiến lược Kinh doanh, Đầu tư, Sự nghiệp & Hôn nhân',
+      'Định hướng du học, chọn ngành nghề & cải vận phong thủy thực chứng',
+    ],
+    ctaText: 'Nhắn Zalo Đặt Lịch: 0935.058.688',
+    ctaHref: 'https://zalo.me/0935058688',
+  },
+];
+
+const FAQ_ITEMS_VI = [
+  {
+    q: '1. An sao và bình giải Tử Vi tại Tử Vi Thầy Tôn có thực sự miễn phí không?',
+    a: 'Hoàn toàn miễn phí! Quý đương số chỉ cần nhập Họ tên, Ngày tháng năm sinh (Dương lịch hoặc Âm lịch), Giờ sinh và Năm muốn xem hạn rồi chọn "Bản Khởi Nguyên (Miễn Phí - 0đ)". Hệ thống sẽ lập lá số Tử Vi chuẩn xác 110+ sao kèm bài bình giải tổng quan (~1.000 từ) hoàn toàn miễn phí, hỗ trợ lưu lá số và tải ảnh/PDF tiện lợi.',
+  },
+  {
+    q: '2. Thầy Tôn (Trần Huy Tôn) là ai? Vì sao phương pháp luận giải của Thầy được đánh giá cao?',
+    a: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh Chuyên Toán - Tin Đại học Tổng Hợp Hà Nội, tốt nghiệp Cử nhân Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh) với hơn 7 năm học tập, làm việc tại Anh Quốc và hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát & Tướng Pháp thực chứng. Phương pháp của Thầy kết hợp tư duy logic Toán học, nhãn quan Kinh tế vĩ mô và Dịch học cổ truyền — giúp luận giải chuẩn xác, thực tế, khoa học và tuyệt đối không mê tín dị đoan.',
+  },
+  {
+    q: '3. Sự khác biệt giữa Bản Miễn Phí (0đ), Bản VIP Pro (119k) và Bản Chuyên Gia Expert (269k) là gì?',
+    a: '• Bản Miễn Phí (0đ): Luận tổng quan (~1.000 từ) về Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận & Tiểu Vận năm xem.\n• Bản VIP Pro (119.000đ): Luận sâu gấp đôi (~2.500 từ), kết hợp phân tích ảnh Khuôn mặt (Diện tướng) & Chỉ tay (Thủ tướng), vận hạn 4 mùa Xuân - Hạ - Thu - Đông, tặng kèm 02 câu hỏi VIP.\n• Bản Chuyên Gia Đại Tông Sư Expert (269.000đ): Luận giải đồ sộ nhất (~4.500 - 6.000 từ), khảo sát toàn diện TẤT CẢ 12 CUNG, Phi Tinh Tứ Hóa, dự báo chi tiết TỪNG THÁNG từ tháng 1 đến tháng 12 Âm lịch, kết hợp Tướng pháp & Phong thủy cải vận, tặng kèm 02 câu hỏi Chuyên Gia.',
+  },
+  {
+    q: '4. Làm thế nào để đặt lịch xem Tử Vi trực tiếp 1-1 cùng Thầy Tôn?',
+    a: 'Quý khách có thể đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn tại phòng khách R2B 2219, Khu đô thị Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội hoặc đặt lịch xem Online 1-1 qua Video Call (dành cho khách hàng ở xa hoặc kiều bào tại Anh, Mỹ, Úc, Châu Âu, Nhật, Hàn...) bằng cách gọi/nhắn Zalo số 0935.058.688.',
+  },
+];
 
 export default function AboutThayTon() {
   const { language } = useLanguage();
   const data = ABOUT_DATA[language] || ABOUT_DATA.vi;
 
+  const scrollToForm = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <section
       id="gioi-thieu-thay-ton"
-      className="w-full max-w-[1060px] mx-auto mt-10 sm:mt-14 scroll-mt-6"
+      className="w-full max-w-[1060px] mx-auto mt-10 sm:mt-14 scroll-mt-6 space-y-8 sm:space-y-10"
     >
-      {/* Khung chính phong cách Cosmic Gold sang trọng */}
+      {/* Khung chính 1: Giới thiệu Thầy Tôn phong cách Cosmic Gold sang trọng */}
       <div className="relative overflow-hidden rounded-3xl backdrop-blur-xl bg-slate-900/85 border border-amber-500/30 p-6 sm:p-10 shadow-2xl shadow-amber-950/20">
         {/* Hào quang nền trang trí */}
         <div className="absolute -top-32 -right-32 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Phần đầu: Tiêu đề & Giới thiệu ngắn */}
-        <div className="relative z-10 text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+        <div className="relative z-10 text-center max-w-3xl mx-auto mb-8 sm:mb-12">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs sm:text-sm font-semibold uppercase tracking-widest mb-3 shadow-sm">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>{data.badge}</span>
@@ -204,6 +300,160 @@ export default function AboutThayTon() {
               </a>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Khung 2: Hệ Sinh Thái Dịch Vụ An Sao & Bình Giải Tử Vi Thầy Tôn (Tối ưu Quảng cáo, SEO & GEO) */}
+      <div
+        id="dich-vu-tu-vi-thay-ton"
+        className="relative overflow-hidden rounded-3xl backdrop-blur-xl bg-slate-900/85 border border-amber-500/30 p-6 sm:p-10 shadow-2xl shadow-amber-950/20"
+      >
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-300 text-xs sm:text-sm font-semibold uppercase tracking-wider mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Hệ Sinh Thái Dịch Vụ Uy Tín • Minh Bạch • Thực Chứng</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif text-amber-400 tracking-wide mb-2.5">
+            Các Gói An Sao, Bình Giải & Tham Vấn Cùng Thầy Tôn
+          </h2>
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+            Từ trải nghiệm <strong className="text-emerald-300">An Sao & Bình Giải Miễn Phí (0đ)</strong> đến các gói{' '}
+            <strong className="text-amber-300">Luận Giải Chuyên Sâu VIP Pro</strong>,{' '}
+            <strong className="text-purple-300">Đại Tông Sư 12 Cung & 12 Tháng</strong> và{' '}
+            <strong className="text-blue-300">Xem Trực Tiếp 1-1 Cùng Thầy Tôn</strong>.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+          {SERVICE_HIGHLIGHTS_VI.map((srv, idx) => {
+            const IconComp = srv.icon;
+            const borderCls =
+              srv.color === 'emerald'
+                ? 'border-emerald-500/35 hover:border-emerald-400/60 bg-emerald-950/15'
+                : srv.color === 'amber'
+                ? 'border-amber-500/40 hover:border-amber-400/70 bg-amber-950/15'
+                : srv.color === 'purple'
+                ? 'border-purple-500/40 hover:border-purple-400/70 bg-purple-950/15'
+                : 'border-blue-500/35 hover:border-blue-400/60 bg-blue-950/15';
+
+            const badgeCls =
+              srv.color === 'emerald'
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                : srv.color === 'amber'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                : srv.color === 'purple'
+                ? 'bg-purple-500/20 text-purple-200 border-purple-500/40'
+                : 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+
+            const titleCls =
+              srv.color === 'emerald'
+                ? 'text-emerald-300'
+                : srv.color === 'amber'
+                ? 'text-amber-300'
+                : srv.color === 'purple'
+                ? 'text-purple-200'
+                : 'text-blue-300';
+
+            const btnCls =
+              srv.color === 'emerald'
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                : srv.color === 'amber'
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950'
+                : srv.color === 'purple'
+                ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white'
+                : 'bg-blue-600 hover:bg-blue-500 text-white';
+
+            return (
+              <div
+                key={idx}
+                className={`p-5 sm:p-6 rounded-2xl border transition flex flex-col justify-between space-y-4 ${borderCls}`}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${badgeCls}`}>
+                      <IconComp className="w-3.5 h-3.5" />
+                      <span>{srv.badge}</span>
+                    </span>
+                    <span className="text-sm sm:text-base font-black text-white bg-slate-900/90 px-3 py-1 rounded-lg border border-slate-700">
+                      {srv.price}
+                    </span>
+                  </div>
+
+                  <h3 className={`text-lg sm:text-xl font-bold font-serif ${titleCls}`}>
+                    {srv.title}
+                  </h3>
+
+                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                    {srv.desc}
+                  </p>
+
+                  <ul className="space-y-2 pt-1 text-xs sm:text-sm text-slate-200">
+                    {srv.bullets.map((b, bIdx) => (
+                      <li key={bIdx} className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="pt-2">
+                  {srv.ctaHref ? (
+                    <a
+                      href={srv.ctaHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md transition ${btnCls}`}
+                    >
+                      <span>{srv.ctaText}</span>
+                      <ArrowUpRight className="w-4 h-4" />
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={scrollToForm}
+                      className={`w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md transition cursor-pointer ${btnCls}`}
+                    >
+                      <span>{srv.ctaText}</span>
+                      <ArrowUpRight className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Khung 3: Câu Hỏi Thường Gặp (FAQ — Chuẩn SEO & GEO cho công cụ tìm kiếm & AI) */}
+      <div
+        id="cau-hoi-thuong-gap"
+        className="relative overflow-hidden rounded-3xl backdrop-blur-xl bg-slate-900/85 border border-slate-800 p-6 sm:p-10 shadow-xl"
+      >
+        <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-2">
+            <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span>Giải Đáp Thắc Mắc Nhanh</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-serif text-amber-400">
+            Câu Hỏi Thường Gặp Về Tử Vi Thầy Tôn
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+          {FAQ_ITEMS_VI.map((item, idx) => (
+            <div
+              key={idx}
+              className="p-4 sm:p-5 rounded-2xl bg-slate-950/70 border border-slate-800/90 hover:border-amber-500/30 transition space-y-2"
+            >
+              <h3 className="text-sm sm:text-base font-bold text-amber-300 leading-snug">
+                {item.q}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+                {item.a}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

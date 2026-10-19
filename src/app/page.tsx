@@ -1672,9 +1672,9 @@ export default function HomePage() {
               }}
             />
 
-            {!isEditing && !user && (
+            {!isEditing && (
               <>
-                {/* Mục Giới thiệu về Thầy Tôn */}
+                {/* Mục Giới thiệu về Thầy Tôn, Hệ sinh thái Dịch vụ & FAQ */}
                 <AboutThayTon />
 
                 {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
@@ -1762,15 +1762,11 @@ export default function HomePage() {
               onUpgradeToExpert={() => openUpgradeExpertModal()}
             />
 
-            {!user && (
-              <>
-                {/* Mục Giới thiệu về Thầy Tôn */}
-                <AboutThayTon />
+            {/* Mục Giới thiệu về Thầy Tôn, Hệ sinh thái Dịch vụ & FAQ */}
+            <AboutThayTon />
 
-                {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
-                <Testimonials />
-              </>
-            )}
+            {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
+            <Testimonials />
 
             {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
             <BookingBanner />
@@ -1830,18 +1826,22 @@ export default function HomePage() {
 
       <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-6 text-xs text-slate-400 font-medium flex-wrap">
-          {!user && (
-            <>
-              <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
-                {t('footer.about')}
-              </a>
-              <span className="text-slate-600 hidden sm:inline">•</span>
-              <a href="#cam-nhan-chuyen-gia" className="hover:text-amber-400 transition">
-                {t('footer.testimonials')}
-              </a>
-              <span className="text-slate-600 hidden sm:inline">•</span>
-            </>
-          )}
+          <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
+            {t('footer.about')}
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="#dich-vu-tu-vi-thay-ton" className="hover:text-amber-400 transition">
+            Dịch Vụ & Bảng Giá
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="#cam-nhan-chuyen-gia" className="hover:text-amber-400 transition">
+            {t('footer.testimonials')}
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="#cau-hoi-thuong-gap" className="hover:text-amber-400 transition">
+            Câu Hỏi Thường Gặp
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
           <a
             href="https://tonyenglish.vn"
             target="_blank"
