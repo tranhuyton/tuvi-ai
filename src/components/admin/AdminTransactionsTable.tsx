@@ -207,23 +207,28 @@ export default function AdminTransactionsTable({
     );
   });
 
-  // Xử lý duyệt thanh toán thủ công từ Admin
-  const handleApproveOrder = async (orderCode: string) => {
-    const confirmApprove = window.confirm(
-      `Xác nhận DUYỆT THỦ CÔNG cho đơn hàng ${orderCode}?\n\nLưu ý: Chỉ duyệt khi bạn đã kiểm tra tài khoản ngân hàng và thấy khách đã chuyển tiền thực tế.`
-    );
-    if (!confirmApprove) return;
+  // Xử lý duyệt thanh toán thủ công hoặc duyệt tặng 0đ từ Admin
+  const handleApproveOrder = async (orderCode: string, isGift = false) => {
+    const confirmMsg = isGift
+      ? `Xác nhận DUYỆT TẶNG MIỄN PHÍ (0đ) cho đơn hàng ${orderCode}?\n\n• Khách vẫn được mở khóa đầy đủ gói dịch vụ & nhận email kích hoạt.\n• Đơn hàng sẽ được ghi nhận là 0đ (KHÔNG cộng vào doanh thu và KHÔNG cộng hoa hồng CTV).`
+      : `Xác nhận DUYỆT ĐÃ THU TIỀN cho đơn hàng ${orderCode}?\n\nLưu ý: Chỉ bấm nút này khi khách đã chuyển khoản thật vào ngân hàng nhưng webhook bị trễ (Sẽ cộng doanh thu & hoa hồng CTV). Nếu muốn tặng miễn phí, hãy bấm nút [🎁 Tặng 0đ].`;
+
+    if (!window.confirm(confirmMsg)) return;
 
     setApprovingCode(orderCode);
     try {
       const res = await fetch('/api/payment/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderCode }),
+        body: JSON.stringify({ orderCode, isGift }),
       });
       const data = await res.json();
       if (data.success) {
-        alert(`Đã duyệt đơn hàng ${orderCode} thành công và gửi email thông báo!`);
+        alert(
+          isGift
+            ? `Đã duyệt TẶNG 0đ cho đơn ${orderCode} thành công (không tính doanh thu)!`
+            : `Đã duyệt đơn hàng ${orderCode} thành công và gửi email thông báo!`
+        );
         onRefresh();
       } else {
         alert(`Lỗi: ${data.error || 'Không thể duyệt đơn'}`);
@@ -628,16 +633,22 @@ export default function AdminTransactionsTable({
                           </td>
 
                           <td className="py-3 px-4 text-right">
-                            <span className="font-bold text-emerald-400 font-mono">
-                              {ord.amount.toLocaleString('vi-VN')} đ
-                            </span>
+                            {ord.amount === 0 ? (
+                              <span className="font-bold text-purple-300 font-mono text-xs bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded">
+                                0 đ (Tặng)
+                              </span>
+                            ) : (
+                              <span className="font-bold text-emerald-400 font-mono">
+                                {ord.amount.toLocaleString('vi-VN')} đ
+                              </span>
+                            )}
                           </td>
 
                           <td className="py-3 px-4 text-center">
                             {ord.status === 'PAID' ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold shadow-sm">
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>Đã thanh toán</span>
+                                <span>{ord.amount === 0 ? 'Đã tặng (0đ)' : 'Đã thanh toán'}</span>
                               </span>
                             ) : ord.status === 'CANCELLED' ? (
                               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs font-medium">
@@ -674,7 +685,7 @@ export default function AdminTransactionsTable({
                                   ) : (
                                     <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
                                       <CheckCircle2 className="w-3.5 h-3.5" />
-                                      <span>Tự động xong</span>
+                                      <span>{ord.amount === 0 ? 'Đã tặng' : 'Tự động xong'}</span>
                                     </span>
                                   )}
                                   <button
@@ -700,10 +711,19 @@ export default function AdminTransactionsTable({
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => handleApproveOrder(ord.orderCode)}
+                                    onClick={() => handleApproveOrder(ord.orderCode, true)}
+                                    disabled={approvingCode === ord.orderCode}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-950/80 hover:bg-purple-900 text-purple-200 text-xs font-medium rounded-lg border border-purple-500/40 shadow-sm transition disabled:opacity-50"
+                                    title="Duyệt tặng miễn phí (0đ - Không tính vào doanh thu & Không tính hoa hồng CTV)"
+                                  >
+                                    <span>🎁 Tặng 0đ</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleApproveOrder(ord.orderCode, false)}
                                     disabled={approvingCode === ord.orderCode}
                                     className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800/90 hover:bg-slate-700 hover:text-amber-300 text-slate-300 text-xs font-medium rounded-lg border border-slate-700/60 shadow-sm transition disabled:opacity-50"
-                                    title="Duyệt tay thủ công nếu khách đã chuyển khoản mà webhook bị trễ"
+                                    title="Duyệt đã thu tiền (Dùng khi khách chuyển khoản thật nhưng webhook bị trễ)"
                                   >
                                     <Zap className="w-3 h-3 text-amber-400" />
                                     <span>

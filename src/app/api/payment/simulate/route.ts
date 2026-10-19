@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
  */
 export async function POST(req: Request) {
   try {
-    const { orderCode } = await req.json();
+    const { orderCode, isGift } = await req.json();
 
     if (!orderCode) {
       return NextResponse.json(
@@ -23,15 +23,30 @@ export async function POST(req: Request) {
       order = await createOrder({
         customCode: orderCode,
         paymentType: 'chat_free',
-        amount: 49000,
+        amount: isGift ? 0 : 49000,
         hoTen: 'Đương số',
       });
     }
 
-    const paidOrder = await markOrderPaid(order.orderCode, `sim_${Date.now()}`);
+    const txPrefix = isGift ? 'gift' : 'sim';
+    const paidOrder = await markOrderPaid(order.orderCode, `${txPrefix}_${Date.now()}`);
 
-    // Ghi nhận hoa hồng cho CTV nếu đơn hàng có mã Affiliate
-    if (order.affiliateCode) {
+    if (isGift) {
+      // Nếu là đơn Duyệt Tặng (0đ): đặt amount = 0, commission_amount = 0 để không cộng vào doanh thu hay hoa hồng CTV
+      order.amount = 0;
+      if (paidOrder) {
+        paidOrder.amount = 0;
+      }
+      try {
+        await supabase
+          .from('tuvi_orders')
+          .update({ amount: 0, commission_amount: 0, affiliate_code: null })
+          .eq('order_code', order.orderCode);
+      } catch (e) {
+        console.warn('[SIMULATE GIFT] Lỗi cập nhật amount=0:', e);
+      }
+    } else if (order.affiliateCode) {
+      // Ghi nhận hoa hồng cho CTV chỉ khi đây là đơn thu tiền thật (không phải đơn tặng 0đ)
       try {
         const { recordAffiliateCommission } = await import('@/lib/affiliateStore');
         await recordAffiliateCommission(
