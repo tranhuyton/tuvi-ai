@@ -14,7 +14,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin', '/api/'],
       },
     ],
-    sitemap: 'https://tuvithayton.vn/sitemap.xml',
-    host: 'https://tuvithayton.vn',
+    sitemap: 'https://www.tuvithayton.vn/sitemap.xml',
+    host: 'https://www.tuvithayton.vn',
   };
 }

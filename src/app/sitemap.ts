@@ -3,9 +3,10 @@ import { SEO_ARTICLES } from '@/lib/seoArticles';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
+  const baseUrl = 'https://www.tuvithayton.vn';
 
   const articleUrls: MetadataRoute.Sitemap = SEO_ARTICLES.map((art) => ({
-    url: `https://tuvithayton.vn/bai-viet/${art.slug}`,
+    url: `${baseUrl}/bai-viet/${art.slug}`,
     lastModified: new Date(art.updatedAt),
     changeFrequency: 'weekly',
     priority: 0.9,
@@ -13,20 +14,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     {
-      url: 'https://tuvithayton.vn',
+      url: baseUrl,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 1.0,
     },
     {
-      url: 'https://tuvithayton.vn/bai-viet',
+      url: `${baseUrl}/bai-viet`,
       lastModified: now,
       changeFrequency: 'daily',
       priority: 0.95,
     },
     ...articleUrls,
     {
-      url: 'https://tuvithayton.vn/ctv',
+      url: `${baseUrl}/ctv`,
       lastModified: now,
       changeFrequency: 'weekly',
       priority: 0.7,
