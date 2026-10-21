@@ -73,38 +73,89 @@ const SERVICE_HIGHLIGHTS_VI = [
   },
   {
     badge: 'Tham Vấn Trực Tiếp 1-1',
-    title: 'Đặt Lịch Xem Cùng Thầy Tôn',
+    title: 'Đặt Lịch Xem Tử Vi & Phong Thủy Cùng Thầy Tôn',
     price: 'Online / Offline',
     color: 'blue',
     icon: Users,
-    desc: 'Đàm đạo riêng 1-1 trực tiếp cùng Thầy Tôn (Trần Huy Tôn) tại Royal City, Hà Nội hoặc qua Video Call Quốc tế.',
+    desc: 'Đàm đạo riêng 1-1 trực tiếp cùng Thầy Tôn (Trần Huy Tôn) tại Royal City (Hà Nội), khảo sát thực địa hoặc qua Video Call Quốc tế.',
     bullets: [
-      'Thẩm định giờ sinh chuẩn xác & đối chiếu biến cố quá khứ',
-      'Trực tiếp xem Diện Tướng, Thủ Tướng (chỉ tay) & bấm quẻ Dịch',
-      'Hoạch định chiến lược Kinh doanh, Đầu tư, Sự nghiệp & Hôn nhân',
-      'Định hướng du học, chọn ngành nghề & cải vận phong thủy thực chứng',
+      'Thẩm định giờ sinh, luận sâu Lá Số Tử Vi, Diện Tướng, Chỉ Tay & Quẻ Dịch',
+      'Khảo sát & bố cục Phong Thủy Nhà Ở, Biệt Thự, Chung Cư, Văn Phòng, Cửa Hàng',
+      'Xem ngày giờ tốt Động thổ, Xây dựng, Nhập trạch, Khai trương & Cưới hỏi',
+      'Hoạch định chiến lược Kinh doanh, Đầu tư, Sự nghiệp & Phong thủy cải vận',
     ],
     ctaText: 'Nhắn Zalo Đặt Lịch: 0935.058.688',
     ctaHref: 'https://zalo.me/0935058688',
   },
 ];
 
+const FENG_SHUI_SERVICES_VI = [
+  {
+    badge: 'Dương Trạch Gia Cư',
+    title: 'Phong Thủy Nhà Ở, Biệt Thự & Chung Cư',
+    sub: 'Khảo Sát Thực Địa Hoặc Qua Bản Vẽ Kiến Trúc',
+    points: [
+      'Đo đạc độ số la kinh, phân tích Loan Đầu (ngoại cục) & Lý Khí (Huyền Không Phi Tinh, Bát Trạch Minh Cảnh).',
+      'Tối ưu vị trí và hướng Cổng/Cửa chính, Phòng khách, Bếp nấu (Táo vị), Phòng ngủ và Bàn thờ Gia tiên hợp mệnh chủ.',
+      'Hóa giải triệt để các thế phạm: đường đâm, góc nhọn xung chiếu, xà ngang压đỉnh, cửa đối cửa, khuyết góc cung vị.',
+    ],
+  },
+  {
+    badge: 'Thương Mại & Doanh Nghiệp',
+    title: 'Phong Thủy Văn Phòng, Cửa Hàng & Trụ Sở',
+    sub: 'Kích Hoạt Tài Lộc — Vượng Khí Kinh Doanh',
+    points: [
+      'Quy hoạch vị trí phòng Chủ tịch/Giám đốc, bàn làm việc lãnh đạo, két sắt, quầy thu ngân và ban Thần Tài - Thổ Địa.',
+      'Kích hoạt cung Tài vị, Quý nhân và Lộc mã theo vận 9 Hạ Nguyên giúp doanh nghiệp thu hút dòng tiền và nhân sự giỏi.',
+      'Tư vấn chọn mặt bằng kinh doanh, hướng tòa nhà và bố cục dòng khí nội cục hanh thông,聚khí sinh tài.',
+    ],
+  },
+  {
+    badge: 'Thiên Địa Nhân Hợp Nhất',
+    title: 'Phong Thủy Cải Vận Kết Hợp Lá Số Tử Vi',
+    sub: 'Cá Nhân Hóa Theo Dụng Thần & Cung Điền Trạch',
+    points: [
+      'Đối chiếu trực tiếp cung Mệnh, Điền Trạch, Tài Bạch, Quan Lộc trên lá số Tử Vi để tìm đúng Ngũ hành Dụng thần.',
+      'Tư vấn phương vị lập nghiệp, hướng xuất hành, màu sắc bản mệnh, biển số xe, số tài khoản và vật phẩm hộ thân.',
+      'Chủ động hóa giải hạn Thái Tuế, Tam Tai, Kim Lâu, Hoang Ốc và các bộ hung sát tinh xâm phạm trong Đại vận / Lưu niên.',
+    ],
+  },
+  {
+    badge: 'Trạch Nhật Cát Khánh',
+    title: 'Xem Ngày Giờ Tốt — Động Thổ, Nhập Trạch, Khai Trương',
+    sub: 'Chuẩn Hiệp Kỷ Biện Phương Thư & Mệnh Chủ',
+    points: [
+      'Chọn ngày giờ hoàng đạo đại cát cho các đại sự: Động thổ làm nhà, Đổ mái, Nhập trạch về nhà mới, Khai trương cửa hàng/công ty.',
+      'Xem tuổi làm nhà, mượn tuổi động thổ và hướng dẫn chi tiết quy trình lễ nghi chuẩn cổ truyền, trang nghiêm, giản dị.',
+      'Tư vấn chọn ngày giờ Ký kết hợp đồng lớn, Nhậm chức, Xuất hành đi xa và Xem tuổi kết hôn — Cưới hỏi trăm năm.',
+    ],
+  },
+];
+
 const FAQ_ITEMS_VI = [
   {
-    q: '1. An sao và bình giải Tử Vi tại Tử Vi Thầy Tôn có thực sự miễn phí không?',
+    q: '1. An sao và bình giải Tử Vi tại Tử Vi & Phong Thủy Thầy Tôn có thực sự miễn phí không?',
     a: 'Hoàn toàn miễn phí! Quý đương số chỉ cần nhập Họ tên, Ngày tháng năm sinh (Dương lịch hoặc Âm lịch), Giờ sinh và Năm muốn xem hạn rồi chọn "Bản Khởi Nguyên (Miễn Phí - 0đ)". Hệ thống sẽ lập lá số Tử Vi chuẩn xác 110+ sao kèm bài bình giải tổng quan (~1.000 từ) hoàn toàn miễn phí, hỗ trợ lưu lá số và tải ảnh/PDF tiện lợi.',
   },
   {
-    q: '2. Thầy Tôn (Trần Huy Tôn) là ai? Vì sao phương pháp luận giải của Thầy được đánh giá cao?',
-    a: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh Chuyên Toán - Tin Đại học Tổng Hợp Hà Nội, tốt nghiệp Cử nhân Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh) với hơn 7 năm học tập, làm việc tại Anh Quốc và hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát & Tướng Pháp thực chứng. Phương pháp của Thầy kết hợp tư duy logic Toán học, nhãn quan Kinh tế vĩ mô và Dịch học cổ truyền — giúp luận giải chuẩn xác, thực tế, khoa học và tuyệt đối không mê tín dị đoan.',
+    q: '2. Thầy Tôn (Trần Huy Tôn) là ai? Vì sao phương pháp Tử Vi & Phong Thủy của Thầy được đánh giá cao?',
+    a: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh Chuyên Toán - Tin Đại học Tổng Hợp Hà Nội, tốt nghiệp Cử nhân Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh) với hơn 7 năm học tập, làm việc tại Anh Quốc và hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch & Tướng Pháp thực chứng. Phương pháp của Thầy kết hợp tư duy logic Toán học, nhãn quan Kinh tế vĩ mô và Dịch học chính tông — giúp luận giải Tử Vi và bố cục Phong Thủy chuẩn xác, thực tế, khoa học và tuyệt đối không mê tín dị đoan.',
   },
   {
     q: '3. Sự khác biệt giữa Bản Miễn Phí (0đ), Bản VIP Pro (119k) và Bản Chuyên Gia Expert (269k) là gì?',
     a: '• Bản Miễn Phí (0đ): Luận tổng quan (~1.000 từ) về Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận & Tiểu Vận năm xem.\n• Bản VIP Pro (119.000đ): Luận sâu gấp đôi (~2.500 từ), kết hợp phân tích ảnh Khuôn mặt (Diện tướng) & Chỉ tay (Thủ tướng), vận hạn 4 mùa Xuân - Hạ - Thu - Đông, tặng kèm 02 câu hỏi VIP.\n• Bản Chuyên Gia Đại Tông Sư Expert (269.000đ): Luận giải đồ sộ nhất (~4.500 - 6.000 từ), khảo sát toàn diện TẤT CẢ 12 CUNG, Phi Tinh Tứ Hóa, dự báo chi tiết TỪNG THÁNG từ tháng 1 đến tháng 12 Âm lịch, kết hợp Tướng pháp & Phong thủy cải vận, tặng kèm 02 câu hỏi Chuyên Gia.',
   },
   {
-    q: '4. Làm thế nào để đặt lịch xem Tử Vi trực tiếp 1-1 cùng Thầy Tôn?',
-    a: 'Quý khách có thể đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn tại phòng khách R2B 2219, Khu đô thị Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội hoặc đặt lịch xem Online 1-1 qua Video Call (dành cho khách hàng ở xa hoặc kiều bào tại Anh, Mỹ, Úc, Châu Âu, Nhật, Hàn...) bằng cách gọi/nhắn Zalo số 0935.058.688.',
+    q: '4. Thầy Tôn tư vấn những hạng mục Phong Thủy nào? Có khảo sát thực địa và tư vấn từ xa không?',
+    a: 'Thầy Tôn trực tiếp tư vấn toàn diện các hạng mục Phong Thủy Dương Trạch: Nhà phố, Biệt thự, Căn hộ chung cư, Văn phòng công ty, Cửa hàng kinh doanh; Bố cục bàn thờ, bếp, phòng ngủ, bàn làm việc lãnh đạo; Kích hoạt Tài vị và Xem ngày giờ tốt (Động thổ, Nhập trạch, Khai trương, Cưới hỏi). Thầy nhận khảo sát thực địa trực tiếp tại Hà Nội & các tỉnh lân cận, đồng thời tư vấn Phong Thủy từ xa qua Bản vẽ mặt bằng + Video thực tế + Toạ độ vệ tinh cho khách hàng trên toàn quốc và kiều bào Quốc tế.',
+  },
+  {
+    q: '5. Vì sao nên kết hợp đồng thời Lá Số Tử Vi và Phong Thủy khi xây sửa nhà hoặc mở văn phòng kinh doanh?',
+    a: 'Trong cổ học phương Đông, "Nhất Mệnh, Nhì Vận, Tam Phong Thủy". Lá số Tử Vi cho biết Thiên Thời (vận hạn thịnh suy, cung Điền Trạch, Tài Bạch và Ngũ hành Dụng thần của gia chủ), còn Phong Thủy chính là Địa Lợi (khí trường không gian sống và làm việc). Khi kết hợp cả hai, Thầy Tôn sẽ giúp gia chủ chọn đúng thời điểm đại cát để mua đất/xây nhà/mở công ty và bố cục không gian chuẩn Dụng thần của chính lá số đó — tạo sự cộng hưởng mạnh mẽ nhất về Tài lộc, Sức khỏe và Gia đạo.',
+  },
+  {
+    q: '6. Làm thế nào để đặt lịch xem Tử Vi & Tư vấn Phong Thủy trực tiếp 1-1 cùng Thầy Tôn?',
+    a: 'Quý khách có thể đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn tại phòng khách R2B 2219, Khu đô thị Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội; đặt lịch mời Thầy khảo sát Phong Thủy thực địa; hoặc xem Online 1-1 qua Video Call bằng cách gọi/nhắn Zalo số 0935.058.688.',
   },
 ];
 
@@ -314,13 +365,13 @@ export default function AboutThayTon() {
             <span>Hệ Sinh Thái Dịch Vụ Uy Tín • Minh Bạch • Thực Chứng</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold font-serif text-amber-400 tracking-wide mb-2.5">
-            Các Gói An Sao, Bình Giải & Tham Vấn Cùng Thầy Tôn
+            Các Gói An Sao, Bình Giải Tử Vi & Tư Vấn Phong Thủy Cùng Thầy Tôn
           </h2>
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
             Từ trải nghiệm <strong className="text-emerald-300">An Sao & Bình Giải Miễn Phí (0đ)</strong> đến các gói{' '}
             <strong className="text-amber-300">Luận Giải Chuyên Sâu VIP Pro</strong>,{' '}
             <strong className="text-purple-300">Đại Tông Sư 12 Cung & 12 Tháng</strong> và{' '}
-            <strong className="text-blue-300">Xem Trực Tiếp 1-1 Cùng Thầy Tôn</strong>.
+            <strong className="text-blue-300">Xem Tử Vi & Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn</strong>.
           </p>
         </div>
 
@@ -423,6 +474,50 @@ export default function AboutThayTon() {
             );
           })}
         </div>
+
+        {/* Chuyên mục chuyên sâu: Các Hạng Mục Tư Vấn Phong Thủy Thực Chứng & Cải Vận */}
+        <div id="dich-vu-phong-thuy" className="mt-8 sm:mt-10 pt-8 border-t border-slate-800/80 scroll-mt-6">
+          <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-2">
+              <Compass className="w-3.5 h-3.5 text-amber-400" />
+              <span>Phong Thủy Chính Tông • Huyền Không Phi Tinh • Bát Trạch & Loan Đầu</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold font-serif text-amber-400">
+              Chuyên Môn Tư Vấn Phong Thủy Thực Chứng & Cải Vận
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+              Thầy Tôn trực tiếp khảo sát thực địa hoặc tư vấn từ xa qua bản vẽ kiến trúc & tọa độ vệ tinh — kết hợp chặt chẽ giữa <strong className="text-amber-300">Khí trường Phong Thủy (Địa Lợi)</strong> và <strong className="text-amber-300">Lá Số Tử Vi Gia Chủ (Thiên Thời)</strong>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+            {FENG_SHUI_SERVICES_VI.map((fs, fIdx) => (
+              <div
+                key={fIdx}
+                className="p-5 sm:p-6 rounded-2xl bg-slate-950/75 border border-amber-500/25 hover:border-amber-400/50 transition space-y-3"
+              >
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/35">
+                    <Compass className="w-3 h-3 text-amber-400" />
+                    <span>{fs.badge}</span>
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">{fs.sub}</span>
+                </div>
+                <h4 className="text-base sm:text-lg font-bold font-serif text-amber-300">
+                  {fs.title}
+                </h4>
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                  {fs.points.map((pt, pIdx) => (
+                    <li key={pIdx} className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <span>{pt}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Khung 3: Câu Hỏi Thường Gặp (FAQ — Chuẩn SEO & GEO cho công cụ tìm kiếm & AI) */}
@@ -436,7 +531,7 @@ export default function AboutThayTon() {
             <span>Giải Đáp Thắc Mắc Nhanh</span>
           </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-serif text-amber-400">
-            Câu Hỏi Thường Gặp Về Tử Vi Thầy Tôn
+            Câu Hỏi Thường Gặp Về Tử Vi & Phong Thủy Thầy Tôn
           </h2>
         </div>
 

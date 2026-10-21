@@ -86,17 +86,17 @@ export default function UserNav({
       >
         <img
           src="/icon.svg"
-          alt="Tử Vi Thầy Tôn"
+          alt="Tử Vi & Phong Thủy Thầy Tôn"
           className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
         />
         <div className="flex flex-col">
-          <h1 className="text-xs sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
-            {t('brand.title', 'TỬ VI THẦY TÔN')}
+          <h1 className="text-[11px] sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
+            {t('brand.title', 'TỬ VI & PHONG THỦY THẦY TÔN')}
           </h1>
-          <p className="text-[10.5px] text-slate-400 font-sans hidden xl:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
-            <span>{t('brand.subtitle', 'Bát Bộ Thần Sát & Tướng Pháp Bí Truyền')}</span>
-            <span className="text-slate-600 font-light">•</span>
-            <span className="text-amber-300/85 font-medium">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
+          <p className="text-[9.5px] sm:text-[10.5px] text-slate-400 font-sans hidden md:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
+            <span>{t('brand.subtitle', 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng • Bát Bộ Thần Sát & Tướng Pháp')}</span>
+            <span className="text-slate-600 font-light hidden xl:inline">•</span>
+            <span className="text-amber-300/85 font-medium hidden xl:inline">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
           </p>
         </div>
       </div>
@@ -108,6 +108,15 @@ export default function UserNav({
 
         {/* Bộ chọn màu nền giao diện */}
         <ThemeSelector />
+
+        {/* Nút tắt nhanh Về Thầy Tôn & Phong Thủy trên màn hình lớn */}
+        <a
+          href="#dich-vu-phong-thuy"
+          className="hidden xl:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-amber-300/90 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-amber-500/30 transition shadow-inner"
+          title="Xem dịch vụ Tư vấn Phong Thủy Thực Chứng của Thầy Tôn"
+        >
+          <span>Phong Thủy</span>
+        </a>
 
         {/* Khối tài khoản */}
         {isLoading ? (

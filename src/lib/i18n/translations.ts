@@ -18,8 +18,8 @@ export const SUPPORTED_LANGUAGES: LanguageOption[] = [
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   vi: {
     // Header & Brand
-    'brand.title': 'TỬ VI THẦY TÔN',
-    'brand.subtitle': 'An Sao & Bình Giải Miễn Phí • Bát Bộ Thần Sát & Tướng Pháp Thực Chứng',
+    'brand.title': 'TỬ VI & PHONG THỦY THẦY TÔN',
+    'brand.subtitle': 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng • Bát Bộ Thần Sát & Tướng Pháp',
     'brand.multilingual': 'Luận Giải Đa Ngôn Ngữ',
     'nav.createChart': 'Lập Lá Số',
     'nav.savedCharts': 'Lá Số Đã Lưu',
@@ -34,9 +34,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.about': 'Về Thầy Tôn',
 
     // Form
-    'form.heroBadge': '✨ Tinh Hoa Tử Vi Đẩu Số • Bát Bộ Thần Sát • Diện Tướng & Chỉ Tay Thực Chứng',
+    'form.heroBadge': '✨ Tinh Hoa Tử Vi Đẩu Số • Phong Thủy Thực Chứng • Diện Tướng & Chỉ Tay',
     'form.title': 'AN SAO & BÌNH GIẢI TỬ VI MIỄN PHÍ',
-    'form.desc': 'Lập lá số Tử Vi chuẩn xác 110+ chính phụ tinh theo giờ sinh • Trải nghiệm ngay bài Bình Giải Khởi Nguyên Miễn Phí (0đ) hoặc Luận Giải Chuyên Sâu kết hợp Xem Mặt & Chỉ Tay từ phương pháp thực chứng của Thầy Tôn.',
+    'form.desc': 'Lập lá số Tử Vi chuẩn xác 110+ chính phụ tinh theo giờ sinh • Trải nghiệm ngay bài Bình Giải Khởi Nguyên Miễn Phí (0đ) hoặc Luận Giải Chuyên Sâu kết hợp Xem Mặt, Chỉ Tay & Phong Thủy Cải Vận từ phương pháp thực chứng của Thầy Tôn.',
     'form.pill1': 'An Sao & Luận Giải 0đ',
     'form.pill2': 'Xem Mặt & Chỉ Tay',
     'form.pill3': 'Lưu Sổ & Tải PDF',
@@ -202,21 +202,21 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'chat.upgradeProChatBtn': '👑 Nâng Cấp Bản Pro (119.000đ - Tặng 2 câu VIP)',
 
     // Booking Banner
-    'booking.title': 'Đặt Lịch Xem Tử Vi Trực Tiếp 1-1 Cùng Thầy Tôn (Online & Offline)',
-    'booking.desc': 'Quý đương số, chủ doanh nghiệp hoặc nhà đầu tư mong muốn được đàm đạo riêng 1-1 cùng Thầy Tôn (Trần Huy Tôn) — trực tiếp tại phòng khách Royal City (Hà Nội) hoặc qua Video Call Quốc tế — để thẩm định giờ sinh, soi diện tướng & chỉ tay thực chứng, bấm quẻ dịch và hoạch định chiến lược Sự nghiệp, Tài chính, Hôn nhân? Xin vui lòng liên hệ đặt lịch trước.',
+    'booking.title': 'Đặt Lịch Xem Tử Vi & Tư Vấn Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn (Online & Offline)',
+    'booking.desc': 'Quý đương số, gia chủ, chủ doanh nghiệp hoặc nhà đầu tư mong muốn được đàm đạo riêng 1-1 cùng Thầy Tôn (Trần Huy Tôn) — trực tiếp tại phòng khách Royal City (Hà Nội), khảo sát thực địa hoặc qua Video Call Quốc tế — để xem Lá số Tử Vi chuyên sâu, soi Diện tướng & Chỉ tay thực chứng, bấm quẻ Dịch và Tư vấn Phong Thủy Nhà Ở, Biệt Thự, Chung Cư, Văn Phòng Kinh Doanh, Xem Ngày Giờ Động Thổ / Nhập Trạch / Khai Trương? Xin vui lòng liên hệ đặt lịch trước.',
     'booking.addressLabel': 'Phòng xem trực tiếp (Offline):',
     'booking.addressValue': 'R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội',
     'booking.callBtn': 'Gọi Đặt Lịch: 0935.058.688',
     'booking.zaloBtn': 'Nhắn Zalo: 0935.058.688',
 
     // Floating Contact
-    'floating.title': 'Tư vấn CSKH hoặc Đặt lịch Online & Offline',
+    'floating.title': 'Tư vấn Tử Vi, Phong Thủy & Đặt lịch 1-1',
     'floating.close': 'Đóng menu',
-    'floating.callSub': 'Đặt lịch xem Online & Offline',
-    'floating.zaloSub': 'Tư vấn CSKH qua Zalo',
+    'floating.callSub': 'Đặt lịch Tử Vi & Phong Thủy',
+    'floating.zaloSub': 'Tư vấn CSKH & Đặt lịch qua Zalo',
     'floating.zaloBtn': 'Nhắn Zalo Thầy Tôn',
     'floating.mainBtn': 'Hỗ Trợ & Đặt Lịch',
-    'floating.mainBtnAria': 'Tư vấn CSKH hoặc Đặt lịch xem Online & Offline',
+    'floating.mainBtnAria': 'Tư vấn Tử Vi, Phong Thủy hoặc Đặt lịch xem Online & Offline',
 
     // Footer
     'footer.about': 'Về Thầy Tôn',
@@ -225,7 +225,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.email': 'Email:',
     'footer.addressLabel': 'Địa chỉ:',
     'footer.addressValue': 'R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội',
-    'footer.copyright': '© {year} Tử Vi Thầy Tôn. Kế thừa tinh hoa Dịch học & Cổ thuật ngàn năm — Soi sáng căn duyên, hanh thông bản mệnh.',
+    'footer.copyright': '© {year} Tử Vi & Phong Thủy Thầy Tôn. Kế thừa tinh hoa Dịch học, Tử Vi Đẩu Số & Phong Thủy chính tông — Soi sáng căn duyên, kích hoạt vượng khí, hanh thông bản mệnh.',
 
     // Theme
     'theme.btnLabel': 'Giao diện',
@@ -255,8 +255,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
   en: {
     // Header & Brand
-    'brand.title': 'MASTER TON ASTROLOGY',
-    'brand.subtitle': 'Free Zi Wei Chart & Reading • Esoteric Physiognomy & Palmistry',
+    'brand.title': 'MASTER TON ASTROLOGY & FENG SHUI',
+    'brand.subtitle': 'Free Zi Wei Chart & Reading • Empirical Feng Shui • Face & Palm Reading',
     'brand.multilingual': 'Multilingual Readings',
     'nav.createChart': 'Generate Chart',
     'nav.savedCharts': 'Saved Charts',
@@ -439,8 +439,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'chat.upgradeProChatBtn': '👑 Upgrade to Pro (119,000 VND - 2 Pro Qs Free)',
 
     // Booking Banner
-    'booking.title': 'Book a Consultation with Master Ton (Online & Offline 1-on-1)',
-    'booking.desc': 'Would you like a direct consultation with Master Ton (In-person in Hanoi or 1-on-1 Online via Video Call) for physiognomy, palmistry, Qi Men Dun Jia divination, and in-depth destiny analysis? Please contact us in advance to schedule your session.',
+    'booking.title': 'Book a 1-on-1 Zi Wei & Feng Shui Consultation with Master Ton (Online & Offline)',
+    'booking.desc': 'Would you like a direct 1-on-1 consultation with Master Ton (In-person in Hanoi, on-site property audit, or Online via Video Call) for Zi Wei Dou Shu, Residential & Corporate Feng Shui, Auspicious Date Selection, Physiognomy, Palmistry, and I-Ching Divination? Please contact us in advance to schedule your session.',
     'booking.addressLabel': 'In-Person Consultation Venue:',
     'booking.addressValue': 'R2B 2219, Royal City, 72 Nguyen Trai, Thanh Xuan, Hanoi',
     'booking.callBtn': 'Call to Book: +84 93 505 8688',
@@ -492,8 +492,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
   zh: {
     // Header & Brand
-    'brand.title': '顿师紫微斗数',
-    'brand.subtitle': '八部神煞与相法秘传',
+    'brand.title': '顿师紫微斗数与风水',
+    'brand.subtitle': '免费紫微排盘详批 • 实证阳宅商铺风水 • 八部神煞与相法秘传',
     'brand.multilingual': '多语言命理精批',
     'nav.createChart': '排盘算命',
     'nav.savedCharts': '保存命盘',
@@ -719,8 +719,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
   ko: {
     // Header & Brand
-    'brand.title': '톤 대사 자미두수',
-    'brand.subtitle': '팔부신살과 관상비전 심층추명',
+    'brand.title': '톤 대사 자미두수 & 풍수지리',
+    'brand.subtitle': '무료 자미두수 감명 • 실증 양택·상업 풍수 • 팔부신살 및 관상·수상',
     'brand.multilingual': '다국어 운명 감정',
     'nav.createChart': '명반 명조 작성',
     'nav.savedCharts': '저장된 명반',
@@ -946,8 +946,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
   ja: {
     // Header & Brand
-    'brand.title': 'トン先生の紫微斗数',
-    'brand.subtitle': '八部神殺・秘伝相法による本格運命鑑定',
+    'brand.title': 'トン先生の紫微斗数＆風水鑑定',
+    'brand.subtitle': '無料紫微斗数命盤＆鑑定 • 実証風水 • 八部神殺と面相・手相秘伝',
     'brand.multilingual': '多言語本格紫微斗数鑑定',
     'nav.createChart': '命盤作成',
     'nav.savedCharts': '保存済み命盤',

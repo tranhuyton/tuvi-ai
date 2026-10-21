@@ -33,11 +33,11 @@ export interface AboutContent {
 
 export const ABOUT_DATA: Record<Language, AboutContent> = {
   vi: {
-    badge: 'Chân Dung Chuyên Gia & Người Sáng Lập Hệ Thống',
+    badge: 'Chân Dung Chuyên Gia Tử Vi & Phong Thủy — Người Sáng Lập Hệ Thống',
     name: 'Thầy Tôn (Trần Huy Tôn)',
-    bio: 'Chuyên gia Mệnh lý học & Dịch học thực chứng, Cựu Chuyên gia Tài chính — Kiểm toán Quốc tế tại Vương Quốc Anh. Người tiên phong ứng dụng Tư duy Toán học xác suất, Nhãn quan Kinh tế vĩ mô kết hợp Tử Vi Đẩu Số Cổ Truyền, Bát Bộ Thần Sát cùng Diện Tướng & Thủ Tướng (Chỉ Tay) thực chứng.',
+    bio: 'Chuyên gia Tử Vi Đẩu Số, Phong Thủy Thực Chứng & Dịch học cổ truyền; Cựu Chuyên gia Tài chính — Kiểm toán Quốc tế tại Vương Quốc Anh. Người tiên phong ứng dụng Tư duy Toán học xác suất, Nhãn quan Kinh tế vĩ mô kết hợp Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch & Tướng Pháp (Diện Tướng, Chỉ Tay) thực chứng.',
     stats: [
-      { val: '18+ Năm', label: 'Nghiên cứu Tử Vi & Tướng Pháp' },
+      { val: '18+ Năm', label: 'Nghiên cứu Tử Vi & Phong Thủy' },
       { val: '7+ Năm', label: 'Du học & Làm việc tại Anh Quốc' },
       { val: 'Top 5 UK', label: 'ĐH Lancaster (Tài chính - Kế toán)' },
       { val: '15+ Năm', label: 'Giảng dạy & Cố vấn Chiến lược' },
@@ -64,18 +64,18 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       ],
     },
     pillar3: {
-      title: '18+ Năm Tử Vi Thực Chứng & Cố Vấn Cấp Cao',
+      title: '18+ Năm Tử Vi, Phong Thủy Thực Chứng & Cố Vấn',
       points: [
         'Hơn 18 năm nghiên cứu, khảo chứng hàng chục ngàn lá số Tử Vi Đẩu Số thực tế, kết hợp Bát Bộ Thần Sát, Phi Tinh Tứ Hóa cùng Diện Tướng (khuôn mặt) và Thủ Tướng (chỉ tay).',
-        'Cố vấn định hướng thời vận 1-1 cho đông đảo chủ doanh nghiệp, lãnh đạo tập đoàn, nhà đầu tư tài chính, bác sĩ, kỹ sư và các nghệ sĩ, diễn viên tên tuổi.',
-        'Đồng hành cùng phụ huynh và thế hệ trẻ trong việc định hướng chọn ngành nghề, du học, khởi nghiệp, chọn năm kết hôn và hóa giải xung đột gia đạo.',
+        'Trực tiếp tư vấn, khảo sát và bố cục Phong Thủy Dương Trạch (nhà ở, biệt thự, chung cư, văn phòng, trụ sở doanh nghiệp), kích hoạt Tài vị — Văn xương và Trạch nhật (xem ngày giờ động thổ, nhập trạch, khai trương) chuẩn Huyền Không Phi Tinh & Bát Trạch.',
+        'Cố vấn định hướng thời vận, kinh doanh và phong thủy cải vận 1-1 cho đông đảo chủ doanh nghiệp, lãnh đạo tập đoàn, nhà đầu tư, bác sĩ, kỹ sư và các nghệ sĩ, diễn viên tên tuổi.',
       ],
     },
     philosophy: {
-      title: 'Triết Lý Luận Giải: Khoa Học — Thực Chứng — Không Mê Tín Dị Đoan',
-      desc: 'Khác biệt cốt lõi làm nên uy tín của Thầy Tôn nằm ở phương pháp luận giải khoa học, logic chặt chẽ, tuyệt đối không hù dọa hay mê tín dị đoan. Dưới lăng kính Toán học xác suất và Quản trị rủi ro Tài chính Quốc tế, mỗi lá số Tử Vi là một "bản đồ chiến lược nhân sinh" — giúp quý đương số thấu hiểu ưu nhược điểm bản thân, nắm bắt đúng "Thiên Thời - Địa Lợi - Nhân Hòa", kích hoạt tài lộc và chủ động hóa giải tai ương.',
+      title: 'Triết Lý Tử Vi & Phong Thủy: Khoa Học — Thực Chứng — Không Mê Tín Dị Đoan',
+      desc: 'Khác biệt cốt lõi làm nên uy tín của Thầy Tôn nằm ở phương pháp luận giải Tử Vi và tư vấn Phong Thủy khoa học, logic chặt chẽ, tuyệt đối không hù dọa hay bày vẽ cúng bái mê tín dị đoan. Dưới lăng kính Toán học xác suất, Quy luật Khí trường tự nhiên và Quản trị rủi ro Tài chính Quốc tế, sự kết hợp giữa Lá Số Tử Vi (Thiên thời) và Phong Thủy Thực Chứng (Địa lợi) chính là "bản đồ chiến lược nhân sinh" — giúp gia chủ và doanh nghiệp kích hoạt vượng khí, chiêu tài tụ lộc và chủ động hóa giải tai ương.',
       websiteBtn: 'Xem Website TonyEnglish',
-      contactBtn: 'Đặt Lịch Cùng Thầy Tôn',
+      contactBtn: 'Đặt Lịch Tử Vi & Phong Thủy',
     },
     addressLabel: 'Địa chỉ phòng xem trực tiếp:',
     addressValue: 'R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội',

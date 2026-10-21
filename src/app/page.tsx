@@ -1825,13 +1825,21 @@ export default function HomePage() {
       <FloatingContact />
 
       <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
-        <div className="flex items-center justify-center gap-3 sm:gap-6 text-xs text-slate-400 font-medium flex-wrap">
+        <div className="flex items-center justify-center gap-3 sm:gap-5 text-xs text-slate-400 font-medium flex-wrap">
           <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
             {t('footer.about')}
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
           <a href="#dich-vu-tu-vi-thay-ton" className="hover:text-amber-400 transition">
-            Dịch Vụ & Bảng Giá
+            Dịch Vụ Tử Vi
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="#dich-vu-phong-thuy" className="hover:text-amber-400 transition">
+            Tư Vấn Phong Thủy
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="/bai-viet" className="hover:text-amber-400 transition">
+            Kho Kiến Thức
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
           <a href="#cam-nhan-chuyen-gia" className="hover:text-amber-400 transition">
