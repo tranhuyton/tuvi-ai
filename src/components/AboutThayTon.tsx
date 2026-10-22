@@ -139,7 +139,7 @@ const FAQ_ITEMS_VI = [
   },
   {
     q: '2. Thầy Tôn (Trần Huy Tôn) là ai? Vì sao phương pháp Tử Vi & Phong Thủy của Thầy được đánh giá cao?',
-    a: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh Chuyên Toán - Tin Đại học Tổng Hợp Hà Nội, tốt nghiệp Cử nhân Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh) với hơn 7 năm học tập, làm việc tại Anh Quốc và hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch & Tướng Pháp thực chứng. Phương pháp của Thầy kết hợp tư duy logic Toán học, nhãn quan Kinh tế vĩ mô và Dịch học chính tông — giúp luận giải Tử Vi và bố cục Phong Thủy chuẩn xác, thực tế, khoa học và tuyệt đối không mê tín dị đoan.',
+    a: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh Chuyên Toán - Tin Đại học Tổng Hợp Hà Nội, tốt nghiệp Cử nhân Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh) với hơn 7 năm học tập, làm việc tại Anh Quốc; đồng thời là Giáo viên Tiếng Anh chuyên luyện thi IELTS, Giao tiếp và giảng dạy các môn Toán, Khoa học, Kinh tế, Kinh doanh, Địa lý chương trình Quốc tế IGCSE hơn 15 năm (sáng lập TonyEnglish.vn). Với hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch & Tướng Pháp thực chứng, phương pháp của Thầy kết hợp tư duy logic Toán học, nhãn quan Kinh tế vĩ mô và Dịch học chính tông — giúp luận giải Tử Vi và bố cục Phong Thủy chuẩn xác, thực tế, khoa học và tuyệt đối không mê tín dị đoan.',
   },
   {
     q: '3. Sự khác biệt giữa Bản Miễn Phí (0đ), Bản VIP Pro (119k) và Bản Chuyên Gia Expert (269k) là gì?',

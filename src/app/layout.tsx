@@ -114,8 +114,9 @@ const seoGeoJsonLd = {
       '@type': 'Person',
       '@id': 'https://www.tuvithayton.vn/#thayton',
       name: 'Trần Huy Tôn',
-      alternateName: ['Thầy Tôn', 'Master Ton'],
-      jobTitle: 'Chuyên Gia Tử Vi Đẩu Số, Phong Thủy Thực Chứng, Nhân Tướng Học & Cố Vấn Chiến Lược Mệnh Lý',
+      alternateName: ['Thầy Tôn', 'Master Ton', 'Tony Tran'],
+      jobTitle:
+        'Chuyên Gia Tử Vi Đẩu Số & Phong Thủy Thực Chứng | Giảng Viên IELTS, Giao Tiếp & Các Môn Học Thuật Quốc Tế IGCSE (Toán, Khoa Học, Kinh Tế, Kinh Doanh, Địa Lý)',
       alumniOf: [
         {
           '@type': 'CollegeOrUniversity',
@@ -133,6 +134,8 @@ const seoGeoJsonLd = {
         'Trạch Nhật — Xem Ngày Giờ Động Thổ, Nhập Trạch, Khai Trương, Cưới Hỏi',
         'Nhân Tướng Học (Diện Tướng & Thủ Tướng Chỉ Tay)',
         'Kinh Dịch, Kỳ Môn Độn Giáp & Quản Trị Rủi Ro Chu Kỳ Kinh Tế',
+        'Luyện thi IELTS & Tiếng Anh Giao tiếp (15+ năm kinh nghiệm)',
+        'Giảng dạy chương trình Quốc tế Cambridge IGCSE: Toán (Mathematics), Khoa học (Sciences), Kinh tế (Economics), Kinh doanh (Business Studies), Địa lý (Geography)',
       ],
       sameAs: ['https://tonyenglish.vn/', 'https://zalo.me/0935058688'],
       url: 'https://www.tuvithayton.vn/#gioi-thieu-thay-ton',
@@ -212,7 +215,7 @@ const seoGeoJsonLd = {
           name: 'Thầy Tôn (Trần Huy Tôn) là ai và phương pháp Tử Vi & Phong Thủy của Thầy có gì đặc biệt?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh chuyên Toán - Tin ĐH Tổng Hợp Hà Nội, tốt nghiệp ngành Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh), có hơn 7 năm làm việc tại Anh Quốc và hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch, Diện Tướng & Chỉ Tay. Phương pháp của Thầy Tôn nổi tiếng nhờ tính khoa học, thực chứng, logic chặt chẽ và hoàn toàn không mê tín dị đoan.',
+            text: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh chuyên Toán - Tin ĐH Tổng Hợp Hà Nội, tốt nghiệp ngành Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh), có hơn 7 năm học tập & làm việc tại Anh Quốc; đồng thời là Giáo viên Tiếng Anh chuyên luyện thi IELTS, Giao tiếp và giảng dạy các môn Toán, Khoa học, Kinh tế, Kinh doanh, Địa lý của chương trình Quốc tế IGCSE hơn 15 năm (sáng lập TonyEnglish.vn). Với hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch, Diện Tướng & Chỉ Tay, phương pháp của Thầy Tôn nổi tiếng nhờ tính khoa học, thực chứng, logic chặt chẽ và hoàn toàn không mê tín dị đoan.',
           },
         },
         {

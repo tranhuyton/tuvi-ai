@@ -35,12 +35,12 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
   vi: {
     badge: 'Chân Dung Chuyên Gia Tử Vi & Phong Thủy — Người Sáng Lập Hệ Thống',
     name: 'Thầy Tôn (Trần Huy Tôn)',
-    bio: 'Chuyên gia Tử Vi Đẩu Số, Phong Thủy Thực Chứng & Dịch học cổ truyền; Cựu Chuyên gia Tài chính — Kiểm toán Quốc tế tại Vương Quốc Anh. Người tiên phong ứng dụng Tư duy Toán học xác suất, Nhãn quan Kinh tế vĩ mô kết hợp Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch & Tướng Pháp (Diện Tướng, Chỉ Tay) thực chứng.',
+    bio: 'Chuyên gia Tử Vi Đẩu Số, Phong Thủy Thực Chứng & Dịch học cổ truyền; Cựu Chuyên gia Tài chính — Kiểm toán Quốc tế tại Vương Quốc Anh; Giáo viên Tiếng Anh chuyên luyện thi IELTS, Giao tiếp và các môn Toán, Khoa học, Kinh tế, Kinh doanh, Địa lý chương trình Quốc tế IGCSE hơn 15 năm. Người tiên phong ứng dụng Tư duy Toán học xác suất, Nhãn quan Kinh tế vĩ mô kết hợp Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch & Tướng Pháp thực chứng.',
     stats: [
       { val: '18+ Năm', label: 'Nghiên cứu Tử Vi & Phong Thủy' },
       { val: '7+ Năm', label: 'Du học & Làm việc tại Anh Quốc' },
       { val: 'Top 5 UK', label: 'ĐH Lancaster (Tài chính - Kế toán)' },
-      { val: '15+ Năm', label: 'Giảng dạy & Cố vấn Chiến lược' },
+      { val: '15+ Năm', label: 'Giảng dạy IELTS & IGCSE Quốc tế' },
     ],
     pillar1: {
       title: 'Nền Tảng Toán Học & Tinh Hoa Anh Quốc',
@@ -51,15 +51,15 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       ],
     },
     pillar2: {
-      title: 'Kiểm Toán Quốc Tế & Kinh Tế Thực Chứng',
+      title: 'Giáo Dục Quốc Tế (IELTS, IGCSE) & Kiểm Toán',
       points: [
-        'Kinh nghiệm thực chiến tại các hãng Kiểm toán Quốc tế và định chế Tài chính — Đầu tư doanh nghiệp tại Anh Quốc và Việt Nam.',
-        'Hơn 15 năm nghiên cứu học thuật và giảng dạy chuyên sâu Ngôn ngữ Anh, Kinh tế học & Tài chính cho các chương trình Quốc tế.',
+        'Hơn 15 năm trực tiếp giảng dạy Tiếng Anh chuyên luyện thi IELTS, Tiếng Anh Giao tiếp và các môn học thuật chương trình Quốc tế Cambridge IGCSE: Toán (Mathematics), Khoa học (Sciences), Kinh tế (Economics), Kinh doanh (Business Studies) & Địa lý (Geography).',
         {
-          text: 'Nhà sáng lập nền tảng giáo dục học thuật uy tín ',
+          text: 'Nhà sáng lập nền tảng giáo dục học thuật Quốc tế uy tín ',
           linkText: 'TonyEnglish.vn',
           url: 'https://tonyenglish.vn/',
         },
+        'Kinh nghiệm thực chiến tại các hãng Kiểm toán Quốc tế và định chế Tài chính — Đầu tư doanh nghiệp tại Anh Quốc và Việt Nam.',
         'Thường xuyên phân tích chuyên sâu về chu kỳ kinh tế vĩ mô, bất động sản, chứng khoán và quản trị rủi ro tài chính cá nhân.',
       ],
     },
@@ -85,12 +85,12 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
   en: {
     badge: 'Founder & Master Astrologer Profile',
     name: 'Master Ton (Tran Huy Ton)',
-    bio: 'Researcher of Classical I-Ching & Zi Wei Dou Shu Metaphysics, former International Finance & Audit Specialist. Pioneer in integrating Mathematical Logic, Empirical Economics, and Esoteric Physiognomy & Palmistry.',
+    bio: 'Expert in Zi Wei Dou Shu, Empirical Feng Shui & Classical I-Ching; former International Finance & Audit Specialist in the UK; Senior Educator with 15+ years teaching IELTS, English Communication, and IGCSE Mathematics, Sciences, Economics, Business Studies, and Geography.',
     stats: [
-      { val: '18+ Years', label: 'Zi Wei & Metaphysics Research' },
+      { val: '18+ Years', label: 'Zi Wei & Feng Shui Research' },
       { val: '7+ Years', label: 'Studied & Worked in the UK' },
       { val: 'Top 5 UK', label: 'Lancaster University (Finance)' },
-      { val: '15+ Years', label: 'Teaching & Economic Research' },
+      { val: '15+ Years', label: 'IELTS & IGCSE International Educator' },
     ],
     pillar1: {
       title: 'Academics & United Kingdom',
@@ -101,16 +101,16 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       ],
     },
     pillar2: {
-      title: 'Audit & Empirical Economics',
+      title: 'International Education (IELTS, IGCSE) & Audit',
       points: [
-        'Hands-on professional experience at international audit firms and corporate financial institutions.',
-        'Over 15 years conducting deep research and lecturing English language, economics, and finance for international institutions.',
+        'Over 15 years teaching intensive IELTS preparation, English Communication, and Cambridge IGCSE subjects: Mathematics, Sciences, Economics, Business Studies, and Geography.',
         {
           text: 'Founder of the academic education platform ',
           linkText: 'TonyEnglish.vn',
           url: 'https://tonyenglish.vn/',
         },
-        'Ongoing in-depth analysis of macroeconomic trends and investment cycles.',
+        'Hands-on professional experience at international audit firms and corporate financial institutions in the UK and Vietnam.',
+        'Ongoing in-depth analysis of macroeconomic trends, real estate, and investment cycles.',
       ],
     },
     pillar3: {
@@ -151,15 +151,15 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       ],
     },
     pillar2: {
-      title: '国际审计与实证经济学',
+      title: '国际教育 (IELTS/IGCSE) 与国际审计',
       points: [
-        '具备国际权威会计师事务所及跨国金融机构实操实战底蕴。',
-        '逾15年致力于为国际学校研习教授高等英语语言学与经济金融学科。',
+        '逾15年深耕雅思 (IELTS) 备考、英语口语交际及剑桥国际课程 (IGCSE) 全英文学科教学：数学、科学、经济学、商业研究与地理。',
         {
           text: '学术教育品牌创始人：',
           linkText: 'TonyEnglish.vn',
           url: 'https://tonyenglish.vn/',
         },
+        '具备英国及越南国际权威会计师事务所及跨国金融机构实操实战底蕴。',
         '长期跟踪宏观商业经济变迁与产业投资大周期。',
       ],
     },
@@ -201,15 +201,15 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       ],
     },
     pillar2: {
-      title: '회계 감사 & 실증 경제학',
+      title: '국제 교육 (IELTS·IGCSE) & 회계 감사',
       points: [
-        '글로벌 국제 회계법인 및 기업 금융기관에서의 풍부한 실무 경험.',
-        '15년 이상 국제학교 대상 고급 영어학 및 경제·금융 학술 강의 진행.',
+        '15년 이상 IELTS 시험 대비, 영어 회화 및 캠브리지 국제 교육과정(IGCSE) 수학, 과학, 경제학, 경영학(비즈니스), 지리학 전문 강의.',
         {
           text: '학술 교육 플랫폼 창립: ',
           linkText: 'TonyEnglish.vn',
           url: 'https://tonyenglish.vn/',
         },
+        '글로벌 국제 회계법인 및 기업 금융기관에서의 풍부한 실무 경험.',
         '거시 경제 동향 및 투자 사이클에 관한 전문적 심층 연구 지속.',
       ],
     },
@@ -251,15 +251,15 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       ],
     },
     pillar2: {
-      title: '会計監査＆実証経済学',
+      title: '国際教育 (IELTS・IGCSE) ＆会計監査',
       points: [
-        '国際監査法人およびグローバル金融機関における豊富な実務経験。',
-        '15年以上にわたりインターナショナルスクール等で高度な英語学・経済学の教鞭を執る。',
+        '15年以上にわたりIELTS対策、英会話、およびケンブリッジ国際カリキュラム（IGCSE）の数学、科学、経済学、ビジネス学、地理学を専門指導。',
         {
           text: '学術教育プラットフォーム創設: ',
           linkText: 'TonyEnglish.vn',
           url: 'https://tonyenglish.vn/',
         },
+        '国際監査法人およびグローバル金融機関における豊富な実務経験。',
         'マクロ経済動向や投資サイクルに関する専門的分析を継続。',
       ],
     },
