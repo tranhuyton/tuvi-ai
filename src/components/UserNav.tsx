@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSelector from '@/components/LanguageSelector';
 import ThemeSelector from '@/components/ThemeSelector';
+import GuideMenuDropdown from '@/components/GuideMenuDropdown';
 import { User, LogOut, LogIn, KeyRound, ChevronDown, BookOpen } from 'lucide-react';
 
 interface UserNavProps {
@@ -109,22 +110,16 @@ export default function UserNav({
         {/* Bộ chọn màu nền giao diện */}
         <ThemeSelector />
 
-        {/* Nút tắt nhanh Về Thầy Tôn & Phong Thủy */}
+        {/* Nút tắt nhanh Về Thầy Tôn & Menu Cẩm Nang 20 Chuyên Đề */}
         <a
           href="/thay-ton"
-          className="hidden lg:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-200 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner whitespace-nowrap"
+          className="hidden xl:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-200 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner whitespace-nowrap"
           title="Hồ sơ chuyên gia Thầy Tôn (Trần Huy Tôn)"
         >
           <span>{t('nav.about', 'Về Thầy Tôn')}</span>
         </a>
 
-        <a
-          href="/phong-thuy"
-          className="hidden xl:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-amber-300/90 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-amber-500/30 transition shadow-inner whitespace-nowrap"
-          title="Xem dịch vụ Tư vấn Phong Thủy Theo Lá Số của Thầy Tôn"
-        >
-          <span>Phong Thủy</span>
-        </a>
+        <GuideMenuDropdown />
 
         {/* Khối tài khoản */}
         {isLoading ? (

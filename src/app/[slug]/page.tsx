@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { FUNNEL_PAGES, getFunnelPageBySlug, type FunnelPageData } from '@/lib/funnelPages';
 import { ABOUT_DATA } from '@/lib/i18n/aboutData';
+import GuideMenuDropdown from '@/components/GuideMenuDropdown';
 
 export function generateStaticParams() {
   return FUNNEL_PAGES.filter((p) => p.slug !== '').map((p) => ({
@@ -345,16 +346,10 @@ export default async function FunnelSlugPage({
           </div>
 
           <div className="flex items-center gap-2">
-            <Link
-              href="/bai-viet"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
-            >
-              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              Sơ Đồ 20 Chuyên Đề
-            </Link>
+            <GuideMenuDropdown />
             <Link
               href="/#lap-la-so"
-              className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 hover:from-amber-400 hover:to-yellow-500 transition-all shadow-md"
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 hover:from-amber-400 hover:to-yellow-500 transition-all shadow-md"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Lập Lá Số Miễn Phí
