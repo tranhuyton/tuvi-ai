@@ -162,8 +162,7 @@ export default function HomeFunnelContent() {
           {/* Nhánh 1 */}
           <div className="bg-slate-950/70 border border-amber-500/25 rounded-2xl p-5">
             <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
-              <span>Nhánh 1 • Dịch Vụ &amp; Bản Luận Giải</span>
-              <span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 text-[10px]">6 trang</span>
+              <span>Luận Mệnh &amp; Tham Vấn • Ấn Phẩm Chuyên Sâu</span>
             </div>
             <ul className="space-y-2.5 text-xs sm:text-sm">
               {group1Pages.map((p) => (
@@ -183,8 +182,7 @@ export default function HomeFunnelContent() {
           {/* Nhánh 2 */}
           <div className="bg-slate-950/70 border border-emerald-500/25 rounded-2xl p-5">
             <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
-              <span>Nhánh 2 • Phong Thủy Theo Lá Số</span>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 text-[10px]">7 trang</span>
+              <span>Phong Thủy &amp; Trạch Nhật • Địa Lợi Cải Vận</span>
             </div>
             <ul className="space-y-2.5 text-xs sm:text-sm">
               {group2Pages.map((p) => (
@@ -204,8 +202,7 @@ export default function HomeFunnelContent() {
           {/* Nhánh 3 */}
           <div className="bg-slate-950/70 border border-indigo-500/25 rounded-2xl p-5">
             <div className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
-              <span>Nhánh 3 • Kiến Thức Tử Vi Đẩu Số</span>
-              <span className="px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 text-[10px]">6 trang</span>
+              <span>Tinh Đẩu &amp; Vận Hạn • Huyền Cơ Đẩu Số</span>
             </div>
             <ul className="space-y-2.5 text-xs sm:text-sm">
               {group3Pages.map((p) => (

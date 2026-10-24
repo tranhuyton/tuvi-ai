@@ -39,21 +39,21 @@ const STAGES_ORDER: FunnelStage[] = ['TOFU', 'MOFU', 'USP_GEO', 'BOFU'];
 const FUNNEL_GROUPS = [
   {
     groupNum: 1,
-    badge: 'NHÁNH 1 • CHUYỂN ĐỔI & DỊCH VỤ TRỌNG TÂM',
+    badge: 'LUẬN MỆNH & THAM VẤN • ẤN PHẨM CHUYÊN SÂU',
     title: 'Hệ Thống Luận Giải Lá Số, Hỏi Đáp AI & Xem Trực Tiếp 1-1',
     desc: 'Tìm hiểu chi tiết các mức luận giải (Khởi Nguyên 0đ, Chuyên Sâu Pro 119.000đ, Chuyên Gia Expert 269.000đ — nâng cấp chỉ trả phần chênh lệch 150.000đ), Hỏi đáp AI Thầy Tôn và Đặt lịch xem trực tiếp 1-1 tại Royal City, Hà Nội.',
     color: 'amber',
   },
   {
     groupNum: 2,
-    badge: 'NHÁNH 2 • PHONG THỦY THEO LÁ SỐ',
+    badge: 'PHONG THỦY & TRẠCH NHẬT • ĐỊA LỢI CẢI VẬN',
     title: 'Tư Vấn Phong Thủy Nhà Ở, Văn Phòng, Cải Vận & Xem Ngày Tốt',
     desc: 'Kết hợp Thiên thời (Lá số Tử Vi) và Địa lợi (Phong Thủy Dương Trạch): bố trí nhà ở, chung cư, văn phòng, cửa hàng, chọn ngày động thổ - nhập trạch - khai trương và xem tuổi làm nhà năm 2027.',
     color: 'emerald',
   },
   {
     groupNum: 3,
-    badge: 'NHÁNH 3 • KIẾN THỨC TỬ VI ĐẨU SỐ',
+    badge: 'TINH ĐẨU & VẬN HẠN • HUYỀN CƠ ĐẨU SỐ',
     title: 'Cẩm Nang Đọc Lá Số Tử Vi: 12 Cung, 14 Chính Tinh, Tứ Hóa & Vận Hạn 2027',
     desc: 'Hướng dẫn bài bản cho người mới: cách đọc 12 cung, bảng 14 chính tinh đắc/hãm địa, bảng Tứ Hóa 10 Thiên Can, Mệnh vô chính diệu, cách tìm lại giờ sinh và tử vi năm 2027 Đinh Mùi.',
     color: 'indigo',
@@ -194,7 +194,13 @@ export default function BaiVietIndexPage() {
                     >
                       <div className="space-y-2.5">
                         <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
-                          <span className="font-semibold text-amber-400">{p.role}</span>
+                          <span className="font-semibold text-amber-400">
+                            {p.groupNum === 1
+                              ? 'Ấn Phẩm & Tham Vấn Mệnh Lý'
+                              : p.groupNum === 2
+                              ? 'Phong Thủy & Trạch Nhật'
+                              : 'Tinh Hoa Tử Vi Đẩu Số'}
+                          </span>
                           <span className="text-[11px] font-mono text-slate-400">
                             {p.url}
                           </span>

@@ -247,6 +247,35 @@ function buildPageJsonLd(page: FunnelPageData) {
   };
 }
 
+function getMetaphysicalBadge(code: string): string {
+  switch (code) {
+    case 'P1':
+    case 'P2':
+    case 'P3':
+      return 'Ấn Phẩm Luận Giải Mệnh Lý';
+    case 'DV1':
+      return 'Tham Vấn Mệnh Lý & Phong Thủy 1-1';
+    case 'TR':
+      return 'Chân Dung Chuyên Gia Mệnh Lý';
+    case 'LH':
+      return 'Liên Hệ & Đặt Lịch Tham Vấn';
+    case 'C1':
+      return 'Tổng Quan Phong Thủy & Cải Vận';
+    case 'S1':
+    case 'S2':
+    case 'S3':
+    case 'S4':
+      return 'Phong Thủy Dương Trạch & Trạch Nhật';
+    case 'B6':
+    case 'B8':
+      return 'Chuyên Khảo Phong Thủy & Mệnh Lý';
+    case 'B1':
+      return 'Cẩm Nang Nhập Môn Tử Vi Đẩu Số';
+    default:
+      return 'Chuyên Khảo Tinh Đẩu & Vận Hạn';
+  }
+}
+
 export default async function FunnelSlugPage({
   params,
 }: {
@@ -339,7 +368,7 @@ export default async function FunnelSlugPage({
           <div className="flex flex-wrap items-center gap-2.5 mb-4">
             <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border text-amber-300 bg-amber-950/60 border-amber-500/40">
               <Crown className="w-3.5 h-3.5" />
-              {page.role}
+              {getMetaphysicalBadge(page.code)}
             </span>
             <span className="inline-flex items-center gap-1 text-xs text-emerald-300 bg-emerald-950/50 border border-emerald-500/30 px-2.5 py-1 rounded-full font-medium">
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -645,7 +674,7 @@ export default async function FunnelSlugPage({
             {/* Nhánh 1 */}
             <div className="bg-slate-950/60 border border-slate-800/90 rounded-2xl p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 pb-2 border-b border-slate-800">
-                Nhóm 1 • Dịch Vụ &amp; Bản Luận Giải
+                Luận Mệnh &amp; Tham Vấn • Ấn Phẩm Chuyên Sâu
               </h3>
               <ul className="space-y-2 text-xs sm:text-sm">
                 <li>
@@ -671,7 +700,7 @@ export default async function FunnelSlugPage({
             {/* Nhánh 2 */}
             <div className="bg-slate-950/60 border border-slate-800/90 rounded-2xl p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 pb-2 border-b border-slate-800">
-                Nhóm 2 • Phong Thủy Theo Lá Số
+                Phong Thủy &amp; Trạch Nhật • Địa Lợi Cải Vận
               </h3>
               <ul className="space-y-2 text-xs sm:text-sm">
                 {group2Pages.map((p) => (
@@ -690,7 +719,7 @@ export default async function FunnelSlugPage({
             {/* Nhánh 3 */}
             <div className="bg-slate-950/60 border border-slate-800/90 rounded-2xl p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-3 pb-2 border-b border-slate-800">
-                Nhóm 3 • Cẩm Nang Tử Vi Đẩu Số
+                Tinh Đẩu &amp; Vận Hạn • Huyền Cơ Đẩu Số
               </h3>
               <ul className="space-y-2 text-xs sm:text-sm">
                 {group3Pages.map((p) => (
