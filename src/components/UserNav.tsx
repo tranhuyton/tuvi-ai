@@ -81,7 +81,7 @@ export default function UserNav({
       {/* Khối bên trái: Logo & Brand */}
       <div
         onClick={onNewChart}
-        className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group shrink-0"
+        className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group min-w-0 flex-1"
         title="Lập lá số mới"
       >
         <img
@@ -89,20 +89,20 @@ export default function UserNav({
           alt="Tử Vi & Phong Thủy Thầy Tôn"
           className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
         />
-        <div className="flex flex-col">
-          <span className="text-[11px] sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
+        <div className="flex flex-col min-w-0">
+          <span className="text-[11px] sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight truncate">
             {t('brand.title', 'TỬ VI & PHONG THỦY THẦY TÔN')}
           </span>
-          <p className="text-[9.5px] sm:text-[10.5px] text-slate-400 font-sans hidden md:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
+          <p className="text-[9.5px] sm:text-[10.5px] text-slate-400 font-sans hidden md:block truncate tracking-tight">
             <span>{t('brand.subtitle', 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng • Bát Bộ Thần Sát & Tướng Pháp')}</span>
-            <span className="text-slate-600 font-light hidden xl:inline">•</span>
-            <span className="text-amber-300/85 font-medium hidden xl:inline">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
+            <span className="text-slate-600 font-light hidden 2xl:inline"> • </span>
+            <span className="text-amber-300/85 font-medium hidden 2xl:inline">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
           </p>
         </div>
       </div>
 
       {/* Khối bên phải: Ngôn ngữ + Theme + Tài khoản (Đồng bộ 1 dòng trên cả PC & Mobile) */}
-      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         {/* Bộ chọn ngôn ngữ Quốc Tế dạng Dropdown */}
         <LanguageSelector />
 
@@ -112,7 +112,7 @@ export default function UserNav({
         {/* Nút tắt nhanh Về Thầy Tôn & Phong Thủy */}
         <a
           href="/thay-ton"
-          className="hidden lg:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-200 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner"
+          className="hidden lg:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-200 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner whitespace-nowrap"
           title="Hồ sơ chuyên gia Thầy Tôn (Trần Huy Tôn)"
         >
           <span>{t('nav.about', 'Về Thầy Tôn')}</span>
@@ -120,7 +120,7 @@ export default function UserNav({
 
         <a
           href="/phong-thuy"
-          className="hidden xl:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-amber-300/90 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-amber-500/30 transition shadow-inner"
+          className="hidden xl:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-amber-300/90 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-amber-500/30 transition shadow-inner whitespace-nowrap"
           title="Xem dịch vụ Tư vấn Phong Thủy Theo Lá Số của Thầy Tôn"
         >
           <span>Phong Thủy</span>
@@ -130,13 +130,13 @@ export default function UserNav({
         {isLoading ? (
           <div className="w-16 sm:w-20 h-8 sm:h-9 bg-slate-800 animate-pulse rounded-xl" />
         ) : !user ? (
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onOpenAuthModal}
-              className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
             >
-              <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <LogIn className="w-3.5 h-3.5 shrink-0" />
               <span>{t('nav.login', 'Đăng Nhập')}</span>
             </button>
           </div>
