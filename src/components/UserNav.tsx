@@ -94,9 +94,9 @@ export default function UserNav({
             {t('brand.title', 'TỬ VI & PHONG THỦY THẦY TÔN')}
           </span>
           <p className="text-[9.5px] sm:text-[10.5px] text-slate-400 font-sans hidden md:block truncate tracking-tight">
-            <span>{t('brand.subtitle', 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng • Bát Bộ Thần Sát & Tướng Pháp')}</span>
-            <span className="text-slate-600 font-light hidden 2xl:inline"> • </span>
-            <span className="text-amber-300/85 font-medium hidden 2xl:inline">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
+            <span>{t('brand.subtitle', 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng')}</span>
+            <span className="text-slate-500 font-light"> • </span>
+            <span className="text-amber-300 font-medium">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
           </p>
         </div>
       </div>

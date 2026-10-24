@@ -19,7 +19,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   vi: {
     // Header & Brand
     'brand.title': 'TỬ VI & PHONG THỦY THẦY TÔN',
-    'brand.subtitle': 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng • Bát Bộ Thần Sát & Tướng Pháp',
+    'brand.subtitle': 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng',
     'brand.multilingual': 'Luận Giải Đa Ngôn Ngữ',
     'nav.createChart': 'Lập Lá Số',
     'nav.savedCharts': 'Lá Số Đã Lưu',
