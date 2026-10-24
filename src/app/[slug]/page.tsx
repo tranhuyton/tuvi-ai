@@ -14,8 +14,12 @@ import {
   Crown,
   CheckCircle2,
   MapPin,
+  GraduationCap,
+  Briefcase,
+  ExternalLink,
 } from 'lucide-react';
 import { FUNNEL_PAGES, getFunnelPageBySlug, type FunnelPageData } from '@/lib/funnelPages';
+import { ABOUT_DATA } from '@/lib/i18n/aboutData';
 
 export function generateStaticParams() {
   return FUNNEL_PAGES.filter((p) => p.slug !== '').map((p) => ({
@@ -361,12 +365,21 @@ export default async function FunnelSlugPage({
                 Cựu HS Chuyên Toán - Tin ĐH Tổng hợp Hà Nội • Cử nhân Tài chính &amp; Kế toán ĐH Lancaster (UK) • Hơn 15 năm giảng dạy IELTS &amp; Cambridge IGCSE
               </p>
             </div>
-            <Link
-              href="/thay-ton"
-              className="text-xs font-semibold text-amber-400 hover:text-amber-300 underline underline-offset-4 shrink-0"
-            >
-              Xem hồ sơ Thầy Tôn →
-            </Link>
+            {page.code !== 'TR' ? (
+              <Link
+                href="/thay-ton"
+                className="text-xs font-semibold text-amber-400 hover:text-amber-300 underline underline-offset-4 shrink-0"
+              >
+                Xem hồ sơ Thầy Tôn →
+              </Link>
+            ) : (
+              <Link
+                href="/#lap-la-so"
+                className="text-xs font-semibold text-amber-400 hover:text-amber-300 underline underline-offset-4 shrink-0"
+              >
+                ← Quay về Lập Lá Số
+              </Link>
+            )}
           </div>
 
           {/* Tóm tắt nhanh (H2) — GEO Answer-First Highlight Block */}
@@ -383,6 +396,123 @@ export default async function FunnelSlugPage({
               dangerouslySetInnerHTML={{ __html: page.quickSummaryHtml }}
             />
           </section>
+
+          {/* Khối Visual Hồ Sơ Chuyên Gia Dành Riêng Cho Trang /thay-ton (Mã TR) */}
+          {page.code === 'TR' && (
+            <section className="mb-10 space-y-6 rounded-3xl bg-slate-950/75 border border-amber-500/35 p-5 sm:p-8 shadow-xl">
+              {/* 4 Thẻ Số Liệu Nổi Bật */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                {ABOUT_DATA.vi.stats.map((s, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-amber-500/25 text-center"
+                  >
+                    <div className="text-2xl sm:text-3xl font-black text-amber-400 font-serif">
+                      {s.val}
+                    </div>
+                    <div className="text-xs sm:text-sm text-slate-300 mt-1 font-medium">
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* 3 Cột Trụ Nền Tảng Học Thuật & Thực Chứng */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-amber-300 font-serif">
+                    {ABOUT_DATA.vi.pillar1.title}
+                  </h3>
+                  <ul className="text-xs sm:text-sm text-slate-200 space-y-2 leading-relaxed">
+                    {ABOUT_DATA.vi.pillar1.points.map((p, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                    <Briefcase className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-blue-300 font-serif">
+                    {ABOUT_DATA.vi.pillar2.title}
+                  </h3>
+                  <ul className="text-xs sm:text-sm text-slate-200 space-y-2 leading-relaxed">
+                    {ABOUT_DATA.vi.pillar2.points.map((p, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                        <span>
+                          {typeof p === 'string' ? (
+                            p
+                          ) : (
+                            <>
+                              {p.text}
+                              <a
+                                href={p.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:underline inline-flex items-center gap-0.5 font-semibold"
+                              >
+                                {p.linkText} <ExternalLink className="w-3.5 h-3.5 inline" />
+                              </a>
+                            </>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                    <Compass className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-purple-300 font-serif">
+                    {ABOUT_DATA.vi.pillar3.title}
+                  </h3>
+                  <ul className="text-xs sm:text-sm text-slate-200 space-y-2 leading-relaxed">
+                    {ABOUT_DATA.vi.pillar3.points.map((p, idx) => (
+                      <li key={idx} className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                        <span>{p}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Thanh điều hướng quay lại Lập Lá Số / Mua Gói ngay sau khi đọc tổng quan hồ sơ */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800/80">
+                <span className="text-xs sm:text-sm text-amber-200 font-medium">
+                  Đã tìm hiểu rõ nền tảng của Thầy Tôn? Bắt đầu với lá số của bạn ngay:
+                </span>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Link
+                    href="/#lap-la-so"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>Quay Về Lập Lá Số &amp; Mở Khóa Bản Luận Giải</span>
+                  </Link>
+                  <a
+                    href="https://tonyenglish.vn/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-semibold transition"
+                  >
+                    <span>TonyEnglish.vn</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Introductory Context Paragraph */}
           {page.introHtml && (

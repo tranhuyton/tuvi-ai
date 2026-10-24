@@ -90,9 +90,9 @@ export default function UserNav({
           className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
         />
         <div className="flex flex-col">
-          <h1 className="text-[11px] sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
+          <span className="text-[11px] sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight whitespace-nowrap">
             {t('brand.title', 'TỬ VI & PHONG THỦY THẦY TÔN')}
-          </h1>
+          </span>
           <p className="text-[9.5px] sm:text-[10.5px] text-slate-400 font-sans hidden md:flex items-center gap-1.5 whitespace-nowrap tracking-tight">
             <span>{t('brand.subtitle', 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng • Bát Bộ Thần Sát & Tướng Pháp')}</span>
             <span className="text-slate-600 font-light hidden xl:inline">•</span>
@@ -109,11 +109,19 @@ export default function UserNav({
         {/* Bộ chọn màu nền giao diện */}
         <ThemeSelector />
 
-        {/* Nút tắt nhanh Về Thầy Tôn & Phong Thủy trên màn hình lớn */}
+        {/* Nút tắt nhanh Về Thầy Tôn & Phong Thủy */}
         <a
-          href="#dich-vu-phong-thuy"
+          href="/thay-ton"
+          className="hidden lg:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-200 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner"
+          title="Hồ sơ chuyên gia Thầy Tôn (Trần Huy Tôn)"
+        >
+          <span>{t('nav.about', 'Về Thầy Tôn')}</span>
+        </a>
+
+        <a
+          href="/phong-thuy"
           className="hidden xl:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-amber-300/90 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-amber-500/30 transition shadow-inner"
-          title="Xem dịch vụ Tư vấn Phong Thủy Thực Chứng của Thầy Tôn"
+          title="Xem dịch vụ Tư vấn Phong Thủy Theo Lá Số của Thầy Tôn"
         >
           <span>Phong Thủy</span>
         </a>
@@ -123,13 +131,6 @@ export default function UserNav({
           <div className="w-16 sm:w-20 h-8 sm:h-9 bg-slate-800 animate-pulse rounded-xl" />
         ) : !user ? (
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <a
-              href="#gioi-thieu-thay-ton"
-              className="hidden lg:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-300 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner"
-              title="Xem thông tin & tiểu sử Thầy Tôn"
-            >
-              <span>{t('nav.about', 'Về Thầy Tôn')}</span>
-            </a>
             <button
               type="button"
               onClick={onOpenAuthModal}

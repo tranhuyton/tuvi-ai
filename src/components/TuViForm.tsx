@@ -217,7 +217,10 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto backdrop-blur-xl bg-slate-900/85 border border-amber-500/35 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100">
+    <div
+      id="lap-la-so"
+      className="w-full max-w-xl mx-auto backdrop-blur-xl bg-slate-900/85 border border-amber-500/35 rounded-2xl shadow-2xl p-6 sm:p-8 text-slate-100 scroll-mt-6"
+    >
       <div className="mb-6 pb-4 border-b border-slate-800/80">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/35 text-[11px] sm:text-xs font-bold text-amber-300 uppercase tracking-wider">
@@ -236,8 +239,8 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
             </button>
           ) : null}
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-wide text-amber-400 font-serif">
-          {t('form.title', 'AN SAO & BÌNH GIẢI TỬ VI MIỄN PHÍ')}
+        <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif leading-snug">
+          Lập Lá Số Tử Vi Miễn Phí và Bình Giải Trọn Đời Cùng Thầy Tôn
         </h1>
         <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed">
           {t(
