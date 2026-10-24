@@ -1,34 +1,54 @@
-# Tử Vi & Phong Thủy Thầy Tôn (tuvithayton.vn)
+# Tử Vi & Phong Thủy Thầy Tôn (https://www.tuvithayton.vn)
 
-> Hệ thống An Sao 108 Tinh Đẩu Cổ Truyền, Bình Giải Tử Vi Thực Chứng & Tư Vấn Phong Thủy Chính Tông kết hợp Diện Tướng Khuôn Mặt và Thủ Tướng Chỉ Tay từ Thầy Tôn (Trần Huy Tôn).
+> Tử Vi & Phong Thủy Thầy Tôn là công cụ lập lá số Tử Vi Đẩu Số miễn phí (an hơn 110 sao trên 12 cung, trả về bài Bình Giải Khởi Nguyên ~1.000 từ) và hệ thống luận giải chuyên sâu kết hợp Diện tướng, Chỉ tay và Tư vấn Phong thủy theo lá số của Thầy Tôn. Khi nâng cấp lên bản luận giải hoặc gói câu hỏi cao hơn, người dùng chỉ trả phần chênh lệch.
 
 ## Giới thiệu về Thầy Tôn (Trần Huy Tôn)
-- **Người sáng lập & Chuyên gia Tử Vi — Phong Thủy:** Thầy Tôn (Trần Huy Tôn) — Cựu học sinh Chuyên Toán - Tin ĐH Tổng Hợp Hà Nội, Cựu Chuyên gia Tài chính — Kiểm toán Quốc tế tốt nghiệp Đại học Lancaster (Top 5 Vương Quốc Anh), với hơn 7 năm học tập & làm việc tại Anh Quốc và hơn 18 năm nghiên cứu thực chứng Kinh Dịch, Tử Vi Đẩu Số Bát Bộ Thần Sát, Phong Thủy Dương Trạch (Huyền Không Phi Tinh, Bát Trạch, Loan Đầu), Nhân Tướng Học (Diện Tướng) và Thủ Tướng Học (Chỉ Tay).
-- **Sự nghiệp Giáo dục Quốc tế (15+ năm):** Nhà sáng lập nền tảng giáo dục học thuật Quốc tế **TonyEnglish.vn**; Giáo viên Tiếng Anh chuyên luyện thi **IELTS**, **Tiếng Anh Giao tiếp**, và giảng dạy trực tiếp bằng tiếng Anh các môn học thuật chương trình Quốc tế **Cambridge IGCSE**: **Toán (Mathematics), Khoa học (Sciences), Kinh tế (Economics), Kinh doanh (Business Studies) và Địa lý (Geography)** hơn 15 năm.
-- **Triết lý hoạt động:** Khoa học — Thực chứng — Logic toán học & kinh tế vĩ mô — Tuyệt đối không mê tín dị đoan.
-- **Website chính thức:** https://www.tuvithayton.vn | https://tonyenglish.vn
-- **Kho kiến thức Tử Vi & Phong Thủy chuyên sâu:** https://www.tuvithayton.vn/bai-viet
+- **Người sáng lập & Chuyên gia Tử Vi — Phong Thủy:** Thầy Tôn (Trần Huy Tôn) — Chuyên gia Tử Vi Đẩu Số và Phong Thủy với hơn 18 năm nghiên cứu.
+- **Nền tảng học thuật:** Cựu học sinh khối Chuyên Toán - Tin, Đại học Tổng hợp Hà Nội; Cử nhân Quản lý Tài chính và Kế toán tại Đại học Lancaster (Vương quốc Anh); hơn 7 năm học tập và làm việc tại Anh Quốc.
+- **Sự nghiệp Giáo dục Quốc tế (15+ năm):** Nhà sáng lập TonyEnglish.vn; hơn 15 năm giảng dạy Tiếng Anh luyện thi IELTS, Giao tiếp và các môn Toán (Mathematics), Khoa học (Sciences), Kinh tế (Economics), Kinh doanh (Business Studies), Địa lý (Geography) chương trình Quốc tế Cambridge IGCSE.
+- **Phương pháp luận giải:** Đọc theo tổ hợp sao (cách cục) và dòng thời gian (Đại vận 10 năm, Tiểu vận, Lưu niên, Lưu nguyệt); đối chiếu thêm bằng Diện tướng, Chỉ tay và Bát Bộ Thần Sát; không dùng lời hù dọa để bán lễ cúng hay vật phẩm.
 
-## Các Dịch Vụ Tử Vi & Phong Thủy Nổi Bật
-1. **Lập Lá Số Tử Vi 108 Sao & Bình Giải Khởi Nguyên (Miễn Phí 100% - 0đ):**
-   - Tự động chuyển đổi ngày giờ sinh Dương lịch / Âm lịch, tính Cục, Mệnh Chủ, Thân Chủ, Cân Xương Tính Số, an 14 Chính Tinh và hơn 90 Phụ Tinh chuẩn xác theo cổ thư.
-   - Nhận bài bình giải Khởi Nguyên (~1.000 từ) miễn phí ngay trên web, hỗ trợ lưu lá số và xuất PDF.
-2. **Bản Luận Giải Chuyên Sâu VIP Pro (119.000đ):**
-   - Khảo sát chi tiết Tam Phương Tứ Chính, Tứ Hóa, Đại Vận 10 năm, Tiểu Vận Lưu Niên và vận hạn 4 mùa Xuân - Hạ - Thu - Đông (~2.500 từ).
-   - Tích hợp phân tích hình ảnh Khuôn Mặt (Diện Tướng) và Chỉ Tay (Thủ Tướng).
-   - Tặng kèm 02 câu hỏi VIP đàm đạo chuyên sâu.
-3. **Bản Luận Giải Chuyên Gia Đại Tông Sư Expert (269.000đ):**
-   - Khảo sát chuyên sâu toàn diện trọn bộ TẤT CẢ 12 Cung trên lá số + Cung Thân (~4.500 - 6.000 từ).
-   - Luận giải chi tiết từng tháng từ Tháng 1 đến Tháng 12 Âm lịch, đối chiếu Diện Tướng & Chỉ Tay và tư vấn Phong Thủy Cải Vận cá nhân hóa theo Dụng thần.
-   - Tặng kèm 02 câu hỏi cấp độ Chuyên Gia.
-4. **Dịch Vụ Tư Vấn Phong Thủy Thực Chứng & Xem Trực Tiếp 1-1 Cùng Thầy Tôn:**
-   - **Phong Thủy Nhà Ở, Biệt Thự & Chung Cư (Dương Trạch):** Đo đạc la kinh, phân tích Loan Đầu & Lý Khí (Huyền Không Phi Tinh, Bát Trạch), bố cục cổng/cửa chính, phòng khách, bếp nấu, phòng ngủ, bàn thờ gia tiên và hóa giải sát khí.
-   - **Phong Thủy Văn Phòng, Cửa Hàng & Trụ Sở Doanh Nghiệp:** Bố cục phòng lãnh đạo, bàn làm việc Chủ tịch/Giám đốc, két sắt, quầy thu ngân, ban Thần Tài và kích hoạt Tài vị vận 9 Hạ Nguyên.
-   - **Phong Thủy Cải Vận Kết Hợp Lá Số Tử Vi:** Đối chiếu cung Điền Trạch, Tài Bạch, Quan Lộc và Ngũ hành Dụng thần để định hướng phương vị lập nghiệp, màu sắc, vật phẩm hộ thân và hóa giải hạn Thái Tuế, Tam Tai, Kim Lâu, Hoang Ốc.
-   - **Trạch Nhật (Xem Ngày Giờ Tốt):** Chọn ngày giờ đại cát cho Động thổ, Xây sửa nhà, Nhập trạch, Khai trương, Ký kết hợp đồng, Xuất hành và Cưới hỏi.
+## Bảng Giá Dịch Vụ & Chính Sách Nâng Cấp Chỉ Trả Phần Chênh Lệch
+1. **Bản Khởi Nguyên (Miễn phí - 0đ):** ~1.000 từ về Bản Mệnh, Cục, Tam hợp Mệnh - Tài - Quan, cung Thân, Đại vận 10 năm và Tiểu vận năm xem; lưu Sổ tay cá nhân, tải ảnh/PDF.
+2. **Bản Chuyên Sâu Pro (119.000đ):** ~2.500 từ, đọc kỹ 14 chính tinh, Tứ Hóa, bộ sao đắc/hãm địa và vận hạn 4 mùa Xuân - Hạ - Thu - Đông; tặng kèm 2 câu hỏi Chuyên Sâu cho AI Thầy Tôn (trị giá 99.000đ).
+3. **Bản Chuyên Gia Expert (269.000đ):** ~4.500 - 6.000 từ, luận giải toàn bộ 12 cung và vận hạn từng tháng từ tháng 1 đến tháng 12 âm lịch; tặng kèm 2 câu hỏi Chuyên Gia cho AI Thầy Tôn (trị giá 129.000đ).
+   - **Nâng cấp từ Bản Pro (119.000đ) lên Bản Expert (269.000đ):** Chỉ trả thêm **150.000đ** (đúng phần chênh lệch).
+4. **Hỏi đáp AI Thầy Tôn (bán theo gói 2 câu hỏi):**
+   - Gói Cơ Bản (2 câu): **49.000đ**
+   - Gói Chuyên Sâu (2 câu): **99.000đ** (Nâng từ Cơ Bản lên Chuyên Sâu chỉ trả thêm **50.000đ**)
+   - Gói Chuyên Gia (2 câu): **129.000đ** (Nâng từ Chuyên Sâu lên Chuyên Gia chỉ trả thêm **30.000đ**; nâng từ Cơ Bản lên Chuyên Gia chỉ trả thêm **80.000đ**)
+5. **Xem Tử Vi & Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn:** Đặt lịch trước qua Zalo **0935 058 688**, xem trực tiếp tại văn phòng Royal City, Hà Nội hoặc online qua Video Call.
 
-## Liên Hệ & Đặt Lịch Tư Vấn Trực Tiếp (Online & Offline)
-- **Địa chỉ phòng xem trực tiếp:** R2B 2219, Khu đô thị Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội
+## Sơ Đồ 20 Trang Trọng Tâm Trên tuvithayton.vn
+### Nhóm 1 — Trang chuyển đổi (Dịch vụ, Sản phẩm, Thương hiệu)
+- [H] Trang chủ Lập Lá Số Tử Vi Miễn Phí: https://www.tuvithayton.vn/
+- [P1] Luận Giải Lá Số Tử Vi Chi Tiết - Bản Chuyên Sâu Pro (119.000đ): https://www.tuvithayton.vn/luan-giai-tu-vi-chuyen-sau
+- [P2] Luận Giải Lá Số Tử Vi 12 Cung và Vận Hạn Từng Tháng - Bản Chuyên Gia Expert (269.000đ): https://www.tuvithayton.vn/luan-giai-tu-vi-chuyen-gia
+- [P3] Hỏi Đáp Tử Vi Online Cùng AI Thầy Tôn: https://www.tuvithayton.vn/hoi-dap-tu-vi-ai
+- [DV1] Xem Tử Vi và Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn tại Hà Nội: https://www.tuvithayton.vn/dat-lich-xem-tu-vi
+- [TR] Thầy Tôn - Chuyên Gia Tử Vi Đẩu Số và Phong Thủy: https://www.tuvithayton.vn/thay-ton
+- [LH] Liên Hệ và Đặt Lịch Xem Tử Vi Cùng Thầy Tôn: https://www.tuvithayton.vn/lien-he
+
+### Nhóm 2 — Phong thủy theo lá số (Hub C1, Dịch vụ S1–S4, Blog B6 & B8)
+- [C1] Tư Vấn Phong Thủy Nhà Ở, Văn Phòng và Cải Vận Theo Lá Số: https://www.tuvithayton.vn/phong-thuy
+- [S1] Phong Thủy Nhà Ở, Chung Cư: Bố Trí Cửa, Bếp, Phòng Ngủ Hợp Mệnh Gia Chủ: https://www.tuvithayton.vn/phong-thuy-nha-o
+- [S2] Phong Thủy Văn Phòng, Cửa Hàng: Vị Trí Bàn Làm Việc, Quầy Thu Ngân, Hướng Cửa: https://www.tuvithayton.vn/phong-thuy-van-phong
+- [S3] Phong Thủy Cải Vận Theo Lá Số Tử Vi: Hướng, Màu Sắc, Bố Trí Hợp Mệnh: https://www.tuvithayton.vn/phong-thuy-cai-van
+- [S4] Xem Ngày Tốt Động Thổ, Nhập Trạch, Khai Trương, Cưới Hỏi Hợp Tuổi: https://www.tuvithayton.vn/xem-ngay-tot
+- [B6] Xem Tuổi Làm Nhà Năm 2027: Tuổi Nào Phạm Kim Lâu, Hoang Ốc, Tam Tai?: https://www.tuvithayton.vn/xem-tuoi-lam-nha-2027
+- [B8] Tử Vi và Phong Thủy Khác Nhau Thế Nào, Kết Hợp Ra Sao?: https://www.tuvithayton.vn/tu-vi-va-phong-thuy
+
+### Nhóm 3 — Kiến thức Tử Vi Đẩu Số (Hub B1 và Blog B2, B3, B4, B5, B7)
+- [B1] Cách Xem Lá Số Tử Vi Cho Người Mới: 12 Cung, 14 Chính Tinh và Vận Hạn: https://www.tuvithayton.vn/cach-xem-la-so-tu-vi
+- [B2] Tử Vi Năm 2027 Đinh Mùi: Tuổi Nào Phạm Thái Tuế, Tam Tai, Kim Lâu?: https://www.tuvithayton.vn/tu-vi-2027
+- [B3] 14 Chính Tinh Trong Tử Vi: Ý Nghĩa và Vị Trí Đắc, Hãm: https://www.tuvithayton.vn/14-chinh-tinh-tu-vi
+- [B4] Tứ Hóa Trong Tử Vi: Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ Là Gì?: https://www.tuvithayton.vn/tu-hoa-trong-tu-vi
+- [B5] Mệnh Vô Chính Diệu Là Gì? Tốt Hay Xấu?: https://www.tuvithayton.vn/menh-vo-chinh-dieu
+- [B7] Không Nhớ Giờ Sinh Có Lập Lá Số Tử Vi Được Không?: https://www.tuvithayton.vn/khong-nho-gio-sinh
+
+## Thông Tin Liên Hệ Chính Thức
+- **Thương hiệu:** Tử Vi & Phong Thủy Thầy Tôn
+- **Địa chỉ văn phòng:** R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội
+- **Điện thoại / Zalo:** 0935 058 688
 - **Website:** https://www.tuvithayton.vn
-- **Hotline / Zalo đặt lịch:** 0935.058.688
-- **Email:** tranhuyton@gmail.com
+- **Thư viện chuyên đề:** https://www.tuvithayton.vn/bai-viet

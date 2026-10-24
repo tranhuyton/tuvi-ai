@@ -14,40 +14,67 @@ import {
   Clock,
 } from 'lucide-react';
 import { SEO_ARTICLES, FUNNEL_STAGE_META, FunnelStage } from '@/lib/seoArticles';
+import { FUNNEL_PAGES } from '@/lib/funnelPages';
 
 export const metadata: Metadata = {
-  title: 'Cẩm Nang Tử Vi Đẩu Số, Diện Tướng & Chỉ Tay Thực Chứng | Tử Vi Thầy Tôn',
+  title: {
+    absolute: 'Cẩm Nang Tử Vi Đẩu Số & Phong Thủy Theo Lá Số | Thầy Tôn',
+  },
   description:
-    'Hệ thống bài viết chuyên sâu về Tử Vi Đẩu Số, Bát Bộ Thần Sát, Diện Tướng (khuôn mặt) và Thủ Tướng (chỉ tay) dưới góc nhìn khoa học thực chứng của Thầy Tôn (Trần Huy Tôn).',
+    'Hệ thống 20 chuyên đề trọng điểm về Tử Vi Đẩu Số, Phong Thủy theo lá số, Diện Tướng và Chỉ Tay được biên soạn và thẩm định bởi Thầy Tôn (Trần Huy Tôn).',
   alternates: {
-    canonical: 'https://tuvithayton.vn/bai-viet',
+    canonical: 'https://www.tuvithayton.vn/bai-viet',
   },
   openGraph: {
-    title: 'Cẩm Nang Tử Vi Đẩu Số, Diện Tướng & Chỉ Tay Thực Chứng | Tử Vi Thầy Tôn',
+    title: 'Cẩm Nang Tử Vi Đẩu Số & Phong Thủy Theo Lá Số | Thầy Tôn',
     description:
-      'Khám phá kho tàng tri thức Tử Vi Đẩu Số, cách lập lá số miễn phí, xem vận hạn 2026, giải mã Mệnh - Tài - Quan - Phu Thê và phương pháp kết hợp Xem Mặt & Chỉ Tay.',
-    url: 'https://tuvithayton.vn/bai-viet',
+      'Khám phá hệ thống 20 chuyên đề Tử Vi Đẩu Số & Phong Thủy của Thầy Tôn: cách xem lá số tử vi, 14 chính tinh, Tứ Hóa, tử vi 2027, phong thủy nhà ở, văn phòng và cải vận.',
+    url: 'https://www.tuvithayton.vn/bai-viet',
     type: 'website',
   },
 };
 
 const STAGES_ORDER: FunnelStage[] = ['TOFU', 'MOFU', 'USP_GEO', 'BOFU'];
 
+const FUNNEL_GROUPS = [
+  {
+    groupNum: 1,
+    badge: 'NHÁNH 1 • CHUYỂN ĐỔI & DỊCH VỤ TRỌNG TÂM',
+    title: 'Hệ Thống Luận Giải Lá Số, Hỏi Đáp AI & Xem Trực Tiếp 1-1',
+    desc: 'Tìm hiểu chi tiết các mức luận giải (Khởi Nguyên 0đ, Chuyên Sâu Pro 119.000đ, Chuyên Gia Expert 269.000đ — nâng cấp chỉ trả phần chênh lệch 150.000đ), Hỏi đáp AI Thầy Tôn và Đặt lịch xem trực tiếp 1-1 tại Royal City, Hà Nội.',
+    color: 'amber',
+  },
+  {
+    groupNum: 2,
+    badge: 'NHÁNH 2 • PHONG THỦY THEO LÁ SỐ',
+    title: 'Tư Vấn Phong Thủy Nhà Ở, Văn Phòng, Cải Vận & Xem Ngày Tốt',
+    desc: 'Kết hợp Thiên thời (Lá số Tử Vi) và Địa lợi (Phong Thủy Dương Trạch): bố trí nhà ở, chung cư, văn phòng, cửa hàng, chọn ngày động thổ - nhập trạch - khai trương và xem tuổi làm nhà năm 2027.',
+    color: 'emerald',
+  },
+  {
+    groupNum: 3,
+    badge: 'NHÁNH 3 • KIẾN THỨC TỬ VI ĐẨU SỐ',
+    title: 'Cẩm Nang Đọc Lá Số Tử Vi: 12 Cung, 14 Chính Tinh, Tứ Hóa & Vận Hạn 2027',
+    desc: 'Hướng dẫn bài bản cho người mới: cách đọc 12 cung, bảng 14 chính tinh đắc/hãm địa, bảng Tứ Hóa 10 Thiên Can, Mệnh vô chính diệu, cách tìm lại giờ sinh và tử vi năm 2027 Đinh Mùi.',
+    color: 'indigo',
+  },
+];
+
 export default function BaiVietIndexPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Cẩm Nang Tử Vi Đẩu Số & Tướng Pháp Thực Chứng — Tử Vi Thầy Tôn',
-    url: 'https://tuvithayton.vn/bai-viet',
+    name: 'Hệ Thống 20 Chuyên Đề Tử Vi Đẩu Số & Phong Thủy — Thầy Tôn',
+    url: 'https://www.tuvithayton.vn/bai-viet',
     description:
-      'Chuyên mục bài viết nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Diện Tướng & Chỉ Tay thực chứng của Thầy Tôn (Trần Huy Tôn).',
+      'Thư viện 20 trang chuyên khảo Tử Vi Đẩu Số và Phong Thủy theo lá số do Thầy Tôn biên soạn và thẩm định.',
     mainEntity: {
       '@type': 'ItemList',
-      itemListElement: SEO_ARTICLES.map((art, index) => ({
+      itemListElement: FUNNEL_PAGES.map((p, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `https://tuvithayton.vn/bai-viet/${art.slug}`,
-        name: art.title,
+        url: `https://www.tuvithayton.vn${p.url}`,
+        name: p.h1,
       })),
     },
   };
@@ -67,16 +94,16 @@ export default function BaiVietIndexPage() {
             className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-serif font-bold text-base sm:text-lg transition"
           >
             <Compass className="w-5 h-5" />
-            <span>TỬ VI THẦY TÔN</span>
+            <span>TỬ VI &amp; PHONG THỦY THẦY TÔN</span>
           </Link>
 
           <div className="flex items-center gap-2.5 flex-wrap">
             <Link
-              href="/"
+              href="/#lap-la-so"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition"
             >
               <Sparkles className="w-4 h-4" />
-              <span>An Sao & Bình Giải Miễn Phí (0đ)</span>
+              <span>Lập Lá Số Miễn Phí (0đ)</span>
             </Link>
             <a
               href="https://zalo.me/0935058688"
@@ -85,7 +112,7 @@ export default function BaiVietIndexPage() {
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs sm:text-sm transition"
             >
               <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
-              <span>Đặt Lịch 1-1: 0935.058.688</span>
+              <span>Đặt Lịch 1-1: 0935 058 688</span>
             </a>
           </div>
         </div>
@@ -94,83 +121,139 @@ export default function BaiVietIndexPage() {
         <header className="relative overflow-hidden rounded-3xl bg-slate-900/90 border border-amber-500/35 p-6 sm:p-10 text-center space-y-4 shadow-2xl">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs sm:text-sm font-semibold uppercase tracking-wider">
             <BookOpen className="w-4 h-4 text-amber-400" />
-            <span>Thư Viện Học Thuật & Thực Chứng • Chuẩn SEO & AI GEO</span>
+            <span>Hệ Sinh Thái 20 Chuyên Đề • Tử Vi Đẩu Số &amp; Phong Thủy</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-bold font-serif text-amber-400 tracking-wide leading-tight">
-            CẨM NANG TỬ VI ĐẨU SỐ, DIỆN TƯỚNG & CHỈ TAY THỰC CHỨNG
+            CẨM NANG TỬ VI ĐẨU SỐ &amp; PHONG THỦY THEO LÁ SỐ CÙNG THẦY TÔN
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            Hệ thống chuyên khảo được biên soạn bởi <strong className="text-amber-300">Thầy Tôn (Trần Huy Tôn)</strong> — kết hợp Tư duy Toán học, Nhãn quan Kinh tế Tài chính Quốc tế (ĐH Lancaster - Top 5 UK) cùng hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát và Tướng Pháp.
+            Biên soạn và thẩm định chuyên môn bởi <strong className="text-amber-300">Thầy Tôn</strong> — Chuyên gia Tử Vi Đẩu Số và Phong Thủy với hơn 18 năm nghiên cứu, Cựu HS Chuyên Toán - Tin ĐH Tổng hợp Hà Nội, Cử nhân Tài chính &amp; Kế toán ĐH Lancaster (UK) và hơn 15 năm giảng dạy IELTS, Giao tiếp &amp; Cambridge IGCSE.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/"
+              href="/#lap-la-so"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition"
             >
               <Sparkles className="w-4 h-4" />
-              <span>Lập Lá Số & Nhận Bình Giải Miễn Phí (0đ)</span>
+              <span>Lập Lá Số &amp; Nhận Bình Giải Miễn Phí (0đ)</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </header>
 
-        {/* Hiển thị các bài viết được phân nhóm theo 4 Tầng Phễu Chiến Lược */}
+        {/* 20 Chuyên Đề Trọng Tâm Theo 3 Nhánh Phễu */}
         <div className="space-y-10">
+          {FUNNEL_GROUPS.map((grp) => {
+            const pages = FUNNEL_PAGES.filter((p) => p.groupNum === grp.groupNum);
+            const borderCls =
+              grp.color === 'amber'
+                ? 'border-amber-500/35'
+                : grp.color === 'emerald'
+                ? 'border-emerald-500/35'
+                : 'border-indigo-500/35';
+            const badgeCls =
+              grp.color === 'amber'
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/35'
+                : grp.color === 'emerald'
+                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'
+                : 'bg-indigo-500/15 text-indigo-300 border-indigo-500/35';
+
+            return (
+              <section
+                key={grp.groupNum}
+                className={`rounded-3xl bg-slate-900/75 border ${borderCls} p-6 sm:p-8 space-y-6 shadow-xl`}
+              >
+                <div className="space-y-2 border-b border-slate-800 pb-4">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${badgeCls}`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>{grp.badge}</span>
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      {pages.length} trang chuyên đề
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold font-serif text-white">
+                    {grp.title}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    {grp.desc}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {pages.map((p) => (
+                    <article
+                      key={p.code}
+                      className="rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 p-5 flex flex-col justify-between space-y-4 transition group"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
+                          <span className="font-semibold text-amber-400">{p.role}</span>
+                          <span className="text-[11px] font-mono text-slate-400">
+                            {p.url}
+                          </span>
+                        </div>
+
+                        <h3 className="text-base sm:text-lg font-bold font-serif text-slate-100 group-hover:text-amber-300 transition leading-snug">
+                          <Link href={p.url}>{p.h1}</Link>
+                        </h3>
+
+                        <p className="text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed">
+                          {p.quickSummaryText}
+                        </p>
+                      </div>
+
+                      <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+                        <Link
+                          href={p.url}
+                          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-400 hover:text-amber-300 transition"
+                        >
+                          <span>Xem chi tiết chuyên đề</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+
+        {/* Chuyên khảo mở rộng (Các bài viết chuyên sâu bổ trợ) */}
+        <div className="space-y-10 pt-6 border-t border-slate-800">
+          <h2 className="text-xl sm:text-2xl font-bold font-serif text-amber-300 text-center">
+            CHUYÊN KHẢO MỞ RỘNG &amp; ĐỐI CHIẾU THỰC CHỨNG
+          </h2>
           {STAGES_ORDER.map((stageKey) => {
             const stageMeta = FUNNEL_STAGE_META[stageKey];
             const stageArticles = SEO_ARTICLES.filter((a) => a.funnelStage === stageKey);
 
-            const borderColor =
-              stageMeta.color === 'emerald'
-                ? 'border-emerald-500/35'
-                : stageMeta.color === 'amber'
-                ? 'border-amber-500/35'
-                : stageMeta.color === 'purple'
-                ? 'border-purple-500/35'
-                : 'border-blue-500/35';
-
-            const badgeColor =
-              stageMeta.color === 'emerald'
-                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35'
-                : stageMeta.color === 'amber'
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/35'
-                : stageMeta.color === 'purple'
-                ? 'bg-purple-500/15 text-purple-200 border-purple-500/35'
-                : 'bg-blue-500/15 text-blue-300 border-blue-500/35';
-
             return (
               <section
                 key={stageKey}
-                className={`rounded-3xl bg-slate-900/75 border ${borderColor} p-6 sm:p-8 space-y-6 shadow-xl`}
+                className="rounded-3xl bg-slate-900/60 border border-slate-800 p-6 sm:p-8 space-y-6"
               >
-                <div className="space-y-2 border-b border-slate-800 pb-4">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${badgeColor}`}>
-                      <Layers className="w-3.5 h-3.5" />
-                      <span>{stageMeta.shortLabel}</span>
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      {stageArticles.length} chuyên đề trọng tâm
-                    </span>
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-bold font-serif text-white">
+                <div className="space-y-1 border-b border-slate-800 pb-3">
+                  <h3 className="text-lg sm:text-xl font-bold font-serif text-white">
                     {stageMeta.name}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    <strong className="text-amber-300">Vai trò trong luồng đọc:</strong> {stageMeta.goal}
-                  </p>
+                  </h3>
+                  <p className="text-xs text-slate-400">{stageMeta.goal}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {stageArticles.map((article) => (
                     <article
                       key={article.slug}
-                      className="rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 p-5 flex flex-col justify-between space-y-4 transition group"
+                      className="rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 p-5 flex flex-col justify-between space-y-3 transition group"
                     >
-                      <div className="space-y-2.5">
+                      <div className="space-y-2">
                         <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
                           <span className="font-semibold text-amber-400">{article.category}</span>
                           <span className="inline-flex items-center gap-1">
@@ -178,23 +261,20 @@ export default function BaiVietIndexPage() {
                             {article.readTime}
                           </span>
                         </div>
-
-                        <h3 className="text-base sm:text-lg font-bold font-serif text-slate-100 group-hover:text-amber-300 transition leading-snug">
+                        <h4 className="text-base font-bold font-serif text-slate-100 group-hover:text-amber-300 transition leading-snug">
                           <Link href={`/bai-viet/${article.slug}`}>{article.title}</Link>
-                        </h3>
-
-                        <p className="text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed">
+                        </h4>
+                        <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
                           {article.geoSummary}
                         </p>
                       </div>
-
-                      <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+                      <div className="pt-2">
                         <Link
                           href={`/bai-viet/${article.slug}`}
-                          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-400 hover:text-amber-300 transition"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300"
                         >
-                          <span>Đọc chi tiết chuyên khảo</span>
-                          <ArrowRight className="w-4 h-4" />
+                          <span>Đọc thêm</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
                     </article>
@@ -208,34 +288,34 @@ export default function BaiVietIndexPage() {
         {/* Khối Chốt Chuyển Đổi Cuối Trang (Bottom Funnel CTA) */}
         <section className="rounded-3xl bg-gradient-to-br from-amber-500/15 via-slate-900 to-purple-900/20 border border-amber-500/40 p-6 sm:p-10 text-center space-y-5 shadow-2xl">
           <h2 className="text-2xl sm:text-3xl font-bold font-serif text-amber-400">
-            Trải Nghiệm Ngay Hệ Thống An Sao & Luận Giải Tử Vi Thực Chứng
+            Bước Tiếp Theo Với Lá Số Của Bạn: Chọn Đúng Mức Luận Giải
           </h2>
           <p className="text-sm sm:text-base text-slate-200 max-w-2xl mx-auto leading-relaxed">
-            Kiểm chứng ngay độ chính xác trên chính lá số của bạn với <strong className="text-emerald-300">Bản Khởi Nguyên Miễn Phí (0đ)</strong>, hoặc mở khóa trọn bộ <strong className="text-amber-300">VIP Pro (119k)</strong> & <strong className="text-purple-300">Đại Tông Sư Expert 12 Cung (269k)</strong> kết hợp Xem Mặt & Chỉ Tay.
+            Bắt đầu bằng <strong className="text-emerald-300">Bản Khởi Nguyên Miễn Phí (0đ)</strong> để nắm tổng quan; khi đứng trước quyết định trong năm, mở khóa <strong className="text-amber-300">Bản Chuyên Sâu Pro (119.000đ)</strong> hoặc <strong className="text-purple-300">Bản Chuyên Gia Expert (269.000đ)</strong> — nâng cấp chỉ trả phần chênh lệch (150.000đ).
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto text-left text-xs sm:text-sm">
             <div className="p-3.5 rounded-xl bg-slate-950/70 border border-emerald-500/30 flex items-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span><strong className="text-emerald-300">Gói 0đ Miễn Phí:</strong> An sao 110+ sao & đọc bình giải ~1.000 từ.</span>
+              <span><strong className="text-emerald-300">Bản Khởi Nguyên (0đ):</strong> An hơn 110 sao &amp; bình giải ~1.000 từ.</span>
             </div>
             <div className="p-3.5 rounded-xl bg-slate-950/70 border border-amber-500/30 flex items-start gap-2">
               <Crown className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-              <span><strong className="text-amber-300">Gói VIP Pro (119k):</strong> Luận sâu + Xem Mặt/Chỉ tay + Tặng 2 câu VIP.</span>
+              <span><strong className="text-amber-300">Bản Pro (119.000đ):</strong> ~2.500 từ, 4 mùa + Tặng 2 câu hỏi Chuyên Sâu.</span>
             </div>
             <div className="p-3.5 rounded-xl bg-slate-950/70 border border-purple-500/30 flex items-start gap-2">
               <Gem className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-              <span><strong className="text-purple-300">Gói Expert (269k):</strong> Luận 12 cung & 12 tháng + Tặng 2 câu Expert.</span>
+              <span><strong className="text-purple-300">Bản Expert (269.000đ):</strong> ~4.500-6.000 từ, 12 cung &amp; 12 tháng âm lịch.</span>
             </div>
           </div>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/"
+              href="/#lap-la-so"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-amber-500/25 transition"
             >
               <Sparkles className="w-5 h-5" />
-              <span>Lập Lá Số & Bình Giải Miễn Phí Ngay</span>
+              <span>Lập Lá Số Miễn Phí</span>
             </Link>
             <a
               href="https://zalo.me/0935058688"
@@ -244,7 +324,7 @@ export default function BaiVietIndexPage() {
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/30 text-amber-300 font-bold text-sm sm:text-base transition"
             >
               <PhoneCall className="w-4 h-4" />
-              <span>Đặt Lịch Xem 1-1: 0935.058.688</span>
+              <span>Đặt Lịch Xem 1-1 Với Thầy Tôn (Zalo 0935 058 688)</span>
             </a>
           </div>
         </section>

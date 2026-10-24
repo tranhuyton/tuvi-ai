@@ -13,6 +13,7 @@ import PaymentModal, { PaymentPurpose } from '@/components/PaymentModal';
 import UserNav from '@/components/UserNav';
 import FloatingContact from '@/components/FloatingContact';
 import AboutThayTon from '@/components/AboutThayTon';
+import HomeFunnelContent from '@/components/HomeFunnelContent';
 import Testimonials from '@/components/Testimonials';
 import BookingBanner from '@/components/BookingBanner';
 import { useAuth } from '@/context/AuthContext';
@@ -1674,6 +1675,9 @@ export default function HomePage() {
 
             {!isEditing && (
               <>
+                {/* Khối Nội dung Trang chủ Chuẩn SEO & GEO (Bài 1 - Mã H) */}
+                <HomeFunnelContent />
+
                 {/* Mục Giới thiệu về Thầy Tôn, Hệ sinh thái Dịch vụ & FAQ */}
                 <AboutThayTon />
 
@@ -1826,28 +1830,36 @@ export default function HomePage() {
 
       <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-5 text-xs text-slate-400 font-medium flex-wrap">
-          <a href="#gioi-thieu-thay-ton" className="hover:text-amber-400 transition">
-            {t('footer.about')}
+          <a href="/thay-ton" className="hover:text-amber-400 transition">
+            Hồ Sơ Thầy Tôn
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="#dich-vu-tu-vi-thay-ton" className="hover:text-amber-400 transition">
-            Dịch Vụ Tử Vi
+          <a href="/luan-giai-tu-vi-chuyen-sau" className="hover:text-amber-400 transition">
+            Bản Pro (119k)
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="#dich-vu-phong-thuy" className="hover:text-amber-400 transition">
+          <a href="/luan-giai-tu-vi-chuyen-gia" className="hover:text-amber-400 transition">
+            Bản Expert (269k)
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="/phong-thuy" className="hover:text-amber-400 transition">
             Tư Vấn Phong Thủy
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="/cach-xem-la-so-tu-vi" className="hover:text-amber-400 transition">
+            Cách Xem Lá Số Tử Vi
+          </a>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <a href="/tu-vi-2027" className="hover:text-amber-400 transition">
+            Tử Vi 2027
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
           <a href="/bai-viet" className="hover:text-amber-400 transition">
             Kho Kiến Thức
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="#cam-nhan-chuyen-gia" className="hover:text-amber-400 transition">
-            {t('footer.testimonials')}
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="#cau-hoi-thuong-gap" className="hover:text-amber-400 transition">
-            Câu Hỏi Thường Gặp
+          <a href="/lien-he" className="hover:text-amber-400 transition">
+            Liên Hệ &amp; Đặt Lịch
           </a>
           <span className="text-slate-600 hidden sm:inline">•</span>
           <a

@@ -22,11 +22,11 @@ const lora = Lora({
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.tuvithayton.vn'),
   title: {
-    default: 'Tử Vi & Phong Thủy Thầy Tôn — An Sao Bình Giải Tử Vi Miễn Phí | Tư Vấn Phong Thủy, Diện Tướng & Chỉ Tay',
-    template: '%s | Tử Vi & Phong Thủy Thầy Tôn (tuvithayton.vn)',
+    default: 'Lập Lá Số Tử Vi Miễn Phí - Bình Giải Trọn Đời | Thầy Tôn',
+    template: '%s | Thầy Tôn',
   },
   description:
-    'Lập lá số Tử Vi 108 sao cổ truyền & nhận bài bình giải Khởi Nguyên MIỄN PHÍ 100% từ Thầy Tôn (Trần Huy Tôn — Cựu Chuyên gia Tài chính Quốc tế ĐH Lancaster UK, 18+ năm nghiên cứu Tử Vi Đẩu Số, Phong Thủy Thực Chứng & Tướng Pháp). Tư vấn Phong Thủy nhà ở, biệt thự, chung cư, văn phòng kinh doanh, xem ngày giờ tốt động thổ, nhập trạch, khai trương.',
+    'Lập lá số tử vi miễn phí, nhận bình giải ~1.000 từ về Mệnh, Tài, Quan, Đại vận. Nâng cấp bản chuyên sâu chỉ trả phần chênh lệch, từ 119.000đ.',
   keywords: [
     'tử vi thầy tôn',
     'phong thủy thầy tôn',
