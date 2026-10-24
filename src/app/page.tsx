@@ -14,7 +14,6 @@ import UserNav from '@/components/UserNav';
 import FloatingContact from '@/components/FloatingContact';
 import AboutThayTon from '@/components/AboutThayTon';
 import HomeFunnelContent from '@/components/HomeFunnelContent';
-import Testimonials from '@/components/Testimonials';
 import BookingBanner from '@/components/BookingBanner';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -1680,9 +1679,6 @@ export default function HomePage() {
 
                 {/* Mục Giới thiệu về Thầy Tôn, Hệ sinh thái Dịch vụ & FAQ */}
                 <AboutThayTon />
-
-                {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
-                <Testimonials />
               </>
             )}
 
@@ -1766,11 +1762,8 @@ export default function HomePage() {
               onUpgradeToExpert={() => openUpgradeExpertModal()}
             />
 
-            {/* Mục Giới thiệu về Thầy Tôn, Hệ sinh thái Dịch vụ & FAQ */}
+            {/* Mục Giới thiệu về Thầy Tôn */}
             <AboutThayTon />
-
-            {/* Mục Đánh giá & Cảm nhận từ Chuyên gia & Đương số */}
-            <Testimonials />
 
             {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
             <BookingBanner />
