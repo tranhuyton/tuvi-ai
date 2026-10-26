@@ -151,6 +151,26 @@ body {
   font-weight: 600;
 }
 
+/* Override cho các khối nội dung nền tối (.prose-invert) để chữ đậm & tiêu đề luôn sáng rõ, dễ đọc */
+.prose.prose-invert {
+  color: #e2e8f0;
+}
+
+.prose.prose-invert h3 {
+  color: #fcd34d;
+  border-bottom-color: rgba(245, 158, 11, 0.25);
+}
+
+.prose.prose-invert h4 {
+  color: #fde68a;
+}
+
+.prose.prose-invert b,
+.prose.prose-invert strong {
+  color: #fde68a;
+  font-weight: 700;
+}
+
 .prose p {
   margin-bottom: 0.95rem;
   line-height: 1.8;
