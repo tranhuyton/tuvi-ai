@@ -7,6 +7,7 @@ export interface AffiliateTierCommissions {
   chat_free: number;       // Hỏi 2 câu Cơ Bản (49k) -> mặc định 20,000đ
   chat_vip: number;        // Hỏi 2 câu Pro (99k) -> mặc định 40,000đ
   chat_expert: number;     // Hỏi 2 câu Expert (129k) -> mặc định 50,000đ
+  course_tuvi?: number;    // Khóa học Tử Vi Thực Chiến (699k) -> mặc định 200,000đ
 }
 
 export const DEFAULT_TIER_COMMISSIONS: AffiliateTierCommissions = {
@@ -16,6 +17,7 @@ export const DEFAULT_TIER_COMMISSIONS: AffiliateTierCommissions = {
   chat_free: 20000,
   chat_vip: 40000,
   chat_expert: 50000,
+  course_tuvi: 200000,
 };
 
 export interface AffiliateItem {
@@ -68,6 +70,7 @@ export function calculateAffiliateCommission(
     }
 
     // Fallback suy luận từ số tiền nếu không có paymentType
+    if (orderAmount >= 600000) return Number(tiers.course_tuvi || 200000);
     if (orderAmount >= 250000) return Number(tiers.reading_expert);
     if (orderAmount === 150000) return Number(tiers.upgrade_expert);
     if (orderAmount === 129000) return Number(tiers.chat_expert);

@@ -28,7 +28,8 @@ export type PaymentPurpose =
   | 'upgrade_expert'
   | 'chat_free'
   | 'chat_vip'
-  | 'chat_expert';
+  | 'chat_expert'
+  | 'course_tuvi';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -99,7 +100,17 @@ export default function PaymentModal({
   let subtitle = customDescription;
   let benefits: string[] = [];
 
-  if (paymentType === 'reading_expert') {
+  if (paymentType === 'course_tuvi') {
+    finalPrice = finalPrice ?? 699000;
+    title = title || 'Mở Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn';
+    subtitle = subtitle || 'Trọn bộ 24 bài Podcast + Chuyên khảo 14 Chính Tinh, Phụ Tinh, Cách Cục & Vận Hạn';
+    benefits = [
+      'Mở khóa trọn đời 24 bài giảng Podcast & Giáo trình Web tương tác của Thầy Tôn.',
+      'Nắm vững tính chất, tâm lý, hình tướng, đắc/hãm của 14 Chính Tinh & hệ thống Phụ Tinh.',
+      'Tính năng độc quyền: Tự động đối chiếu từng sao trong bài học lên Lá Số cá nhân của bạn.',
+      'Tra cứu nhanh Tinh Đẩu, chỉnh tốc độ nghe Podcast, lưu tiến độ và ghi chú riêng từng bài.',
+    ];
+  } else if (paymentType === 'reading_expert') {
     finalPrice = finalPrice ?? 269000;
     title = title || 'Kích Hoạt Bản Chuyên Gia Expert';
     subtitle = subtitle || 'Tuyệt học luận giải chuyên sâu toàn diện 12 Cung - Gấp 2 lần Bản Pro';

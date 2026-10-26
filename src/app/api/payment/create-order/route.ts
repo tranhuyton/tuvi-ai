@@ -21,7 +21,8 @@ export async function POST(req: Request) {
 
     let finalAmount = Number(price);
     if (!finalAmount || isNaN(finalAmount)) {
-      if (paymentType === 'reading_expert') finalAmount = 269000;
+      if (paymentType === 'course_tuvi') finalAmount = 699000;
+      else if (paymentType === 'reading_expert') finalAmount = 269000;
       else if (paymentType === 'upgrade_expert') finalAmount = 150000;
       else if (paymentType === 'chat_expert') finalAmount = 129000;
       else if (paymentType === 'reading_vip') finalAmount = 119000;

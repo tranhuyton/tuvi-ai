@@ -161,7 +161,9 @@ export async function POST(req: Request) {
         console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong DB, tự động khởi tạo để duyệt`);
         const { createOrder } = await import('@/lib/orderStore');
         const pType =
-          tx.amount >= 269000
+          tx.amount >= 600000
+            ? 'course_tuvi'
+            : tx.amount >= 269000
             ? 'reading_expert'
             : tx.amount === 150000
             ? 'upgrade_expert'

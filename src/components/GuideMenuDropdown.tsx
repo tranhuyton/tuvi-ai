@@ -71,6 +71,15 @@ export default function GuideMenuDropdown() {
               <ul className="space-y-1 text-xs">
                 <li>
                   <Link
+                    href="/khoa-hoc"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:bg-amber-500/25 font-bold transition"
+                  >
+                    🎓 Khóa Học Tử Vi &amp; Podcast (699.000đ)
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href="/thay-ton"
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-amber-200 hover:text-amber-300 hover:bg-slate-800/80 font-semibold transition"

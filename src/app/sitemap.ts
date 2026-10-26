@@ -27,6 +27,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'daily',
       priority: 1.0,
     },
+    {
+      url: `${baseUrl}/khoa-hoc`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.98,
+    },
     ...funnelUrls,
     {
       url: `${baseUrl}/bai-viet`,

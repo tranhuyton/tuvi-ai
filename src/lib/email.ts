@@ -171,7 +171,11 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
   let serviceDesc =
     'Bản luận giải đại pháp chuyên sâu đa tầng của Thầy Tôn (14 chính tinh, Diện tướng, Thủ tướng, Đại vận 10 năm và 4 mùa) đã được kích hoạt thành công trên lá số của quý khách.';
 
-  if (paymentType === 'reading_expert') {
+  if (paymentType === 'course_tuvi') {
+    serviceTitle = 'Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn (Trọn Bộ Podcast & Giáo Trình)';
+    serviceDesc =
+      'Quý khách đã mở khóa thành công trọn bộ 24 bài giảng Podcast & Giáo trình Tử Vi Đẩu Số tương tác trên Web của Thầy Tôn (14 Chính tinh, Lục Cát, Lục Sát, Tứ Hóa, 4 Cách Cục lớn & Luận giải vận hạn). Quý khách có thể truy cập trực tiếp tại https://www.tuvithayton.vn/khoa-hoc bằng tài khoản hoặc nhập Mã giao dịch này để học mọi lúc mọi nơi.';
+  } else if (paymentType === 'reading_expert') {
     serviceTitle = 'Luận Giải Tử Vi Bản Chuyên Gia Expert';
     serviceDesc =
       'Bản luận giải Chuyên Gia Expert cao cấp nhất (khảo sát chi tiết toàn diện 12 Cung, độ dài gấp 2 lần Bản Pro, kèm 02 câu hỏi Chuyên Gia miễn phí) đã được kích hoạt thành công trên lá số của quý khách.';

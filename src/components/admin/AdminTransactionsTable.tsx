@@ -600,7 +600,8 @@ export default function AdminTransactionsTable({
                         : '—';
 
                       let serviceLabel = 'Luận Giải VIP (119k)';
-                      if (ord.paymentType === 'reading_expert') serviceLabel = '💎 Luận Giải Expert (269k)';
+                      if (ord.paymentType === 'course_tuvi') serviceLabel = '🎓 Khóa Học Tử Vi (699k)';
+                      else if (ord.paymentType === 'reading_expert') serviceLabel = '💎 Luận Giải Expert (269k)';
                       else if (ord.paymentType === 'upgrade_expert') serviceLabel = '💎 Nâng Cấp Pro -> Expert (150k)';
                       else if (ord.paymentType === 'chat_expert') serviceLabel = '💎 Hỏi Thầy Expert (129k)';
                       else if (ord.paymentType === 'chat_vip') serviceLabel = '👑 Hỏi Thầy VIP (99k)';
