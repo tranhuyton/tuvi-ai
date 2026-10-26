@@ -3,7 +3,7 @@
 import React, { useState, ChangeEvent } from 'react';
 import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, Gem, PhoneCall, BookOpen } from 'lucide-react';
+import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, Gem, PhoneCall, BookOpen, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -227,17 +227,27 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
             <Sparkles className="w-3 h-3 text-amber-400" />
             <span>{t('form.heroBadge', 'Tử Vi Cổ Truyền 108 Sao & Nhân Tướng Học Thực Chứng')}</span>
           </span>
-          {onOpenSavedCharts ? (
-            <button
-              type="button"
-              onClick={onOpenSavedCharts}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition cursor-pointer shadow-sm"
-              title="Xem danh sách các lá số đã lưu"
+          <div className="flex items-center gap-2 flex-wrap">
+            {onOpenSavedCharts ? (
+              <button
+                type="button"
+                onClick={onOpenSavedCharts}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition cursor-pointer shadow-sm"
+                title="Xem danh sách các lá số đã lưu"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                <span>{t('nav.savedCharts', 'Sổ Tay Số Mệnh')}</span>
+              </button>
+            ) : null}
+            <a
+              href="/khoa-hoc"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-amber-200 border border-amber-400/40 text-xs font-bold transition shadow-sm"
+              title="Học Viện Tử Vi Thực Chiến (Podcast & Giáo trình 14 Chính Tinh)"
             >
-              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              <span>{t('nav.savedCharts', 'Sổ Tay Số Mệnh')}</span>
-            </button>
-          ) : null}
+              <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+              <span>Khóa Học Tử Vi</span>
+            </a>
+          </div>
         </div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif leading-snug">
           Lập Lá Số Tử Vi Miễn Phí và Bình Giải Trọn Đời Cùng Thầy Tôn

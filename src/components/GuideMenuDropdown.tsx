@@ -42,7 +42,7 @@ export default function GuideMenuDropdown() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer border whitespace-nowrap ${
+        className={`inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer border whitespace-nowrap ${
           isOpen
             ? 'bg-slate-800 text-amber-300 border-amber-400/80 shadow-md shadow-amber-500/15'
             : 'bg-slate-950/70 hover:bg-slate-800/80 text-amber-300/95 hover:text-amber-300 border-amber-500/35 shadow-inner'

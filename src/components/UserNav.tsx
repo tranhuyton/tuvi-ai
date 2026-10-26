@@ -78,11 +78,11 @@ export default function UserNav({
   const initialLetter = (displayName || 'U').charAt(0).toUpperCase();
 
   return (
-    <header className="w-full max-w-[1060px] mx-auto mb-3 sm:mb-5 px-2.5 py-2 sm:px-4 sm:py-2 rounded-2xl bg-slate-900/85 border border-amber-500/20 backdrop-blur-md shadow-xl flex items-center justify-between gap-2 relative z-30">
+    <header className="w-full max-w-[1060px] mx-auto mb-3 sm:mb-5 px-2 py-2 sm:px-4 sm:py-2 rounded-2xl bg-slate-900/85 border border-amber-500/20 backdrop-blur-md shadow-xl flex items-center justify-between gap-1.5 sm:gap-2 relative z-30">
       {/* Khối bên trái: Logo & Brand */}
       <div
         onClick={onNewChart}
-        className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group min-w-0 flex-1"
+        className="flex items-center gap-1.5 sm:gap-2.5 cursor-pointer group min-w-0 flex-1"
         title="Lập lá số mới"
       >
         <img
@@ -90,7 +90,7 @@ export default function UserNav({
           alt="Tử Vi & Phong Thủy Thầy Tôn"
           className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
         />
-        <div className="flex flex-col min-w-0">
+        <div className="hidden xs:flex sm:flex flex-col min-w-0">
           <span className="text-[11px] sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight truncate">
             {t('brand.title', 'TỬ VI & PHONG THỦY THẦY TÔN')}
           </span>
@@ -103,7 +103,7 @@ export default function UserNav({
       </div>
 
       {/* Khối bên phải: Ngôn ngữ + Theme + Tài khoản (Đồng bộ 1 dòng trên cả PC & Mobile) */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         {/* Bộ chọn ngôn ngữ Quốc Tế dạng Dropdown */}
         <LanguageSelector />
 
@@ -113,7 +113,7 @@ export default function UserNav({
         {/* Nút tắt nhanh Về Thầy Tôn, Khóa Học Tử Vi & Menu Cẩm Nang */}
         <a
           href="/khoa-hoc"
-          className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl text-xs font-semibold text-amber-200 hover:text-amber-100 bg-gradient-to-r from-amber-500/20 to-purple-500/20 hover:from-amber-500/30 hover:to-purple-500/30 border border-amber-400/50 transition shadow-sm whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-xs font-semibold text-amber-200 hover:text-amber-100 bg-gradient-to-r from-amber-500/20 to-purple-500/20 hover:from-amber-500/30 hover:to-purple-500/30 border border-amber-400/50 transition shadow-sm whitespace-nowrap"
           title="Học Viện Tử Vi Thực Chiến Cùng Thầy Tôn (Podcast & Giáo trình 14 Chính Tinh, Cách Cục)"
         >
           <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -134,14 +134,15 @@ export default function UserNav({
         {isLoading ? (
           <div className="w-16 sm:w-20 h-8 sm:h-9 bg-slate-800 animate-pulse rounded-xl" />
         ) : !user ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center">
             <button
               type="button"
               onClick={onOpenAuthModal}
-              className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-[11px] sm:text-xs rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
             >
               <LogIn className="w-3.5 h-3.5 shrink-0" />
-              <span>{t('nav.login', 'Đăng Nhập')}</span>
+              <span className="sm:hidden">Đăng Nhập</span>
+              <span className="hidden sm:inline">{t('nav.login', 'Đăng Nhập')}</span>
             </button>
           </div>
         ) : (
