@@ -208,7 +208,7 @@ function buildPageJsonLd(page: FunnelPageData) {
         availability: 'https://schema.org/InStock',
       },
     });
-  } else if (['DV1', 'C1', 'S1', 'S2', 'S3', 'S4'].includes(page.code)) {
+  } else if (['DV1', 'DV2', 'C1', 'S1', 'S2', 'S3', 'S4'].includes(page.code)) {
     graph.push({
       '@type': 'Service',
       name: page.h1,
@@ -255,7 +255,8 @@ function getMetaphysicalBadge(code: string): string {
     case 'P3':
       return 'Ấn Phẩm Luận Giải Mệnh Lý';
     case 'DV1':
-      return 'Tham Vấn Mệnh Lý & Phong Thủy 1-1';
+    case 'DV2':
+      return 'Tham Vấn Mệnh Lý & Định Hướng 1-1';
     case 'TR':
       return 'Chân Dung Chuyên Gia Mệnh Lý';
     case 'LH':
@@ -269,6 +270,8 @@ function getMetaphysicalBadge(code: string): string {
       return 'Phong Thủy Dương Trạch & Trạch Nhật';
     case 'B6':
     case 'B8':
+    case 'B24':
+    case 'B25':
       return 'Chuyên Khảo Phong Thủy & Mệnh Lý';
     case 'B1':
       return 'Cẩm Nang Nhập Môn Tử Vi Đẩu Số';

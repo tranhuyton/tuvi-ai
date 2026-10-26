@@ -21,14 +21,14 @@ export const metadata: Metadata = {
     absolute: 'Cẩm Nang Tử Vi Đẩu Số & Phong Thủy Theo Lá Số | Thầy Tôn',
   },
   description:
-    'Hệ thống 28 chuyên đề trọng điểm về Tử Vi Đẩu Số, 12 Cung Vị, Phong Thủy theo lá số, Diện Tướng và Chỉ Tay được biên soạn và thẩm định bởi Thầy Tôn (Trần Huy Tôn).',
+    'Hệ thống 38 chuyên đề trọng điểm về Tử Vi Đẩu Số, 12 Cung Vị, Phong Thủy theo lá số, Diện Tướng và Chỉ Tay được biên soạn và thẩm định bởi Thầy Tôn (Trần Huy Tôn).',
   alternates: {
     canonical: 'https://www.tuvithayton.vn/bai-viet',
   },
   openGraph: {
     title: 'Cẩm Nang Tử Vi Đẩu Số & Phong Thủy Theo Lá Số | Thầy Tôn',
     description:
-      'Khám phá hệ thống 28 chuyên đề Tử Vi Đẩu Số & Phong Thủy của Thầy Tôn: cách xem lá số tử vi, 12 cung, 14 chính tinh, Tứ Hóa, Tuần Triệt, Đại vận, tử vi 2027 và phong thủy.',
+      'Khám phá hệ thống 38 chuyên đề Tử Vi Đẩu Số & Phong Thủy của Thầy Tôn: cách xem lá số tử vi, 12 cung, 14 chính tinh, Tứ Hóa, Lục Sát Tinh, Đại vận, tử vi 2027 và phong thủy.',
     url: 'https://www.tuvithayton.vn/bai-viet',
     type: 'website',
   },
