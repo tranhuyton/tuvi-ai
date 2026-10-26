@@ -146,7 +146,7 @@ export default function HomeFunnelContent() {
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
               <Compass className="w-5 h-5 text-amber-400 shrink-0" />
-              Hệ Thống 20 Chuyên Đề Tử Vi Đẩu Số &amp; Phong Thủy Thầy Tôn
+              Hệ Thống {FUNNEL_PAGES.length} Chuyên Đề Tử Vi Đẩu Số &amp; Phong Thủy Thầy Tôn
             </h2>
           </div>
           <Link

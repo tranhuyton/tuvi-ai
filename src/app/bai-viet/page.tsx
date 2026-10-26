@@ -21,14 +21,14 @@ export const metadata: Metadata = {
     absolute: 'Cẩm Nang Tử Vi Đẩu Số & Phong Thủy Theo Lá Số | Thầy Tôn',
   },
   description:
-    'Hệ thống 20 chuyên đề trọng điểm về Tử Vi Đẩu Số, Phong Thủy theo lá số, Diện Tướng và Chỉ Tay được biên soạn và thẩm định bởi Thầy Tôn (Trần Huy Tôn).',
+    'Hệ thống 28 chuyên đề trọng điểm về Tử Vi Đẩu Số, 12 Cung Vị, Phong Thủy theo lá số, Diện Tướng và Chỉ Tay được biên soạn và thẩm định bởi Thầy Tôn (Trần Huy Tôn).',
   alternates: {
     canonical: 'https://www.tuvithayton.vn/bai-viet',
   },
   openGraph: {
     title: 'Cẩm Nang Tử Vi Đẩu Số & Phong Thủy Theo Lá Số | Thầy Tôn',
     description:
-      'Khám phá hệ thống 20 chuyên đề Tử Vi Đẩu Số & Phong Thủy của Thầy Tôn: cách xem lá số tử vi, 14 chính tinh, Tứ Hóa, tử vi 2027, phong thủy nhà ở, văn phòng và cải vận.',
+      'Khám phá hệ thống 28 chuyên đề Tử Vi Đẩu Số & Phong Thủy của Thầy Tôn: cách xem lá số tử vi, 12 cung, 14 chính tinh, Tứ Hóa, Tuần Triệt, Đại vận, tử vi 2027 và phong thủy.',
     url: 'https://www.tuvithayton.vn/bai-viet',
     type: 'website',
   },
@@ -64,10 +64,10 @@ export default function BaiVietIndexPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Hệ Thống 20 Chuyên Đề Tử Vi Đẩu Số & Phong Thủy — Thầy Tôn',
+    name: `Hệ Thống ${FUNNEL_PAGES.length} Chuyên Đề Tử Vi Đẩu Số & Phong Thủy — Thầy Tôn`,
     url: 'https://www.tuvithayton.vn/bai-viet',
     description:
-      'Thư viện 20 trang chuyên khảo Tử Vi Đẩu Số và Phong Thủy theo lá số do Thầy Tôn biên soạn và thẩm định.',
+      `Thư viện ${FUNNEL_PAGES.length} trang chuyên khảo Tử Vi Đẩu Số và Phong Thủy theo lá số do Thầy Tôn biên soạn và thẩm định.`,
     mainEntity: {
       '@type': 'ItemList',
       itemListElement: FUNNEL_PAGES.map((p, index) => ({
@@ -121,7 +121,7 @@ export default function BaiVietIndexPage() {
         <header className="relative overflow-hidden rounded-3xl bg-slate-900/90 border border-amber-500/35 p-6 sm:p-10 text-center space-y-4 shadow-2xl">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs sm:text-sm font-semibold uppercase tracking-wider">
             <BookOpen className="w-4 h-4 text-amber-400" />
-            <span>Hệ Sinh Thái 20 Chuyên Đề • Tử Vi Đẩu Số &amp; Phong Thủy</span>
+            <span>Hệ Sinh Thái {FUNNEL_PAGES.length} Chuyên Đề • Tử Vi Đẩu Số &amp; Phong Thủy</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-bold font-serif text-amber-400 tracking-wide leading-tight">
