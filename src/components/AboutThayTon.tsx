@@ -28,9 +28,9 @@ export default function AboutThayTon() {
 
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 mb-6">
           <img
-            src="/thay-ton.png"
+            src="/avatar-thay-ton.jpg"
             alt="Thầy Tôn - Chuyên Gia Tử Vi Đẩu Số và Phong Thủy"
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-amber-400/70 shadow-lg shrink-0"
+            className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-amber-400/80 shadow-xl shadow-amber-950/40 shrink-0"
           />
           <div className="text-center md:text-left flex-1">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-2">

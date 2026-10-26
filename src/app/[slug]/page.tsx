@@ -377,11 +377,11 @@ export default async function FunnelSlugPage({
           </h1>
 
           {/* Author & Expert Verification Line (Right below H1 per Section A.2) */}
-          <div className="flex flex-wrap items-center gap-3 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/90 mb-8 text-xs sm:text-sm text-slate-300">
+          <div className="flex flex-wrap items-center gap-3.5 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/90 mb-8 text-xs sm:text-sm text-slate-300">
             <img
-              src="/thay-ton.png"
+              src="/avatar-thay-ton.jpg"
               alt="Thầy Tôn - Chuyên gia Tử Vi Đẩu Số và Phong Thủy"
-              className="w-10 h-10 rounded-full object-cover border border-amber-500/50 shrink-0"
+              className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/60 shadow-md shrink-0"
             />
             <div className="flex-1 min-w-[200px]">
               <p className="font-semibold text-amber-300">{page.authorLine}</p>
@@ -424,6 +424,27 @@ export default async function FunnelSlugPage({
           {/* Khối Visual Hồ Sơ Chuyên Gia Dành Riêng Cho Trang /thay-ton (Mã TR) */}
           {page.code === 'TR' && (
             <section className="mb-10 space-y-6 rounded-3xl bg-slate-950/75 border border-amber-500/35 p-5 sm:p-8 shadow-xl">
+              {/* Chân dung & Giới thiệu Chuyên Gia */}
+              <div className="flex flex-col sm:flex-row items-center gap-5 pb-6 border-b border-slate-800/80">
+                <img
+                  src="/avatar-thay-ton.jpg"
+                  alt="Thầy Tôn (Trần Huy Tôn) - Chuyên Gia Tử Vi Đẩu Số và Phong Thủy"
+                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-2 border-amber-400/80 shadow-xl shadow-amber-950/50 shrink-0"
+                />
+                <div className="text-center sm:text-left">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{ABOUT_DATA.vi.badge}</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold font-serif text-amber-400 mb-2">
+                    {ABOUT_DATA.vi.name}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                    {ABOUT_DATA.vi.bio}
+                  </p>
+                </div>
+              </div>
+
               {/* 4 Thẻ Số Liệu Nổi Bật */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 {ABOUT_DATA.vi.stats.map((s, idx) => (
