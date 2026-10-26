@@ -138,11 +138,13 @@ export default function ChatThayTon({
 
   // 5. Tùy biến kích thước & kéo resize trên PC
   const [chatHeight, setChatHeight] = useState<number>(560);
+  const [hasCustomResize, setHasCustomResize] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const startResizeRef = useRef<{ startY: number; startHeight: number }>({ startY: 0, startHeight: 560 });
   const chatListRef = useRef<HTMLDivElement | null>(null);
   const prevMsgCountRef = useRef<number>(chatHistory.length);
+  const hasMessages = chatHistory.length > 0 || isLoading;
 
   // Khôi phục chiều cao cửa sổ chat từ localStorage
   useEffect(() => {
@@ -150,7 +152,7 @@ export default function ChatThayTon({
       const saved = localStorage.getItem('tuvi_chat_height');
       if (saved) {
         const val = parseInt(saved, 10);
-        if (!isNaN(val) && val >= 380 && val <= 1200) {
+        if (!isNaN(val) && val >= 280 && val <= 1200) {
           setChatHeight(val);
         }
       }
@@ -161,9 +163,11 @@ export default function ChatThayTon({
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
+    setHasCustomResize(true);
+    const currentRenderedHeight = chatListRef.current?.clientHeight || chatHeight;
     startResizeRef.current = {
       startY: e.clientY,
-      startHeight: chatHeight,
+      startHeight: currentRenderedHeight,
     };
   };
 
@@ -263,25 +267,27 @@ export default function ChatThayTon({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Nút Phóng to / Thu nhỏ nhanh trên PC */}
-            <button
-              type="button"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700 text-xs font-semibold transition cursor-pointer"
-              title={isExpanded ? 'Thu nhỏ cửa sổ chat về độ cao mặc định' : 'Mở rộng tối đa cửa sổ chat trên màn hình'}
-            >
-              {isExpanded ? (
-                <>
-                  <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Thu nhỏ</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Mở rộng</span>
-                </>
-              )}
-            </button>
+            {/* Nút Phóng to / Thu nhỏ nhanh trên PC (chỉ hiển thị khi đã có tin nhắn hỏi đáp) */}
+            {hasMessages && (
+              <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700 text-xs font-semibold transition cursor-pointer"
+                title={isExpanded ? 'Thu nhỏ cửa sổ chat về độ cao mặc định' : 'Mở rộng tối đa cửa sổ chat trên màn hình'}
+              >
+                {isExpanded ? (
+                  <>
+                    <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Thu nhỏ</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Mở rộng</span>
+                  </>
+                )}
+              </button>
+            )}
 
             {/* Huy hiệu hiển thị chi tiết số lượt theo từng loại */}
             {flowStep === 'unpaid' ? (
@@ -326,31 +332,36 @@ export default function ChatThayTon({
           </div>
         </div>
 
-        {/* Lịch sử tin nhắn - Bo trong khung cuộn, trên điện thoại mở rộng độ thoáng */}
-        <div
-          ref={chatListRef}
-          className="space-y-3.5 sm:space-y-4 mb-3 overflow-y-auto pr-1 sm:pr-2.5 scroll-smooth select-text"
-          style={{
-            height: isExpanded ? '80vh' : `${chatHeight}px`,
-            maxHeight: isExpanded ? '85vh' : `${chatHeight}px`,
-            minHeight: '380px',
-          }}
-        >
-          {chatHistory.length === 0 && flowStep === 'chatting' && (
-            <div className="text-center py-8 space-y-2">
-              <p className="text-base sm:text-lg text-slate-200 font-medium">
-                {t('chat.introQuota', `Quý khách đang có ${totalRemaining} lượt thỉnh giáo cùng AI Thầy Tôn.`, {
-                  count: totalRemaining,
-                })}
-              </p>
-              <p className="text-sm text-slate-300 italic max-w-lg mx-auto leading-relaxed">
-                {t(
-                  'chat.introGuide',
-                  'Hãy nhập câu hỏi chi tiết về công danh, sự nghiệp, tài lộc, tình duyên hoặc hạn vận để Thầy Tôn soi chiếu lá số.'
-                )}
-              </p>
-            </div>
-          )}
+        {/* Lịch sử tin nhắn - Ngắn sát khi chưa hỏi, tự động dãn dần khi bắt đầu hỏi đáp */}
+        {(hasMessages || flowStep === 'chatting') && (
+          <div
+            ref={chatListRef}
+            className="space-y-3.5 sm:space-y-4 mb-3 overflow-y-auto pr-1 sm:pr-2.5 scroll-smooth select-text transition-all duration-300"
+            style={
+              !hasMessages
+                ? { height: 'auto', minHeight: '0px' }
+                : isExpanded
+                ? { height: '80vh', maxHeight: '85vh', minHeight: '320px' }
+                : hasCustomResize
+                ? { height: `${chatHeight}px`, maxHeight: `${chatHeight}px`, minHeight: '280px' }
+                : { height: 'auto', maxHeight: `${chatHeight}px` }
+            }
+          >
+            {chatHistory.length === 0 && flowStep === 'chatting' && (
+              <div className="text-center py-3 sm:py-4 space-y-1.5">
+                <p className="text-sm sm:text-base text-slate-200 font-medium">
+                  {t('chat.introQuota', `Quý khách đang có ${totalRemaining} lượt thỉnh giáo cùng AI Thầy Tôn.`, {
+                    count: totalRemaining,
+                  })}
+                </p>
+                <p className="text-xs sm:text-sm text-slate-300 italic max-w-lg mx-auto leading-relaxed">
+                  {t(
+                    'chat.introGuide',
+                    'Hãy nhập câu hỏi chi tiết về công danh, sự nghiệp, tài lộc, tình duyên hoặc hạn vận để Thầy Tôn soi chiếu lá số.'
+                  )}
+                </p>
+              </div>
+            )}
 
           {chatHistory.map((item, idx) => (
             <div key={idx} className="space-y-3">
@@ -427,10 +438,11 @@ export default function ChatThayTon({
               </div>
             </div>
           )}
-        </div>
+          </div>
+        )}
 
-        {/* Thanh kéo chỉnh độ cao (PC / Desktop Resize Bar) */}
-        {!isExpanded && (
+        {/* Thanh kéo chỉnh độ cao (PC / Desktop Resize Bar — chỉ hiển thị khi đã có tin nhắn) */}
+        {hasMessages && !isExpanded && (
           <div
             onMouseDown={handleMouseDown}
             className={`hidden sm:flex items-center justify-center gap-2 py-1.5 mb-3 bg-slate-950/60 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/40 rounded-xl cursor-row-resize select-none transition group ${
