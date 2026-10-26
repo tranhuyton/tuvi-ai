@@ -8,6 +8,7 @@ import {
   Crown,
   Compass,
   Sparkles,
+  Layers,
   ArrowRight,
 } from 'lucide-react';
 
@@ -47,7 +48,7 @@ export default function GuideMenuDropdown() {
             : 'bg-slate-950/70 hover:bg-slate-800/80 text-amber-300/95 hover:text-amber-300 border-amber-500/35 shadow-inner'
         }`}
         aria-expanded={isOpen}
-        title="Danh mục 20 chuyên đề Tử Vi Đẩu Số & Phong Thủy Thầy Tôn"
+        title="Danh mục 28 chuyên đề Tử Vi Đẩu Số & Phong Thủy Thầy Tôn"
       >
         <BookOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
         <span className="hidden sm:inline">Cẩm Nang</span>
@@ -59,8 +60,8 @@ export default function GuideMenuDropdown() {
       </button>
 
       {isOpen && (
-        <div className="fixed sm:absolute left-2.5 right-2.5 sm:left-auto sm:right-0 mt-2 sm:w-[680px] md:w-[760px] max-h-[82vh] overflow-y-auto p-4 sm:p-5 rounded-2xl bg-slate-900/98 border border-amber-500/40 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+        <div className="fixed sm:absolute left-2.5 right-2.5 sm:left-auto sm:right-0 mt-2 sm:w-[720px] lg:w-[960px] max-h-[84vh] overflow-y-auto p-4 sm:p-5 rounded-2xl bg-slate-900/98 border border-amber-500/40 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {/* Cột 1: Luận Mệnh & Tham Vấn */}
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-400 pb-1.5 border-b border-slate-800">
@@ -225,6 +226,15 @@ export default function GuideMenuDropdown() {
                 </li>
                 <li>
                   <Link
+                    href="/cach-xem-dai-van-tieu-van"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
+                  >
+                    • Cách Xem Đại Vận 10 Năm &amp; Tiểu Vận
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href="/14-chinh-tinh-tu-vi"
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
@@ -239,6 +249,15 @@ export default function GuideMenuDropdown() {
                     className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
                     • Tứ Hóa: Lộc, Quyền, Khoa, Kỵ
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/tuan-triet-trong-tu-vi"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
+                  >
+                    • Tuần, Triệt Trong Tử Vi Tốt Hay Xấu?
                   </Link>
                 </li>
                 <li>
@@ -261,6 +280,70 @@ export default function GuideMenuDropdown() {
                 </li>
               </ul>
             </div>
+
+            {/* Cột 4: Chuyên Khảo 12 Cung Vị */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-400 pb-1.5 border-b border-slate-800">
+                <Layers className="w-3.5 h-3.5 shrink-0" />
+                <span>Chuyên Khảo 12 Cung Vị</span>
+              </div>
+              <ul className="space-y-1 text-xs">
+                <li>
+                  <Link
+                    href="/cung-phu-the-trong-tu-vi"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1.5 rounded-lg text-purple-200 hover:text-purple-300 hover:bg-slate-800/80 font-semibold transition"
+                  >
+                    ✦ Cung Phu Thê: Hôn Nhân &amp; Bạn Đời
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/cung-tai-bach-trong-tu-vi"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
+                  >
+                    • Cung Tài Bạch: Kiếm Tiền &amp; Giữ Tiền
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/cung-quan-loc-trong-tu-vi"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
+                  >
+                    • Cung Quan Lộc: Định Hướng Nghề Nghiệp
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/cung-dien-trach-trong-tu-vi"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
+                  >
+                    • Cung Điền Trạch: Đất Đai &amp; Mua Nhà
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/cung-tu-tuc-va-phuc-duc"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
+                  >
+                    • Cung Tử Tức &amp; Phúc Đức: Con Cái, Âm Đức
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/cung-than-va-thien-di"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-2 py-1.5 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
+                  >
+                    • Cung Thân &amp; Thiên Di: Hậu Vận, Xuất Ngoại
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Thanh điều hướng dưới cùng của Dropdown */}
@@ -271,7 +354,7 @@ export default function GuideMenuDropdown() {
               className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition"
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Xem Toàn Bộ Thư Viện Chuyên Đề</span>
+              <span>Xem Toàn Bộ 28 Chuyên Đề Trong Thư Viện</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
 
