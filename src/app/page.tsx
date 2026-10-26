@@ -1821,40 +1821,20 @@ export default function HomePage() {
       {/* Nút Liên Hệ Nhanh (Zalo & Gọi Điện Đặt Lịch Offline) */}
       <FloatingContact />
 
-      <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
+      <footer className="max-w-[1060px] w-full mx-auto text-center text-xs text-slate-400 py-5 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-5 text-xs text-slate-400 font-medium flex-wrap">
           <a href="/thay-ton" className="hover:text-amber-400 transition">
             Hồ Sơ Thầy Tôn
           </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="/luan-giai-tu-vi-chuyen-sau" className="hover:text-amber-400 transition">
-            Bản Pro (119k)
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="/luan-giai-tu-vi-chuyen-gia" className="hover:text-amber-400 transition">
-            Bản Expert (269k)
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
+          <span className="text-slate-700">•</span>
           <a href="/phong-thuy" className="hover:text-amber-400 transition">
-            Tư Vấn Phong Thủy
+            Phong Thủy Cải Vận
           </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="/cach-xem-la-so-tu-vi" className="hover:text-amber-400 transition">
-            Cách Xem Lá Số Tử Vi
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="/tu-vi-2027" className="hover:text-amber-400 transition">
-            Tử Vi 2027
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
+          <span className="text-slate-700">•</span>
           <a href="/bai-viet" className="hover:text-amber-400 transition">
-            Kho Kiến Thức
+            Cẩm Nang Tử Vi
           </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="/lien-he" className="hover:text-amber-400 transition">
-            Liên Hệ &amp; Đặt Lịch
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
+          <span className="text-slate-700">•</span>
           <a
             href="https://tonyenglish.vn"
             target="_blank"
@@ -1863,26 +1843,14 @@ export default function HomePage() {
           >
             TonyEnglish.vn
           </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <a href="tel:0935058688" className="hover:text-amber-400 transition">
-            {t('footer.contact')}{' '}
-            <strong className="text-amber-400">+84 93 505 8688</strong>
-          </a>
-          <span className="text-slate-600 hidden sm:inline">•</span>
+          <span className="text-slate-700">•</span>
           <a href="mailto:tranhuyton@gmail.com" className="hover:text-amber-300 transition">
-            {t('footer.email')} tranhuyton@gmail.com
+            Email: tranhuyton@gmail.com
           </a>
         </div>
-        <p className="text-slate-400 text-xs flex items-center justify-center gap-1.5 flex-wrap">
-          <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span>
-            {t('footer.addressLabel')}{' '}
-            <strong>{t('footer.addressValue')}</strong>
-          </span>
-        </p>
         <p className="text-slate-500 text-[11px] sm:text-xs">
           {t('footer.copyright', undefined, { year: new Date().getFullYear() })}{' '}
-          <a href="/admin" className="text-slate-600 hover:text-slate-400 transition ml-1" title="Cổng quản trị Thầy Tôn">
+          <a href="/admin" className="text-slate-600 hover:text-slate-400 transition ml-1.5" title="Cổng quản trị Thầy Tôn">
             {t('footer.admin')}
           </a>
         </p>

@@ -65,41 +65,23 @@ export default function AboutThayTon() {
         </div>
 
         {/* Nút điều hướng sang Trang Hồ Sơ Chuyên Gia (/thay-ton) & Trang Phong Thủy (/phong-thuy) */}
-        <div className="relative z-10 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-slate-800/80">
-          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-            <Link
-              href="/thay-ton"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition"
-            >
-              <ShieldCheck className="w-4 h-4 shrink-0" />
-              <span>Xem Hồ Sơ &amp; Phương Pháp Luận Giải Của Thầy Tôn</span>
-              <ArrowRight className="w-4 h-4 shrink-0" />
-            </Link>
+        <div className="relative z-10 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 pt-4 border-t border-slate-800/80">
+          <Link
+            href="/thay-ton"
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition"
+          >
+            <ShieldCheck className="w-4 h-4 shrink-0" />
+            <span>Xem Hồ Sơ &amp; Phương Pháp Luận Giải Của Thầy Tôn</span>
+            <ArrowRight className="w-4 h-4 shrink-0" />
+          </Link>
 
-            <Link
-              href="/phong-thuy"
-              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-300 font-semibold text-xs sm:text-sm border border-amber-500/30 transition"
-            >
-              <Compass className="w-4 h-4 shrink-0" />
-              <span>Tư Vấn Phong Thủy Theo Lá Số</span>
-            </Link>
-          </div>
-
-          <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
-            <span className="hidden lg:inline-flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              Royal City, 72 Nguyễn Trãi, Hà Nội
-            </span>
-            <a
-              href="https://zalo.me/0935058688"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-amber-300 hover:text-amber-200 font-semibold"
-            >
-              <PhoneCall className="w-3.5 h-3.5" />
-              Zalo: 0935 058 688
-            </a>
-          </div>
+          <Link
+            href="/phong-thuy"
+            className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-300 font-semibold text-xs sm:text-sm border border-amber-500/30 transition"
+          >
+            <Compass className="w-4 h-4 shrink-0" />
+            <span>Tư Vấn Phong Thủy Theo Lá Số</span>
+          </Link>
         </div>
       </div>
     </section>
