@@ -160,7 +160,7 @@ export default function LanguageSelector({ className = '' }: { className?: strin
 
       {/* Menu xổ xuống lựa chọn ngôn ngữ */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 sm:w-52 p-1.5 rounded-2xl bg-slate-900/98 border border-amber-500/40 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in divide-y divide-slate-800/70">
+        <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-48 sm:w-52 p-1.5 rounded-2xl bg-slate-900/98 border border-amber-500/40 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in divide-y divide-slate-800/70">
           <div className="px-2.5 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
             Ngôn ngữ / Language
           </div>

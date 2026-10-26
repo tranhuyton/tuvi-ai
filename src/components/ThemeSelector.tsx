@@ -70,7 +70,7 @@ export default function ThemeSelector({ className = '' }: { className?: string }
 
       {/* Dropdown Bảng Chọn Màu Nền */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-[295px] sm:w-[340px] p-3 rounded-2xl bg-slate-900/98 border border-amber-500/50 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in divide-y divide-slate-800">
+        <div className="fixed left-3 right-3 sm:absolute sm:left-auto sm:right-0 mt-2 sm:w-[340px] p-3 rounded-2xl bg-slate-900/98 border border-amber-500/50 shadow-2xl backdrop-blur-xl z-50 text-slate-100 animate-fade-in divide-y divide-slate-800">
           {/* Header */}
           <div className="pb-2.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
