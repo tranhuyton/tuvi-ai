@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { SEO_ARTICLES, FUNNEL_STAGE_META, FunnelStage } from '@/lib/seoArticles';
 import { FUNNEL_PAGES } from '@/lib/funnelPages';
+import GuideMenuDropdown from '@/components/GuideMenuDropdown';
+import { ArticleCardThumbnail } from '@/components/MetaphysicalIllustration';
 
 export const metadata: Metadata = {
   title: {
@@ -88,7 +90,7 @@ export default function BaiVietIndexPage() {
 
       <div className="max-w-[1080px] mx-auto space-y-10">
         {/* Thanh điều hướng quay lại Trang chủ An Sao */}
-        <div className="flex items-center justify-between gap-4 flex-wrap bg-slate-900/80 border border-amber-500/25 rounded-2xl px-4 py-3">
+        <div className="relative z-40 flex items-center justify-between gap-4 flex-wrap bg-slate-900/80 border border-amber-500/25 rounded-2xl px-4 py-3">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-serif font-bold text-base sm:text-lg transition"
@@ -98,6 +100,7 @@ export default function BaiVietIndexPage() {
           </Link>
 
           <div className="flex items-center gap-2.5 flex-wrap">
+            <GuideMenuDropdown />
             <Link
               href="/#lap-la-so"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition"
@@ -193,6 +196,13 @@ export default function BaiVietIndexPage() {
                       className="rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 p-5 flex flex-col justify-between space-y-4 transition group"
                     >
                       <div className="space-y-2.5">
+                        <Link href={p.url} className="block">
+                          <ArticleCardThumbnail
+                            code={p.code}
+                            title={p.h1}
+                            groupNum={p.groupNum}
+                          />
+                        </Link>
                         <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
                           <span className="font-semibold text-amber-400">
                             {p.groupNum === 1
@@ -260,6 +270,12 @@ export default function BaiVietIndexPage() {
                       className="rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 p-5 flex flex-col justify-between space-y-3 transition group"
                     >
                       <div className="space-y-2">
+                        <Link href={`/bai-viet/${article.slug}`} className="block">
+                          <ArticleCardThumbnail
+                            code={article.slug}
+                            title={article.shortTitle}
+                          />
+                        </Link>
                         <div className="flex items-center justify-between gap-2 text-xs text-slate-400">
                           <span className="font-semibold text-amber-400">{article.category}</span>
                           <span className="inline-flex items-center gap-1">

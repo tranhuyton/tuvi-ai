@@ -36,6 +36,10 @@ import {
 } from '@/lib/courseData';
 import PaymentModal from '@/components/PaymentModal';
 import GuideMenuDropdown from '@/components/GuideMenuDropdown';
+import {
+  CourseVisualShowcase,
+  CourseLessonIllustration,
+} from '@/components/MetaphysicalIllustration';
 import { useAuth } from '@/context/AuthContext';
 import type { LaSoData } from '@/types/tuvi';
 
@@ -448,8 +452,8 @@ export default function CoursePlayerClient() {
       )}
 
       <div className="max-w-[1220px] mx-auto px-3.5 sm:px-6 pt-5 sm:pt-8 space-y-6">
-        {/* Thanh Điều Hướng Trên Cùng */}
-        <nav className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/85 border border-amber-500/25 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md">
+        {/* Thanh Điều Hướng Trên Cùng (z-40 để menu dropdown không bị Hero banner đè lên) */}
+        <nav className="relative z-40 flex flex-wrap items-center justify-between gap-3 bg-slate-900/85 border border-amber-500/25 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <Link
               href="/"
@@ -492,8 +496,16 @@ export default function CoursePlayerClient() {
         </nav>
 
         {/* HERO BANNER KHÓA HỌC & NÚT QUÉT QR MỞ KHÓA */}
-        <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#0f152a] to-amber-950/30 border border-amber-500/35 p-6 sm:p-8 shadow-2xl">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#0f152a] to-amber-950/30 border border-amber-500/35 p-5 sm:p-8 shadow-2xl">
+          {/* Ảnh nền nghệ thuật Học Viện Tinh Đẩu & Podcast */}
+          <img
+            src="/images/course-hero-podcast.png"
+            alt="Học Viện Tử Vi Đẩu Số Thực Chiến & Podcast Thầy Tôn"
+            className="absolute inset-0 w-full h-full object-cover opacity-25 pointer-events-none select-none"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/70 pointer-events-none" />
+
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
             <div className="lg:col-span-8 space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-bold uppercase tracking-wider">
@@ -510,9 +522,51 @@ export default function CoursePlayerClient() {
                 {COURSE_INFO.title}
               </h1>
 
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                Hệ thống hóa toàn bộ <strong>14 Chính Tinh, Lục Cát, Lục Sát, Tứ Hóa, 4 Cách Cục Lớn và Quy Trình 5 Bước Chấm Hạn Năm</strong> qua giọng giảng Podcast kết hợp bài phân tích chuyên sâu của <strong>Thầy Tôn</strong>. Tự động đối chiếu từng ngôi sao đang học lên chính lá số của bạn.
-              </p>
+              {/* Khung ảnh minh họa nổi bật phân biệt Học Viện Podcast với các trang bài viết */}
+              <div className="relative rounded-2xl overflow-hidden border border-amber-400/40 bg-slate-950/90 shadow-xl">
+                <div className="grid grid-cols-1 sm:grid-cols-12 items-center">
+                  <div className="sm:col-span-5 relative h-44 sm:h-full min-h-[165px] overflow-hidden">
+                    <img
+                      src="/images/course-hero-podcast.png"
+                      alt="Minh họa Khóa học Tử Vi & Podcast Audio Thầy Tôn"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-slate-950/85 via-transparent to-transparent" />
+                    <div className="absolute bottom-2.5 left-2.5 flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-950/90 border border-amber-400/50 backdrop-blur-md">
+                      <img
+                        src="/avatar-thay-ton.jpg"
+                        alt="Thầy Tôn"
+                        className="w-7 h-7 rounded-full object-cover border border-amber-400"
+                      />
+                      <div className="text-[11px] leading-tight">
+                        <div className="font-bold text-amber-300">Thầy Tôn giảng dạy</div>
+                        <div className="text-[10px] text-slate-300">18+ năm nghiên cứu</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-7 p-4 space-y-2.5">
+                    <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Trải Nghiệm Học Tử Vi Thế Hệ Mới</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                      Hệ thống hóa trọn bộ <strong>14 Chính Tinh, Lục Cát, Lục Sát, Tứ Hóa, 4 Đại Cách Cục &amp; Quy Trình 5 Bước Chấm Hạn Năm</strong> qua giọng giảng Podcast kết hợp giáo trình tương tác và công cụ <strong>Soi Sao Tự Động</strong> trên lá số của bạn.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[11px] px-2.5 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold">
+                        🎧 Nghe Podcast mọi lúc
+                      </span>
+                      <span className="text-[11px] px-2.5 py-0.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-semibold">
+                        🃏 Flashcard 14 Chính Tinh
+                      </span>
+                      <span className="text-[11px] px-2.5 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold">
+                        🧭 Khớp thẳng lá số cá nhân
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                 <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
@@ -656,6 +710,12 @@ export default function CoursePlayerClient() {
             </div>
           </div>
         </header>
+
+        {/* BẢN ĐỒ 4 HỌC PHẦN CÓ ẢNH MINH HỌA TRỰC QUAN */}
+        <CourseVisualShowcase
+          selectedModule={selectedModule}
+          onSelectModule={(modId) => setSelectedModule(modId)}
+        />
 
         {/* BỐ CỤC PHÒNG HỌC CHÍNH: CỘT TRÁI (DANH SÁCH 24 BÀI) & CỘT PHẢI (TRÌNH PHÁT PODCAST + BÀI ĐỌC) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start" ref={lessonTopRef}>
@@ -851,6 +911,20 @@ export default function CoursePlayerClient() {
                 </h2>
                 <p className="text-sm sm:text-base text-slate-300 mt-2">{activeLesson.subtitle}</p>
               </div>
+
+              {/* Ảnh minh họa Chòm sao & Podcast riêng cho từng bài giảng */}
+              <CourseLessonIllustration
+                lessonOrder={activeLesson.number}
+                moduleId={activeLesson.moduleId}
+                moduleTitle={
+                  COURSE_MODULES.find((m) => m.id === activeLesson.moduleId)?.title ||
+                  `Học phần ${activeLesson.moduleId}`
+                }
+                title={activeLesson.title}
+                relatedStars={activeLesson.relatedStars}
+                durationLabel={activeLesson.duration}
+                isPlaying={isPlaying}
+              />
 
               {/* NẾU BÀI HỌC ĐANG KHÓA (Bài 3..24 khi chưa mua): HIỆN KHUNG MỞ KHÓA QR NGAY */}
               {!canAccessActiveLesson ? (

@@ -21,6 +21,7 @@ import {
 import { FUNNEL_PAGES, getFunnelPageBySlug, type FunnelPageData } from '@/lib/funnelPages';
 import { ABOUT_DATA } from '@/lib/i18n/aboutData';
 import GuideMenuDropdown from '@/components/GuideMenuDropdown';
+import { ArticleHeroIllustration } from '@/components/MetaphysicalIllustration';
 
 export function generateStaticParams() {
   return FUNNEL_PAGES.filter((p) => p.slug !== '').map((p) => ({
@@ -316,7 +317,7 @@ export default async function FunnelSlugPage({
         {/* Top Navigation Bar */}
         <nav
           aria-label="Điều hướng chính"
-          className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800/80"
+          className="relative z-40 flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800/80"
         >
           <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-400">
             <Link
@@ -423,6 +424,13 @@ export default async function FunnelSlugPage({
               dangerouslySetInnerHTML={{ __html: page.quickSummaryHtml }}
             />
           </section>
+
+          {/* Ảnh Minh Họa & Sơ Đồ Chuyên Đề Trực Quan Cho Từng Bài Cẩm Nang */}
+          <ArticleHeroIllustration
+            code={page.code}
+            title={page.h1}
+            groupNum={page.groupNum}
+          />
 
           {/* Khối Visual Hồ Sơ Chuyên Gia Dành Riêng Cho Trang /thay-ton (Mã TR) */}
           {page.code === 'TR' && (

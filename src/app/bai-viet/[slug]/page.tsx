@@ -17,6 +17,8 @@ import {
   Gem,
 } from 'lucide-react';
 import { SEO_ARTICLES, getArticleBySlug, FUNNEL_STAGE_META } from '@/lib/seoArticles';
+import GuideMenuDropdown from '@/components/GuideMenuDropdown';
+import { ArticleHeroIllustration } from '@/components/MetaphysicalIllustration';
 
 export function generateStaticParams() {
   return SEO_ARTICLES.map((article) => ({
@@ -176,7 +178,7 @@ export default async function BaiVietDetailPage({
         {/* Thanh Breadcrumb & CTA Nhanh */}
         <nav
           aria-label="Breadcrumb"
-          className="flex items-center justify-between gap-3 flex-wrap bg-slate-900/80 border border-amber-500/25 rounded-2xl px-4 py-3 text-xs sm:text-sm"
+          className="relative z-40 flex items-center justify-between gap-3 flex-wrap bg-slate-900/80 border border-amber-500/25 rounded-2xl px-4 py-3 text-xs sm:text-sm"
         >
           <div className="flex items-center gap-2 text-slate-300 flex-wrap">
             <Link href="/" className="text-amber-400 hover:text-amber-300 font-bold inline-flex items-center gap-1">
@@ -193,13 +195,16 @@ export default async function BaiVietDetailPage({
             </span>
           </div>
 
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md transition"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>An Sao & Bình Giải 0đ</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <GuideMenuDropdown />
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-md transition"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>An Sao & Bình Giải 0đ</span>
+            </Link>
+          </div>
         </nav>
 
         {/* Nội dung chính của bài viết */}
@@ -274,6 +279,12 @@ export default async function BaiVietDetailPage({
               </ul>
             </div>
           </section>
+
+          {/* Ảnh Minh Họa & Sơ Đồ Chuyên Đề */}
+          <ArticleHeroIllustration
+            code={article.slug}
+            title={article.shortTitle}
+          />
 
           {/* Khối Nội dung chi tiết từng phần */}
           <div className="space-y-8">
