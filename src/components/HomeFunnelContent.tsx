@@ -59,10 +59,10 @@ export default function HomeFunnelContent() {
 
         {/* Tóm tắt nhanh (Answer-First GEO Block) */}
         <div className="mb-6 rounded-2xl bg-gradient-to-br from-amber-950/40 via-slate-900/90 to-indigo-950/30 border border-amber-500/40 p-5 sm:p-6 shadow-lg">
-          <h3 className="text-base sm:text-lg font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2 mb-2">
+          <h2 className="text-base sm:text-lg font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
             Tóm tắt nhanh
-          </h3>
+          </h2>
           <p
             className="text-sm sm:text-base text-slate-100 leading-relaxed font-medium"
             dangerouslySetInnerHTML={{ __html: homePage.quickSummaryHtml }}

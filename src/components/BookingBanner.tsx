@@ -30,9 +30,9 @@ export default function BookingBanner() {
             <span>Tham Vấn Mệnh Lý &amp; Phong Thủy 1-1</span>
           </div>
 
-          <h3 className="font-bold text-amber-300 text-xl sm:text-2xl font-serif leading-snug">
+          <h2 className="font-bold text-amber-300 text-xl sm:text-2xl font-serif leading-snug">
             {t('booking.title', 'Đặt Lịch Xem Tử Vi & Tư Vấn Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn')}
-          </h3>
+          </h2>
 
           <p className="text-xs sm:text-sm md:text-base text-slate-200 leading-relaxed">
             {t(
@@ -49,9 +49,9 @@ export default function BookingBanner() {
               <Building2 className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs sm:text-sm font-bold text-amber-300">
+              <h3 className="text-xs sm:text-sm font-bold text-amber-300">
                 1. Gặp Trực Tiếp Tại Văn Phòng
-              </div>
+              </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                 R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội (Đặt lịch hẹn trước).
               </p>
@@ -63,9 +63,9 @@ export default function BookingBanner() {
               <Video className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs sm:text-sm font-bold text-blue-300">
+              <h3 className="text-xs sm:text-sm font-bold text-blue-300">
                 2. Xem Online Qua Video Call
-              </div>
+              </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                 Thuận tiện cho khách ở các tỉnh thành khác và kiều bào đang sinh sống tại nước ngoài.
               </p>
@@ -77,9 +77,9 @@ export default function BookingBanner() {
               <Compass className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-xs sm:text-sm font-bold text-emerald-300">
+              <h3 className="text-xs sm:text-sm font-bold text-emerald-300">
                 3. Khảo Sát Phong Thủy &amp; Trạch Nhật
-              </div>
+              </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                 Tư vấn mặt bằng Nhà ở, Chung cư, Văn phòng, Cửa hàng &amp; Chọn ngày giờ khởi sự.
               </p>
