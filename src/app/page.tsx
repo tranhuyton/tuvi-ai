@@ -51,7 +51,7 @@ export default function HomePage() {
     proAllowed: 0,
     expertAllowed: 0,
   });
-  const [isRestoringSession, setIsRestoringSession] = useState(true);
+  const [isRestoringSession, setIsRestoringSession] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Refs đồng bộ tức thì để các hàm callback thanh toán không bao giờ dính stale closure
@@ -1534,6 +1534,7 @@ export default function HomePage() {
     }
 
     if (!hasRestored && urlChartId && user) {
+      setIsRestoringSession(true);
       handleSelectSavedChart(urlChartId).finally(() => {
         setIsRestoringSession(false);
       });
@@ -1689,6 +1690,9 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="space-y-6">
+            <h1 className="sr-only">
+              Lập Lá Số Tử Vi Miễn Phí và Bình Giải Trọn Đời Cùng Thầy Tôn — Lá Số {laSo.duongSo.hoTen}
+            </h1>
             {/* Thanh trạng thái gói dịch vụ khi đang xem lá số (hiện khi đang ở Bản Miễn Phí hoặc Bản Pro) */}
             {currentTier !== 'expert' && (
               <div className="flex items-center justify-end max-w-[1060px] mx-auto">
