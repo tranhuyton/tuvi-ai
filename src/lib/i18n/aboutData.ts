@@ -47,7 +47,7 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       points: [
         'Cựu học sinh Chuyên Toán - Tin, Khối Chuyên Trường Đại học Tổng Hợp Hà Nội (nay là ĐH Khoa học Tự nhiên - ĐHQGHN) với nền tảng tư duy logic và cấu trúc hệ thống sắc bén.',
         'Hơn 7 năm du học và làm việc chuyên nghiệp tại Vương Quốc Anh (UK) từ năm 16 tuổi.',
-        'Tốt nghiệp Cử nhân Quản lý Tài chính & Kế toán tại Đại học Lancaster (Lancaster University) — Top 5 trường đại học hàng đầu Vương Quốc Anh về Tài chính, Kế toán & Quản trị.',
+        'Tốt nghiệp Cử nhân và Thạc sỹ chuyên ngành Quản lý Tài chính & Kế toán tại Đại học Lancaster (Lancaster University) — Top 5 trường đại học hàng đầu Vương Quốc Anh về Tài chính, Kế toán & Quản trị.',
       ],
     },
     pillar2: {
@@ -97,7 +97,7 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       points: [
         'Alumni of Hanoi University High School for the Gifted (Mathematics & Computer Science).',
         'Over 7 years living, studying, and working in the United Kingdom from the age of 16.',
-        'Graduated in Accounting and Finance from Lancaster University — Top 5 premier institution in Accounting & Finance in the United Kingdom.',
+        'Holds both Bachelor’s and Master’s degrees in Accounting and Finance from Lancaster University — Top 5 premier institution in Accounting & Finance in the United Kingdom.',
       ],
     },
     pillar2: {
@@ -147,7 +147,7 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       points: [
         '毕业于河内综合大学数学与信息特长班。',
         '16岁起赴英国留学深造并执业，深耕英伦逾7年。',
-        '毕业于全英会计金融常年稳居前5之顶尖学府 —— 兰卡斯特大学 (Lancaster University) 会计金融系。',
+        '毕业于全英会计金融常年稳居前5之顶尖学府 —— 兰卡斯特大学 (Lancaster University)，获会计与金融学士及硕士学位。',
       ],
     },
     pillar2: {
@@ -197,7 +197,7 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       points: [
         '하노이 종합대학교 수학·정보 과학 영재과정 출신.',
         '16세부터 7년 이상 영국에서 유학 및 현지 전문직 근무.',
-        '영국 내 회계·금융 분야 최상위 5위권 명문인 랭커스터 대학교(Lancaster University) 재무회계학과 졸업.',
+        '영국 내 회계·금융 분야 최상위 5위권 명문인 랭커스터 대학교(Lancaster University) 재무회계학 학사 및 석사 학위 취득.',
       ],
     },
     pillar2: {
@@ -247,7 +247,7 @@ export const ABOUT_DATA: Record<Language, AboutContent> = {
       points: [
         'ハノイ総合大学 数学・情報英才クラス出身。',
         '16歳より7年以上にわたりイギリスへ留学し現地で勤務。',
-        'イギリス国内の会計・金融分野でトップ5に入る名門ランカスター大学（Lancaster University）財務会計学部を卒業。',
+        'イギリス国内の会計・金融分野でトップ5に入る名門ランカスター大学（Lancaster University）にて財務会計学の学士号および修士号を取得。',
       ],
     },
     pillar2: {

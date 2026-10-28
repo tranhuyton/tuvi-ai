@@ -209,7 +209,7 @@ export const TESTIMONIALS_BY_LANG: Record<Language, TestimonialItem[]> = {
       rating: 5,
       highlight: 'Nhãn quan tài chính quốc tế kết hợp chu kỳ vận hạn sắc bén đến kinh ngạc',
       content:
-        'Tôi tìm đến Thầy Tôn vì Thầy tốt nghiệp Tài chính Đại học Lancaster (Top 5 UK) và có thâm niên kiểm toán quốc tế. Thầy phân tích tương quan cung Tài Bạch, Điền Trạch với chu kỳ kinh tế vĩ mô cực kỳ thuyết phục. Từng chặng 5 năm trong đại vận 10 năm được bóc tách như một bản báo cáo phân tích chiến lược cuộc đời độc bản.',
+        'Tôi tìm đến Thầy Tôn vì Thầy tốt nghiệp Cử nhân và Thạc sỹ Tài chính - Kế toán tại Đại học Lancaster (Top 5 UK) và có thâm niên kiểm toán quốc tế. Thầy phân tích tương quan cung Tài Bạch, Điền Trạch với chu kỳ kinh tế vĩ mô cực kỳ thuyết phục. Từng chặng 5 năm trong đại vận 10 năm được bóc tách như một bản báo cáo phân tích chiến lược cuộc đời độc bản.',
       tags: ['#ChuyênGiaCFA', '#TàiChínhVĩMô', '#ĐạiVận10Năm'],
       verifiedDate: 'Đã đàm đạo 1-1',
     },
@@ -324,7 +324,7 @@ export const TESTIMONIALS_BY_LANG: Record<Language, TestimonialItem[]> = {
       rating: 5,
       highlight: 'International financial vision paired with astonishingly acute cyclical timing',
       content:
-        'I sought out Master Ton because of his Finance degree from Lancaster University (Top 5 UK) and extensive audit background. His analysis connecting the Wealth and Property Palaces to macroeconomic cycles was intensely compelling. Each 5-year phase within the 10-year major decan read like an exquisite, personalized strategic report.',
+        'I sought out Master Ton because of his Bachelor’s and Master’s degrees in Accounting & Finance from Lancaster University (Top 5 UK) and extensive audit background. His analysis connecting the Wealth and Property Palaces to macroeconomic cycles was intensely compelling. Each 5-year phase within the 10-year major decan read like an exquisite, personalized strategic report.',
       tags: ['#CFACharterholder', '#MacroEconomics', '#10YearDecan'],
       verifiedDate: '1-on-1 Consultation',
     },

@@ -132,7 +132,7 @@ export default function BaiVietIndexPage() {
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            Biên soạn và thẩm định chuyên môn bởi <strong className="text-amber-300">Thầy Tôn</strong> — Chuyên gia Tử Vi Đẩu Số và Phong Thủy với hơn 18 năm nghiên cứu, Cựu HS Chuyên Toán - Tin ĐH Tổng hợp Hà Nội, Cử nhân Tài chính &amp; Kế toán ĐH Lancaster (UK) và hơn 15 năm giảng dạy IELTS, Giao tiếp &amp; Cambridge IGCSE.
+            Biên soạn và thẩm định chuyên môn bởi <strong className="text-amber-300">Thầy Tôn</strong> — Chuyên gia Tử Vi Đẩu Số và Phong Thủy với hơn 18 năm nghiên cứu, Cựu HS Chuyên Toán - Tin ĐH Tổng hợp Hà Nội, Cử nhân &amp; Thạc sỹ Tài chính &amp; Kế toán ĐH Lancaster (UK) và hơn 15 năm giảng dạy IELTS, Giao tiếp &amp; Cambridge IGCSE.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">

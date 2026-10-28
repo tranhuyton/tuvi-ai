@@ -390,7 +390,7 @@ export default async function FunnelSlugPage({
             <div className="flex-1 min-w-[200px]">
               <p className="font-semibold text-amber-300">{page.authorLine}</p>
               <p className="text-xs text-slate-400 mt-0.5">
-                Cựu HS Chuyên Toán - Tin ĐH Tổng hợp Hà Nội • Cử nhân Tài chính &amp; Kế toán ĐH Lancaster (UK) • Hơn 15 năm giảng dạy IELTS &amp; Cambridge IGCSE
+                Cựu HS Chuyên Toán - Tin ĐH Tổng hợp Hà Nội • Cử nhân &amp; Thạc sỹ Tài chính &amp; Kế toán ĐH Lancaster (UK) • Hơn 15 năm giảng dạy IELTS &amp; Cambridge IGCSE
               </p>
             </div>
             {page.code !== 'TR' ? (

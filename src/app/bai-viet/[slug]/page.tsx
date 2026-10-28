@@ -241,7 +241,7 @@ export default async function BaiVietDetailPage({
                     Biên soạn & Kiểm duyệt: <span className="text-amber-300">Thầy Tôn (Trần Huy Tôn)</span>
                   </div>
                   <div className="text-xs text-slate-400">
-                    Cựu HS Chuyên Toán ĐH Tổng Hợp • Cử nhân Tài chính ĐH Lancaster (Top 5 UK) • 18+ năm Tử Vi Thực Chứng
+                    Cựu HS Chuyên Toán ĐH Tổng Hợp • Cử nhân &amp; Thạc sỹ Tài chính - Kế toán ĐH Lancaster (Top 5 UK) • 18+ năm Tử Vi Thực Chứng
                   </div>
                 </div>
               </div>

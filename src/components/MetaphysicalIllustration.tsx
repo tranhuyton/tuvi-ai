@@ -112,7 +112,7 @@ const ARTICLE_VISUAL_MAP: Record<string, ArticleVisualSpec> = {
     centerLabel: 'Thầy Tôn',
     nodes: [
       { label: 'Chuyên Toán - Tin ĐHTH', sub: 'Tư duy cấu trúc & hệ thống logic chặt chẽ', badge: 'Nền tảng' },
-      { label: 'Cử Nhân ĐH Lancaster (UK)', sub: 'Quản lý Tài chính & Kế toán tại Anh Quốc', badge: '7+ năm tại UK' },
+      { label: 'Cử Nhân & Thạc Sỹ ĐH Lancaster', sub: 'Chuyên ngành Tài chính & Kế toán tại Anh Quốc', badge: '7+ năm tại UK' },
       { label: '15+ Năm Giảng Dạy', sub: 'IELTS & Toán, Kinh tế Cambridge IGCSE', badge: 'Sư phạm' },
       { label: '18+ Năm Tử Vi & Phong Thủy', sub: 'Luận giải thực chứng, minh bạch cơ sở', badge: 'Thực chiến' },
     ],

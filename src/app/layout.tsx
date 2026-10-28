@@ -215,7 +215,7 @@ const seoGeoJsonLd = {
           name: 'Thầy Tôn (Trần Huy Tôn) là ai và phương pháp Tử Vi & Phong Thủy của Thầy có gì đặc biệt?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh chuyên Toán - Tin ĐH Tổng Hợp Hà Nội, tốt nghiệp ngành Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh), có hơn 7 năm học tập & làm việc tại Anh Quốc; đồng thời là Giáo viên Tiếng Anh chuyên luyện thi IELTS, Giao tiếp và giảng dạy các môn Toán, Khoa học, Kinh tế, Kinh doanh, Địa lý của chương trình Quốc tế IGCSE hơn 15 năm (sáng lập TonyEnglish.vn). Với hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch, Diện Tướng & Chỉ Tay, phương pháp của Thầy Tôn nổi tiếng nhờ tính khoa học, thực chứng, logic chặt chẽ và hoàn toàn không mê tín dị đoan.',
+            text: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh chuyên Toán - Tin ĐH Tổng Hợp Hà Nội, tốt nghiệp Cử nhân và Thạc sỹ chuyên ngành Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh), có hơn 7 năm học tập & làm việc tại Anh Quốc; đồng thời là Giáo viên Tiếng Anh chuyên luyện thi IELTS, Giao tiếp và giảng dạy các môn Toán, Khoa học, Kinh tế, Kinh doanh, Địa lý của chương trình Quốc tế IGCSE hơn 15 năm (sáng lập TonyEnglish.vn). Với hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch, Diện Tướng & Chỉ Tay, phương pháp của Thầy Tôn nổi tiếng nhờ tính khoa học, thực chứng, logic chặt chẽ và hoàn toàn không mê tín dị đoan.',
           },
         },
         {

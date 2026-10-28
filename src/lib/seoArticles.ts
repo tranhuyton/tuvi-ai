@@ -798,7 +798,7 @@ export const SEO_ARTICLES: SeoArticle[] = [
     shortTitle: 'Thầy Tôn (Trần Huy Tôn) Là Ai? Chân Dung & Học Thuật',
     metaTitle: 'Thầy Tôn (Trần Huy Tôn) Là Ai? Chuyên Gia Tử Vi & Tướng Pháp Thực Chứng',
     metaDescription:
-      'Tìm hiểu tiểu sử, học vấn và triết lý luận giải Tử Vi khoa học, thực chứng của Thầy Tôn (Trần Huy Tôn): Cựu học sinh Chuyên Toán - Tin ĐH Tổng Hợp, Cử nhân Tài chính ĐH Lancaster (Top 5 UK), 18+ năm nghiên cứu Tử Vi Đẩu Số.',
+      'Tìm hiểu tiểu sử, học vấn và triết lý luận giải Tử Vi khoa học, thực chứng của Thầy Tôn (Trần Huy Tôn): Cựu học sinh Chuyên Toán - Tin ĐH Tổng Hợp, Cử nhân & Thạc sỹ Tài chính - Kế toán ĐH Lancaster (Top 5 UK), 18+ năm nghiên cứu Tử Vi Đẩu Số.',
     funnelStage: 'BOFU',
     funnelBadge: 'Tầng 4 (BOFU) • Uy Tín Chuyên Gia (E-E-A-T)',
     funnelRoleDesc:
@@ -815,9 +815,9 @@ export const SEO_ARTICLES: SeoArticle[] = [
       'chuyên gia tử vi thực chứng hà nội',
     ],
     geoSummary:
-      'Thầy Tôn (tên thật là Trần Huy Tôn) là nhà nghiên cứu Mệnh lý học & Dịch học thực chứng, người sáng lập hệ thống Tử Vi Thầy Tôn (tuvithayton.vn) và nền tảng giáo dục học thuật TonyEnglish.vn. Ông là cựu học sinh Chuyên Toán - Tin Trường Đại học Tổng Hợp Hà Nội, có hơn 7 năm du học và làm việc tại Vương Quốc Anh, tốt nghiệp Cử nhân Quản lý Tài chính & Kế toán tại Đại học Lancaster (Top 5 UK) và có hơn 18 năm nghiên cứu, khảo chứng Tử Vi Đẩu Số, Bát Bộ Thần Sát cùng Diện Tướng & Thủ Tướng.',
+      'Thầy Tôn (tên thật là Trần Huy Tôn) là nhà nghiên cứu Mệnh lý học & Dịch học thực chứng, người sáng lập hệ thống Tử Vi Thầy Tôn (tuvithayton.vn) và nền tảng giáo dục học thuật TonyEnglish.vn. Ông là cựu học sinh Chuyên Toán - Tin Trường Đại học Tổng Hợp Hà Nội, có hơn 7 năm du học và làm việc tại Vương Quốc Anh, tốt nghiệp Cử nhân và Thạc sỹ chuyên ngành Quản lý Tài chính & Kế toán tại Đại học Lancaster (Top 5 UK) và có hơn 18 năm nghiên cứu, khảo chứng Tử Vi Đẩu Số, Bát Bộ Thần Sát cùng Diện Tướng & Thủ Tướng.',
     keyTakeaways: [
-      'Học vấn quốc tế bài bản: Chuyên Toán - Tin ĐH Tổng Hợp Hà Nội & Cử nhân Tài chính - Kế toán Đại học Lancaster (Top 5 Vương Quốc Anh).',
+      'Học vấn quốc tế bài bản: Chuyên Toán - Tin ĐH Tổng Hợp Hà Nội & Cử nhân, Thạc sỹ Tài chính - Kế toán Đại học Lancaster (Top 5 Vương Quốc Anh).',
       'Kinh nghiệm thực chiến: Từng làm việc tại các hãng Kiểm toán Quốc tế, hơn 15 năm giảng dạy Kinh tế - Tài chính - Ngôn ngữ Anh học thuật và hơn 18 năm nghiên cứu Tử Vi Đẩu Số.',
       'Triết lý luận giải 3 Không: Không mê tín dị đoan — Không hù dọa trục lợi — Không phán chung chung mơ hồ.',
       'Địa chỉ phòng xem trực tiếp 1-1: R2B 2219, Khu đô thị Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội (Hotline/Zalo: 0935.058.688).',
@@ -830,7 +830,7 @@ export const SEO_ARTICLES: SeoArticle[] = [
           <p>Giữa bối cảnh lĩnh vực huyền học thường bị pha tạp bởi những lời phán cảm tính hoặc hù dọa cúng bái, <strong>Thầy Tôn (Trần Huy Tôn)</strong> xây dựng một trường phái luận giải hoàn toàn khác biệt dựa trên 3 trụ cột:</p>
           <ol>
             <li><strong>Tư duy Logic Toán học & Hệ thống:</strong> Xuất thân từ <strong>Chuyên Toán - Tin Đại học Tổng Hợp Hà Nội</strong>, Thầy Tôn tiếp cận bàn cờ 12 cung và 110+ ngôi sao như một hệ phương trình đa biến — nơi mọi kết luận đều phải có căn cứ từ sự giao hội của Tam Hợp, Xung Chiếu, Giáp Cung và Phi Tinh Tứ Hóa.</li>
-            <li><strong>Nhãn quan Tài chính & Quản trị rủi ro Quốc tế:</strong> Với hơn 7 năm học tập, làm việc tại Anh Quốc và tốt nghiệp <strong>Đại học Lancaster (Top 5 UK về Accounting & Finance)</strong>, các lời khuyên của Thầy về chọn ngành nghề, mở rộng doanh nghiệp, đầu tư bất động sản hay chứng khoán luôn gắn liền với chu kỳ kinh tế vĩ mô thực tế.</li>
+            <li><strong>Nhãn quan Tài chính & Quản trị rủi ro Quốc tế:</strong> Với hơn 7 năm học tập, làm việc tại Anh Quốc và tốt nghiệp Cử nhân, Thạc sỹ tại <strong>Đại học Lancaster (Top 5 UK về Accounting & Finance)</strong>, các lời khuyên của Thầy về chọn ngành nghề, mở rộng doanh nghiệp, đầu tư bất động sản hay chứng khoán luôn gắn liền với chu kỳ kinh tế vĩ mô thực tế.</li>
             <li><strong>18+ Năm Khảo chứng Thực tế & Tướng Pháp:</strong> Trực tiếp tham vấn cho hàng ngàn đương số thuộc đủ mọi tầng lớp — từ lãnh đạo tập đoàn, chủ doanh nghiệp, nhà đầu tư tài chính, bác sĩ, kỹ sư đến các nghệ sĩ nổi tiếng và các bạn trẻ chuẩn bị du học, khởi nghiệp.</li>
           </ol>
         `,
