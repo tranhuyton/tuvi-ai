@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { generateVietQrDataUrl, buildVietQrString } from '@/lib/vietqr';
+import { trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
 import QRCode from 'qrcode';
 
 export type PaymentPurpose =
@@ -237,6 +238,7 @@ export default function PaymentModal({
         const code = data.order.orderCode;
         activeOrderKeyRef.current = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
         setOrderCode(code);
+        trackInitiateCheckout(paymentType, finalPrice || 0, code);
         setQrUrl(data.qrUrl || `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${finalPrice}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(chuTk)}`);
         setSepayQrUrl(data.sepayQrUrl || `https://qr.sepay.vn/img?bank=VPBank&acc=${stk}&template=compact&amount=${finalPrice}&des=${encodeURIComponent(code)}`);
 
@@ -318,6 +320,7 @@ export default function PaymentModal({
     if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
     setOrderStatus('PAID');
     activeOrderKeyRef.current = null;
+    trackPurchase(paymentType, finalPrice || 0, orderCode);
 
     // Lưu email và quyền lợi mở khóa vào localStorage để bền vững qua các lần F5
     if (typeof window !== 'undefined') {

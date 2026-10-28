@@ -28,6 +28,7 @@ import { supabase } from '@/lib/supabase';
 import { Sparkles, Crown, Gem, PhoneCall, MapPin, Mail, FlaskConical } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
+import { trackLeadChart } from '@/lib/metaPixel';
 
 export default function HomePage() {
   const { user, profile, testerInfo, refreshTesterInfo, isLoading: isAuthLoading, isPasswordRecovery, signOut } = useAuth();
@@ -544,6 +545,11 @@ export default function HomePage() {
     setChatHistory(existingChatHistory);
     setQuestionsQuota(initialQuota);
     setIsLoadingReading(!requiresPayment);
+
+    // Ghi nhận sự kiện Lead về Meta Pixel khi khách tạo lá số
+    if (!isEditing) {
+      trackLeadChart(data.hoTen, tier);
+    }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
