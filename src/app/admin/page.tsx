@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import AdminTestStudio from '@/components/admin/AdminTestStudio';
+import AdminCourseViewer from '@/components/admin/AdminCourseViewer';
 import AdminUsersTable, { AdminUser, AdminChatMessage } from '@/components/admin/AdminUsersTable';
 import AdminTransactionsTable, { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
 import AdminAffiliatesTable from '@/components/admin/AdminAffiliatesTable';
@@ -12,9 +13,9 @@ import { AffiliateItem } from '@/types/affiliate';
 import { TesterAccount } from '@/types/tester';
 import LanguageSelector from '@/components/LanguageSelector';
 import ThemeSelector from '@/components/ThemeSelector';
-import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw, Share2, FlaskConical } from 'lucide-react';
+import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw, Share2, FlaskConical, GraduationCap } from 'lucide-react';
 
-type AdminTab = 'studio' | 'transactions' | 'affiliates' | 'testers' | 'users';
+type AdminTab = 'studio' | 'course' | 'transactions' | 'affiliates' | 'testers' | 'users';
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -48,11 +49,20 @@ export default function AdminPage() {
 
     if (savedPin && validPins.includes(savedPin)) {
       setIsAuthenticated(true);
+      localStorage.setItem('tuvi_course_unlocked', 'true');
+      localStorage.setItem('tuvi_course_order_code', 'VIP-ADMIN');
       fetchAdminData(savedPin);
-    } else if (user?.email && (user.email.includes('tranhuyton') || user.email.includes('thayton'))) {
+    } else if (
+      user?.email &&
+      (user.email.includes('tranhuyton') ||
+        user.email.includes('tonhuytran') ||
+        user.email.includes('thayton'))
+    ) {
       // Tự động cho phép nếu đăng nhập tài khoản Thầy Tôn
       setIsAuthenticated(true);
       localStorage.setItem('tuvi_admin_pin', 'thayton2026');
+      localStorage.setItem('tuvi_course_unlocked', 'true');
+      localStorage.setItem('tuvi_course_order_code', 'VIP-ADMIN');
       fetchAdminData('thayton2026');
     }
   }, [user]);
@@ -66,6 +76,8 @@ export default function AdminPage() {
       setIsAuthenticated(true);
       setPinError('');
       localStorage.setItem('tuvi_admin_pin', pin);
+      localStorage.setItem('tuvi_course_unlocked', 'true');
+      localStorage.setItem('tuvi_course_order_code', 'VIP-ADMIN');
       fetchAdminData(pin);
     } else {
       setPinError('Mã PIN bảo mật không chính xác. Xin vui lòng thử lại!');
@@ -264,6 +276,19 @@ export default function AdminPage() {
 
           <button
             type="button"
+            onClick={() => setActiveTab('course')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+              activeTab === 'course'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4" />
+            <span>🎓 Khóa Học 699k (Đủ 24 Bài)</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => {
               setActiveTab('transactions');
               fetchAdminData();
@@ -329,6 +354,8 @@ export default function AdminPage() {
 
         {/* Nội Dung Từng Tab */}
         {activeTab === 'studio' && <AdminTestStudio />}
+
+        {activeTab === 'course' && <AdminCourseViewer />}
 
         {activeTab === 'transactions' && (
           <AdminTransactionsTable

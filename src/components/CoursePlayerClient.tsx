@@ -51,13 +51,21 @@ interface StarMatchOnChart {
   coStars: string[];
 }
 
-export default function CoursePlayerClient() {
+interface CoursePlayerClientProps {
+  forceUnlock?: boolean;
+  embeddedInAdmin?: boolean;
+}
+
+export default function CoursePlayerClient({
+  forceUnlock = false,
+  embeddedInAdmin = false,
+}: CoursePlayerClientProps = {}) {
   const { user, profile, testerInfo } = useAuth();
 
   // Trạng thái mở khóa khóa học
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
-  const [unlockedCode, setUnlockedCode] = useState<string>('');
-  const [isCheckingAccess, setIsCheckingAccess] = useState<boolean>(true);
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(forceUnlock);
+  const [unlockedCode, setUnlockedCode] = useState<string>(forceUnlock ? 'VIP-ADMIN' : '');
+  const [isCheckingAccess, setIsCheckingAccess] = useState<boolean>(!forceUnlock);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 
   // Khôi phục bằng Mã đơn TVxxxxx hoặc Email
@@ -118,22 +126,47 @@ export default function CoursePlayerClient() {
         }
       }
 
+      const savedAdminPin = localStorage.getItem('tuvi_admin_pin') || '';
+      const isLocalAdmin = ['thayton2026', '0935058688'].includes(savedAdminPin);
       const localUnlocked = localStorage.getItem('tuvi_course_unlocked') === 'true';
       const savedOrderCode = localStorage.getItem('tuvi_course_order_code') || '';
-      if (localUnlocked) {
+      if (forceUnlock || isLocalAdmin || localUnlocked) {
         setIsUnlocked(true);
-        setUnlockedCode(savedOrderCode || 'ĐÃ KÍCH HOẠT');
+        setUnlockedCode(
+          forceUnlock || isLocalAdmin ? 'VIP-ADMIN' : savedOrderCode || 'ĐÃ KÍCH HOẠT'
+        );
       }
     } catch {
       // ignore
     }
-  }, []);
+  }, [forceUnlock]);
 
   // Kiểm tra quyền truy cập tự động với API khi có user hoặc mã đơn lưu trong máy
   useEffect(() => {
     const verifyAccess = async () => {
       setIsCheckingAccess(true);
       try {
+        const savedAdminPin =
+          typeof window !== 'undefined' ? localStorage.getItem('tuvi_admin_pin') || '' : '';
+        const isLocalAdmin = ['thayton2026', '0935058688'].includes(savedAdminPin);
+        const emailLower = (user?.email || profile?.email || '').toLowerCase();
+        const isEmailAdmin =
+          emailLower.includes('tranhuyton') ||
+          emailLower.includes('tonhuytran') ||
+          emailLower.includes('thayton') ||
+          emailLower === 'diep.anh.12135@gmail.com';
+
+        if (forceUnlock || isLocalAdmin || isEmailAdmin) {
+          setIsUnlocked(true);
+          setUnlockedCode('VIP-ADMIN');
+          setIsCheckingAccess(false);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('tuvi_course_unlocked', 'true');
+            localStorage.setItem('tuvi_course_order_code', 'VIP-ADMIN');
+          }
+          return;
+        }
+
         if (testerInfo?.isTester) {
           setIsUnlocked(true);
           setUnlockedCode('VIP-TESTER');
@@ -164,6 +197,7 @@ export default function CoursePlayerClient() {
             userId: user?.id,
             email: savedEmail,
             orderCode: savedOrderCode,
+            adminPin: savedAdminPin,
           }),
         });
 
@@ -424,8 +458,9 @@ export default function CoursePlayerClient() {
     });
   }, [selectedModule, searchQuery]);
 
-  // Chặn phím tắt Copy / Print khi đang đọc bài học
+  // Chặn phím tắt Copy / Print khi đang đọc bài học (Bỏ qua nếu đang ở trong Admin)
   const handleProtectedKeyDown = (e: React.KeyboardEvent) => {
+    if (embeddedInAdmin || forceUnlock) return;
     if ((e.ctrlKey || e.metaKey) && ['c', 'p', 's', 'u'].includes(e.key.toLowerCase())) {
       e.preventDefault();
     }
@@ -439,7 +474,9 @@ export default function CoursePlayerClient() {
 
   return (
     <div
-      className="min-h-screen bg-[#070a14] text-slate-100 pb-28 print:hidden"
+      className={`${
+        embeddedInAdmin ? 'bg-transparent pb-16' : 'min-h-screen bg-[#070a14] pb-28 print:hidden'
+      } text-slate-100`}
       onKeyDown={handleProtectedKeyDown}
     >
       {activeLesson.audioUrl && (
@@ -451,49 +488,55 @@ export default function CoursePlayerClient() {
         />
       )}
 
-      <div className="max-w-[1220px] mx-auto px-3.5 sm:px-6 pt-5 sm:pt-8 space-y-6">
+      <div
+        className={`${
+          embeddedInAdmin ? 'w-full space-y-6' : 'max-w-[1220px] mx-auto px-3.5 sm:px-6 pt-5 sm:pt-8 space-y-6'
+        }`}
+      >
         {/* Thanh Điều Hướng Trên Cùng (z-40 để menu dropdown không bị Hero banner đè lên) */}
-        <nav className="relative z-40 flex flex-wrap items-center justify-between gap-3 bg-slate-900/85 border border-amber-500/25 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md">
-          <div className="flex items-center gap-2.5">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-serif font-bold text-sm sm:text-base transition"
-            >
-              <Compass className="w-5 h-5 shrink-0" />
-              <span>TỬ VI &amp; PHONG THỦY THẦY TÔN</span>
-            </Link>
-            <span className="text-slate-600 hidden sm:inline">/</span>
-            <span className="text-xs sm:text-sm font-semibold text-amber-200 hidden sm:inline">
-              🎓 Học Viện Tử Vi Thực Chiến
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <GuideMenuDropdown />
-            <Link
-              href="/#lap-la-so"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-semibold transition"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Lập Lá Số Miễn Phí</span>
-            </Link>
-            {!isUnlocked ? (
-              <button
-                type="button"
-                onClick={() => setIsPaymentModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
+        {!embeddedInAdmin && (
+          <nav className="relative z-40 flex flex-wrap items-center justify-between gap-3 bg-slate-900/85 border border-amber-500/25 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md">
+            <div className="flex items-center gap-2.5">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-serif font-bold text-sm sm:text-base transition"
               >
-                <QrCode className="w-3.5 h-3.5" />
-                <span>Mở Khóa 699.000đ</span>
-              </button>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold text-xs">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Học Viên Chính Thức ({unlockedCode})</span>
+                <Compass className="w-5 h-5 shrink-0" />
+                <span>TỬ VI &amp; PHONG THỦY THẦY TÔN</span>
+              </Link>
+              <span className="text-slate-600 hidden sm:inline">/</span>
+              <span className="text-xs sm:text-sm font-semibold text-amber-200 hidden sm:inline">
+                🎓 Học Viện Tử Vi Thực Chiến
               </span>
-            )}
-          </div>
-        </nav>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <GuideMenuDropdown />
+              <Link
+                href="/#lap-la-so"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-semibold transition"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Lập Lá Số Miễn Phí</span>
+              </Link>
+              {!isUnlocked ? (
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Mở Khóa 699.000đ</span>
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold text-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Học Viên Chính Thức ({unlockedCode})</span>
+                </span>
+              )}
+            </div>
+          </nav>
+        )}
 
         {/* HERO BANNER KHÓA HỌC & NÚT QUÉT QR MỞ KHÓA */}
         <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-[#0f152a] to-amber-950/30 border border-amber-500/35 p-5 sm:p-8 shadow-2xl">
@@ -1188,10 +1231,18 @@ export default function CoursePlayerClient() {
 
                   {/* 4. NỘI DUNG BÀI ĐỌC CHUYÊN SÂU (CHỐNG COPY + DYNAMIC WATERMARK) */}
                   <div
-                    className="relative rounded-2xl bg-slate-950/75 border border-slate-800 p-5 sm:p-7 select-none overflow-hidden"
-                    onCopy={(e) => e.preventDefault()}
-                    onCut={(e) => e.preventDefault()}
-                    onContextMenu={(e) => e.preventDefault()}
+                    className={`relative rounded-2xl bg-slate-950/75 border border-slate-800 p-5 sm:p-7 ${
+                      embeddedInAdmin || forceUnlock ? 'select-text' : 'select-none'
+                    } overflow-hidden`}
+                    onCopy={(e) => {
+                      if (!embeddedInAdmin && !forceUnlock) e.preventDefault();
+                    }}
+                    onCut={(e) => {
+                      if (!embeddedInAdmin && !forceUnlock) e.preventDefault();
+                    }}
+                    onContextMenu={(e) => {
+                      if (!embeddedInAdmin && !forceUnlock) e.preventDefault();
+                    }}
                   >
                     {/* Lớp đóng dấu chìm bảo vệ bản quyền (Dynamic Watermark) */}
                     <div
