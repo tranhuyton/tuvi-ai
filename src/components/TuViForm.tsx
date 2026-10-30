@@ -239,14 +239,6 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                 <span>{t('nav.savedCharts', 'Sổ Tay Số Mệnh')}</span>
               </button>
             ) : null}
-            <a
-              href="/khoa-hoc"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-amber-200 border border-amber-400/40 text-xs font-bold transition shadow-sm"
-              title="Học Viện Tử Vi Thực Chiến (Podcast & Giáo trình 14 Chính Tinh)"
-            >
-              <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
-              <span>Khóa Học Tử Vi</span>
-            </a>
           </div>
         </div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif leading-snug">

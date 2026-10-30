@@ -110,16 +110,7 @@ export default function UserNav({
         {/* Bộ chọn màu nền giao diện */}
         <ThemeSelector />
 
-        {/* Nút tắt nhanh Về Thầy Tôn, Khóa Học Tử Vi & Menu Cẩm Nang */}
-        <a
-          href="/khoa-hoc"
-          className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-xs font-semibold text-amber-200 hover:text-amber-100 bg-gradient-to-r from-amber-500/20 to-purple-500/20 hover:from-amber-500/30 hover:to-purple-500/30 border border-amber-400/50 transition shadow-sm whitespace-nowrap"
-          title="Học Viện Tử Vi Thực Chiến Cùng Thầy Tôn (Podcast & Giáo trình 14 Chính Tinh, Cách Cục)"
-        >
-          <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span className="hidden md:inline">Khóa Học</span>
-        </a>
-
+        {/* Nút tắt nhanh Về Thầy Tôn & Menu Cẩm Nang */}
         <a
           href="/thay-ton"
           className="hidden xl:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-200 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner whitespace-nowrap"
