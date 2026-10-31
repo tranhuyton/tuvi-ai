@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { trackContact } from '@/lib/metaPixel';
 
 export default function BookingBanner() {
   const { t } = useLanguage();
@@ -110,6 +111,7 @@ export default function BookingBanner() {
 
             <a
               href="tel:0935058688"
+              onClick={() => trackContact('phone', 'booking_banner')}
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 cursor-pointer"
             >
               <PhoneCall className="w-4 h-4 fill-slate-950 shrink-0" />
@@ -120,6 +122,7 @@ export default function BookingBanner() {
               href="https://zalo.me/0935058688"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackContact('zalo', 'booking_banner')}
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0068FF] hover:bg-[#0054cc] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition transform hover:-translate-y-0.5 cursor-pointer"
             >
               <span className="w-4 h-4 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[9px] font-black shrink-0">

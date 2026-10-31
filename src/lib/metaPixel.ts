@@ -58,3 +58,11 @@ export function trackPurchase(paymentType: string, price: number, orderCode?: st
     orderCode
   );
 }
+
+export function trackContact(channel: 'phone' | 'zalo', location?: string) {
+  trackMetaEvent('Contact', {
+    content_name: channel === 'zalo' ? 'Nhan Tin Zalo 0935058688' : 'Goi Dien Dat Lich 0935058688',
+    content_category: location || 'website',
+    contact_channel: channel,
+  });
+}

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { PhoneCall, X, Sparkles, Headphones } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { trackContact } from '@/lib/metaPixel';
 
 export default function FloatingContact() {
   const { t } = useLanguage();
@@ -55,6 +56,7 @@ export default function FloatingContact() {
           {/* Nút Gọi Điện Đặt Lịch */}
           <a
             href={telUrl}
+            onClick={() => trackContact('phone', 'floating_widget')}
             className="flex items-center gap-3 p-2.5 rounded-xl bg-gradient-to-r from-amber-500/15 to-amber-600/10 hover:from-amber-500/25 hover:to-amber-600/20 border border-amber-500/30 transition group cursor-pointer"
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-md group-hover:scale-105 transition">
@@ -73,6 +75,7 @@ export default function FloatingContact() {
             href={zaloUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackContact('zalo', 'floating_widget')}
             className="flex items-center gap-3 p-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 transition group cursor-pointer"
           >
             <div className="w-10 h-10 rounded-xl bg-[#0068FF] text-white flex items-center justify-center font-black shrink-0 shadow-md group-hover:scale-105 transition text-xs">
