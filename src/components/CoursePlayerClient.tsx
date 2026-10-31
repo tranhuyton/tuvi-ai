@@ -89,19 +89,36 @@ export default function CoursePlayerClient({
   const [userLaSo, setUserLaSo] = useState<LaSoData | null>(null);
   const [userHoTen, setUserHoTen] = useState<string>('');
 
-  // Trạng thái Podcast Player (Hỗ trợ cả file MP3 và giọng đọc Podcast từng chương)
+  // Trạng thái Podcast Player (Phát file MP3 giọng đọc Thầy Tôn chuẩn phòng thu cho từng chương)
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [activeChapterIdx, setActiveChapterIdx] = useState<number>(0);
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
   const [chapterProgress, setChapterProgress] = useState<number>(0);
+  const [currentTimeSec, setCurrentTimeSec] = useState<number>(0);
+  const [durationSec, setDurationSec] = useState<number>(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lessonTopRef = useRef<HTMLDivElement | null>(null);
 
   const activeLesson: CourseLesson = useMemo(() => {
     return COURSE_LESSONS.find((l) => l.id === activeLessonId) || COURSE_LESSONS[0];
   }, [activeLessonId]);
+
+  const currentChapterAudioUrl = useMemo(() => {
+    const chap = activeLesson.podcastChapters[activeChapterIdx];
+    return (
+      chap?.audioUrl ||
+      activeLesson.audioUrl ||
+      `/audio/course/bai-${activeLesson.number}-chap-${activeChapterIdx + 1}.mp3`
+    );
+  }, [activeLesson, activeChapterIdx]);
+
+  const formatAudioTime = (sec: number) => {
+    if (!sec || !Number.isFinite(sec) || sec < 0) return '00:00';
+    const mins = Math.floor(sec / 60);
+    const secs = Math.floor(sec % 60);
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
   const canAccessActiveLesson = isUnlocked || activeLesson.isFreePreview;
 
@@ -258,19 +275,14 @@ export default function CoursePlayerClient({
     return matches;
   }, [userLaSo, activeLesson.relatedStars]);
 
-  // 3. Quản lý Podcast Player (Web Speech Synthesis + Audio MP3)
+  // 3. Quản lý Podcast Player (Phát trực tiếp file MP3 chuẩn phòng thu từng chương)
   const stopPodcastPlayback = () => {
     setIsPlaying(false);
     setChapterProgress(0);
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
+    setCurrentTimeSec(0);
     if (audioRef.current) {
       audioRef.current.pause();
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      audioRef.current.currentTime = 0;
     }
   };
 
@@ -279,77 +291,42 @@ export default function CoursePlayerClient({
     stopPodcastPlayback();
     setActiveChapterIdx(0);
     return () => {
-      stopPodcastPlayback();
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     };
   }, [activeLessonId]);
 
-  const speakChapter = (chapterIndex: number, rate: number) => {
-    if (typeof window === 'undefined') return;
+  const speakChapter = (chapterIndex: number, rate: number = playbackRate) => {
     const chapters = activeLesson.podcastChapters;
     if (!chapters || chapterIndex < 0 || chapterIndex >= chapters.length) {
       stopPodcastPlayback();
       return;
     }
 
+    const chap = chapters[chapterIndex];
+    const targetSrc =
+      chap?.audioUrl ||
+      activeLesson.audioUrl ||
+      `/audio/course/bai-${activeLesson.number}-chap-${chapterIndex + 1}.mp3`;
+
     setActiveChapterIdx(chapterIndex);
     setChapterProgress(0);
+    setCurrentTimeSec(0);
 
-    // Nếu bài học có file MP3 riêng được gán vào audioUrl thì ưu tiên phát MP3
-    if (activeLesson.audioUrl && audioRef.current) {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = targetSrc;
       audioRef.current.playbackRate = rate;
-      audioRef.current.play().catch(() => {});
-      setIsPlaying(true);
-      return;
-    }
-
-    // Phát bằng giọng đọc Podcast tiếng Việt tích hợp sẵn
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const chapter = chapters[chapterIndex];
-      const utterance = new SpeechSynthesisUtterance(
-        `${chapter.title}. ${chapter.transcript}`
-      );
-      utterance.lang = 'vi-VN';
-      utterance.rate = rate;
-      utterance.pitch = 0.98;
-
-      const voices = window.speechSynthesis.getVoices();
-      const viVoice = voices.find(
-        (v) => v.lang.toLowerCase().includes('vi') || v.name.toLowerCase().includes('viet')
-      );
-      if (viVoice) utterance.voice = viVoice;
-
-      // Ước lượng thời gian đọc để chạy thanh progress mượt mà
-      const estimatedSeconds = Math.max(
-        15,
-        Math.round(chapter.transcript.split(/\s+/).length / (2.6 * rate))
-      );
-      let elapsed = 0;
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = setInterval(() => {
-        elapsed += 0.5;
-        setChapterProgress(Math.min(98, Math.round((elapsed / estimatedSeconds) * 100)));
-      }, 500);
-
-      utterance.onend = () => {
-        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        setChapterProgress(100);
-        if (chapterIndex + 1 < chapters.length) {
-          setTimeout(() => {
-            speakChapter(chapterIndex + 1, rate);
-          }, 600);
-        } else {
+      audioRef.current.currentTime = 0;
+      audioRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {
           setIsPlaying(false);
-        }
-      };
-
-      utterance.onerror = () => {
-        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        setIsPlaying(false);
-      };
-
-      setIsPlaying(true);
-      window.speechSynthesis.speak(utterance);
+        });
     }
   };
 
@@ -358,18 +335,40 @@ export default function CoursePlayerClient({
       setIsPaymentModalOpen(true);
       return;
     }
+    if (!audioRef.current) return;
+
     if (isPlaying) {
-      stopPodcastPlayback();
+      audioRef.current.pause();
+      setIsPlaying(false);
     } else {
-      speakChapter(activeChapterIdx, playbackRate);
+      // Nếu đã load sẵn đúng chương hiện tại và đang tạm dừng giữa chừng thì phát tiếp
+      if (audioRef.current.src && audioRef.current.currentTime > 0 && !audioRef.current.ended) {
+        audioRef.current.playbackRate = playbackRate;
+        audioRef.current
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => speakChapter(activeChapterIdx, playbackRate));
+      } else {
+        speakChapter(activeChapterIdx, playbackRate);
+      }
+    }
+  };
+
+  const handleSeekAudio = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const pct = Number(e.target.value);
+    setChapterProgress(pct);
+    if (audioRef.current && durationSec > 0) {
+      const nextTime = (pct / 100) * durationSec;
+      audioRef.current.currentTime = nextTime;
+      setCurrentTimeSec(nextTime);
     }
   };
 
   const handleChangeSpeed = () => {
     const nextRate = playbackRate === 1.0 ? 1.25 : playbackRate === 1.25 ? 1.5 : 1.0;
     setPlaybackRate(nextRate);
-    if (isPlaying) {
-      speakChapter(activeChapterIdx, nextRate);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = nextRate;
     }
   };
 
@@ -479,14 +478,35 @@ export default function CoursePlayerClient({
       } text-slate-100`}
       onKeyDown={handleProtectedKeyDown}
     >
-      {activeLesson.audioUrl && (
-        <audio
-          ref={audioRef}
-          src={activeLesson.audioUrl}
-          onEnded={() => setIsPlaying(false)}
-          className="hidden"
-        />
-      )}
+      <audio
+        ref={audioRef}
+        src={currentChapterAudioUrl}
+        preload="metadata"
+        onLoadedMetadata={(e) => {
+          const dur = e.currentTarget.duration;
+          if (Number.isFinite(dur) && dur > 0) {
+            setDurationSec(dur);
+          }
+        }}
+        onTimeUpdate={(e) => {
+          const cur = e.currentTarget.currentTime;
+          const dur = e.currentTarget.duration;
+          setCurrentTimeSec(cur);
+          if (Number.isFinite(dur) && dur > 0) {
+            setDurationSec(dur);
+            setChapterProgress(Math.min(100, Math.round((cur / dur) * 100)));
+          }
+        }}
+        onEnded={() => {
+          setChapterProgress(100);
+          if (activeChapterIdx + 1 < activeLesson.podcastChapters.length) {
+            speakChapter(activeChapterIdx + 1, playbackRate);
+          } else {
+            setIsPlaying(false);
+          }
+        }}
+        className="hidden"
+      />
 
       <div
         className={`${
@@ -1089,11 +1109,25 @@ export default function CoursePlayerClient({
                       </div>
                     </div>
 
-                    {/* Thanh tiến trình chương đang phát */}
-                    <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-                      <div
-                        className="bg-gradient-to-r from-amber-400 to-emerald-400 h-full transition-all duration-300"
-                        style={{ width: `${isPlaying ? Math.max(8, chapterProgress) : chapterProgress}%` }}
+                    {/* Thanh tiến trình chương đang phát (Có thể kéo tua trực tiếp) */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                        <span className="text-amber-300 font-semibold">
+                          {formatAudioTime(currentTimeSec)}
+                        </span>
+                        <span>
+                          Chương {activeChapterIdx + 1}/{activeLesson.podcastChapters.length} •{' '}
+                          {durationSec > 0 ? formatAudioTime(durationSec) : activeLesson.duration}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={chapterProgress}
+                        onChange={handleSeekAudio}
+                        className="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                        title="Kéo để tua thời gian bài giảng"
                       />
                     </div>
 

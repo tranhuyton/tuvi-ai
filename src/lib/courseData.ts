@@ -2,6 +2,7 @@ export interface PodcastChapter {
   time: string;
   title: string;
   transcript: string;
+  audioUrl?: string;
 }
 
 export interface StarFlashcard {
@@ -61,7 +62,7 @@ export const COURSE_MODULES: CourseModule[] = [
     id: 3,
     badge: 'HỌC PHẦN 3 • PHỤ TINH, TỨ HÓA & VÒNG SAO',
     title: 'Hệ Thống Lục Cát, Lục Sát, Tứ Hóa, Thái Tuế, Lộc Tồn & Tuần Triệt',
-    description: 'Nắm vững các bộ sao quyết định成敗 (thành bại) thực tế của lá số: Tứ Hóa kích hoạt biến cố, Lục Sát phát dã như lôi, Lục Cát trợ lực và cơ chế đảo chiều của Tuần - Triệt.',
+    description: 'Nắm vững các bộ sao quyết định thành bại thực tế của lá số: Tứ Hóa kích hoạt biến cố, Lục Sát phát dã như lôi, Lục Cát trợ lực và cơ chế đảo chiều của Tuần - Triệt.',
   },
   {
     id: 4,
@@ -94,21 +95,25 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Sai lầm phổ biến nhất của người mới học Tử Vi',
         transcript: 'Chào mừng các bạn đến với Học Viện Tử Vi Đẩu Số Thực Chiến cùng Thầy Tôn. Ở bài mở đầu này, chúng ta giải quyết ngay sai lầm lớn nhất của 90% người mới xem lá số: đó là nhìn thấy một ngôi sao tên nghe rất đẹp như Tử Vi, Thiên Phủ liền mừng rỡ, hoặc vừa thấy Kình Dương, Địa Không, Hóa Kỵ đã vội hoang mang lo sợ. Trong Tử Vi Đẩu Số, một ngôi sao đứng một mình giống như một cầu thủ đứng giữa sân bóng trống, chưa thể tạo nên bàn thắng hay thất bại. Giá trị thực của sao phụ thuộc vào 3 yếu tố: vị trí đắc hãm tại 12 địa chi, tổ hợp các sao hội họp trong Tam hợp - Xung chiếu, và thời điểm Đại vận đi qua.',
+        audioUrl: '/audio/course/bai-1-chap-1.mp3',
       },
       {
         time: '04:45',
         title: 'Tương quan giữa Bản Mệnh và Cục: Nội lực và Môi trường',
         transcript: 'Khi nhìn vào thiên bàn ở giữa lá số, hai dòng các bạn cần đọc đầu tiên là Bản Mệnh ngũ hành nạp âm và Cục. Hãy hình dung Bản Mệnh là chiếc xe của bạn, còn Cục là mặt đường và môi trường xã hội. Nếu Cục sinh Mệnh, ví dụ Thủy Nhị Cục sinh Mệnh Mộc, bạn đi ra đời dễ gặp thời thế thuận lợi, môi trường nâng đỡ. Nếu Mệnh sinh Cục, bạn là người dốc sức cống hiến cho tập thể và công việc. Nếu Mệnh khắc Cục, bạn luôn muốn làm chủ hoàn cảnh và tự mở lối đi riêng. Còn nếu Cục khắc Mệnh, giai đoạn đầu đời thường phải vượt qua thử thách từ hoàn cảnh để rèn bản lĩnh.',
+        audioUrl: '/audio/course/bai-1-chap-2.mp3',
       },
       {
         time: '10:15',
         title: 'Công thức 40 - 30 - 30 khi đọc Tam Hợp và Xung Chiếu',
         transcript: 'Mỗi cung trên lá số luôn chịu sự chi phối trực tiếp của 3 cung khác tạo thành thế Tam Phương Tứ Chính. Lấy cung Mệnh làm gốc thì cung Mệnh chiếm khoảng 40% trọng số; cung Thiên Di xung chiếu đối diện chiếm 30% trọng số vì nó phản ánh môi trường bên ngoài tác động trực tiếp vào bạn; và hai cung Tài Bạch, Quan Lộc nằm trong tam hợp chiếm 30% còn lại. Do đó, dù cung Mệnh Vô Chính Diệu nhưng cung Thiên Di và Tam hợp sáng sủa, có Tuần Triệt trấn giữ đúng chỗ thì vẫn là lá số cực kỳ bản lĩnh.',
+        audioUrl: '/audio/course/bai-1-chap-3.mp3',
       },
       {
         time: '15:20',
         title: 'Mệnh quản tiền vận, Thân quản hậu vận từ mốc 30 tuổi',
         transcript: 'Một nguyên tắc sống còn nữa là phải luôn xem cung Thân cư ở đâu. Trước 30 tuổi, con người hành xử theo bản năng của cung Mệnh. Sau 30 tuổi, suy nghĩ, ưu tiên và thành tựu của bạn dịch chuyển mạnh về cung an Thân. Thân cư Tài Bạch thì nửa đời sau lấy dòng tiền làm trọng tâm; Thân cư Quan Lộc thì lấy danh vị và sự nghiệp làm lẽ sống; Thân cư Phúc Đức hay Phu Thê thì hậu vận đặt nặng sự bình an tinh thần và gia đạo.',
+        audioUrl: '/audio/course/bai-1-chap-4.mp3',
       },
     ],
     contentHtml: `
@@ -156,6 +161,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Quy Tắc Thực Chiến Khi Luận Giải Của Thầy Tôn</h2>
+      <ul>
+        <li><strong>Không nhìn đơn tinh mà kết luận vội:</strong> Thấy Sát tinh (Kình, Đà, Không, Kiếp) phải xem ngay có Chính tinh Miếu Vượng hay Tuần, Triệt, Hóa Khoa chế giải hay không.</li>
+        <li><strong>Phân biệt rõ Mệnh và Thân:</strong> Trước 30 tuổi xem trọng cung Mệnh; từ sau 30 tuổi trở đi, cung an Thân mới là nơi quyết định thành tựu thực tế và ưu tiên sống của đương số.</li>
+        <li><strong>Lấy Phúc Đức làm gốc rễ:</strong> Cung Phúc Đức luôn chiếu thẳng vào cung Tài Bạch và nằm trong tam hợp của cung Phu Thê, Thiên Di — do đó giữ gìn chữ tín và bồi đắp phúc ấm gia tộc chính là chìa khóa bền vững nhất để kích hoạt tài vận.</li>
+      </ul>
     `,
   },
   {
@@ -168,7 +179,7 @@ export const COURSE_LESSONS: CourseLesson[] = [
     duration: '21:15',
     relatedStars: ['Tử Vi', 'Tả Phù', 'Hữu Bật', 'Thiên Phủ', 'Thiên Tướng'],
     flashcard: {
-      nguHanh: 'Dương Thổ (Kỷ Thổ — Đất cao nguyên mẫu mực)',
+      nguHanh: 'Âm Thổ (Kỷ Thổ — Đất trung tâm màu mỡ, che chở và quy tụ muôn loài)',
       hoaKhi: 'Tôn Quý & Đế Tinh (Ngôi sao chủ về uy quyền, tổ chức và dẫn dắt)',
       chuSu: 'Chủ Quan Lộc, tước vị, năng lực điều hành và giải ách chế sát',
       dacHam: 'Miếu địa: Tỵ, Ngọ, Dần, Thân • Vượng địa: Thìn, Tuất • Đắc địa: Sửu, Mùi • Bình hòa: Hợi, Tý, Mão, Dậu',
@@ -178,28 +189,32 @@ export const COURSE_LESSONS: CourseLesson[] = [
     podcastChapters: [
       {
         time: '00:00',
-        title: 'Bản chất Dương Thổ và khí chất Đế Tinh của sao Tử Vi',
-        transcript: 'Sao Tử Vi là ngôi sao mở đầu cho vòng Bắc Đẩu, mang ngũ hành Dương Thổ, hóa khí là Tôn Quý. Người có sao Tử Vi thủ Mệnh ở vị trí Miếu Vượng thường có phong thái đĩnh đạc, tự trọng cao, thích sắp xếp, tổ chức và không thích bị người khác áp đặt một cách vô lý. Tuy nhiên, hiểu đúng sao Tử Vi không phải là ai có Tử Vi cũng làm quan to hay làm tổng giám đốc. Tử Vi là hình tượng của một vị vua; mà một vị vua có thực quyền hay không hoàn toàn phụ thuộc vào việc xung quanh có bề tôi giỏi hay không.',
+        title: 'Bản chất Âm Thổ và khí chất Đế Tinh của sao Tử Vi',
+        transcript: 'Sao Tử Vi là ngôi sao mở đầu cho vòng Bắc Đẩu, mang ngũ hành Âm Thổ, tức Kỷ Thổ trung tâm, hóa khí là Tôn Quý. Người có sao Tử Vi thủ Mệnh ở vị trí Miếu Vượng thường có phong thái đĩnh đạc, tự trọng cao, thích sắp xếp, tổ chức và không thích bị người khác áp đặt một cách vô lý. Tuy nhiên, hiểu đúng sao Tử Vi không phải là ai có Tử Vi cũng làm quan to hay làm tổng giám đốc. Tử Vi là hình tượng của một vị vua; mà một vị vua có thực quyền hay không hoàn toàn phụ thuộc vào việc xung quanh có bề tôi giỏi hay không.',
+        audioUrl: '/audio/course/bai-2-chap-1.mp3',
       },
       {
         time: '06:10',
         title: 'Tử Vi cần Tả Phù, Hữu Bật như vua cần tể tướng',
         transcript: 'Điều kiện sống còn của sao Tử Vi là phải hội hợp được Lục Cát Tinh, đặc biệt là cặp Tả Phù - Hữu Bật, Văn Xương - Văn Khúc, Thiên Khôi - Thiên Việt hoặc Hóa Lộc, Hóa Quyền, Hóa Khoa. Khi Tử Vi có Tả Hữu phò tá gọi là Quân Thần Khánh Hội: người này đi tới đâu cũng có cộng sự đắc lực, biết dùng người và dễ nắm vị trí quản lý cấp cao. Ngược lại, nếu Tử Vi đứng trơ trọi không có một sao phụ tá nào mà lại gặp Tuần Triệt hoặc Cô Thần, Quả Tú thì gọi là Cô Quân — tức là ông vua cô độc, việc gì cũng phải tự ôm vào người, tâm tính dễ cao ngạo mà thực quyền lại mỏng.',
+        audioUrl: '/audio/course/bai-2-chap-2.mp3',
       },
       {
         time: '12:40',
         title: 'Các thế đứng của Tử Vi trên 12 địa chi',
         transcript: 'Tại hai cung Tý và Ngọ, Tử Vi đứng độc thủ. Đặc biệt Tử Vi cư Ngọ là thế Cực Hướng Ly Minh — vua ngồi ngai vàng nhìn về phương Nam rực rỡ nhất, rất hợp với người tuổi Giáp, Đinh, Kỷ khi không bị Kình Dương, Hóa Kỵ phá cách. Tại Dần và Thân, Tử Vi đồng cung với Thiên Phủ tạo thành bộ Tử Phủ đồng cung cực kỳ vững chãi cả về quyền lẫn tài. Tại Thìn và Tuất, Tử Vi đi cùng Thiên Tướng; tại Sửu và Mùi đi cùng Phá Quân; tại Mão và Dậu đi cùng Tham Lang; còn tại Tỵ và Hợi đi cùng Thất Sát tạo thành cách Tử Sát uy quyền.',
+        audioUrl: '/audio/course/bai-2-chap-3.mp3',
       },
       {
         time: '17:30',
         title: 'Khi Tử Vi gặp Không Kiếp, Kình Đà: Đế Ngộ Hung Đồ',
         transcript: 'Nếu Tử Vi không có Tả Hữu mà lại hội họp Địa Không, Địa Kiếp, Kình Dương, Đà La thì cổ nhân gọi là Đế Ngộ Hung Đồ — vua gặp đám loạn thần. Người mang cách này trong công việc dễ dùng tiểu xảo, quyết định nóng vội hoặc bị cấp dưới phản trắc. Tuy nhiên, nếu Tử Vi đồng cung Thất Sát tại Tỵ Hợi gặp thêm Hóa Quyền thì lại chế ngự được sát tinh để làm tướng cầm quân trên thương trường.',
+        audioUrl: '/audio/course/bai-2-chap-4.mp3',
       },
     ],
     contentHtml: `
       <h2>1. Đặc Tính Cốt Lõi Của Sao Tử Vi: Tâm Lý, Hình Tướng &amp; Sự Nghiệp</h2>
-      <p><strong>Sao Tử Vi</strong> đứng đầu chòm Bắc Đẩu, thuộc hành <strong>Dương Thổ</strong>. Trong hệ thống 14 chính tinh, Tử Vi không bao giờ rơi vào vị trí Hãm địa hoàn toàn (thấp nhất là Bình hòa tại Tý, Hợi, Mão, Dậu), thể hiện sức che chở và khả năng tự cân bằng rất lớn:</p>
+      <p><strong>Sao Tử Vi</strong> đứng đầu chòm Bắc Đẩu, thuộc hành <strong>Âm Thổ (Kỷ Thổ)</strong>. Trong hệ thống 14 chính tinh, Tử Vi không bao giờ rơi vào vị trí Hãm địa hoàn toàn (thấp nhất là Bình hòa tại Tý, Hợi, Mão, Dậu), thể hiện sức che chở và khả năng tự cân bằng rất lớn:</p>
       <ul>
         <li><strong>Về tâm lý &amp; tính cách:</strong> Trọng danh dự, có tư duy hệ thống, thích nhìn bức tranh tổng thể, bao dung nhưng đôi khi cả nể, ưa nghe lời khen ngợi (nếu thiếu các sao sắc bén đi kèm).</li>
         <li><strong>Về năng lực công việc:</strong> Xuất sắc trong vai trò hoạch định, điều phối nhân sự, quản lý dự án, điều hành doanh nghiệp hoặc làm việc trong các tổ chức lớn.</li>
@@ -247,6 +262,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Tử Vi Tại Các Cung Trọng Điểm &amp; Bí Quyết Ứng Dụng</h2>
+      <ul>
+        <li><strong>Tại Cung Tài Bạch &amp; Quan Lộc:</strong> Chủ về nguồn thu nhập từ vị trí quản lý, điều hành, thương hiệu uy tín hoặc làm việc trong các tập đoàn, cơ quan lớn. Cực kỳ phát đạt khi đi cùng Lộc Tồn, Hóa Lộc, Hóa Quyền, Tả Phù, Hữu Bật.</li>
+        <li><strong>Tại Cung Phu Thê:</strong> Người phối ngẫu thường có lòng tự trọng cao, có năng lực tổ chức hoặc xuất thân gia giáo; vợ chồng cần tôn trọng thể diện và lắng nghe nhau để giữ hòa khí.</li>
+        <li><strong>Tại Cung Điền Trạch:</strong> Thích ở nơi cao ráo, khang trang, an ninh tốt, gần trung tâm hành chính hoặc tòa nhà lớn; hậu vận tích lũy bất động sản vững chắc.</li>
+      </ul>
     `,
   },
   {
@@ -271,16 +292,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Vì sao hai người có Mệnh đẹp như nhau nhưng cuộc đời khác biệt?',
         transcript: 'Trong thực tế tư vấn hơn 18 năm qua, Thầy gặp rất nhiều lá số có cung Mệnh cực đẹp nhưng phải đến ngoài 40 tuổi mới phất lên, trong khi có người cung Mệnh bình thường nhưng từ 25 đến 45 tuổi lại liên tiếp đi vào các cung Đại vận đắc địa nên thành đạt rất sớm. Bí mật nằm ở quy luật Tiên Thiên và Hậu Thiên. Tiên Thiên là 12 cung cố định khi bạn cất tiếng khóc chào đời; còn Hậu Thiên là chiều mũi tên Đại vận 10 năm đi thuận hay đi nghịch qua các cung.',
+        audioUrl: '/audio/course/bai-3-chap-1.mp3',
       },
       {
         time: '06:00',
         title: 'Cách xét chiều đi của Đại vận: Dương Nam Âm Nữ thuận hành',
         transcript: 'Dương Nam và Âm Nữ thì Đại vận 10 năm đi thuận chiều kim đồng hồ từ cung Mệnh sang cung Phụ Mẫu, Phúc Đức, Điền Trạch, Quan Lộc... Ngược lại, Âm Nam và Dương Nữ thì Đại vận đi nghịch chiều kim đồng hồ từ cung Mệnh sang Huynh Đệ, Phu Thê, Tử Tức, Tài Bạch... Chính chiều đi này quyết định việc ở tuổi 30-40 bạn đang bước vào vùng đất của những ngôi sao nào.',
+        audioUrl: '/audio/course/bai-3-chap-2.mp3',
       },
       {
         time: '12:15',
         title: 'Sự giao thoa giữa Đại vận 10 năm và Lưu niên 1 năm',
         transcript: 'Nếu Đại vận 10 năm đang rất đẹp, ví dụ hội Lộc Mã Giao Trì hoặc Tả Hữu Khoa Quyền Lộc, mà năm Lưu niên gặp hạn nhỏ thì chỉ như cơn mưa rào thoáng qua trên đại lộ, khó làm sụp đổ đại cục. Ngược lại, nếu Đại vận 10 năm đang rơi vào thế Không Kiếp Kình Đà Hóa Kỵ trùng trùng, thì dù một năm Lưu niên có sao Lộc chiếu vào cũng không được tất tay vay nợ mở rộng quá đà.',
+        audioUrl: '/audio/course/bai-3-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -323,6 +347,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Nguyên Tắc Vàng Khi Kết Hợp Gốc Tiên Thiên &amp; Đại Vận 10 Năm</h2>
+      <ul>
+        <li><strong>Gốc tốt gặp Vận tốt (Thượng cách):</strong> Mệnh Thân vốn đắc cách lại bước vào Đại vận 10 năm hội Khoa Quyền Lộc, Lộc Mã — đây là thập kỷ vàng để dốc toàn lực xây dựng cơ đồ lớn.</li>
+        <li><strong>Gốc vất vả nhưng Đại vận sáng (Trung niên bứt phá):</strong> Rất nhiều doanh nhân có cung Mệnh gặp Tuần Triệt hoặc Sát tinh vất vả trước tuổi 30, nhưng từ Đại vận thứ 3, thứ 4 (giai đoạn 25 – 54 tuổi) đi vào cung Miếu Vượng nên làm nên sự nghiệp lừng lẫy.</li>
+        <li><strong>Chiến lược quản trị rủi ro theo chu kỳ:</strong> Khi bước vào Đại vận 10 năm có nhiều Sát Kỵ, hãy ưu tiên tích lũy chuyên môn, mua tài sản hữu hình và tuyệt đối không dùng đòn bẩy nợ vay quá sức.</li>
+      </ul>
     `,
   },
   {
@@ -347,16 +377,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Bản chất Âm Mộc và Động Tinh của sao Thiên Cơ',
         transcript: 'Nếu sao Tử Vi là vị vua ngồi trên ngai vàng thì sao Thiên Cơ luôn đứng ngay cạnh để làm quân sư tham mưu. Thiên Cơ thuộc hành Âm Mộc, hóa khí là Thiện Tinh nhưng đồng thời cũng là Động Tinh — ngôi sao của sự vận động trí óc không ngừng nghỉ. Người có Thiên Cơ thủ Mệnh thường có đôi mắt linh hoạt, đầu óc nhạy bén với con số, quy trình, công nghệ, phần mềm và chiến lược.',
+        audioUrl: '/audio/course/bai-4-chap-1.mp3',
       },
       {
         time: '06:30',
         title: 'Thiên Cơ đi với Thái Âm, Cự Môn và Thiên Lương',
         transcript: 'Thiên Cơ chỉ kết hợp với 3 ngôi sao khác tạo thành 3 tổ hợp kinh điển: Cơ Nguyệt (Thiên Cơ - Thái Âm tại Dần Thân) thiên về tài chính, bất động sản và thẩm mỹ; Cơ Cự (Thiên Cơ - Cự Môn tại Mão Dậu) cực kỳ sắc bén về ngôn ngữ, luật pháp, thương mại quốc tế; và Cơ Lương (Thiên Cơ - Thiên Lương tại Thìn Tuất) là mẫu hình chuẩn mực của nhà nghiên cứu, giảng dạy, y dược và cố vấn cấp cao.',
+        audioUrl: '/audio/course/bai-4-chap-2.mp3',
       },
       {
         time: '13:45',
         title: 'Điểm yếu cần khắc phục của người mệnh Thiên Cơ',
         transcript: 'Vì đầu óc tính toán quá nhanh và nhìn ra quá nhiều phương án, người mệnh Thiên Cơ nếu thiếu Hóa Quyền hoặc Lộc Tồn giữ chân thì dễ rơi vào trạng thái đứng núi này trông núi nọ, làm nhiều dự án cùng lúc nhưng thiếu sự kiên trì đi tới đích cuối cùng. Đặc biệt khi Thiên Cơ gặp Hóa Kỵ, Đà La, Hỏa Linh thì hệ thần kinh rất dễ căng thẳng, khó ngủ sâu.',
+        audioUrl: '/audio/course/bai-4-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -399,6 +432,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Thiên Cơ Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Tài Bạch:</strong> Kiếm tiền bằng trí óc, chất xám, công nghệ, tư vấn chiến lược hoặc xoay vòng vốn linh hoạt; dòng tiền lưu chuyển liên tục chứ không nằm im một chỗ.</li>
+        <li><strong>Tại Cung Quan Lộc:</strong> Hợp với các ngành nghề đòi hỏi tư duy phân tích, lập trình, kỹ thuật, hoạch định dự án, marketing, thương mại điện tử hoặc cố vấn chuyên môn.</li>
+        <li><strong>Lời khuyên thực chiến của Thầy Tôn:</strong> Người mệnh Thiên Cơ cần rèn thói quen hoàn thành dứt điểm từng mục tiêu lớn thay vì ôm đồm quá nhiều ý tưởng cùng lúc, đồng thời duy trì thiền định hoặc thể thao để dưỡng thần kinh và giấc ngủ.</li>
+      </ul>
     `,
   },
   {
@@ -423,16 +462,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Thái Dương: Ngôi sao của sự quang minh, hào sảng và danh vị',
         transcript: 'Thái Dương là mặt trời trên bầu trời Tử Vi, thuộc hành Dương Hỏa, hóa khí là Quý Tinh. Bản chất của mặt trời là tỏa sáng và cho đi mà không đòi hỏi nhận lại. Bởi vậy, người có Thái Dương thủ Mệnh ở vị trí Miếu Vượng từ cung Dần đến cung Ngọ thường có tính cách vô cùng thẳng thắn, rộng lượng, ghét sự mập mờ tiểu xảo và có uy tín rất lớn trong cộng đồng.',
+        audioUrl: '/audio/course/bai-5-chap-1.mp3',
       },
       {
         time: '07:20',
         title: 'Thái Dương ban ngày (Miếu Vượng) và Thái Dương ban đêm (Hãm địa)',
         transcript: 'Không ngôi sao nào phụ thuộc vào vị trí Địa Chi và giờ sinh mạnh như Thái Dương. Từ cung Dần qua Mão, Thìn, Tỵ đến Ngọ là mặt trời ban ngày: đặc biệt tại Mão gọi là Nhật Xuất Lôi Môn, tại Ngọ gọi là Nhật Lệ Trung Thiên. Ngược lại, từ cung Dậu qua Tuất, Hợi, Tý, Sửu là mặt trời đã lặn xuống núi: người mệnh Thái Dương hãm địa vẫn rất thông minh và nhiệt tình, nhưng làm ơn dễ mắc oán, hay phải vất vả lo toan ngầm và cần Hóa Lộc, Hóa Khoa hoặc Tuần Triệt để làm sáng lại.',
+        audioUrl: '/audio/course/bai-5-chap-2.mp3',
       },
       {
         time: '14:10',
         title: 'Ý nghĩa đặc biệt của Thái Dương đối với lá số Nữ mệnh',
         transcript: 'Trên lá số của người phụ nữ, sao Thái Dương vừa là năng lực sự nghiệp vừa đại diện trực tiếp cho người cha và người chồng. Nữ mệnh có Thái Dương Miếu Vượng thường lấy được người chồng có danh vị, nhưng bản thân chị em cũng rất giỏi giang, mang tính cách nam tính quyết đoán nên trong gia đình cần học cách mềm mỏng để giữ hòa khí.',
+        audioUrl: '/audio/course/bai-5-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -474,6 +516,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Thái Dương Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Quan Lộc:</strong> Khi Thái Dương Miếu Vượng (Dần, Mão, Thìn, Tỵ, Ngọ), đương số dễ nổi danh sớm, có uy tín lớn trong giới chuyên môn, ngoại giao, quản lý, giáo dục hoặc truyền thông.</li>
+        <li><strong>Tại Cung Tài Bạch:</strong> Thái Dương chủ về lấy danh nuôi lợi — càng minh bạch, hào sảng và xây dựng thương hiệu cá nhân uy tín thì tài lộc càng tự tìm đến; tránh giữ tiền mặt quá nhiều vì hay phải chi lo cho đại cục và người thân.</li>
+        <li><strong>Cách hóa giải khi Thái Dương Hãm địa:</strong> Chọn làm việc trong lĩnh vực công nghệ, nghiên cứu chuyên sâu, làm việc với đối tác quốc tế (lệch múi giờ) hoặc luôn giữ tinh thần cho đi tri thức để kích hoạt ánh sáng của Thái Dương.</li>
+      </ul>
     `,
   },
   {
@@ -498,16 +546,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Vũ Khúc: Ngôi sao thực tế nhất trong 14 Chính Tinh',
         transcript: 'Nếu Thiên Cơ thích lập kế hoạch, Thái Dương thích danh tiếng thì Vũ Khúc là ngôi sao của hành động thực tế và hiệu quả tài chính. Thuộc hành Âm Kim, Vũ Khúc là Chính Tài Tinh chủ quản cung Tài Bạch. Người có Vũ Khúc thủ Mệnh nói ít làm nhiều, cực kỳ dứt khoát, rõ ràng về tiền bạc và ghét sự vòng vo lý thuyết suông.',
+        audioUrl: '/audio/course/bai-6-chap-1.mp3',
       },
       {
         time: '07:15',
         title: 'Vũ Khúc đi với Tử Phủ Tướng và Vũ Khúc đi với Sát Phá Tham',
         transcript: 'Điểm thú vị của Vũ Khúc là nó đứng giao thoa giữa hai nhóm lớn: khi đi với Thiên Phủ tại Tý Ngọ hoặc Thiên Tướng tại Dần Thân, Vũ Khúc mang dáng dấp của nhà quản lý tài chính, giám đốc ngân hàng, kiểm toán viên chuẩn mực. Nhưng khi đi với Tham Lang tại Sửu Mùi, Thất Sát tại Mão Dậu hay Phá Quân tại Tỵ Hợi, Vũ Khúc lại biến thành nhà kinh doanh mạo hiểm, đầu tư công nghiệp, kỹ thuật và thương mại sắc bén.',
+        audioUrl: '/audio/course/bai-6-chap-2.mp3',
       },
       {
         time: '14:30',
         title: 'Vì sao cổ nhân gọi Vũ Khúc là Quả Tú tinh?',
         transcript: 'Vì hành Kim của Vũ Khúc quá sắc lạnh và lý trí, người mệnh Vũ Khúc thường đặt công việc và trách nhiệm kinh tế lên trên sự lãng mạn. Nếu đi thêm Cô Thần, Quả Tú, Vũ Khúc Hóa Kỵ thì đời sống hôn nhân dễ có khoảng cách tâm lý. Giải pháp thực tế là nên kết hôn muộn một chút, chọn bạn đời có tính cách ấm áp hoặc cùng chung chí hướng kinh doanh.',
+        audioUrl: '/audio/course/bai-6-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -560,6 +611,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Vũ Khúc Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Tài Bạch:</strong> Vũ Khúc đóng đúng cung bản vị Tài Bạch là thượng cách về tài chính — đương số nhạy bén với từng cơ hội sinh lời, quản lý dòng tiền sắc sảo và thực tế.</li>
+        <li><strong>Tại Cung Điền Trạch:</strong> Thuộc hành Kim nhưng rất vượng về tích lũy tài sản công nghiệp, kho bãi, văn phòng cho thuê hoặc bất động sản thương mại (đặc biệt khi đóng tại Thìn, Tuất, Sửu, Mùi).</li>
+        <li><strong>Tại Cung Phu Thê:</strong> Cần tránh sự cứng nhắc, nguyên tắc quá mức trong đời sống vợ chồng; nên cùng bạn đời thống nhất mục tiêu tài chính rõ ràng và dành thời gian hâm nóng cảm xúc gia đình.</li>
+      </ul>
     `,
   },
   {
@@ -584,16 +641,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Thiên Đồng: Ngôi sao trẻ mãi không già trong 14 Chính Tinh',
         transcript: 'Thiên Đồng thuộc hành Dương Thủy, hóa khí là Phúc Tinh chủ quản cung Phúc Đức. Người có Thiên Đồng thủ Mệnh thường có khuôn mặt bầu bĩnh, phúc hậu, tính tình ôn hòa, giàu lòng trắc ẩn, yêu thích âm nhạc, văn chương, ẩm thực và du lịch. Dù ở tuổi 50 hay 60, người mệnh Thiên Đồng vẫn giữ được nét hồn nhiên và khả năng thích nghi với cái mới.',
+        audioUrl: '/audio/course/bai-7-chap-1.mp3',
       },
       {
         time: '06:40',
         title: 'Nghịch lý thú vị: Thiên Đồng quá êm đềm lại khó bứt phá',
         transcript: 'Vì bản chất của Thiên Đồng là hưởng phúc và né tránh xung đột, nếu lá số chỉ toàn sao êm dịu thì đương số dễ hài lòng với mức sống vừa đủ, thiếu động lực dấn thân. Do đó, cổ nhân rất quý cách Thiên Đồng gặp Kình Dương tại Ngọ (Mã Đầu Đới Kiếm) hoặc có Hóa Quyền, Lộc Tồn thúc đẩy — chính áp lực từ thực tế sẽ biến sự thông minh của Thiên Đồng thành sự nghiệp lớn.',
+        audioUrl: '/audio/course/bai-7-chap-2.mp3',
       },
       {
         time: '12:50',
         title: 'Thiên Đồng đi với Thái Âm, Thiên Lương và Cự Môn',
         transcript: 'Tại Tý Ngọ, Thiên Đồng đi với Thái Âm (Đồng Âm tại Tý là Thủy Trừng Quế Ngạc cực đẹp). Tại Dần Thân, Thiên Đồng đi với Thiên Lương tạo thành bộ Đồng Lương tối miếu — phúc thọ song toàn, cực hợp làm giáo dục, y tế, tư vấn. Còn tại Sửu Mùi, Thiên Đồng đi với Cự Môn thì nội tâm sâu sắc nhưng hay có nỗi buồn kín đáo.',
+        audioUrl: '/audio/course/bai-7-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -635,6 +695,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Thiên Đồng Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Phúc Đức &amp; Tật Ách:</strong> Đóng vai trò là Đệ nhất Phúc tinh giải trừ tai ách, giúp đương số gặp hung hóa cát, tâm hồn lạc quan và có tuổi thọ cao.</li>
+        <li><strong>Tại Cung Tài Bạch &amp; Quan Lộc:</strong> Hợp khởi nghiệp từ hai bàn tay trắng (<em>Bạch thủ thành gia</em>), phát triển mạnh trong ngành ẩm thực, nhà hàng – khách sạn, du lịch, làm đẹp, giáo dục, nghệ thuật và dịch vụ chăm sóc khách hàng.</li>
+        <li><strong>Tại Cung Điền Trạch:</strong> Buổi đầu thường thuê mặt bằng hoặc đổi nơi ở vài lần, càng về trung và hậu vận (khi hội Lộc Tồn, Thái Âm) càng tích lũy được nhiều nhà đất đẹp gần sông hồ, công viên.</li>
+      </ul>
     `,
   },
   {
@@ -659,16 +725,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Hai mặt đối lập thú vị bên trong sao Liêm Trinh',
         transcript: 'Trong 14 Chính tinh, Liêm Trinh là ngôi sao có cá tính đặc biệt nhất. Nó mang hành Âm Hỏa nhưng trong tàng chứa cả khí Kim và Mộc. Cổ nhân vừa gọi Liêm Trinh là Thanh Bạch tinh (ngôi sao của sự liêm chính, kỷ luật, nguyên tắc), vừa gọi nó là Thứ Đào Hoa (ngôi sao đào hoa thứ hai sau Tham Lang). Tại sao lại như vậy? Vì người mệnh Liêm Trinh ngoài mặt rất nghiêm túc, thẳng thắn nhưng nội tâm bên trong lại cực kỳ giàu cảm xúc và có sức hút riêng biệt.',
+        audioUrl: '/audio/course/bai-8-chap-1.mp3',
       },
       {
         time: '07:00',
         title: 'Liêm Trinh độc thủ tại Dần Thân và Liêm Tướng tại Tý Ngọ',
         transcript: 'Khi Liêm Trinh độc thủ tại Dần Thân hoặc đồng cung Thiên Tướng tại Tý Ngọ, Thủy của Thiên Tướng chế hóa bớt tính nóng của Hỏa Liêm Trinh tạo thành cách Hình Ấn tương phùng. Đây là những nhà quản trị xuất sắc, làm việc có nguyên tắc, hợp với pháp chế, kiểm toán, quân đội, công an hoặc quản lý vận hành.',
+        audioUrl: '/audio/course/bai-8-chap-2.mp3',
       },
       {
         time: '13:30',
         title: 'Khi Liêm Trinh gặp Hóa Kỵ, Bạch Hổ tại Tỵ Hợi, Mão Dậu',
         transcript: 'Vì hóa khí của Liêm Trinh có chữ Tù (sự ràng buộc, quy tắc pháp lý), khi Liêm Trinh đóng ở Tỵ Hợi đi cùng Tham Lang hoặc ở Mão Dậu đi cùng Phá Quân mà lại gặp Hóa Kỵ, Thiên Hình, Bạch Hổ thì trong đời làm ăn phải hết sức minh bạch giấy tờ, thuế vụ, hợp đồng và chú ý an toàn giao thông.',
+        audioUrl: '/audio/course/bai-8-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -720,6 +789,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Liêm Trinh Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Quan Lộc:</strong> Liêm Trinh là Quan Lộc chủ — làm việc cực kỳ có kỷ luật, quy trình rõ ràng, rất hợp với pháp chế, kiểm toán, hành chính công, lực lượng vũ trang, công nghệ thông tin và điện tử viễn thông.</li>
+        <li><strong>Tại Cung Tài Bạch:</strong> Kiếm tiền từ chuyên môn sắc bén hoặc thương mại có tính cạnh tranh cao; khi đi cùng Thiên Phủ, Lộc Tồn thì giữ tiền cực kỳ chặt chẽ.</li>
+        <li><strong>Nguyên tắc bảo hộ của Thầy Tôn:</strong> Khi Liêm Trinh gặp Hóa Kỵ, Thiên Hình hoặc Bạch Hổ trong vận hạn, tuyệt đối tuân thủ pháp luật, minh bạch hóa đơn chứng từ và giữ cái đầu lạnh khi đàm phán.</li>
+      </ul>
     `,
   },
   {
@@ -732,7 +807,7 @@ export const COURSE_LESSONS: CourseLesson[] = [
     duration: '19:40',
     relatedStars: ['Thiên Phủ', 'Tử Vi', 'Vũ Khúc', 'Liêm Trinh', 'Lộc Tồn'],
     flashcard: {
-      nguHanh: 'Âm Thổ (Mậu/Kỷ Thổ — Kho tàng tích trữ tài sản và đất đai)',
+      nguHanh: 'Dương Thổ (Mậu Thổ — Thành quách vững chãi, kho tàng tích trữ tài sản và đất đai)',
       hoaKhi: 'Lệnh Tinh & Tài Khố (Chủ kho tiền bạc, điền sản và quyền điều hành)',
       chuSu: 'Chủ Tài Bạch & Điền Trạch; đứng đầu chòm Nam Đẩu Tinh',
       dacHam: 'Luôn Miếu / Vượng / Đắc địa tại tất cả 12 cung Địa Chi (Không bao giờ Hãm địa)',
@@ -744,16 +819,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Thiên Phủ: Nam Đẩu Đế Tinh — Vững vàng, cẩn trọng và thực tế',
         transcript: 'Nếu sao Tử Vi là Bắc Đẩu Đế Tinh chuyên về mở mang quyền lực thì sao Thiên Phủ là Nam Đẩu Đế Tinh chuyên về giữ gìn cơ nghiệp, quản lý kho tàng và tích lũy tài sản. Thiên Phủ thuộc hành Thổ, đứng ở bất kỳ cung nào trong 12 địa chi cũng đều từ Đắc địa đến Miếu Vượng. Người mệnh Thiên Phủ có phong thái điềm đạm, ăn chắc mặc bền, không bao giờ thích mạo hiểm tất tay.',
+        audioUrl: '/audio/course/bai-9-chap-1.mp3',
       },
       {
         time: '06:50',
-        title: 'Thiên Phủ Đắc Lộc (Kho đầy) vs. Thiên Phủ Không Lộ (Kho rỗng)',
+        title: 'Thiên Phủ Đắc Lộc (Kho đầy) và Thiên Phủ Không Lộ (Kho rỗng)',
         transcript: 'Bản chất của Thiên Phủ là cái kho chứa tiền (Tài khố). Một cái kho chỉ thực sự giá trị khi bên trong có hàng hóa và vàng bạc — tức là Thiên Phủ phải hội hợp được Lộc Tồn hoặc Hóa Lộc, thêm Tả Phù, Hữu Bật canh giữ. Ngược lại, nếu Thiên Phủ không có Lộc mà lại gặp Địa Không, Địa Kiếp, Đại Tiểu Hao, Tuần Triệt đóng ngay tại đó thì cổ nhân gọi là Không Khố hoặc Lộ Khố — bên ngoài nhìn rất bề thế nhưng dòng tiền thực tế bên trong lại hao hụt.',
+        audioUrl: '/audio/course/bai-9-chap-2.mp3',
       },
       {
         time: '13:40',
         title: 'Luôn nhìn cung Tướng diện và cung Thất Sát khi xem Thiên Phủ',
         transcript: 'Trong kỹ thuật an sao, Thiên Phủ và Thiên Tướng luôn luôn nằm trong tam hợp của nhau gọi là Phủ Tướng Triều Viên; đồng thời cung xung chiếu của Thiên Phủ lúc nào cũng có sao Thất Sát. Do đó, xem Thiên Phủ phải xem đồng thời cả Thiên Tướng có bị Triệt hay Hình Kỵ làm hỏng ấn tín hay không.',
+        audioUrl: '/audio/course/bai-9-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -795,6 +873,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Thiên Phủ Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Tài Bạch &amp; Điền Trạch:</strong> Thiên Phủ là Nam Đẩu Tài Khố — đóng tại Tài hoặc Điền mà gặp Lộc Tồn, Hóa Lộc, Tả Hữu thì kho tiền đầy ắp, giữ của rất bền, sở hữu nhiều bất động sản giá trị cao.</li>
+        <li><strong>Tại Cung Phu Thê:</strong> Người bạn đời chín chắn, biết vun vén kinh tế gia đình, là hậu phương tài chính vững chắc cho đương số phát triển sự nghiệp.</li>
+        <li><strong>Lưu ý quản trị rủi ro:</strong> Nếu Thiên Phủ gặp Địa Không, Địa Kiếp hoặc Đại Hao (<em>Kho lộ, Kho rỗng</em>), đương số chỉ nên đầu tư bằng vốn tự có, không đứng ra bảo lãnh nợ vay và ưu tiên cất giữ tài sản dưới dạng bất động sản có pháp lý sạch.</li>
+      </ul>
     `,
   },
   {
@@ -819,16 +903,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Thái Âm: Phú Tinh chủ quản Điền Trạch và tài sản tích lũy',
         transcript: 'Nếu Thái Dương là mặt trời rực rỡ chủ về danh vị thì Thái Âm là mặt trăng dịu dàng chủ về Phú — tức là tiền tài và bất động sản thực chất. Người có sao Thái Âm thủ Mệnh ở vị trí Miếu Vượng từ cung Dậu qua Tuất, Hợi đến Tý thường có khí chất thanh lịch, tinh tế, thấu hiểu tâm lý người khác và có duyên đặc biệt với đất đai, nhà cửa, tài chính.',
+        audioUrl: '/audio/course/bai-10-chap-1.mp3',
       },
       {
         time: '07:10',
         title: 'Nguyệt Lãng Thiên Môn (Thái Âm cư Hợi) và Thủy Trừng Quế Ngạc (Cư Tý)',
         transcript: 'Đẹp nhất của sao Thái Âm là khi đóng tại cung Hợi vào ban đêm, gọi là Nguyệt Lãng Thiên Môn — trăng rằm tỏa sáng giữa bầu trời đêm trong vắt, đặc biệt người tuổi Ất, Bính, Đinh, Mậu cực kỳ giàu có. Tại cung Tuất và cung Dậu, Thái Âm cũng rất sáng, đối chiếu với Thái Dương tại Thìn và Mão tạo nên cách Nhật Nguyệt tịnh minh.',
+        audioUrl: '/audio/course/bai-10-chap-2.mp3',
       },
       {
         time: '14:00',
         title: 'Khi Thái Âm Hãm địa từ Dần đến Ngọ cần lưu ý gì?',
         transcript: 'Khi Thái Âm đóng ở các cung ban ngày từ Dần đến Ngọ thì ánh trăng bị ánh mặt trời lấn át. Người mệnh Thái Âm hãm địa thường nặng lòng về tình cảm, hay lo nghĩ cho người thân, nếu đầu tư bất động sản hoặc cho vay tiền cần tránh nghe theo cảm xúc mà phải kiểm tra kỹ pháp lý.',
+        audioUrl: '/audio/course/bai-10-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -865,6 +952,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Thái Âm Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Điền Trạch &amp; Tài Bạch:</strong> Khi Thái Âm Miếu Vượng (Dậu, Tuất, Hợi, Tý), đương số cực kỳ có duyên với bất động sản, cho thuê mặt bằng, đầu tư tài chính dài hạn và tích lũy tài sản ngầm rất lớn.</li>
+        <li><strong>Tại Cung Phu Thê (Đối với Nam mệnh):</strong> Dễ cưới được người vợ hiền thục, đảm đang, có nhan sắc thanh tú và giỏi quản lý tay hòm chìa khóa trong gia đình.</li>
+        <li><strong>Lời khuyên khi Thái Âm Hãm địa:</strong> Tránh đầu tư bất động sản theo tin đồn cảm tính hoặc cho người quen vay mượn không có giấy tờ thế chấp rõ ràng.</li>
+      </ul>
     `,
   },
   {
@@ -877,7 +970,7 @@ export const COURSE_LESSONS: CourseLesson[] = [
     duration: '20:05',
     relatedStars: ['Tham Lang', 'Vũ Khúc', 'Tử Vi', 'Liêm Trinh', 'Hỏa Tinh', 'Linh Tinh'],
     flashcard: {
-      nguHanh: 'Thủy đới Mộc (Gốc癸 Thủy nhưng hóa khí hướng ra Giáp Mộc)',
+      nguHanh: 'Thủy đới Mộc (Gốc Quý Thủy nhưng hóa khí hướng ra Giáp Mộc)',
       hoaKhi: 'Chánh Đào Hoa & Dục Vọng Tinh (Khát vọng vươn lên, giao tế và tâm linh)',
       chuSu: 'Chủ về ngoại giao, thương mại, giải trí, nghệ thuật, ẩm thực và huyền học',
       dacHam: 'Miếu địa: Sửu, Mùi • Vượng địa: Thìn, Tuất • Đắc địa: Dần, Thân • Hãm địa: Tý, Ngọ, Mão, Dậu, Tỵ, Hợi',
@@ -889,16 +982,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Hiểu đúng về chữ Tham và chữ Đào Hoa của sao Tham Lang',
         transcript: 'Nhiều người nghe tên sao Tham Lang liền nghĩ ngay đến sự tham lam hay đào hoa trăng gió. Thực chất trong Tử Vi Đẩu Số, chữ Tham ở đây là khát vọng sống, khát vọng chinh phục những đỉnh cao mới và sự ham học hỏi đa lĩnh vực. Người mệnh Tham Lang cực kỳ thông minh trong giao tiếp xã hội, bước vào bất kỳ đám đông nào cũng biết cách làm chủ bầu không khí.',
+        audioUrl: '/audio/course/bai-11-chap-1.mp3',
       },
       {
         time: '07:30',
         title: 'Vì sao Tham Lang sợ Không Kiếp nhưng lại cực thích Hỏa Tinh, Linh Tinh?',
         transcript: 'Trong Lục Sát tinh, hầu hết các chính tinh đều ngại Hỏa Tinh và Linh Tinh, duy chỉ có sao Tham Lang là ngoại lệ. Khi Tham Lang ở vị trí Miếu Vượng (đặc biệt tại Thìn, Tuất, Sửu, Mùi) gặp Hỏa Tinh hoặc Linh Tinh mà không bị Không Kiếp, Hóa Kỵ phá đám thì tạo thành đại cách cục Tham Hỏa Tương Phùng và Tham Linh Tịnh Thủ — chủ về nắm bắt thời cơ làm giàu cực nhanh trên thương trường.',
+        audioUrl: '/audio/course/bai-11-chap-2.mp3',
       },
       {
         time: '14:15',
         title: 'Từ Chánh Đào Hoa lúc trẻ đến niềm đam mê Huyền học, Tâm linh tuổi trung niên',
         transcript: 'Một đặc điểm rất hay của sao Tham Lang là khi còn trẻ thì đam mê giao lưu, kinh doanh, nghệ thuật; nhưng càng về trung niên và hậu vận (đặc biệt khi đi cùng Hoa Cái, Không Vong) lại rất có căn duyên và trực giác sâu sắc với triết học, tôn giáo, Tử Vi, Phong Thủy.',
+        audioUrl: '/audio/course/bai-11-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -936,6 +1032,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Tham Lang Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Quan Lộc &amp; Thiên Di:</strong> Bậc thầy về ngoại giao, đàm phán thương mại, tổ chức sự kiện, marketing, giải trí, nhà hàng – ẩm thực và kinh doanh đa ngành.</li>
+        <li><strong>Tại Cung Tài Bạch:</strong> Khi Tham Lang gặp Hỏa Tinh hoặc Linh Tinh tại Tứ Mộ (Thìn, Tuất, Sửu, Mùi), dòng tiền thường có những cú bứt phá nhảy vọt (<em>Hoạnh phát</em>) nhờ nắm bắt đúng xu hướng thị trường.</li>
+        <li><strong>Chuyển hóa năng lượng Đào Hoa của Tham Lang:</strong> Chủ động đưa năng lượng giao tế vào việc mở rộng mạng lưới khách hàng và nghiên cứu chiều sâu văn hóa, triết học, tâm linh để giữ gia đạo êm ấm.</li>
+      </ul>
     `,
   },
   {
@@ -959,17 +1061,20 @@ export const COURSE_LESSONS: CourseLesson[] = [
       {
         time: '00:00',
         title: 'Tại sao gọi Cự Môn là Ám Tinh? Hiểu đúng để không sợ Cự Môn',
-        transcript: 'Nhiều sách cũ dịch chữ Ám Tinh của Cự Môn là ngôi sao mờ ám, thị phi khiến người có Cự Môn thủ Mệnh rất lo lắng. Nhưng hiểu theo ngôn ngữ hiện đại và thực chứng, chữ Ám của Cự Môn là khả năng nhìn thấu những góc khuất mà người khác không nhìn thấy, tức là tư duy phản biện (Critical Thinking) và năng lực ngôn ngữ sắc bén. Người mệnh Cự Môn không bao giờ tin một điều gì nếu chưa tự mình kiểm chứng lý lẽ.',
+        transcript: 'Nhiều sách cũ dịch chữ Ám Tinh của Cự Môn là ngôi sao mờ ám, thị phi khiến người có Cự Môn thủ Mệnh rất lo lắng. Nhưng hiểu theo ngôn ngữ hiện đại và thực chứng, chữ Ám của Cự Môn là khả năng nhìn thấu những góc khuất mà người khác không nhìn thấy, tức là tư duy phản biện sắc sảo và năng lực ngôn ngữ sắc bén. Người mệnh Cự Môn không bao giờ tin một điều gì nếu chưa tự mình kiểm chứng lý lẽ.',
+        audioUrl: '/audio/course/bai-12-chap-1.mp3',
       },
       {
         time: '06:45',
         title: 'Cách cục Thạch Trung Ẩn Ngọc (Cự Môn tại Tý Ngọ)',
         transcript: 'Khi Cự Môn đóng độc thủ tại hai cung Tý và Ngọ, hội hợp với Hóa Lộc, Hóa Quyền, Hóa Khoa hoặc Lộc Tồn thì tạo thành đại cách cục Thạch Trung Ẩn Ngọc — viên ngọc quý nằm ẩn bên trong tảng đá. Người mang cách này không thích phô trương hào nhoáng bề ngoài, nhưng khi cất tiếng nói trong phòng họp hay trên bục giảng thì ai cũng phải nể phục vì lập luận quá chặt chẽ.',
+        audioUrl: '/audio/course/bai-12-chap-2.mp3',
       },
       {
         time: '13:20',
         title: 'Cách dùng nghề nghiệp liên quan đến Khẩu Tài để hóa giải thị phi của Cự Môn',
         transcript: 'Nguyên lý hóa giải thông minh nhất của Tử Vi là Thuận Theo Tượng Sao: vì Cự Môn chủ về cái miệng và ngôn từ, nếu bạn chủ động dùng lời nói để kiếm tiền mỗi ngày — như làm giáo viên, luật sư, tư vấn viên, MC, sáng tạo nội dung, bán hàng, ngoại giao — thì năng lượng của Cự Môn sẽ chuyển hóa hoàn toàn thành tài lộc thay vì biến thành tranh cãi vụn vặt trong đời sống.',
+        audioUrl: '/audio/course/bai-12-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1006,6 +1111,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Cự Môn Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Quan Lộc &amp; Tài Bạch:</strong> Đắc cách nhất khi làm các ngành nghề dùng ngôn từ, lập luận và chuyên môn sâu để tạo ra giá trị: Giảng viên, Luật sư, Chuyên gia tư vấn, Truyền thông, Thương mại quốc tế, Nghiên cứu khoa học.</li>
+        <li><strong>Tại Cung Phu Thê:</strong> Vợ chồng cần tránh tranh luận thắng thua từng lời nói nhỏ trong nhà; nên nhường nhịn và giao tiếp bằng sự khích lệ để hóa giải tính khắt khe của Cự Môn.</li>
+        <li><strong>Khẩu quyết Hóa Giải Thị Phi của Thầy Tôn:</strong> <em>"Lấy khẩu tài làm nghề nghiệp chính"</em> — khi bạn dùng lời nói để giảng dạy, tư vấn và giúp đỡ khách hàng mỗi ngày, năng lượng Ám tinh của Cự Môn sẽ tự động chuyển hóa thành uy tín và tài lộc.</li>
+      </ul>
     `,
   },
 
@@ -1031,16 +1142,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Thiên Tướng: Con dấu quyền lực và tinh thần hiệp nghĩa',
         transcript: 'Sao Thiên Tướng thuộc hành Dương Thủy, hóa khí là Ấn Tinh — tức là chiếc ấn ngọc của nhà vua. Người có Thiên Tướng thủ Mệnh ở vị trí Miếu Vượng thường có ngoại hình đĩnh đạc, ăn mặc chỉnh tề, coi trọng lời hứa, thấy chuyện bất bình chẳng tha và là người cộng sự đáng tin cậy bậc nhất.',
+        audioUrl: '/audio/course/bai-13-chap-1.mp3',
       },
       {
         time: '06:20',
-        title: 'Bí quyết đọc Giáp Cung của Thiên Tướng: Tài Ấm Giáp Ấn vs. Hình Kỵ Giáp Ấn',
+        title: 'Bí quyết đọc Giáp Cung của Thiên Tướng: Tài Ấm Giáp Ấn và Hình Kỵ Giáp Ấn',
         transcript: 'Theo quy tắc an sao cố định, hai cung kề hai bên Thiên Tướng luôn luôn có một bên là Cự Môn và một bên là Thiên Lương. Nếu Cự Môn Hóa Lộc thì gọi là Tài Ấm Giáp Ấn — vừa có tiền tài vừa có phúc ấm che chở hai bên chiếc ấn, cực kỳ phú quý. Ngược lại, nếu Cự Môn Hóa Kỵ hoặc đi cùng Kình Dương, Thiên Hình kẹp hai bên thì gọi là Hình Kỵ Giáp Ấn — dễ chịu áp lực lớn từ cấp trên hoặc quy định pháp lý.',
+        audioUrl: '/audio/course/bai-13-chap-2.mp3',
       },
       {
         time: '12:50',
         title: 'Tại sao Thiên Tướng rất kỵ gặp sao Triệt?',
         transcript: 'Có câu phú kinh điển: Thiên Tướng tối hỷ Tả Hữu Xương Khúc, tối kỵ Triệt Lộ Không Vong. Chiếc ấn mà bị Triệt đóng vào giống như con dấu bị mẻ góc: nếu đóng ở Mệnh hoặc Quan Lộc thì buổi đầu lập nghiệp dễ phải thay đổi công việc hoặc có danh mà chậm có thực quyền cho tới sau tuổi 32 khi lực của Triệt giảm dần.',
+        audioUrl: '/audio/course/bai-13-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1082,6 +1196,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Thiên Tướng Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Quan Lộc:</strong> Chiếc ấn quyền lực giúp đương số dễ giữ các vị trí quản lý, trưởng phòng, giám đốc điều hành, nhân sự, pháp chế, đối ngoại hoặc cố vấn cấp cao.</li>
+        <li><strong>Tại Cung Tài Bạch:</strong> Thu nhập ổn định, minh bạch, thường gắn liền với chức vụ, uy tín thương hiệu cá nhân và sự tín nhiệm của tổ chức.</li>
+        <li><strong>Lưu ý khi xem Thiên Tướng:</strong> Luôn kiểm tra hai cung kề bên xem có thành cách <em>Tài Ấm Giáp Ấn</em> (rất thuận lợi) hay <em>Hình Kỵ Giáp Ấn</em> (cần thận trọng giấy tờ, bút phê) và xem có bị sao Triệt đóng vào hay không.</li>
+      </ul>
     `,
   },
   {
@@ -1094,7 +1214,7 @@ export const COURSE_LESSONS: CourseLesson[] = [
     duration: '18:10',
     relatedStars: ['Thiên Lương', 'Thái Dương', 'Thiên Cơ', 'Thiên Đồng'],
     flashcard: {
-      nguHanh: 'Ấm Thổ đới Mộc (Sách cổ ghi Mộc/Thổ — Tượng cây cổ thụ che bóng mát và nền đất phúc ấm)',
+      nguHanh: 'Dương Thổ đới Mộc (Sách cổ ghi Mộc đới Thổ — Tượng cây cổ thụ che bóng mát và nền đất phúc ấm)',
       hoaKhi: 'Ấm Tinh & Thọ Tinh (Chủ về sự che chở, giải trừ tai ương, phúc thọ và sư phạm)',
       chuSu: 'Chủ cung Phụ Mẫu & Phúc Đức; đại diện cho y học, giáo dục, thanh tra, cố vấn',
       dacHam: 'Miếu/Vượng: Ngọ, Thìn, Tuất, Dần, Thân, Tý, Mão • Đắc địa: Sửu, Mùi • Hãm địa: Tỵ, Hợi, Dậu',
@@ -1106,16 +1226,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Thiên Lương: Hình tượng người Thầy giáo, Thầy thuốc và bậc Trưởng bối',
         transcript: 'Sao Thiên Lương hóa khí là Ấm Tinh — nghĩa là bóng râm che chở cho người khác và phúc ấm của tổ tiên để lại. Người có sao Thiên Lương thủ Mệnh ở vị trí Miếu Vượng thường có tác phong điềm đạm, chín chắn trước tuổi, thích giảng giải, khuyên nhủ, coi trọng đạo đức và có năng khiếu bẩm sinh trong ngành giáo dục, y dược, nghiên cứu khoa học, kiểm toán hoặc thanh tra.',
+        audioUrl: '/audio/course/bai-14-chap-1.mp3',
       },
       {
         time: '06:30',
         title: 'Năng lực Giải Ách của Thiên Lương: Gặp dữ hóa lành',
         transcript: 'Điểm quý giá nhất của sao Thiên Lương là khả năng giải tai ách. Người mệnh Thiên Lương hoặc cung Tật Ách, Phúc Đức có Thiên Lương sáng sủa thì trong đời nhiều lần gặp chuyện nguy hiểm hay bệnh tật đều bất ngờ gặp được thầy giỏi thuốc hay cứu giúp kịp thời.',
+        audioUrl: '/audio/course/bai-14-chap-2.mp3',
       },
       {
         time: '12:40',
         title: 'Vì sao Thiên Lương hợp làm Chuyên gia hơn là Đầu cơ lướt sóng?',
         transcript: 'Bản chất của Thiên Lương là Thanh Quý (trong sạch và danh giá). Khi người mệnh Thiên Lương tập trung vào chuyên môn, giảng dạy, y tế, tư vấn thì tiền bạc tự tìm đến rất bền. Nhưng nếu Thiên Lương lại cố lao vào đầu cơ tài chính lướt sóng ngắn hạn (đặc biệt khi gặp Lộc Tồn, Hóa Lộc kèm Không Kiếp) thì lại rất dễ bị tiểu nhân đố kỵ hoặc hao tài.',
+        audioUrl: '/audio/course/bai-14-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1157,6 +1280,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Thiên Lương Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Phúc Đức &amp; Phụ Mẫu:</strong> Báo hiệu gia tộc có truyền thống hiếu học, nhân hậu, ông bà cha mẹ để lại phúc ấm lớn che chở cho con cháu qua khỏi những lúc ngặt nghèo.</li>
+        <li><strong>Tại Cung Quan Lộc:</strong> Rất hợp với ngành Giáo dục, Y dược, Thanh tra, Kiểm toán, Nghiên cứu học thuật, Công tác xã hội và Tư vấn chuyên gia.</li>
+        <li><strong>Tại Cung Tài Bạch:</strong> Đi theo con đường lấy chuyên môn và uy tín đạo đức làm gốc thì tài lộc bền vững suốt đời; không nên tham gia đầu cơ lướt sóng mạo hiểm.</li>
+      </ul>
     `,
   },
   {
@@ -1181,16 +1310,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Thất Sát: Vị tướng ngoài biên ải — Tiền trảm hậu tấu',
         transcript: 'Trong bộ Sát - Phá - Tham, Thất Sát là vị nguyên soái cầm quân ngoài mặt trận. Mang hành Kim đới Hỏa, người có sao Thất Sát thủ Mệnh có ánh mắt sắc, hành động cực kỳ dứt khoát, đã quyết việc gì là làm ngay chứ không chần chừ. Họ là những người sinh ra để giải quyết khủng hoảng và mở đường ở những thị trường cạnh tranh khốc liệt nhất.',
+        audioUrl: '/audio/course/bai-15-chap-1.mp3',
       },
       {
         time: '06:50',
         title: 'Thất Sát Triều Đẩu và Thất Sát Ngưỡng Đẩu (Dần, Thân, Tý, Ngọ)',
         transcript: 'Khi Thất Sát đóng độc thủ tại Dần, Thân, Tý, Ngọ nhìn thẳng về cung đối diện có Tử Vi - Thiên Phủ hoặc Vũ Khúc - Thiên Phủ thì gọi là Thất Sát Triều Đẩu và Ngưỡng Đẩu. Đây là hình ảnh vị tướng tài ba được nhà vua giao trọn binh quyền, nếu hội thêm Lộc Tồn, Hóa Lộc, Hóa Quyền, Tả Hữu thì lập nên cơ nghiệp thương trường rất lớn.',
+        audioUrl: '/audio/course/bai-15-chap-2.mp3',
       },
       {
         time: '13:30',
         title: 'Tại sao cuộc đời người mệnh Thất Sát luôn có ít nhất một lần đại biến đổi?',
         transcript: 'Vì Thất Sát luôn nằm trong tam hợp với Phá Quân và Tham Lang, cuộc đời của người mệnh Thất Sát không bao giờ là một đường thẳng phẳng lặng. Thường ở giai đoạn ngoài 30 tuổi, họ sẽ trải qua một bước ngoặt lớn để lột xác từ người làm chuyên môn sang người làm chủ cuộc chơi.',
+        audioUrl: '/audio/course/bai-15-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1232,6 +1364,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Thất Sát Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Quan Lộc &amp; Mệnh:</strong> Có tố chất tướng lĩnh cầm quân, quyết đoán nhanh, chịu được áp lực thương trường khắc nghiệt; hợp làm chủ doanh nghiệp sản xuất, xây dựng, kỹ thuật, công nghệ, y khoa ngoại khoa hoặc lực lượng vũ trang.</li>
+        <li><strong>Tại Cung Tài Bạch:</strong> Dám đánh những thương vụ lớn, xoay vòng vốn nhanh; khi hội Lộc Tồn, Hóa Lộc, Hóa Quyền thì phát tài mạnh mẽ.</li>
+        <li><strong>Lời khuyên thực chiến của Thầy Tôn:</strong> Người mệnh Thất Sát cần học nghệ thuật trao quyền cho cấp dưới (nhờ sức của Tả Phù, Hữu Bật) và giữ kỷ luật bảo toàn lợi nhuận sau mỗi giai đoạn tăng trưởng nóng.</li>
+      </ul>
     `,
   },
   {
@@ -1256,16 +1394,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Phá Quân: Đội quân tiên phong mở đường trên lá số',
         transcript: 'Nếu Thất Sát là vị tướng chỉ huy toàn cục thì Phá Quân là đội quân tiên phong đi đầu đập tan chướng ngại vật. Thuộc hành Âm Thủy, hóa khí là Hao Tinh, bản chất của Phá Quân là không bao giờ chịu ngồi yên trong một khuôn khổ cũ kỹ. Người mệnh Phá Quân cực kỳ sáng tạo, dám nghĩ dám làm những điều chưa ai từng thử.',
+        audioUrl: '/audio/course/bai-16-chap-1.mp3',
       },
       {
         time: '06:45',
         title: 'Anh Tinh Nhập Miếu: Phá Quân độc thủ tại Tý và Ngọ',
         transcript: 'Đẹp nhất của sao Phá Quân là khi đóng độc thủ tại hai cung Tý và Ngọ, cổ nhân gọi là Anh Tinh Nhập Miếu. Đặc biệt người tuổi Giáp, Quý sinh ra có Phá Quân cư Tý Ngọ hội Hóa Lộc, Hóa Quyền, Lộc Tồn thì tài năng cải cách và kinh doanh đạt tới đỉnh cao.',
+        audioUrl: '/audio/course/bai-16-chap-2.mp3',
       },
       {
         time: '13:15',
         title: 'Tại sao Phá Quân rất cần Hóa Lộc và Lộc Tồn nhưng lại kỵ Văn Xương, Văn Khúc?',
         transcript: 'Vì Phá Quân là Hao Tinh (tiêu hao năng lượng và tiền vốn lớn để đầu tư cái mới), nếu có Lộc Tồn hoặc Hóa Lộc đi kèm thì gọi là Có Nguồn Bù Hao — phá cái cũ đi là xây ngay được cơ ngơi mới to đẹp hơn. Còn với Văn Xương, Văn Khúc vốn là sao văn nghệ thư sinh, khi đi với võ tinh hung mãnh như Phá Quân lại dễ lệch nhịp, trừ phi làm trong ngành sáng tạo nghệ thuật hiện đại.',
+        audioUrl: '/audio/course/bai-16-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1307,6 +1448,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Luận Giải Sao Phá Quân Tại Các Cung Trọng Điểm</h2>
+      <ul>
+        <li><strong>Tại Cung Quan Lộc:</strong> Luôn là người tiên phong mở thị trường mới, cải tiến sản phẩm mới hoặc tái cấu trúc doanh nghiệp; thường thành công rực rỡ sau ít nhất một lần chuyển đổi bước ngoặt.</li>
+        <li><strong>Tại Cung Tài Bạch:</strong> Mang tính <em>Tiên Phá Hậu Thành</em> — phải chi tiền đầu tư nhà xưởng, công nghệ, mặt bằng trước rồi mới thu về khoản lợi nhuận lớn; rất cần Lộc Tồn hoặc Hóa Lộc đi kèm để giữ của.</li>
+        <li><strong>Tại Cung Phu Thê:</strong> Nên kết hôn muộn sau khi sự nghiệp đã định hình ổn định, hoặc hai vợ chồng làm khác lĩnh vực chuyên môn để tôn trọng khoảng trời riêng của nhau.</li>
+      </ul>
     `,
   },
   {
@@ -1321,7 +1468,7 @@ export const COURSE_LESSONS: CourseLesson[] = [
     flashcard: {
       nguHanh: 'Hóa Lộc (Mộc/Thổ) • Hóa Quyền (Mộc/Hỏa) • Hóa Khoa (Thủy/Mộc) • Hóa Kỵ (Thủy)',
       hoaKhi: 'Tứ Thời Biến Hóa — Xuân (Lộc) • Hạ (Quyền) • Thu (Khoa) • Đông (Kỵ)',
-      chuSu: 'Kích hoạt tài lộc (Lộc), quyền bính (Quyền), danh tiếng & giải ách (Khoa), áp lực &执착 (Kỵ)',
+      chuSu: 'Kích hoạt tài lộc (Lộc), quyền bính (Quyền), danh tiếng & giải ách (Khoa), áp lực & sự trăn trở, chấp trước (Kỵ)',
       dacHam: 'Tam Hóa liên châu (Khoa – Quyền – Lộc hội chiếu Mệnh Tài Quan) là thượng cách phú quý',
       cauPhu: 'Khoa Quyền Lộc hội, phú quý song toàn; Hóa Kỵ cư Tứ Mộ, phản vi giai luận.',
       cotLoi: 'Chính tinh là chiếc xe, Tứ Hóa là xăng và động cơ: nhìn cung có Hóa Lộc và Hóa Kỵ là biết ngay nơi khởi phát tài lộc và nơi tập trung nợ nghiệp của đời người.',
@@ -1331,16 +1478,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Vì sao cao thủ Tử Vi luôn tìm 4 sao Tứ Hóa đầu tiên trên lá số?',
         transcript: 'Nếu 14 Chính tinh là phần xác của ngôi nhà thì 4 sao Hóa Lộc, Hóa Quyền, Hóa Khoa, Hóa Kỵ chính là dòng điện chạy bên trong ngôi nhà đó. Hóa Lộc chỉ nơi tiền bạc, cơ hội và nhân duyên chảy về dễ nhất; Hóa Quyền chỉ nơi bạn muốn kiểm soát và khẳng định thực lực; Hóa Khoa chỉ nơi bạn có kiến thức, bằng cấp và quý nhân cứu giải; còn Hóa Kỵ chỉ nơi bạn trăn trở nhiều nhất, mắc nợ tâm lý nhiều nhất trong cuộc đời.',
+        audioUrl: '/audio/course/bai-17-chap-1.mp3',
       },
       {
         time: '08:15',
         title: 'Khẩu quyết nhớ nhanh Bảng Tứ Hóa của 10 Thiên Can',
         transcript: 'Mỗi Thiên Can năm sinh từ Giáp đến Quý sẽ làm cho 4 chính tinh hoặc phụ tinh biến hóa: Tuổi Giáp là Liêm - Phá - Vũ - Dương; Tuổi Ất là Cơ - Lương - Tử - Nguyệt; Tuổi Bính là Đồng - Cơ - Xương - Liêm; Tuổi Đinh là Nguyệt - Đồng - Cơ - Cự; Tuổi Mậu là Tham - Nguyệt - Bật - Cơ; Tuổi Kỷ là Vũ - Tham - Lương - Khúc; Tuổi Canh là Nhật - Vũ - Âm - Đồng; Tuổi Tân là Cự - Nhật - Khúc - Xương; Tuổi Nhâm là Lương - Tử - Phủ - Vũ; và Tuổi Quý là Phá - Cự - Âm - Tham.',
+        audioUrl: '/audio/course/bai-17-chap-2.mp3',
       },
       {
         time: '15:40',
         title: 'Bí mật về Hóa Kỵ: Khi nào Hóa Kỵ lại làm nên chuyên gia đại tài?',
-        transcript: 'Đừng bao giờ thấy Hóa Kỵ mà vội kết luận xấu hết! Hóa Kỵ thuộc hành Thủy, mang tính thu liễm,执착 (tập trung cao độ vào một điểm). Khi Hóa Kỵ đóng ở 4 cung Thìn, Tuất, Sửu, Mùi hoặc đi cùng Hóa Khoa, người đó có khả năng đào sâu nghiên cứu một lĩnh vực chuyên môn cực khó như lập trình, y khoa, kế toán kiểm toán để trở thành chuyên gia không ai thay thế được.',
+        transcript: 'Đừng bao giờ thấy Hóa Kỵ mà vội kết luận xấu hết! Hóa Kỵ thuộc hành Thủy, mang tính thu liễm và sự tập trung cao độ vào một điểm. Khi Hóa Kỵ đóng ở 4 cung Thìn, Tuất, Sửu, Mùi hoặc đi cùng Hóa Khoa, người đó có khả năng đào sâu nghiên cứu một lĩnh vực chuyên môn cực khó như lập trình, y khoa, kế toán kiểm toán để trở thành chuyên gia không ai thay thế được.',
+        audioUrl: '/audio/course/bai-17-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1375,6 +1525,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           <tr><td><strong>Quý</strong></td><td>Phá Quân</td><td>Cự Môn</td><td>Thái Âm</td><td>Tham Lang</td></tr>
         </tbody>
       </table>
+      <h2>3. Quy Tắc Đọc Tứ Hóa Phối Hợp Giữa Lá Số Gốc &amp; Đại Vận</h2>
+      <ul>
+        <li><strong>Tìm Đường Đi Của Tiền (Hóa Lộc):</strong> Hóa Lộc đóng ở cung nào trên lá số gốc thì đó là mỏ vàng tự nhiên của đương số; khi Đại vận hoặc Lưu niên đi tới cung tam hợp/xung chiếu với Hóa Lộc thì tài vận bung mở.</li>
+        <li><strong>Tìm Điểm Nhấn Sự Nghiệp (Hóa Quyền &amp; Hóa Khoa):</strong> Hóa Quyền cho biết năng lực lãnh đạo thực chiến; Hóa Khoa cho biết bằng cấp chuyên môn và tấm bùa hộ mệnh giúp vượt qua khủng hoảng truyền thông hay pháp lý.</li>
+        <li><strong>Quản Trị Nợ Nghiệp (Hóa Kỵ):</strong> Cung có Hóa Kỵ là nơi không được phép chủ quan — nếu Hóa Kỵ ở Tài Bạch cần minh bạch sổ sách; ở Quan Lộc cần tập trung chuyên môn sâu; ở Phu Thê cần bao dung và lắng nghe bạn đời.</li>
+      </ul>
     `,
   },
   {
@@ -1399,16 +1555,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Phân biệt rõ 3 cặp Sát tinh: Kình Đà, Không Kiếp và Hỏa Linh',
         transcript: 'Lục Sát Tinh chia làm 3 cặp với cơ chế tác động hoàn toàn khác nhau: Kình Dương - Đà La luôn kẹp hai bên Lộc Tồn (Kình Dương đánh trực diện công khai, Đà La dây dưa ngầm bên trong); Địa Không - Địa Kiếp an theo giờ sinh chủ về sự đột ngột không báo trước và tư duy phá vỡ giới hạn; còn Hỏa Tinh - Linh Tinh chủ về tốc độ phản ứng nhanh như chớp và sức nóng cảm xúc.',
+        audioUrl: '/audio/course/bai-18-chap-1.mp3',
       },
       {
         time: '07:40',
         title: 'Khi nào Lục Sát Tinh giúp con người làm giàu đột biến?',
         transcript: 'Trong thực tế thương trường hiện đại, những doanh nhân tự thân đi lên từ hai bàn tay trắng trong lĩnh vực công nghệ, sản xuất, xây dựng, đầu tư thường có Sát tinh đắc địa trong tam hợp Mệnh Tài Quan. Ví dụ Kình Dương cư Ngọ, Sửu, Mùi, Thìn, Tuất; Không Kiếp cư Tỵ Hợi Dần Thân đi cùng Sát Phá Tham đắc địa; hoặc Hỏa Tinh, Linh Tinh đi cùng Tham Lang.',
+        audioUrl: '/audio/course/bai-18-chap-2.mp3',
       },
       {
         time: '14:50',
         title: 'Nguyên tắc giữ tiền cho người có Không Kiếp, Hỏa Linh tại Tài Bạch',
         transcript: 'Đặc tính của Không Kiếp và Hỏa Linh đắc địa là Phát dã như lôi nhưng nếu chủ quan thì cũng rất dễ Tàn dã như phong. Do đó, ngay khi trúng lớn một thương vụ, nguyên tắc bắt buộc là phải rút ít nhất 50-60% lợi nhuận chuyển ngay sang bất động sản hữu hình (cung Điền Trạch) hoặc tài sản an toàn.',
+        audioUrl: '/audio/course/bai-18-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1445,6 +1604,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Nguyên Tắc Chuyển Hóa Năng Lượng Lục Sát Tinh Trong Đời Thực</h2>
+      <ul>
+        <li><strong>Chọn nghề nghiệp đúng với tượng Sát tinh:</strong> Người có Kình Dương, Đà La, Thiên Hình đắc địa rất hợp ngành Kỹ thuật cơ khí, Phẫu thuật y khoa, Luật pháp, Quân đội, Công nghệ thông tin hoặc Kinh doanh sản xuất.</li>
+        <li><strong>Chiến thuật Quản trị vốn với Không Kiếp &amp; Hỏa Linh:</strong> Khi bước vào vận có Không Kiếp, Hỏa Linh đắc địa giúp trúng lớn về tài chính, bắt buộc phải rút ngay tối thiểu 50% lợi nhuận chuyển sang bất động sản hữu hình (cung Điền Trạch) để khóa lộc.</li>
+        <li><strong>Chăm sóc sức khỏe chủ động:</strong> Khi vận hạn đi qua cung có nhiều Sát tinh hội tụ, việc chủ động đi khám sức khỏe định kỳ, hiến máu nhân đạo hoặc làm thiện nguyện sẽ giúp ứng giải tượng hao tổn một cách nhẹ nhàng nhất.</li>
+      </ul>
     `,
   },
   {
@@ -1469,11 +1634,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Phân biệt chính xác vai trò của Tả Hữu, Xương Khúc và Khôi Việt',
         transcript: 'Trong Lục Cát Tinh, mỗi cặp sao đóng một vai trò rất riêng: Tả Phù - Hữu Bật là số lượng cộng sự, nhân viên và khả năng làm việc nhóm (không có Tả Hữu thì làm chủ rất cô đơn); Văn Xương - Văn Khúc là trí tuệ học thuật, bằng cấp, khả năng viết lách và nghệ thuật; còn Thiên Khôi - Thiên Việt là Quý Nhân cấp trên trực tiếp nâng đỡ và trao cơ hội cho bạn.',
+        audioUrl: '/audio/course/bai-19-chap-1.mp3',
       },
       {
         time: '07:10',
         title: 'Tam Minh: Đào Hoa, Hồng Loan và Thiên Hỷ trong tình duyên và kinh doanh',
-        transcript: 'Bộ ba Đào Hoa - Hồng Loan - Thiên Hỷ gọi là Tam Minh. Ngoài ý nghĩa về tình yêu đôi lứa và tín hiệu kết hôn, trong xã hội hiện đại bộ Đào Hồng Hỷ tại Mệnh, Tài, Quan, Thiên Di còn là ngôi sao của Nhân Duyên Khách Hàng (Personal Branding). Người có Đào Hồng Hỷ đắc cách làm kinh doanh dịch vụ, nghệ thuật, giảng dạy, truyền thông cực kỳ thu hút khách hàng.',
+        transcript: 'Bộ ba Đào Hoa - Hồng Loan - Thiên Hỷ gọi là Tam Minh. Ngoài ý nghĩa về tình yêu đôi lứa và tín hiệu kết hôn, trong xã hội hiện đại bộ Đào Hồng Hỷ tại Mệnh, Tài, Quan, Thiên Di còn là ngôi sao của Nhân Duyên Khách Hàng và sức hút thương hiệu cá nhân. Người có Đào Hồng Hỷ đắc cách làm kinh doanh dịch vụ, nghệ thuật, giảng dạy, truyền thông cực kỳ thu hút khách hàng.',
+        audioUrl: '/audio/course/bai-19-chap-2.mp3',
+      },
+      {
+        time: '13:30',
+        title: 'Cách phối hợp Lục Cát và Đào Hồng khi chọn cộng sự và xây dựng sự nghiệp',
+        transcript: 'Khi xem một lá số để định hướng làm chủ hay làm chuyên gia, nếu thấy Tả Phù, Hữu Bật đóng ở Quan Lộc hoặc Nô Bộc thì đương số rất có duyên tuyển dụng được nhân sự giỏi. Nếu thấy Thiên Khôi, Thiên Việt chiếu Mệnh hoặc Thiên Di thì ra ngoài luôn gặp bậc trưởng bối dẫn dắt. Kết hợp thêm Xương Khúc và Đào Hồng Hỷ thì vừa có chiều sâu tri thức vừa có sức lan tỏa hình ảnh trước công chúng.',
+        audioUrl: '/audio/course/bai-19-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1510,6 +1683,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Ứng Dụng Lục Cát Tinh &amp; Tam Minh Vào Quản Trị Nhân Sự – Thương Hiệu</h2>
+      <ul>
+        <li><strong>Khi có Tả Phù – Hữu Bật mạnh:</strong> Đương số không nên làm việc độc lập một mình mà phải xây dựng đội nhóm, mở rộng hệ thống đại lý hoặc cộng sự để nhân bội thành quả.</li>
+        <li><strong>Khi có Văn Xương – Văn Khúc – Hóa Khoa:</strong> Nên viết sách, xây dựng giáo trình đào tạo, đăng ký bản quyền thương hiệu hoặc phát triển nội dung chuyên gia để tạo uy tín lâu dài.</li>
+        <li><strong>Khi có Đào Hoa – Hồng Loan – Thiên Hỷ tại Mệnh / Tài / Quan / Di:</strong> Tận dụng tối đa sức hút nhân duyên trước công chúng để làm dịch vụ khách hàng, truyền thông, nghệ thuật, thẩm mỹ, tư vấn.</li>
+      </ul>
     `,
   },
   {
@@ -1534,16 +1713,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Bốn nhóm người trong Vòng Thái Tuế: Chính trực, Khéo léo, Nhẫn nhịn và Phản kháng',
         transcript: 'Vòng Thái Tuế chia 12 cung thành 4 tam hợp rõ rệt: Nhóm 1 là Thái Tuế - Quan Phù - Bạch Hổ (chính trực, lý lẽ đanh thép, dám chịu trách nhiệm); Nhóm 2 là Thiếu Dương - Tử Phù - Phúc Đức (thông minh sắc sảo, biết mình biết ta, có Thiên Không đi kèm nên cần biết điểm dừng); Nhóm 3 là Tang Môn - Tuế Phá - Điếu Khách (nội tâm phản biện mạnh, dám đi ngược số đông); và Nhóm 4 là Thiếu Âm - Long Đức - Trực Phù (ôn hòa, nhẫn nhịn, lấy nhu thắng cương, hậu vận rất bền).',
+        audioUrl: '/audio/course/bai-20-chap-1.mp3',
       },
       {
         time: '08:20',
         title: 'Lộc Tồn và cách cục Lộc Mã Giao Trì',
         transcript: 'Nếu Hóa Lộc là dòng tiền linh hoạt thì Lộc Tồn là Thiên Lộc — tài sản tích lũy bền vững, đi kèm Bác Sĩ và luôn có Kình Dương, Đà La đứng hai bên bảo vệ. Khi Lộc Tồn đi cùng Thiên Mã (Lộc Mã Giao Trì), tiền bạc sinh sôi mạnh mẽ qua sự vận động, thương mại, xuất nhập khẩu và mở rộng thị trường.',
+        audioUrl: '/audio/course/bai-20-chap-2.mp3',
       },
       {
         time: '15:10',
         title: 'Tuần và Triệt: Khi nào tháo gỡ bế tắc, khi nào cản trở?',
         transcript: 'Triệt thuộc Kim nên chém rất mạnh từ lúc nhỏ đến khoảng 30-32 tuổi rồi giảm dần; còn Tuần thuộc Hỏa/Thủy nhẹ hơn nhưng kéo dài suốt đời. Nếu đóng vào cung có Chính tinh Miếu Vượng thì gây vất vả buổi đầu; nhưng nếu đóng vào cung Vô Chính Diệu hoặc cung có Chính tinh Hãm địa, Không Kiếp, Hóa Kỵ thì Tuần Triệt lại là tấm khiên bảo vệ tuyệt vời (Triệt đáo hoàn toàn).',
+        audioUrl: '/audio/course/bai-20-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1584,6 +1766,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
         <li><strong>Đóng tại cung Chính tinh Miếu Vượng:</strong> Làm chậm tốc độ phát triển ở tiền vận (phải tự lực vất vả trước tuổi 30), sau 32 tuổi khi Triệt tháo dần sẽ bứt phá mạnh.</li>
         <li><strong>Đóng tại cung Vô Chính Diệu hoặc Chính tinh Hãm địa / Sát tinh:</strong> Biến hung thành cát, giúp đương số giữ vững bản lĩnh và hóa giải tai ương.</li>
       </ul>
+      <h2>3. Bí Quyết Ứng Xử Theo Vòng Thái Tuế &amp; Thời Điểm Tháo Gỡ Của Tuần – Triệt</h2>
+      <ul>
+        <li><strong>Hiểu mình qua Vòng Thái Tuế:</strong> Người mệnh <em>Thái Tuế – Quan Phù – Bạch Hổ</em> cần học thêm sự mềm mỏng của nhóm <em>Thiếu Âm</em> để bớt cô độc; ngược lại người mệnh <em>Thiếu Âm – Long Đức</em> cần rèn thêm sự quyết đoán để không bị thiệt thòi quyền lợi.</li>
+        <li><strong>Mốc 30 – 32 tuổi của sao Triệt:</strong> Nếu cung Mệnh hoặc Quan Lộc có Chính tinh đẹp bị Triệt án ngữ, đừng nản lòng trước những va vấp ở tuổi đôi mươi — từ sau tuổi 32 khi lực của Triệt giảm xuống 70%, sự nghiệp sẽ mở lối rất nhanh.</li>
+        <li><strong>Bảo vệ kho Lộc Tồn:</strong> Vì Lộc Tồn luôn bị Kình Dương (phía trước) và Đà La (phía sau) kẹp giữ, người có Lộc Tồn càng giàu có càng nên sống khiêm nhường, chia sẻ phúc lộc để hóa giải sự đố kỵ xung quanh.</li>
+      </ul>
     `,
   },
   {
@@ -1608,16 +1796,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Bức tranh tổng thể của nhóm Tĩnh Tinh: Tử Phủ Vũ Tướng và Cơ Nguyệt Đồng Lương',
         transcript: 'Khi phân loại 14 Chính tinh theo cách cục lớn, Tử Phủ Vũ Tướng và Cơ Nguyệt Đồng Lương thuộc nhóm Tĩnh — tức là phát triển dựa trên trật tự, hệ thống, học thức và quy trình chuẩn mực. Người mang hai cách cục này không thích kiểu đánh cược may rủi một mất một còn mà xây dựng cơ đồ từng tầng vững chắc.',
+        audioUrl: '/audio/course/bai-21-chap-1.mp3',
       },
       {
         time: '07:20',
         title: 'Tử Phủ Vũ Tướng: Bộ tứ quyền lực của Quản trị và Tài chính',
         transcript: 'Trong tam hợp Tử Phủ Vũ Tướng: Tử Vi là tầm nhìn lãnh đạo, Thiên Phủ là kho giữ tiền, Vũ Khúc là hành động tạo ra tiền, và Thiên Tướng là con dấu pháp lý. Khi bộ này hội thêm Tả Hữu, Khoa Quyền Lộc, Lộc Tồn thì đương số cực kỳ hợp làm chủ doanh nghiệp có hệ thống bài bản, giám đốc tài chính, ngân hàng, bất động sản.',
+        audioUrl: '/audio/course/bai-21-chap-2.mp3',
       },
       {
         time: '14:10',
         title: 'Cơ Nguyệt Đồng Lương: Hiểu đúng câu phú Tác Lại Nhân trong thời đại mới',
         transcript: 'Sách xưa viết Cơ Nguyệt Đồng Lương tác lại nhân — nghĩa là làm quan văn, tham mưu trong triều đình. Trong kinh tế hiện đại, đây là những chuyên gia hàng đầu về công nghệ (Thiên Cơ), tài chính kế toán - bất động sản (Thái Âm), dịch vụ - nhân sự (Thiên Đồng) và giáo dục - y khoa - cố vấn (Thiên Lương). Họ có thể mở trường học, phòng khám, công ty tư vấn rất thịnh vượng.',
+        audioUrl: '/audio/course/bai-21-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1632,6 +1823,11 @@ export const COURSE_LESSONS: CourseLesson[] = [
         <li><strong>Cấu trúc bộ sao:</strong> Sự kết hợp giữa <strong>Thiên Cơ, Thái Âm, Thiên Đồng, Thiên Lương</strong> trong tam hợp Mệnh – Tài – Quan.</li>
         <li><strong>Điều kiện phát huy đỉnh cao:</strong> Hội <strong>Văn Xương – Văn Khúc, Hóa Khoa, Hóa Lộc, Hóa Quyền, Đào Hồng Hỷ</strong>.</li>
         <li><strong>Chiến lược sự nghiệp:</strong> Phát triển từ năng lực chuyên gia (Giáo dục, Y dược, IT, Tài chính – Kế toán, Nghiên cứu, Tư vấn) rồi mở rộng thành thương hiệu uy tín và tích lũy bất động sản.</li>
+      </ul>
+      <h2>3. Chiến Lược Đời Người Cho Nhóm Tử Phủ Vũ Tướng &amp; Cơ Nguyệt Đồng Lương</h2>
+      <ul>
+        <li><strong>Với mệnh Tử Phủ Vũ Tướng:</strong> Hãy chọn môi trường có quy mô lớn, xây dựng quy trình quản trị bài bản, ưu tiên đầu tư tài chính – ngân hàng – bất động sản dài hạn và tuyển dụng đội ngũ cộng sự giỏi (Tả Hữu) thay vì tự làm việc vụn vặt.</li>
+        <li><strong>Với mệnh Cơ Nguyệt Đồng Lương:</strong> Hãy lấy tri thức, bằng cấp và chiều sâu chuyên môn làm vũ khí cốt lõi; từ vị thế chuyên gia hàng đầu sẽ tự khắc mở ra doanh nghiệp tư vấn, giáo dục, y tế, công nghệ có dòng tiền cực kỳ ổn định.</li>
       </ul>
     `,
   },
@@ -1657,16 +1853,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Sát Phá Tham: Trụ cột của giới khởi nghiệp và kinh doanh thực chiến',
         transcript: 'Luôn luôn đi cùng nhau trong một tam hợp cố định, Thất Sát (tướng cầm quân), Phá Quân (tiên phong phá cũ xây mới) và Tham Lang (ngoại giao nắm bắt cơ hội) tạo thành bộ động cơ mạnh mẽ nhất trên lá số Tử Vi. Người mệnh Sát Phá Tham không chịu được công việc bàn giấy lặp đi lặp lại mỗi ngày; họ sinh ra để ra ngoài thương trường, tự làm chủ hoặc dẫn dắt các dự án mới.',
+        audioUrl: '/audio/course/bai-22-chap-1.mp3',
       },
       {
         time: '07:15',
         title: 'Điểm khác biệt: Sát Phá Tham chịu được Sát tinh tốt hơn các bộ khác',
         transcript: 'Nếu Tử Phủ Vũ Tướng hay Cơ Nguyệt Đồng Lương rất ngại gặp Kình Đà, Hỏa Linh thì bộ Sát Phá Tham khi đắc địa lại có thể thu phục Hỏa Tinh, Linh Tinh, Kình Dương đắc địa để tạo thành sức bật kinh tế cực lớn, miễn là có thêm Hóa Lộc, Hóa Quyền hoặc Lộc Tồn giữ gốc tài chính.',
+        audioUrl: '/audio/course/bai-22-chap-2.mp3',
       },
       {
         time: '13:50',
         title: 'Cách cục Cự Nhật: Ánh mặt trời soi sáng tài năng ngôn ngữ',
         transcript: 'Tổ hợp Cự Môn - Thái Dương (đồng cung tại Dần Thân hoặc xung chiếu nhau) là cách cục đỉnh cao của truyền thông, ngoại ngữ, luật pháp, giảng dạy quốc tế và xuất nhập khẩu. Đặc biệt Cự Nhật tại Dần có mặt trời đang lên xóa sạch tính Ám của Cự Môn, giúp đương số nổi danh bằng trí tuệ và tiếng nói có uy tín.',
+        audioUrl: '/audio/course/bai-22-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1707,6 +1906,11 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Chiến Lược Đời Người Cho Nhóm Sát Phá Tham &amp; Cự Nhật</h2>
+      <ul>
+        <li><strong>Với mệnh Sát Phá Tham:</strong> Đừng sợ những giai đoạn thay đổi hay thử thách đầu đời — môi trường càng đòi hỏi sự đổi mới, quyết đoán và tốc độ thực thi thì Sát Phá Tham càng tỏa sáng rực rỡ. Tuy nhiên, lúc đang thắng lớn phải luôn nhớ tích lũy vào cung Điền Trạch.</li>
+        <li><strong>Với mệnh Cự Nhật:</strong> Hãy đầu tư mạnh vào khả năng ngôn ngữ, ngoại ngữ, truyền thông, pháp lý và thương hiệu cá nhân; càng đi xa giao thương quốc tế hoặc đứng trên diễn đàn lớn thì ánh sáng của Thái Dương càng làm rạng danh Cự Môn.</li>
+      </ul>
     `,
   },
   {
@@ -1731,16 +1935,19 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Cặp bài trùng Tài Bạch (Dòng tiền) và Điền Trạch (Két sắt tích sản)',
         transcript: 'Khi xem về kinh tế cho một lá số, nếu chỉ nhìn cung Tài Bạch mà bỏ quên cung Điền Trạch là thiếu một nửa bức tranh. Cung Tài Bạch cho biết bạn kiếm tiền nhanh hay chậm, bằng nghề gì; nhưng cung Điền Trạch mới là cái két sắt giữ lại thành quả cuối cùng. Có người cung Tài Bạch có Vũ Phá kiếm tiền rất mạnh nhưng giữ tiền mặt hay hao, song cung Điền Trạch lại có Thái Âm Lộc Tồn cực đẹp — chỉ cần cứ có tiền là mua đất mua nhà thì giàu bền vững.',
+        audioUrl: '/audio/course/bai-23-chap-1.mp3',
       },
       {
         time: '07:50',
         title: 'Trục Quan Lộc (Sự nghiệp) và Phu Thê (Hôn nhân) chiếu thẳng vào nhau',
         transcript: 'Trên lá số Tử Vi, cung Quan Lộc và cung Phu Thê luôn luôn nằm đối diện xung chiếu nhau 180 độ. Điều này chứa đựng triết lý cực kỳ sâu sắc: sự nghiệp và gia đình luôn tác động qua lại trực tiếp. Khi cung Phu Thê yên ấm, người bạn đời chính là hậu phương lớn nhất cho cung Quan Lộc thăng hoa.',
+        audioUrl: '/audio/course/bai-23-chap-2.mp3',
       },
       {
         time: '14:30',
         title: 'Vai trò gốc rễ của cung Phúc Đức đối với cả Tài Bạch và Hôn Nhân',
         transcript: 'Cung Phúc Đức luôn nằm ở vị trí xung chiếu trực tiếp với cung Tài Bạch và nằm trong tam hợp với cung Phu Thê, Thiên Di. Bởi vậy, người biết bồi đắp phúc đức, sống hiếu thuận và giữ chữ tín trong kinh doanh chính là đang kích hoạt trực tiếp nguồn năng lượng tốt nhất chiếu thẳng sang cung Tài Bạch của mình.',
+        audioUrl: '/audio/course/bai-23-chap-3.mp3',
       },
     ],
     contentHtml: `
@@ -1782,6 +1989,12 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Quy Trình 4 Câu Hỏi Thực Chiến Khi Tư Vấn Cho Khách Hàng</h2>
+      <ul>
+        <li><strong>Câu hỏi 1 — Kiếm tiền bằng con đường nào thuận nhất?</strong> Xem <em>Cung Quan Lộc + Cung Tài Bạch</em> để chỉ rõ nên làm chủ kinh doanh thương mại (Vũ Khúc, Sát Phá Tham, Lộc Mã) hay làm chuyên gia/quản trị (Cơ Nguyệt Đồng Lương, Tử Phủ, Khoa Quyền).</li>
+        <li><strong>Câu hỏi 2 — Giữ tiền bằng kênh nào an toàn nhất?</strong> Xem <em>Cung Điền Trạch</em> để biết thời điểm nào nên chuyển tiền mặt thành nhà đất, bất động sản.</li>
+        <li><strong>Câu hỏi 3 — Gia đạo &amp; Hôn nhân cần lưu ý điều gì?</strong> Xem trục <em>Phu Thê – Quan Lộc – Phúc Đức</em> để cân bằng giữa tham vọng sự nghiệp và hạnh phúc gia đình.</li>
+      </ul>
     `,
   },
   {
@@ -1806,21 +2019,25 @@ export const COURSE_LESSONS: CourseLesson[] = [
         time: '00:00',
         title: 'Tổng kết quy trình 5 bước đọc vận hạn thực chiến của Thầy Tôn',
         transcript: 'Trong bài học cuối cùng của khóa học này, Thầy đúc kết toàn bộ kiến thức về 14 Chính tinh, Phụ tinh và Cách cục thành Quy trình 5 bước thực chiến để mỗi khi bước sang một năm mới, các bạn có thể tự đọc vận hạn cho mình và người thân một cách mạch lạc, khoa học, không bị rối trước hàng trăm ngôi sao.',
+        audioUrl: '/audio/course/bai-24-chap-1.mp3',
       },
       {
         time: '06:30',
         title: 'Bước 1, Bước 2 và Bước 3: Định vị Đại vận, Cung Lưu Thái Tuế và Cung Tiểu vận',
         transcript: 'Bước 1 là kiểm tra xem ở tuổi hiện tại bạn đang nằm trong Đại vận 10 năm nào, cung Đại vận đó tốt hay xấu. Bước 2 là tìm cung có Địa Chi trùng với năm xem (ví dụ năm 2027 Đinh Mùi thì nhìn vào cung Mùi trên lá số) — đó chính là cung Lưu Thái Tuế quản bối cảnh khách quan của năm. Bước 3 là tìm cung Tiểu vận theo tuổi để xem tâm thế chủ quan của bạn trong năm đó.',
+        audioUrl: '/audio/course/bai-24-chap-2.mp3',
       },
       {
         time: '13:45',
         title: 'Bước 4 và Bước 5: Kích hoạt bộ Sao Lưu và rà soát 12 tháng Lưu Nguyệt',
         transcript: 'Bước 4 là xét bộ Sao Lưu của năm đó (Lưu Lộc Tồn, Lưu Thiên Mã, Lưu Kình Đà, Lưu Khốc Hư) và Tứ Hóa của Thiên Can năm (như năm Đinh Mùi 2027 là Nguyệt - Đồng - Cơ - Cự) xem chúng rơi vào cung nào của gốc và của Đại vận. Cuối cùng, Bước 5 là dóng xuống 12 tháng âm lịch Lưu Nguyệt để biết tháng nào vượng tài lộc nên tiến công, tháng nào hội Sát Kỵ nên phòng thủ.',
+        audioUrl: '/audio/course/bai-24-chap-3.mp3',
       },
       {
         time: '19:20',
         title: 'Lời nhắn nhủ của Thầy Tôn: Học Tử Vi để Làm Chủ Vận Mệnh',
         transcript: 'Tử Vi Đẩu Số không phải là định mệnh đóng khung bắt chúng ta ngồi im chịu trận, mà là tấm bản đồ dự báo thời tiết cuộc đời. Khi biết trước năm nào nắng ấm thuận buồm xuôi gió, ta căng buồm ra khơi; khi biết trước tháng nào có giông bão, ta gia cố con thuyền, giữ chặt dòng tiền và bồi đắp tri thức, phúc đức. Chúc các bạn ứng dụng thật tốt kho tàng tri thức này vào cuộc sống!',
+        audioUrl: '/audio/course/bai-24-chap-4.mp3',
       },
     ],
     contentHtml: `
@@ -1864,6 +2081,11 @@ export const COURSE_LESSONS: CourseLesson[] = [
           </tr>
         </tbody>
       </table>
+      <h2>3. Tổng Kết Tâm Pháp Luận Giải Của Học Viện Tử Vi Thầy Tôn</h2>
+      <ul>
+        <li><strong>Tử Vi là Bản Đồ Dự Báo Thời Tiết Cuộc Đời:</strong> Không có lá số nào tốt toàn diện 100%, cũng không có lá số nào xấu tuyệt đối. Người chiến thắng là người biết tiến công đúng Đại vận sáng và biết thu quân bảo toàn lực lượng ở những năm Lưu niên có Sát Kỵ.</li>
+        <li><strong>Đức Năng Thắng Số:</strong> Mọi cách cục trên lá số đều vận hành quanh trục <strong>Nhân – Quả &amp; Phúc Đức</strong>. Hiểu rõ Mệnh lý để rèn tâm tính, chọn đúng nghề, kết đúng người và hành động đúng thời điểm chính là giá trị cao quý nhất của Tử Vi Đẩu Số Thực Chiến.</li>
+      </ul>
     `,
   },
 ];

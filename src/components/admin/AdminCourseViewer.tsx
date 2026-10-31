@@ -389,24 +389,37 @@ export default function AdminCourseViewer() {
                           </span>
                         </div>
                         <div className="space-y-2.5">
-                          {lesson.podcastChapters.map((chap, cIdx) => (
-                            <div
-                              key={cIdx}
-                              className="p-3.5 rounded-xl bg-slate-950/85 border border-slate-800 space-y-1"
-                            >
-                              <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-amber-300">
-                                <span className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 font-mono text-xs text-amber-400">
-                                  {chap.time}
-                                </span>
-                                <span>
-                                  Chương {cIdx + 1}: {chap.title}
-                                </span>
+                          {lesson.podcastChapters.map((chap, cIdx) => {
+                            const audioSrc =
+                              chap.audioUrl ||
+                              `/audio/course/bai-${lesson.number}-chap-${cIdx + 1}.mp3`;
+                            return (
+                              <div
+                                key={cIdx}
+                                className="p-3.5 rounded-xl bg-slate-950/85 border border-slate-800 space-y-2.5"
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-amber-300">
+                                    <span className="px-2 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 font-mono text-xs text-amber-400">
+                                      {chap.time}
+                                    </span>
+                                    <span>
+                                      Chương {cIdx + 1}: {chap.title}
+                                    </span>
+                                  </div>
+                                  <audio
+                                    controls
+                                    preload="none"
+                                    src={audioSrc}
+                                    className="h-8 w-full sm:w-64 rounded-lg"
+                                  />
+                                </div>
+                                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed pl-1">
+                                  {chap.transcript}
+                                </p>
                               </div>
-                              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed pl-1">
-                                {chap.transcript}
-                              </p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
 
