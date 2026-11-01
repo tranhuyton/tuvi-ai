@@ -20,11 +20,40 @@ export function trackMetaEvent(eventName: string, params?: Record<string, any>, 
   }
 }
 
-export function trackLeadChart(hoTen: string, tier: string) {
-  trackMetaEvent('Lead', {
-    content_name: 'Lap La So Tu Vi',
-    content_category: tier,
+export function trackMetaCustomEvent(eventName: string, params?: Record<string, any>) {
+  if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
+  try {
+    window.fbq('trackCustom', eventName, params || {});
+  } catch (err) {
+    console.warn('[MetaPixel] trackMetaCustomEvent error:', err);
+  }
+}
+
+export function trackCompleteRegistration(method: string = 'email', hasPhone: boolean = false) {
+  trackMetaEvent('CompleteRegistration', {
+    content_name: 'Tao Tai Khoan Tu Vi Thay Ton',
     status: 'completed',
+    registration_method: method,
+    has_phone: hasPhone,
+  });
+  trackMetaCustomEvent('TaoTaiKhoan', {
+    registration_method: method,
+    has_phone: hasPhone,
+  });
+}
+
+export function trackLeadChart(hoTen: string, tier: string, namDuong?: number, gioiTinh?: string) {
+  trackMetaEvent('Lead', {
+    content_name: 'An Sao Lap La So Tu Vi',
+    content_category: tier,
+    birth_year: namDuong,
+    gender: gioiTinh,
+    status: 'completed',
+  });
+  trackMetaCustomEvent('AnSaoLapLaSo', {
+    tier,
+    birth_year: namDuong,
+    gender: gioiTinh,
   });
 }
 

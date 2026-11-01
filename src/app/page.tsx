@@ -546,9 +546,9 @@ export default function HomePage() {
     setQuestionsQuota(initialQuota);
     setIsLoadingReading(!requiresPayment);
 
-    // Ghi nhận sự kiện Lead về Meta Pixel khi khách tạo lá số
+    // Ghi nhận sự kiện Lead & AnSaoLapLaSo về Meta Pixel khi khách tạo lá số
     if (!isEditing) {
-      trackLeadChart(data.hoTen, tier);
+      trackLeadChart(data.hoTen, tier, data.namDuong, data.gioiTinh);
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });

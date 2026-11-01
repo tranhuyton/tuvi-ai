@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { TesterConfig } from '@/types/tester';
+import { trackCompleteRegistration } from '@/lib/metaPixel';
 
 interface AuthContextType {
   user: User | null;
@@ -194,6 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setUser(data.user);
         await fetchProfile(data.user);
+        trackCompleteRegistration('email', Boolean(trimmedPhone));
       }
 
       return {
