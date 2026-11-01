@@ -36,6 +36,12 @@ export function trackCompleteRegistration(method: string = 'email', hasPhone: bo
     registration_method: method,
     has_phone: hasPhone,
   });
+  // Khi thu được thông tin liên hệ (Email / SĐT) lúc đăng ký tài khoản thì mới tính là 1 Lead chuẩn CRM
+  trackMetaEvent('Lead', {
+    content_name: 'Thu Thap Contact Tai Khoan',
+    registration_method: method,
+    has_phone: hasPhone,
+  });
   trackMetaCustomEvent('TaoTaiKhoan', {
     registration_method: method,
     has_phone: hasPhone,
@@ -43,12 +49,12 @@ export function trackCompleteRegistration(method: string = 'email', hasPhone: bo
 }
 
 export function trackLeadChart(hoTen: string, tier: string, namDuong?: number, gioiTinh?: string) {
-  trackMetaEvent('Lead', {
+  // Theo chuẩn phễu E-commerce: Khách lập lá số & xem bản miễn phí = AddToWishlist (Đã rất quan tâm sản phẩm nhưng chưa chốt mua VIP/Expert)
+  trackMetaEvent('AddToWishlist', {
     content_name: 'An Sao Lap La So Tu Vi',
     content_category: tier,
     birth_year: namDuong,
     gender: gioiTinh,
-    status: 'completed',
   });
   trackMetaCustomEvent('AnSaoLapLaSo', {
     tier,
