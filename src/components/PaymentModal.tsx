@@ -281,6 +281,11 @@ export default function PaymentModal({
       return;
     }
 
+    // Nếu đơn hàng vừa thanh toán thành công (đang hiển thị thông báo chúc mừng), tuyệt đối không tạo đơn mới
+    if (orderStatus === 'PAID') {
+      return;
+    }
+
     const targetKey = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
     // Nếu modal đang mở và đã có đơn pending cho gói này rồi thì không tạo lại để hiện mã ngay lập tức 0ms
     if (activeOrderKeyRef.current === targetKey && orderCode && orderStatus === 'PENDING') {
