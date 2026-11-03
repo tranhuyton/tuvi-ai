@@ -7,6 +7,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { exportReadingToPdf } from '@/lib/pdfExport';
 import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 import { isInAppBrowser, getInAppBrowserName } from '@/lib/inAppBrowser';
+import { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
 
 interface LuanGiaiAIProps {
   readingHtml?: string;
@@ -18,6 +19,7 @@ interface LuanGiaiAIProps {
   isUpgrading?: boolean;
   duongSo?: DuLieuDuongSo;
   laSo?: LaSoData;
+  activeVoucher?: ClientVoucherInfo | null;
 }
 
 export default function LuanGiaiAI({
@@ -30,6 +32,7 @@ export default function LuanGiaiAI({
   isUpgrading,
   duongSo,
   laSo,
+  activeVoucher,
 }: LuanGiaiAIProps) {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
@@ -80,6 +83,9 @@ export default function LuanGiaiAI({
 
   const isPro = tier === 'pro';
   const isExpert = tier === 'expert';
+  const hasFreeVoucher = tier === 'free' && Boolean(activeVoucher);
+  const vipVoucherK = activeVoucher ? Math.round(activeVoucher.prices.reading_vip / 1000) : 119;
+  const expVoucherK = activeVoucher ? Math.round(activeVoucher.prices.reading_expert / 1000) : 269;
 
   if (!safeReadingHtml && !isLoading && !error && !onUpgrade && !onUpgradeToExpert) {
     return null;
@@ -202,6 +208,8 @@ export default function LuanGiaiAI({
                 <span>
                   {isPro
                     ? t('reading.upgradeProToExpertBtn', '💎 Nâng Cấp Bản Expert (150.000đ - Tặng 2 câu hỏi)')
+                    : hasFreeVoucher && activeVoucher
+                    ? `💎 Thanh Toán Bản Expert: ${activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
                     : t('reading.upgradeExpertBtnFull', '💎 Thanh Toán Bản Chuyên Gia Expert (269.000đ)')}
                 </span>
               </button>
@@ -214,7 +222,11 @@ export default function LuanGiaiAI({
                 className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Crown className="w-5 h-5" />
-                <span>{t('reading.upgradeBtnFull', '👑 Thanh Toán Bản Chuyên Sâu Pro (119.000đ)')}</span>
+                <span>
+                  {hasFreeVoucher && activeVoucher
+                    ? `👑 Thanh Toán Bản Pro: ${activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
+                    : t('reading.upgradeBtnFull', '👑 Thanh Toán Bản Chuyên Sâu Pro (119.000đ)')}
+                </span>
               </button>
             )}
           </div>
@@ -252,7 +264,11 @@ export default function LuanGiaiAI({
                   title="Nâng cấp xem luận giải chuyên sâu chi tiết gấp 2 lần"
                 >
                   <Sparkles className="w-4 h-4 fill-slate-950" />
-                  <span>{t('reading.topUpgradeBtn', '⚡ Nâng Cấp Bản Pro (119K)')}</span>
+                  <span>
+                    {hasFreeVoucher && activeVoucher
+                      ? `⚡ Bản Pro ${vipVoucherK}K (-${activeVoucher.discountPercent}%)`
+                      : t('reading.topUpgradeBtn', '⚡ Nâng Cấp Bản Pro (119K)')}
+                  </span>
                 </button>
               )}
 
@@ -265,7 +281,11 @@ export default function LuanGiaiAI({
                   title="Nâng cấp lên Bản Chuyên Gia Expert (Luận giải đầy đủ 12 Cung)"
                 >
                   <Gem className="w-4 h-4" />
-                  <span>{t('reading.topUpgradeExpertFromFreeBtn', '💎 Bản Expert (269K)')}</span>
+                  <span>
+                    {hasFreeVoucher && activeVoucher
+                      ? `💎 Bản Expert ${expVoucherK}K (-${activeVoucher.discountPercent}%)`
+                      : t('reading.topUpgradeExpertFromFreeBtn', '💎 Bản Expert (269K)')}
+                  </span>
                 </button>
               )}
 
@@ -343,7 +363,9 @@ export default function LuanGiaiAI({
                     onClick={onUpgrade}
                     className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer"
                   >
-                    {t('reading.upgradeBtn', '⚡ Bản Pro (119.000đ)')}
+                    {hasFreeVoucher && activeVoucher
+                      ? `⚡ Bản Pro: ${activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
+                      : t('reading.upgradeBtn', '⚡ Bản Pro (119.000đ)')}
                   </button>
                 )}
                 {onUpgradeToExpert && (
@@ -353,7 +375,11 @@ export default function LuanGiaiAI({
                     className="px-4 py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer flex items-center gap-1.5"
                   >
                     <Gem className="w-4 h-4" />
-                    <span>{t('reading.upgradeExpertBtn', '💎 Bản Expert (269.000đ)')}</span>
+                    <span>
+                      {hasFreeVoucher && activeVoucher
+                        ? `💎 Bản Expert: ${activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
+                        : t('reading.upgradeExpertBtn', '💎 Bản Expert (269.000đ)')}
+                    </span>
                   </button>
                 )}
               </div>

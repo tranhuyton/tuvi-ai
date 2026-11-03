@@ -101,8 +101,11 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
         },
       });
 
+      const gmailSender =
+        options.from || process.env.SMTP_FROM || `"Tử Vi Thầy Tôn" <${gmailUser}>`;
+
       const info = await transporter.sendMail({
-        from: smtpFrom.includes('@') ? smtpFrom : `"Tử Vi Thầy Tôn" <${gmailUser}>`,
+        from: gmailSender,
         to: validToList.join(','),
         subject,
         html,
@@ -520,4 +523,305 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
   }
 
   return adminResult;
+}
+
+
+export interface DripFunnelEmailDetails {
+  stage: 'reminder_1h' | 'voucher_20_24h' | 'voucher_30_72h' | 'voucher_30_6m';
+  recipientEmail: string;
+  customerName: string;
+  chartId?: string | null;
+  chartSummary?: {
+    hoTen?: string;
+    namDuong?: number;
+    gioiTinh?: string;
+    namCanChi?: string;
+    banMenh?: string;
+    chinhTinhMenh?: string;
+    namXem?: number;
+  } | null;
+  voucherCode?: string | null;
+  ctaBaseUrl: string;
+  ctaProUrl: string;
+  ctaExpertUrl: string;
+  unsubscribeUrl: string;
+}
+
+/**
+ * Gửi chuỗi 4 email chăm sóc tự động & ưu đãi đếm ngược cá nhân hóa theo Lá Số
+ */
+export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Promise<{
+  success: boolean;
+  messageId?: string;
+  simulated?: boolean;
+  error?: string;
+}> {
+  const {
+    stage,
+    recipientEmail,
+    customerName,
+    chartSummary,
+    voucherCode,
+    ctaBaseUrl,
+    ctaProUrl,
+    ctaExpertUrl,
+    unsubscribeUrl,
+  } = details;
+
+  const displayName = (chartSummary?.hoTen || customerName || 'Quý khách').trim();
+  const namXem = chartSummary?.namXem || new Date().getFullYear();
+  const hasChart = Boolean(chartSummary?.namDuong);
+  const canChiLabel = chartSummary?.namCanChi
+    ? `${chartSummary.namCanChi} (${chartSummary.namDuong})`
+    : chartSummary?.namDuong
+    ? `sinh năm ${chartSummary.namDuong}`
+    : '';
+  const menhDetail = [
+    chartSummary?.banMenh ? `Bản mệnh <strong>${chartSummary.banMenh}</strong>` : '',
+    chartSummary?.chinhTinhMenh
+      ? `Cung Mệnh tọa thủ <strong>${chartSummary.chinhTinhMenh}</strong>`
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' • ');
+
+  let subject = '';
+  let badgeText = '';
+  let headerTitle = '';
+  let introHtml = '';
+  let highlightBoxHtml = '';
+  let pricingBlockHtml = '';
+
+  if (stage === 'reminder_1h') {
+    subject = hasChart
+      ? `Lá số ${canChiLabel} của ${displayName} còn những ẩn số quan trọng trong năm ${namXem}...`
+      : `${displayName} ơi, Sổ Tay Số Mệnh của quý khách đã sẵn sàng khai mở lá số năm ${namXem}`;
+    badgeText = '✦ LƯU GIỮ LÁ SỐ • TỬ VI THẦY TÔN ✦';
+    headerTitle = 'ẨN SỐ CUNG MỆNH & ĐẠI VẬN CHƯA KHAI MỞ';
+    introHtml = hasChart
+      ? `
+        <p style="font-size: 15px; color: #e2e8f0; line-height: 1.7; margin-bottom: 16px;">
+          Lá số <strong>${canChiLabel}</strong> của <strong>${displayName}</strong> ${menhDetail ? `(${menhDetail})` : ''} đã được hệ thống an sao và lưu giữ an toàn trong Sổ Tay Số Mệnh.
+        </p>
+        <p style="font-size: 14px; color: #cbd5e1; line-height: 1.7; margin-bottom: 18px;">
+          Bản bình giải miễn phí mới chỉ phác họa tổng quan bề nổi. Những nút thắt quyết định nhất về <strong>cơ hội bứt phá Tài Bạch, biến động Quan Lộc, Gia Đạo, đối chiếu Diện Tướng - Chỉ Tay</strong> và <strong>thời điểm cát hung từng tháng năm ${namXem}</strong> hiện vẫn đang chờ quý khách khai mở trọn vẹn.
+        </p>
+      `
+      : `
+        <p style="font-size: 15px; color: #e2e8f0; line-height: 1.7; margin-bottom: 16px;">
+          Cảm ơn <strong>${displayName}</strong> đã khởi tạo tài khoản tại <strong>Tử Vi Thầy Tôn</strong>. Quý khách có thể lập lá số miễn phí ngay hoặc mở khóa bài luận giải chuyên sâu để nắm bắt thời vận năm ${namXem}.
+        </p>
+      `;
+
+    highlightBoxHtml = `
+      <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 12px; padding: 18px; margin-bottom: 22px;">
+        <div style="color: #fbbf24; font-weight: bold; font-size: 15px; margin-bottom: 8px;">🔍 Vì sao hàng nghìn đương số chọn mở khóa Luận Giải Chuyên Sâu?</div>
+        <ul style="margin: 0; padding-left: 18px; color: #e2e8f0; font-size: 13.5px; line-height: 1.75;">
+          <li><strong>Bản Chuyên Sâu Pro (119.000đ):</strong> Dài gấp 2,5 lần bản miễn phí (~2.500 từ), kết hợp soi Diện Tướng &amp; Chỉ Tay, Đại vận 10 năm, Vận khí 4 mùa + <strong>Tặng 02 câu hỏi VIP cùng Thầy Tôn</strong>.</li>
+          <li><strong>Bản Chuyên Gia Expert (269.000đ):</strong> Tuyệt học mệnh lý đỉnh cao (~4.500 - 5.000 từ), mổ xẻ cặn kẽ <strong>trọn bộ 12 Cung + Cung Thân</strong>, bản đồ Lưu Nguyệt 12 tháng Âm lịch + <strong>Tặng 02 câu hỏi Chuyên Gia</strong>.</li>
+        </ul>
+      </div>
+    `;
+
+    pricingBlockHtml = `
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${ctaExpertUrl}" style="display: block; max-width: 420px; margin: 0 auto 12px auto; padding: 14px 22px; background: linear-gradient(135deg, #9333ea 0%, #d97706 100%); color: #ffffff !important; text-decoration: none; font-weight: bold; font-size: 15px; border-radius: 12px; box-shadow: 0 4px 14px rgba(147, 51, 234, 0.35);">
+          💎 Mở Khóa Bản Chuyên Gia 12 Cung (269.000đ) ➜
+        </a>
+        <a href="${ctaProUrl}" style="display: block; max-width: 420px; margin: 0 auto 12px auto; padding: 13px 22px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0b0f19 !important; text-decoration: none; font-weight: bold; font-size: 14.5px; border-radius: 12px;">
+          👑 Mở Khóa Bản Chuyên Sâu Pro (119.000đ) ➜
+        </a>
+        <a href="${ctaBaseUrl}" style="display: inline-block; margin-top: 4px; color: #fbbf24; font-size: 13px; text-decoration: underline;">
+          Hoặc xem lại lá số đã lưu trong Sổ Tay của quý khách
+        </a>
+      </div>
+    `;
+  } else if (stage === 'voucher_20_24h') {
+    subject = `🎁 Dành riêng cho ${displayName}: Tặng mã giảm 20% mở khóa Luận Giải (Tự hủy sau 12 giờ)`;
+    badgeText = '✦ ĐẶC QUYỀN HỮU DUYÊN • GIẢM 20% ✦';
+    headerTitle = 'ƯU ĐÃI 20% DÀNH RIÊNG CHO LÁ SỐ CỦA BẠN';
+    introHtml = `
+      <p style="font-size: 15px; color: #e2e8f0; line-height: 1.7; margin-bottom: 14px;">
+        Kính chào <strong>${displayName}</strong>, hôm qua quý khách đã lưu ${hasChart ? `lá số <strong>${canChiLabel}</strong>` : 'tài khoản'} tại Tử Vi Thầy Tôn nhưng chưa kịp khai mở bài luận giải chuyên sâu.
+      </p>
+      <p style="font-size: 14px; color: #cbd5e1; line-height: 1.7; margin-bottom: 18px;">
+        Gửi lời tri ân hữu duyên, hệ thống dành tặng riêng cho tài khoản của quý khách mã ưu đãi <strong>GIẢM 20%</strong> phí mở khóa Luận Giải. Đồng hồ hiệu lực <strong>12 tiếng</strong> sẽ bắt đầu đếm ngược ngay khi quý khách bấm mở liên kết bên dưới:
+      </p>
+    `;
+
+    highlightBoxHtml = `
+      <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(124, 45, 18, 0.28) 100%); border: 1.5px dashed #fbbf24; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 22px;">
+        <div style="font-size: 12px; color: #fde68a; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Mã Ưu Đãi Cá Nhân (Chỉ Dùng 01 Lần)</div>
+        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${voucherCode}</div>
+        <div style="font-size: 13px; color: #fca5a5; font-weight: 600;">⏳ Tự động hết hạn sau 12 giờ kể từ lúc mở thư</div>
+      </div>
+    `;
+
+    pricingBlockHtml = `
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 22px; background: #0f172a; border-radius: 12px; overflow: hidden; border: 1px solid #334155;">
+        <tr>
+          <td style="padding: 14px 16px; border-bottom: 1px solid #1e293b;">
+            <div style="color: #fbbf24; font-weight: bold; font-size: 14.5px;">👑 Bản Chuyên Sâu VIP Pro (+02 câu hỏi VIP)</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 3px;">Luận giải sâu gấp 2,5 lần, Diện tướng, Chỉ tay &amp; Đại vận</div>
+          </td>
+          <td style="padding: 14px 16px; border-bottom: 1px solid #1e293b; text-align: right; white-space: nowrap;">
+            <div style="color: #64748b; text-decoration: line-through; font-size: 12px;">119.000đ</div>
+            <div style="color: #34d399; font-weight: 800; font-size: 18px;">95.000đ</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 14px 16px;">
+            <div style="color: #e879f9; font-weight: bold; font-size: 14.5px;">💎 Bản Chuyên Gia Expert (+02 câu hỏi Expert)</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 3px;">Trọn bộ 12 Cung + Cung Thân (~5.000 từ) &amp; Lưu Nguyệt 12 tháng</div>
+          </td>
+          <td style="padding: 14px 16px; text-align: right; white-space: nowrap;">
+            <div style="color: #64748b; text-decoration: line-through; font-size: 12px;">269.000đ</div>
+            <div style="color: #34d399; font-weight: 800; font-size: 18px;">215.000đ</div>
+          </td>
+        </tr>
+      </table>
+
+      <div style="text-align: center; margin: 22px 0;">
+        <a href="${ctaExpertUrl}" style="display: block; max-width: 430px; margin: 0 auto 12px auto; padding: 14px 20px; background: linear-gradient(135deg, #9333ea 0%, #d97706 100%); color: #ffffff !important; text-decoration: none; font-weight: bold; font-size: 15px; border-radius: 12px;">
+          💎 Nhận Bản Expert Chỉ 215.000đ (Tiết kiệm 54K) ➜
+        </a>
+        <a href="${ctaProUrl}" style="display: block; max-width: 430px; margin: 0 auto; padding: 13px 20px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0b0f19 !important; text-decoration: none; font-weight: bold; font-size: 14.5px; border-radius: 12px;">
+          👑 Nhận Bản VIP Pro Chỉ 95.000đ (Tiết kiệm 24K) ➜
+        </a>
+      </div>
+    `;
+  } else if (stage === 'voucher_30_72h') {
+    subject = `⚡ Ưu đãi lớn nhất (-30% trong 6 giờ): Mở khóa trọn bộ Lá Số của ${displayName}`;
+    badgeText = '✦ ĐẶC QUYỀN TỐI ĐA • GIẢM SÂU 30% ✦';
+    headerTitle = 'MÓN QUÀ HỖ TRỢ CUỐI TUẦN ĐẦU: GIẢM 30%';
+    introHtml = `
+      <p style="font-size: 15px; color: #e2e8f0; line-height: 1.7; margin-bottom: 14px;">
+        Kính gửi <strong>${displayName}</strong>, đã 3 ngày kể từ khi quý khách an sao ${hasChart ? `lá số <strong>${canChiLabel}</strong>` : ''} tại Tử Vi Thầy Tôn.
+      </p>
+      <p style="font-size: 14px; color: #cbd5e1; line-height: 1.7; margin-bottom: 18px;">
+        Để giúp quý khách dễ dàng trải nghiệm trọn vẹn chiều sâu mệnh lý của Thầy Tôn mà không phải băn khoăn về chi phí, hệ thống xin gửi tặng mức ưu đãi sâu nhất từ trước tới nay: <strong>GIẢM 30% (chỉ có hiệu lực đúng 6 tiếng kể từ lúc quý khách bấm mở thư này)</strong>. Sau lần này hệ thống sẽ ngừng làm phiền quý khách:
+      </p>
+    `;
+
+    highlightBoxHtml = `
+      <div style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.2) 0%, rgba(147, 51, 234, 0.25) 100%); border: 1.5px dashed #f87171; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 22px;">
+        <div style="font-size: 12px; color: #fecaca; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Đặc Quyền Giảm 30% • Dùng 01 Lần Duy Nhất</div>
+        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${voucherCode}</div>
+        <div style="font-size: 13px; color: #fca5a5; font-weight: 700;">🔥 Tự hủy sau đúng 06 giờ kể từ lúc bấm vào nút bên dưới!</div>
+      </div>
+    `;
+
+    pricingBlockHtml = `
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 22px; background: #0f172a; border-radius: 12px; overflow: hidden; border: 1px solid #334155;">
+        <tr>
+          <td style="padding: 14px 16px; border-bottom: 1px solid #1e293b;">
+            <div style="color: #fbbf24; font-weight: bold; font-size: 14.5px;">👑 Bản Chuyên Sâu VIP Pro (+02 câu hỏi VIP)</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 3px;">Chỉ bằng một ly cà phê để thấu tỏ vận hạn cả năm</div>
+          </td>
+          <td style="padding: 14px 16px; border-bottom: 1px solid #1e293b; text-align: right; white-space: nowrap;">
+            <div style="color: #64748b; text-decoration: line-through; font-size: 12px;">119.000đ</div>
+            <div style="color: #34d399; font-weight: 800; font-size: 19px;">83.000đ</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 14px 16px;">
+            <div style="color: #e879f9; font-weight: bold; font-size: 14.5px;">💎 Bản Chuyên Gia Expert 12 Cung (+02 câu hỏi Expert)</div>
+            <div style="color: #94a3b8; font-size: 12px; margin-top: 3px;">Gói cao cấp nhất (~5.000 từ), tiết kiệm ngay 81.000đ!</div>
+          </td>
+          <td style="padding: 14px 16px; text-align: right; white-space: nowrap;">
+            <div style="color: #64748b; text-decoration: line-through; font-size: 12px;">269.000đ</div>
+            <div style="color: #34d399; font-weight: 800; font-size: 19px;">188.000đ</div>
+          </td>
+        </tr>
+      </table>
+
+      <div style="text-align: center; margin: 22px 0;">
+        <a href="${ctaExpertUrl}" style="display: block; max-width: 430px; margin: 0 auto 12px auto; padding: 14px 20px; background: linear-gradient(135deg, #dc2626 0%, #9333ea 50%, #d97706 100%); color: #ffffff !important; text-decoration: none; font-weight: bold; font-size: 15px; border-radius: 12px;">
+          💎 Mở Khóa Bản Expert Chỉ 188.000đ (-30%) ➜
+        </a>
+        <a href="${ctaProUrl}" style="display: block; max-width: 430px; margin: 0 auto; padding: 13px 20px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0b0f19 !important; text-decoration: none; font-weight: bold; font-size: 14.5px; border-radius: 12px;">
+          👑 Mở Khóa Bản VIP Pro Chỉ 83.000đ (-30%) ➜
+        </a>
+      </div>
+    `;
+  } else {
+    // voucher_30_6m (6 tháng hội ngộ lần cuối)
+    subject = `🌟 Nửa năm hội ngộ: Gửi tặng lại ${displayName} ưu đãi 30% lần cuối (Hiệu lực 6 giờ)`;
+    badgeText = '✦ HỘI NGỘ SAU 6 THÁNG • LẦN CUỐI CÙNG ✦';
+    headerTitle = 'NHÌN LẠI NỬA NĂM QUA & ĐỊNH HƯỚNG CHẶNG TỚI';
+    introHtml = `
+      <p style="font-size: 15px; color: #e2e8f0; line-height: 1.7; margin-bottom: 14px;">
+        Kính chào <strong>${displayName}</strong>, thấm thoắt đã nửa năm trôi qua kể từ ngày quý khách lưu ${hasChart ? `lá số <strong>${canChiLabel}</strong>` : 'tài khoản'} tại Tử Vi Thầy Tôn.
+      </p>
+      <p style="font-size: 14px; color: #cbd5e1; line-height: 1.7; margin-bottom: 18px;">
+        Nửa năm qua công việc, tài chính và gia đạo của quý khách chuyển biến ra sao? Nhân dịp bước sang nửa chặng đường mới, hệ thống xin gửi tặng lại quý khách <strong>lần cuối cùng</strong> mã đặc quyền <strong>GIẢM 30% (hiệu lực trong 6 giờ kể từ lúc mở thư)</strong> để soi chiếu cặn kẽ 12 Cung và Lưu Nguyệt sắp tới:
+      </p>
+    `;
+
+    highlightBoxHtml = `
+      <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(147, 51, 234, 0.25) 100%); border: 1.5px dashed #fbbf24; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 22px;">
+        <div style="font-size: 12px; color: #fde68a; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Quà Tặng Hội Ngộ Lần Cuối • Giảm 30%</div>
+        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${voucherCode}</div>
+        <div style="font-size: 13px; color: #fca5a5; font-weight: 700;">⏳ Hiệu lực 06 giờ kể từ lúc mở liên kết (Ưu đãi cuối cùng)</div>
+      </div>
+    `;
+
+    pricingBlockHtml = `
+      <div style="text-align: center; margin: 22px 0;">
+        <a href="${ctaExpertUrl}" style="display: block; max-width: 430px; margin: 0 auto 12px auto; padding: 14px 20px; background: linear-gradient(135deg, #9333ea 0%, #d97706 100%); color: #ffffff !important; text-decoration: none; font-weight: bold; font-size: 15px; border-radius: 12px;">
+          💎 Mở Khóa Bản Expert 12 Cung Chỉ 188.000đ (Gốc 269K) ➜
+        </a>
+        <a href="${ctaProUrl}" style="display: block; max-width: 430px; margin: 0 auto; padding: 13px 20px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0b0f19 !important; text-decoration: none; font-weight: bold; font-size: 14.5px; border-radius: 12px;">
+          👑 Mở Khóa Bản VIP Pro Chỉ 83.000đ (Gốc 119K) ➜
+        </a>
+      </div>
+    `;
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; color: #e2e8f0; margin: 0; padding: 16px;">
+  <div style="max-width: 600px; margin: 0 auto; background: #111827; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.55);">
+    <div style="background: linear-gradient(135deg, #1e1b4b 0%, #451a03 100%); padding: 28px 22px; text-align: center; border-bottom: 1px solid rgba(245, 158, 11, 0.25);">
+      <div style="display: inline-block; background: #f59e0b; color: #0f172a; font-weight: bold; font-size: 12px; padding: 5px 14px; border-radius: 9999px; margin-bottom: 10px; letter-spacing: 0.8px;">
+        ${badgeText}
+      </div>
+      <h1 style="font-size: 20px; font-weight: bold; color: #fbbf24; margin: 0; font-family: Georgia, 'Times New Roman', serif; line-height: 1.4;">
+        ${headerTitle}
+      </h1>
+    </div>
+
+    <div style="padding: 26px 22px;">
+      ${introHtml}
+      ${highlightBoxHtml}
+      ${pricingBlockHtml}
+
+      <div style="border-top: 1px solid #1f2937; padding-top: 18px; margin-top: 20px; font-size: 12.5px; color: #94a3b8; line-height: 1.6; text-align: center;">
+        Cần hỗ trợ trực tiếp hoặc đặt lịch xem riêng 1-1 cùng Thầy Tôn:<br/>
+        Hotline / Zalo: <a href="tel:0935058688" style="color: #fbbf24; text-decoration: none; font-weight: bold;">0935.058.688</a> •
+        <a href="https://zalo.me/0935058688" target="_blank" style="color: #60a5fa; text-decoration: none; font-weight: bold;">Nhắn Zalo Thầy Tôn</a>
+      </div>
+    </div>
+
+    <div style="background: #0a0e17; padding: 16px 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #1e293b; line-height: 1.6;">
+      © ${new Date().getFullYear()} Tử Vi Thầy Tôn (<a href="https://www.tuvithayton.vn" style="color: #94a3b8;">tuvithayton.vn</a>) • Phòng Tư Vấn R5 Royal City, 72A Nguyễn Trãi, Hà Nội.<br/>
+      Email này được gửi tự động vì quý khách đã đăng ký tài khoản tại hệ thống.
+      <a href="${unsubscribeUrl}" style="color: #94a3b8; text-decoration: underline; margin-left: 4px;">Hủy nhận email nhắc nhở</a>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  return sendEmail({
+    to: recipientEmail,
+    subject,
+    html,
+  });
 }

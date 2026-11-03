@@ -6,6 +6,7 @@ import { GIO_ARR } from '@/lib/tuvi/constants';
 import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, Gem, PhoneCall, BookOpen, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
 
 interface TuViFormProps {
   onSubmit: (data: DuLieuDuongSo, tier: ServiceTier) => void;
@@ -14,6 +15,7 @@ interface TuViFormProps {
   onRequireAuth?: (action: () => void, notice: string) => void;
   initialData?: DuLieuDuongSo | null;
   onCancelEdit?: () => void;
+  activeVoucher?: ClientVoucherInfo | null;
 }
 
 function isHeicFile(file: File): boolean {
@@ -66,7 +68,7 @@ function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<stri
   });
 }
 
-export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onRequireAuth, initialData, onCancelEdit }: TuViFormProps) {
+export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onRequireAuth, initialData, onCancelEdit, activeVoucher }: TuViFormProps) {
   const { user } = useAuth();
   const { t, tHour } = useLanguage();
   const currentYear = new Date().getFullYear();
@@ -645,7 +647,14 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                     <span>{t('form.proTitle', 'Bản Chuyên Sâu VIP Pro')}</span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                    {t('form.proPrice', '119.000 VNĐ')}
+                    {activeVoucher ? (
+                      <>
+                        <s className="opacity-65 mr-1 font-normal">119.000</s>
+                        <span>{activeVoucher.prices.reading_vip.toLocaleString('vi-VN')} VNĐ</span>
+                      </>
+                    ) : (
+                      t('form.proPrice', '119.000 VNĐ')
+                    )}
                   </span>
                 </div>
                 <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
@@ -679,7 +688,14 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                     <span>{t('form.expertTitle', 'Bản Chuyên Gia Đại Tông Sư (Expert)')}</span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/40">
-                    {t('form.expertPrice', '269.000 VNĐ')}
+                    {activeVoucher && initialData?.tier !== 'pro' ? (
+                      <>
+                        <s className="opacity-65 mr-1 font-normal">269.000</s>
+                        <span>{activeVoucher.prices.reading_expert.toLocaleString('vi-VN')} VNĐ</span>
+                      </>
+                    ) : (
+                      t('form.expertPrice', '269.000 VNĐ')
+                    )}
                   </span>
                 </div>
                 <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
@@ -727,13 +743,19 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               <span>
                 {initialData?.tier === 'pro'
                   ? t('form.btnUpgradeProToExpert', 'Thanh Toán & Nâng Cấp Bản Expert (150K)')
+                  : activeVoucher
+                  ? `Thanh Toán & Luận Giải Bản Expert (${Math.round(activeVoucher.prices.reading_expert / 1000)}K • -${activeVoucher.discountPercent}%)`
                   : t('form.btnSubmitExpert', 'Thanh Toán & Luận Giải Bản Expert (269K)')}
               </span>
             </>
           ) : selectedTier === 'pro' ? (
             <>
               <Crown className="w-5 h-5" />
-              <span>{t('form.btnSubmitPro', 'Thanh Toán & Luận Giải Bản Pro (119K)')}</span>
+              <span>
+                {activeVoucher
+                  ? `Thanh Toán & Luận Giải Bản Pro (${Math.round(activeVoucher.prices.reading_vip / 1000)}K • -${activeVoucher.discountPercent}%)`
+                  : t('form.btnSubmitPro', 'Thanh Toán & Luận Giải Bản Pro (119K)')}
+              </span>
             </>
           ) : (
             <>

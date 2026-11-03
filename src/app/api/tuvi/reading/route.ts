@@ -75,7 +75,12 @@ export async function POST(req: NextRequest) {
           ? { ...existingChart.duong_so_data, tier: currentTier }
           : undefined;
         const updatedLaSo = existingChart?.laso_data
-          ? { ...existingChart.laso_data, tier: currentTier, needsReadingUpgrade: false }
+          ? {
+              ...existingChart.laso_data,
+              tier: currentTier,
+              ...(laSo.quota ? { quota: laSo.quota } : {}),
+              needsReadingUpgrade: false,
+            }
           : undefined;
 
         await adminSupabase

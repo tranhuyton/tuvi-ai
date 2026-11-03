@@ -10,6 +10,7 @@ import ChatThayTon from '@/components/ChatThayTon';
 import AuthModal, { AuthModalTab } from '@/components/AuthModal';
 import SavedChartsModal from '@/components/SavedChartsModal';
 import PaymentModal, { PaymentPurpose } from '@/components/PaymentModal';
+import VoucherCountdownBanner, { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
 import UserNav from '@/components/UserNav';
 import FloatingContact from '@/components/FloatingContact';
 import AboutThayTon from '@/components/AboutThayTon';
@@ -54,6 +55,35 @@ export default function HomePage() {
   });
   const [isRestoringSession, setIsRestoringSession] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Trạng thái Mã ưu đãi đếm ngược (Drip Email Funnel) & chủ sở hữu lá số mở từ Email
+  const [activeVoucher, setActiveVoucher] = useState<ClientVoucherInfo | null>(null);
+  const activeVoucherRef = useRef<ClientVoucherInfo | null>(null);
+  const [emailLinkOwner, setEmailLinkOwner] = useState<{
+    userId?: string | null;
+    email?: string | null;
+  } | null>(null);
+  const emailLinkOwnerRef = useRef<{
+    userId?: string | null;
+    email?: string | null;
+  } | null>(null);
+  const isHydratingEmailLinkRef = useRef<boolean>(false);
+
+  const clearActiveVoucher = () => {
+    activeVoucherRef.current = null;
+    setActiveVoucher(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('tuvi_active_voucher');
+    }
+  };
+
+  useEffect(() => {
+    activeVoucherRef.current = activeVoucher;
+  }, [activeVoucher]);
+
+  useEffect(() => {
+    emailLinkOwnerRef.current = emailLinkOwner;
+  }, [emailLinkOwner]);
 
   // Refs đồng bộ tức thì để các hàm callback thanh toán không bao giờ dính stale closure
   const laSoRef = useRef<LaSoData | null>(null);
@@ -107,6 +137,213 @@ export default function HomePage() {
       // ignore
     }
   }, []);
+
+  // Khôi phục chủ sở hữu email link từ sessionStorage (giúp giữ mạch thanh toán không cần đăng nhập lại khi F5)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedOwner = sessionStorage.getItem('tuvi_email_link_owner');
+      if (savedOwner) {
+        const parsed = JSON.parse(savedOwner);
+        if (parsed && (parsed.userId || parsed.email)) {
+          emailLinkOwnerRef.current = parsed;
+          setEmailLinkOwner(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Bắt mã Voucher đếm ngược & mở trực tiếp Lá Số từ Email tự động (hỗ trợ xuyên trình duyệt FB -> Gmail -> Safari/Chrome)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    const urlVoucher = (params.get('voucher') || '').trim().toUpperCase();
+    const urlChartId = (params.get('chartId') || '').trim();
+    const urlEtoken = (params.get('etoken') || '').trim();
+    const urlPkg = (params.get('pkg') || '').trim().toLowerCase(); // 'pro' | 'expert'
+    const savedVoucher = (localStorage.getItem('tuvi_active_voucher') || '').trim().toUpperCase();
+
+    const codeToValidate = urlVoucher || savedVoucher;
+    const hasEmailChartToken = Boolean(urlChartId && (urlVoucher || urlEtoken));
+
+    if (!codeToValidate && !hasEmailChartToken && !user?.id) {
+      return;
+    }
+
+    if (hasEmailChartToken) {
+      isHydratingEmailLinkRef.current = true;
+      setIsRestoringSession(true);
+    }
+
+    let cancelled = false;
+
+    fetch('/api/voucher/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: codeToValidate || undefined,
+        chartId: urlChartId || undefined,
+        etoken: urlEtoken || undefined,
+        userId: user?.id || undefined,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+
+        let validatedVoucher: ClientVoucherInfo | null = null;
+
+        if (data?.valid && data?.voucher) {
+          validatedVoucher = data.voucher as ClientVoucherInfo;
+          activeVoucherRef.current = validatedVoucher;
+          setActiveVoucher(validatedVoucher);
+          try {
+            localStorage.setItem('tuvi_active_voucher', validatedVoucher.code);
+          } catch {}
+
+          if (validatedVoucher.userId || validatedVoucher.email) {
+            const ownerObj = {
+              userId: validatedVoucher.userId || null,
+              email: validatedVoucher.email || null,
+            };
+            emailLinkOwnerRef.current = ownerObj;
+            setEmailLinkOwner(ownerObj);
+            try {
+              sessionStorage.setItem('tuvi_email_link_owner', JSON.stringify(ownerObj));
+            } catch {}
+          }
+        } else if (codeToValidate) {
+          clearActiveVoucher();
+        }
+
+        // Nếu link email trả kèm dữ liệu lá số đã lưu của khách: tự động nạp lên màn hình ngay lập tức
+        if (data?.chartBundle?.chart && (hasEmailChartToken || !laSoRef.current)) {
+          const chart = data.chartBundle.chart;
+          const rawMessages = data.chartBundle.messages || [];
+
+          if (data.chartBundle.ownerUserId || data.chartBundle.ownerEmail) {
+            const ownerObj = {
+              userId: data.chartBundle.ownerUserId || null,
+              email: data.chartBundle.ownerEmail || null,
+            };
+            emailLinkOwnerRef.current = ownerObj;
+            setEmailLinkOwner(ownerObj);
+            try {
+              sessionStorage.setItem('tuvi_email_link_owner', JSON.stringify(ownerObj));
+              if (ownerObj.email) {
+                localStorage.setItem('tuvi_customer_email', ownerObj.email);
+              }
+            } catch {}
+          }
+
+          const detectedTier: ServiceTier =
+            chart.duong_so_data?.tier ||
+            chart.laso_data?.tier ||
+            (chart.reading_html?.includes('Bản Expert') || chart.reading_html?.includes('CHUYÊN GIA EXPERT')
+              ? 'expert'
+              : chart.reading_html?.includes('Bản Pro') || chart.reading_html?.includes('CHUYÊN SÂU PRO')
+              ? 'pro'
+              : 'free');
+
+          let hydratedLaSo = chart.laso_data;
+          if (chart.duong_so_data) {
+            try {
+              const resolvedNamXem = chart.duong_so_data.namXem || new Date().getFullYear();
+              hydratedLaSo = lapLaSoTuVi(chart.duong_so_data, resolvedNamXem);
+              hydratedLaSo.tier = detectedTier;
+              if (chart.laso_data?.quota) hydratedLaSo.quota = chart.laso_data.quota;
+            } catch {}
+          }
+
+          const mappedChat: ChatMessage[] = rawMessages.map((m: any) => ({
+            q: m.question,
+            a: m.answer,
+            type:
+              (m.message_type as 'basic' | 'vip' | 'expert') ||
+              (m.answer?.includes('Chuyên Gia') || m.answer?.includes('Expert')
+                ? 'expert'
+                : m.answer?.includes('Chuyên Sâu') || m.answer?.includes('VIP Pro')
+                ? 'vip'
+                : 'basic'),
+          }));
+
+          laSoRef.current = hydratedLaSo;
+          duongSoRef.current = chart.duong_so_data;
+          chartIdRef.current = chart.id;
+          tierRef.current = detectedTier;
+
+          setLaSo(hydratedLaSo);
+          setCurrentDuongSo(chart.duong_so_data);
+          setCurrentChartId(chart.id);
+          setCurrentTier(detectedTier);
+          setReadingHtml(chart.reading_html ? cleanReadingHtml(chart.reading_html) : undefined);
+          setReadingError(undefined);
+          setChatHistory(mappedChat);
+
+          if (detectedTier !== 'free') {
+            clearActiveVoucher();
+          } else if (urlPkg === 'pro' || urlPkg === 'expert') {
+            // Mở thẳng bảng QR Thanh Toán tương ứng với nút bấm trong Email (1-click checkout)
+            setTimeout(() => {
+              if (urlPkg === 'expert') {
+                setPaymentModalConfig({
+                  isOpen: true,
+                  type: 'reading_expert',
+                  price: validatedVoucher ? validatedVoucher.prices.reading_expert : 269000,
+                  originalPrice: validatedVoucher ? 269000 : undefined,
+                  voucherCode: validatedVoucher?.code,
+                  discountPercent: validatedVoucher?.discountPercent,
+                  onConfirm: () => {
+                    clearActiveVoucher();
+                    handleConfirmUpgradeToExpert();
+                  },
+                });
+              } else {
+                setPaymentModalConfig({
+                  isOpen: true,
+                  type: 'reading_vip',
+                  price: validatedVoucher ? validatedVoucher.prices.reading_vip : 119000,
+                  originalPrice: validatedVoucher ? 119000 : undefined,
+                  voucherCode: validatedVoucher?.code,
+                  discountPercent: validatedVoucher?.discountPercent,
+                  onConfirm: () => {
+                    clearActiveVoucher();
+                    handleConfirmUpgradeToPro();
+                  },
+                });
+              }
+            }, 150);
+          }
+
+          // Làm sạch URL để khi F5 không tự bật lại modal thanh toán nhưng vẫn giữ chartId
+          try {
+            const cleanUrl = chart.id ? `/?chartId=${chart.id}` : '/';
+            window.history.replaceState(null, '', cleanUrl);
+          } catch {}
+        } else if (urlPkg === 'pro' || urlPkg === 'expert') {
+          try {
+            const cleanUrl = urlChartId ? `/?chartId=${urlChartId}` : '/';
+            window.history.replaceState(null, '', cleanUrl);
+          } catch {}
+        }
+      })
+      .catch((err) => {
+        console.warn('[VOUCHER] Không thể kiểm tra mã ưu đãi:', err);
+      })
+      .finally(() => {
+        if (!cancelled && hasEmailChartToken) {
+          isHydratingEmailLinkRef.current = false;
+          setIsRestoringSession(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // Đồng bộ số lượng lá số tester đã tạo
   useEffect(() => {
@@ -237,6 +474,9 @@ export default function HomePage() {
     isOpen: boolean;
     type: PaymentPurpose;
     price: number;
+    originalPrice?: number;
+    voucherCode?: string;
+    discountPercent?: number;
     onConfirm?: () => void;
   }>({
     isOpen: false,
@@ -776,28 +1016,44 @@ export default function HomePage() {
     }
   };
 
-  // Mở modal thanh toán nâng cấp Bản Pro (Bắt buộc đăng nhập để lưu lá số và tra cứu lại)
+  // Mở modal thanh toán nâng cấp Bản Pro (Bắt buộc đăng nhập để lưu lá số, trừ khi mở từ link Email đã định danh)
   const openUpgradeModal = () => {
     if (testerInfo?.isTester) {
       alert('Tài khoản Tester của bạn đã được mở khóa toàn bộ quyền lợi VIP Pro!');
       return;
     }
 
+    const currentVoucher = activeVoucherRef.current || activeVoucher;
+    const vipPrice = currentVoucher ? currentVoucher.prices.reading_vip : 119000;
+
     const proceedToPayment = () => {
+      const latestVoucher = activeVoucherRef.current || activeVoucher;
       setPaymentModalConfig({
         isOpen: true,
         type: 'reading_vip',
-        price: 119000,
+        price: latestVoucher ? latestVoucher.prices.reading_vip : 119000,
+        originalPrice: latestVoucher ? 119000 : undefined,
+        voucherCode: latestVoucher?.code,
+        discountPercent: latestVoucher?.discountPercent,
         onConfirm: () => {
+          clearActiveVoucher();
           handleConfirmUpgradeToPro();
         },
       });
     };
 
-    if (!user && !isAuthenticatedRef.current) {
+    const hasVerifiedEmailChart = Boolean(
+      (chartIdRef.current || currentChartId) &&
+        (emailLinkOwnerRef.current?.userId ||
+          emailLinkOwner?.userId ||
+          currentVoucher?.userId ||
+          currentVoucher?.code)
+    );
+
+    if (!user && !isAuthenticatedRef.current && !hasVerifiedEmailChart) {
       pendingPostAuthActionRef.current = proceedToPayment;
       setAuthModalNotice(
-        'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán nâng cấp Bản Pro.'
+        `Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán nâng cấp Bản Pro (${vipPrice.toLocaleString('vi-VN')}đ).`
       );
       setIsAuthModalOpen(true);
       return;
@@ -811,25 +1067,47 @@ export default function HomePage() {
     const baseTier = fromTierOverride || tierRef.current || currentTier;
     const isUpgradingFromPro = baseTier === 'pro';
     const paymentType: PaymentPurpose = isUpgradingFromPro ? 'upgrade_expert' : 'reading_expert';
-    const price = isUpgradingFromPro ? 150000 : 269000;
+    const currentVoucher = !isUpgradingFromPro ? (activeVoucherRef.current || activeVoucher) : null;
+    const price = isUpgradingFromPro
+      ? 150000
+      : currentVoucher
+      ? currentVoucher.prices.reading_expert
+      : 269000;
 
     const proceedToPayment = () => {
+      const latestVoucher = !isUpgradingFromPro ? (activeVoucherRef.current || activeVoucher) : null;
       setPaymentModalConfig({
         isOpen: true,
         type: paymentType,
-        price,
+        price: isUpgradingFromPro
+          ? 150000
+          : latestVoucher
+          ? latestVoucher.prices.reading_expert
+          : 269000,
+        originalPrice: latestVoucher ? 269000 : undefined,
+        voucherCode: latestVoucher?.code,
+        discountPercent: latestVoucher?.discountPercent,
         onConfirm: () => {
+          clearActiveVoucher();
           handleConfirmUpgradeToExpert();
         },
       });
     };
 
-    if (!user && !isAuthenticatedRef.current) {
+    const hasVerifiedEmailChart = Boolean(
+      (chartIdRef.current || currentChartId) &&
+        (emailLinkOwnerRef.current?.userId ||
+          emailLinkOwner?.userId ||
+          currentVoucher?.userId ||
+          currentVoucher?.code)
+    );
+
+    if (!user && !isAuthenticatedRef.current && !hasVerifiedEmailChart) {
       pendingPostAuthActionRef.current = proceedToPayment;
       setAuthModalNotice(
         isUpgradingFromPro
           ? 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để mở mã QR thanh toán nâng cấp từ Bản Pro lên Bản Chuyên Gia Expert (150.000đ).'
-          : 'Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Gia Expert (269.000đ).'
+          : `Quý khách vui lòng đăng nhập hoặc đăng ký tài khoản để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Gia Expert (${price.toLocaleString('vi-VN')}đ).`
       );
       setIsAuthModalOpen(true);
       return;
@@ -1345,6 +1623,12 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window === 'undefined' || isAuthLoading) return;
     if (isLoggingOutRef.current) return;
+    if (isHydratingEmailLinkRef.current) return;
+    // Nếu đang mở từ link Email có chứa voucher hoặc etoken thì ưu tiên luồng nạp lá số từ Email
+    const initParams = new URLSearchParams(window.location.search);
+    if (initParams.get('voucher') || initParams.get('etoken')) {
+      return;
+    }
     // Nếu vừa lập lá số hoặc vừa đăng nhập từ bảng yêu cầu đăng nhập để lập lá số/thanh toán, không ghi đè bằng lá số cũ
     if (laSoRef.current || pendingPostAuthActionRef.current) {
       setIsRestoringSession(false);
@@ -1626,6 +1910,19 @@ export default function HomePage() {
           onSignOut={handleSignOutClean}
         />
 
+        {/* Banner Mã Giảm Giá Đếm Ngược Tự Động (Chỉ hiện khi mã còn hạn & khách đang ở gói Free) */}
+        {activeVoucher && currentTier === 'free' && (
+          <div className="max-w-[1060px] mx-auto">
+            <VoucherCountdownBanner
+              voucher={activeVoucher}
+              hasChart={Boolean(laSo && !isEditing)}
+              onSelectPro={openUpgradeModal}
+              onSelectExpert={() => openUpgradeExpertModal('free')}
+              onExpire={clearActiveVoucher}
+            />
+          </div>
+        )}
+
         {/* Banner dành riêng cho Tài Khoản Tester */}
         {testerInfo?.isTester && (
           <div className="max-w-[1060px] mx-auto mb-5 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-950/90 via-slate-900/95 to-purple-950/90 border border-purple-500/40 shadow-xl backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-200 animate-fade-in">
@@ -1672,6 +1969,7 @@ export default function HomePage() {
               onOpenSavedCharts={handleOpenSavedCharts}
               initialData={isEditing ? (currentDuongSo || laSo?.duongSo) : null}
               onCancelEdit={isEditing && laSo ? () => setIsEditing(false) : undefined}
+              activeVoucher={currentTier === 'free' ? activeVoucher : null}
               onRequireAuth={(action, notice) => {
                 pendingPostAuthActionRef.current = action;
                 setAuthModalNotice(notice);
@@ -1717,7 +2015,11 @@ export default function HomePage() {
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 cursor-pointer"
                     >
                       <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
-                      <span>{t('reading.upgradeBtn', '⚡ Nâng Cấp Pro (119.000đ)')}</span>
+                      <span>
+                        {activeVoucher
+                          ? `⚡ Nâng Cấp Pro (${activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ • -${activeVoucher.discountPercent}%)`
+                          : t('reading.upgradeBtn', '⚡ Nâng Cấp Pro (119.000đ)')}
+                      </span>
                     </button>
                   )}
                   <button
@@ -1729,6 +2031,8 @@ export default function HomePage() {
                     <span>
                       {currentTier === 'pro'
                         ? t('reading.upgradeProToExpertBtn', '💎 Nâng Cấp Bản Expert (150.000đ)')
+                        : activeVoucher
+                        ? `💎 Bản Expert (${activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ • -${activeVoucher.discountPercent}%)`
                         : t('reading.upgradeExpertBtn', '💎 Bản Expert (269.000đ)')}
                     </span>
                   </button>
@@ -1758,6 +2062,7 @@ export default function HomePage() {
               isUpgrading={isUpgrading}
               duongSo={currentDuongSo || undefined}
               laSo={laSo || undefined}
+              activeVoucher={currentTier === 'free' ? activeVoucher : null}
             />
 
             {/* Khung Hỏi Đáp Luận Giải Cùng AI Thầy Tôn */}
@@ -1794,6 +2099,26 @@ export default function HomePage() {
         hoTen={currentDuongSo?.hoTen || 'Đương số'}
         paymentType={paymentModalConfig.type}
         price={paymentModalConfig.price}
+        originalPrice={paymentModalConfig.originalPrice}
+        voucherCode={paymentModalConfig.voucherCode}
+        discountPercent={paymentModalConfig.discountPercent}
+        fallbackUserId={emailLinkOwner?.userId || activeVoucher?.userId || undefined}
+        fallbackEmail={emailLinkOwner?.email || activeVoucher?.email || undefined}
+        onVoucherExpired={() => {
+          clearActiveVoucher();
+          setPaymentModalConfig((prev) => ({
+            ...prev,
+            price:
+              prev.type === 'reading_expert'
+                ? 269000
+                : prev.type === 'reading_vip'
+                ? 119000
+                : prev.price,
+            originalPrice: undefined,
+            voucherCode: undefined,
+            discountPercent: undefined,
+          }));
+        }}
         chartId={currentChartId || undefined}
       />
 

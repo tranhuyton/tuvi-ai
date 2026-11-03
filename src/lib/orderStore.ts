@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { supabase } from './supabase';
+import { adminSupabase as supabase } from './supabaseAdmin';
 
 export interface OrderItem {
   id: string;
@@ -24,6 +24,8 @@ export interface OrderItem {
   userId?: string;
   affiliateCode?: string;
   commissionAmount?: number;
+  voucherCode?: string;
+  discountAmount?: number;
 }
 
 // Global cache trong runtime Node
@@ -104,6 +106,8 @@ export async function createOrder(data: {
   customCode?: string;
   affiliateCode?: string;
   commissionAmount?: number;
+  voucherCode?: string;
+  discountAmount?: number;
 }): Promise<OrderItem> {
   loadOrdersFromFile();
 
@@ -124,6 +128,8 @@ export async function createOrder(data: {
     userId: data.userId,
     affiliateCode: data.affiliateCode?.trim() || undefined,
     commissionAmount: data.commissionAmount || 0,
+    voucherCode: data.voucherCode?.trim().toUpperCase() || undefined,
+    discountAmount: data.discountAmount || 0,
   };
 
   // Lưu vào cache Map & local file
@@ -145,6 +151,8 @@ export async function createOrder(data: {
       user_id: newOrder.userId || null,
       affiliate_code: newOrder.affiliateCode || null,
       commission_amount: newOrder.commissionAmount || 0,
+      voucher_code: newOrder.voucherCode || null,
+      discount_amount: newOrder.discountAmount || 0,
     });
   } catch (err) {
     // Bỏ qua nếu bảng tuvi_orders chưa được tạo trong Supabase
@@ -183,6 +191,8 @@ export async function getOrderByCode(code: string): Promise<OrderItem | null> {
         userId: data.user_id,
         affiliateCode: data.affiliate_code || undefined,
         commissionAmount: Number(data.commission_amount || 0),
+        voucherCode: data.voucher_code || undefined,
+        discountAmount: Number(data.discount_amount || 0),
       };
       ordersMap.set(cleanCode, order);
       saveOrdersToFile();
@@ -351,6 +361,8 @@ export async function getAllOrders(limit?: number): Promise<OrderItem[]> {
           userId: row.user_id,
           affiliateCode: row.affiliate_code || undefined,
           commissionAmount: Number(row.commission_amount || 0),
+          voucherCode: row.voucher_code || undefined,
+          discountAmount: Number(row.discount_amount || 0),
         };
         ordersMap.set(item.orderCode, item);
       }

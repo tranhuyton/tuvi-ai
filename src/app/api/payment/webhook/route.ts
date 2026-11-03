@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getOrderByCode, markOrderPaid } from '@/lib/orderStore';
 import { sendPaymentSuccessEmail } from '@/lib/email';
-import { supabase } from '@/lib/supabase';
+import { adminSupabase as supabase } from '@/lib/supabaseAdmin';
+import { markVoucherUsedAndCancelAllForUser } from '@/lib/voucherStore';
 
 export const dynamic = 'force-dynamic';
 
@@ -193,9 +194,31 @@ export async function POST(req: Request) {
         continue;
       }
 
+      // Chống gian lận chuyển thiếu tiền (cho phép sai số nhỏ tối đa 1.000đ)
+      if (tx.amount > 0 && order.amount > 0 && tx.amount < order.amount - 1000) {
+        console.warn(
+          `[PAYMENT WEBHOOK] Giao dịch ${order.orderCode} chuyển thiếu tiền: nhận ${tx.amount}đ / cần ${order.amount}đ`
+        );
+        results.push({
+          code: order.orderCode,
+          status: 'UNDERPAID',
+          received: tx.amount,
+          expected: order.amount,
+        });
+        continue;
+      }
+
       // Đánh dấu đơn hàng là đã thanh toán
       await markOrderPaid(order.orderCode, tx.txId);
       console.log(`[PAYMENT WEBHOOK] ĐÃ KÍCH HOẠT ĐƠN HÀNG THÀNH CÔNG: ${order.orderCode}`);
+
+      // Đánh dấu Voucher đã sử dụng (nếu có) và tự động hủy mọi Voucher còn lại của khách hàng này (Stop-on-Purchase)
+      await markVoucherUsedAndCancelAllForUser({
+        voucherCode: order.voucherCode,
+        orderCode: order.orderCode,
+        userId: order.userId,
+        email: order.email,
+      });
 
       // Ghi nhận hoa hồng cho CTV nếu đơn hàng có mã Affiliate
       if (order.affiliateCode) {

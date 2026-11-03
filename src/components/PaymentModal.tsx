@@ -39,6 +39,12 @@ interface PaymentModalProps {
   hoTen?: string;
   paymentType?: PaymentPurpose;
   price?: number;
+  originalPrice?: number;
+  voucherCode?: string;
+  discountPercent?: number;
+  fallbackUserId?: string;
+  fallbackEmail?: string;
+  onVoucherExpired?: () => void;
   customTitle?: string;
   customDescription?: string;
   chartId?: string;
@@ -51,6 +57,12 @@ export default function PaymentModal({
   hoTen = 'Đương số',
   paymentType = 'reading_vip',
   price: customPrice,
+  originalPrice,
+  voucherCode,
+  discountPercent,
+  fallbackUserId,
+  fallbackEmail,
+  onVoucherExpired,
   customTitle,
   customDescription,
   chartId,
@@ -59,6 +71,7 @@ export default function PaymentModal({
 
   // Trạng thái đơn hàng
   const [orderCode, setOrderCode] = useState<string>('');
+  const [orderAmount, setOrderAmount] = useState<number | null>(null);
   const [qrUrl, setQrUrl] = useState<string>('');
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [sepayQrUrl, setSepayQrUrl] = useState<string>('');
@@ -172,18 +185,23 @@ export default function PaymentModal({
     ];
   }
 
+  const effectiveAmount = orderAmount ?? finalPrice;
+  const activeVoucherForReading =
+    Boolean(voucherCode) && (paymentType === 'reading_vip' || paymentType === 'reading_expert');
+
   const customerEmailRef = useRef<string>('');
   useEffect(() => {
     customerEmailRef.current = customerEmail;
   }, [customerEmail]);
 
-  // Khởi tạo email từ tài khoản hoặc localStorage khi mở modal
+  // Khởi tạo email từ tài khoản, email link hoặc localStorage khi mở modal
   useEffect(() => {
     if (isOpen) {
       const email =
         customerEmailRef.current ||
         user?.email ||
         profile?.email ||
+        fallbackEmail ||
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
       if (email && !customerEmailRef.current) {
         customerEmailRef.current = email;
@@ -197,7 +215,7 @@ export default function PaymentModal({
         }
       }, 50);
     }
-  }, [isOpen, user, profile]);
+  }, [isOpen, user, profile, fallbackEmail]);
 
   // Hàm tạo hoặc lấy lại đơn hàng
   const createOrFetchOrder = useCallback(async (isRefresh = false) => {
@@ -210,10 +228,16 @@ export default function PaymentModal({
         customerEmailRef.current ||
         user?.email ||
         profile?.email ||
+        fallbackEmail ||
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
 
       const affiliateCode =
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
+
+      const appliedVoucher =
+        paymentType === 'reading_vip' || paymentType === 'reading_expert'
+          ? voucherCode || undefined
+          : undefined;
 
       const res = await fetch('/api/payment/create-order', {
         method: 'POST',
@@ -224,23 +248,31 @@ export default function PaymentModal({
           hoTen,
           email: initialEmail,
           chartId,
-          userId: user?.id,
+          userId: user?.id || fallbackUserId,
           affiliateCode: affiliateCode || undefined,
+          voucherCode: appliedVoucher,
         }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        throw new Error(`Máy chủ phản hồi mã lỗi ${res.status}`);
+        if (data?.voucherExpired && onVoucherExpired) {
+          onVoucherExpired();
+          return;
+        }
+        throw new Error(data?.error || `Máy chủ phản hồi mã lỗi ${res.status}`);
       }
 
-      const data = await res.json();
       if (data.success && data.order) {
         const code = data.order.orderCode;
-        activeOrderKeyRef.current = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
+        const confirmedAmount = Number(data.order.amount) || finalPrice;
+        setOrderAmount(confirmedAmount);
+        activeOrderKeyRef.current = `${paymentType}_${confirmedAmount}_${appliedVoucher || 'none'}_${chartId || 'default'}_${hoTen}`;
         setOrderCode(code);
-        trackInitiateCheckout(paymentType, finalPrice || 0, code);
-        setQrUrl(data.qrUrl || `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${finalPrice}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(chuTk)}`);
-        setSepayQrUrl(data.sepayQrUrl || `https://qr.sepay.vn/img?bank=VPBank&acc=${stk}&template=compact&amount=${finalPrice}&des=${encodeURIComponent(code)}`);
+        trackInitiateCheckout(paymentType, confirmedAmount || 0, code);
+        setQrUrl(data.qrUrl || `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${confirmedAmount}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(chuTk)}`);
+        setSepayQrUrl(data.sepayQrUrl || `https://qr.sepay.vn/img?bank=VPBank&acc=${stk}&template=compact&amount=${confirmedAmount}&des=${encodeURIComponent(code)}`);
 
         // Ưu tiên dữ liệu QR DataURL do server sinh hoặc client sinh ngay tức thì
         if (data.qrDataUrl) {
@@ -250,7 +282,7 @@ export default function PaymentModal({
             const clientDataUrl = await generateVietQrDataUrl({
               bankBinOrCode: 'VPB',
               accountNumber: stk,
-              amount: finalPrice,
+              amount: confirmedAmount,
               memo: code,
               accountName: chuTk,
             });
@@ -269,7 +301,7 @@ export default function PaymentModal({
     } finally {
       setIsCreatingOrder(false);
     }
-  }, [user?.id, user?.email, profile?.email, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
+  }, [user?.id, user?.email, profile?.email, fallbackUserId, fallbackEmail, voucherCode, onVoucherExpired, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
 
   // Tạo đơn hàng khi modal mở ra (tái sử dụng đơn pending nếu cùng gói để không sinh mã rác và hiện QR tức thì)
   useEffect(() => {
@@ -286,14 +318,19 @@ export default function PaymentModal({
       return;
     }
 
-    const targetKey = `${paymentType}_${finalPrice}_${chartId || 'default'}_${hoTen}`;
+    const appliedVoucher =
+      paymentType === 'reading_vip' || paymentType === 'reading_expert'
+        ? voucherCode || 'none'
+        : 'none';
+    const targetKey = `${paymentType}_${finalPrice}_${appliedVoucher}_${chartId || 'default'}_${hoTen}`;
     // Nếu modal đang mở và đã có đơn pending cho gói này rồi thì không tạo lại để hiện mã ngay lập tức 0ms
     if (activeOrderKeyRef.current === targetKey && orderCode && orderStatus === 'PENDING') {
       return;
     }
 
+    setOrderAmount(null);
     createOrFetchOrder();
-  }, [isOpen, paymentType, finalPrice, hoTen, chartId, orderCode, orderStatus, createOrFetchOrder]);
+  }, [isOpen, paymentType, finalPrice, voucherCode, hoTen, chartId, orderCode, orderStatus, createOrFetchOrder]);
 
   // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s)
   useEffect(() => {
@@ -325,7 +362,7 @@ export default function PaymentModal({
     if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
     setOrderStatus('PAID');
     activeOrderKeyRef.current = null;
-    trackPurchase(paymentType, finalPrice || 0, orderCode);
+    trackPurchase(paymentType, effectiveAmount || 0, orderCode);
 
     // Lưu email và quyền lợi mở khóa vào localStorage để bền vững qua các lần F5
     if (typeof window !== 'undefined') {
@@ -347,7 +384,7 @@ export default function PaymentModal({
         const qrString = buildVietQrString({
           bankBinOrCode: 'VPB',
           accountNumber: stk,
-          amount: finalPrice,
+          amount: effectiveAmount,
           memo: orderCode,
           accountName: chuTk,
         });
@@ -367,7 +404,7 @@ export default function PaymentModal({
         console.warn('[PaymentModal] Lỗi tạo chuỗi VietQR cho Canvas:', err);
       }
     }
-  }, [orderCode, qrFallbackStage, qrDataUrl, finalPrice, stk, chuTk]);
+  }, [orderCode, qrFallbackStage, qrDataUrl, effectiveAmount, stk, chuTk]);
 
   // Xử lý chuyển đổi tầng QR dự phòng khi ảnh bị lỗi (onError)
   const handleImgError = () => {
@@ -427,14 +464,14 @@ export default function PaymentModal({
   };
 
   const handleCopyAmount = () => {
-    navigator.clipboard.writeText(String(finalPrice));
+    navigator.clipboard.writeText(String(effectiveAmount));
     setCopiedAmount(true);
     setTimeout(() => setCopiedAmount(false), 2000);
   };
 
   // Sao chép toàn bộ thông tin thanh toán (1-click thuận tiện)
   const handleCopyAll = () => {
-    const text = `Ngân hàng: VPBank\nSố TK: ${stk}\nChủ TK: ${chuTk}\nSố tiền: ${finalPrice.toLocaleString('vi-VN')} đ\nNội dung CK: ${orderCode}`;
+    const text = `Ngân hàng: VPBank\nSố TK: ${stk}\nChủ TK: ${chuTk}\nSố tiền: ${effectiveAmount.toLocaleString('vi-VN')} đ\nNội dung CK: ${orderCode}`;
     navigator.clipboard.writeText(text);
     setCopiedAll(true);
     setTimeout(() => setCopiedAll(false), 2000);
@@ -547,12 +584,22 @@ export default function PaymentModal({
           ) : (
             <>
               {/* Dải thông tin tóm tắt số tiền & bảo mật */}
-              <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs sm:text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-300 font-medium">Số tiền thanh toán:</span>
+              <div className="flex items-center justify-between gap-2 flex-wrap px-3.5 py-2.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs sm:text-sm">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-slate-300 font-medium">Số tiền:</span>
+                  {activeVoucherForReading && originalPrice && originalPrice > effectiveAmount && (
+                    <span className="text-slate-400 line-through font-mono text-xs sm:text-sm">
+                      {originalPrice.toLocaleString('vi-VN')}đ
+                    </span>
+                  )}
                   <span className="font-bold text-amber-400 text-base sm:text-lg font-mono">
-                    {finalPrice.toLocaleString('vi-VN')} đ
+                    {effectiveAmount.toLocaleString('vi-VN')} đ
                   </span>
+                  {activeVoucherForReading && discountPercent && (
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500/25 border border-rose-400/50 text-rose-200 font-bold text-[11px]">
+                      -{discountPercent}% ({voucherCode})
+                    </span>
+                  )}
                 </div>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
                   <ShieldCheck className="w-3.5 h-3.5" />
@@ -680,8 +727,13 @@ export default function PaymentModal({
                 <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
                   <span className="text-slate-400">Số tiền:</span>
                   <div className="flex items-center gap-2">
+                    {activeVoucherForReading && originalPrice && originalPrice > effectiveAmount && (
+                      <span className="text-xs text-slate-500 line-through font-mono">
+                        {originalPrice.toLocaleString('vi-VN')}đ
+                      </span>
+                    )}
                     <span className="font-bold text-emerald-400 text-sm sm:text-base">
-                      {finalPrice.toLocaleString('vi-VN')} VNĐ
+                      {effectiveAmount.toLocaleString('vi-VN')} VNĐ
                     </span>
                     <button
                       type="button"

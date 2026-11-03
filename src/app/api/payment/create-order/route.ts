@@ -1,11 +1,28 @@
 import { NextResponse } from 'next/server';
 import { createOrder, updateOrderEmail } from '@/lib/orderStore';
 import { generateVietQrDataUrl } from '@/lib/vietqr';
+import {
+  activateAndValidateVoucher,
+  getDiscountedReadingPrice,
+} from '@/lib/voucherStore';
 
 const BANK_CODE = 'VPB';
 const STK = 'AGBSPVUONG2026';
 const CHU_TK = 'TRAN THI DIEP';
 const BANK_NAME = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
+
+function getStandardPrice(paymentType: string, customFallback?: number): number {
+  if (paymentType === 'course_tuvi') return 699000;
+  if (paymentType === 'reading_expert') return 269000;
+  if (paymentType === 'upgrade_expert') return 150000;
+  if (paymentType === 'chat_expert') return 129000;
+  if (paymentType === 'reading_vip') return 119000;
+  if (paymentType === 'chat_vip') return 99000;
+  if (paymentType === 'chat_free') return 49000;
+  return customFallback && !isNaN(customFallback) && customFallback > 0
+    ? customFallback
+    : 49000;
+}
 
 export async function POST(req: Request) {
   try {
@@ -17,17 +34,59 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, order: updated });
     }
 
-    const { paymentType = 'reading_vip', price, hoTen = 'Đương số', email, chartId, userId, affiliateCode } = body;
+    const {
+      paymentType = 'reading_vip',
+      price,
+      hoTen = 'Đương số',
+      email,
+      chartId,
+      userId,
+      affiliateCode,
+      voucherCode,
+    } = body;
 
-    let finalAmount = Number(price);
-    if (!finalAmount || isNaN(finalAmount)) {
-      if (paymentType === 'course_tuvi') finalAmount = 699000;
-      else if (paymentType === 'reading_expert') finalAmount = 269000;
-      else if (paymentType === 'upgrade_expert') finalAmount = 150000;
-      else if (paymentType === 'chat_expert') finalAmount = 129000;
-      else if (paymentType === 'reading_vip') finalAmount = 119000;
-      else if (paymentType === 'chat_vip') finalAmount = 99000;
-      else finalAmount = 49000;
+    let finalAmount = getStandardPrice(paymentType, Number(price));
+    const originalAmount = finalAmount;
+    let appliedVoucherCode: string | undefined;
+    let discountAmount = 0;
+    let effectiveUserId: string | undefined = userId || undefined;
+    let effectiveEmail: string | undefined = email || undefined;
+
+    // Xác thực mã giảm giá (Chỉ áp dụng cho 2 gói mở khóa Luận Giải: reading_vip 119k & reading_expert 269k)
+    if (
+      voucherCode &&
+      typeof voucherCode === 'string' &&
+      voucherCode.trim() &&
+      (paymentType === 'reading_vip' || paymentType === 'reading_expert')
+    ) {
+      const check = await activateAndValidateVoucher(voucherCode, { activateTimer: true });
+      if (!check.valid || !check.voucher) {
+        return NextResponse.json(
+          {
+            success: false,
+            voucherExpired: true,
+            error:
+              'Mã ưu đãi này đã hết thời hạn hiệu lực hoặc đã được sử dụng. Hệ thống sẽ cập nhật lại mức phí tiêu chuẩn.',
+          },
+          { status: 400 }
+        );
+      }
+
+      const discounted = getDiscountedReadingPrice(
+        paymentType,
+        check.voucher.discountPercent
+      );
+      if (discounted) {
+        finalAmount = discounted.finalPrice;
+        discountAmount = discounted.discountAmount;
+        appliedVoucherCode = check.voucher.code;
+        if (!effectiveUserId && check.voucher.userId) {
+          effectiveUserId = check.voucher.userId;
+        }
+        if (!effectiveEmail && check.voucher.email) {
+          effectiveEmail = check.voucher.email;
+        }
+      }
     }
 
     const cleanAffCode = affiliateCode ? String(affiliateCode).trim().toLowerCase() : undefined;
@@ -48,11 +107,13 @@ export async function POST(req: Request) {
       paymentType,
       amount: finalAmount,
       hoTen,
-      email,
+      email: effectiveEmail,
       chartId,
-      userId,
+      userId: effectiveUserId,
       affiliateCode: cleanAffCode,
       commissionAmount: expectedCommission,
+      voucherCode: appliedVoucherCode,
+      discountAmount,
     });
 
     // 1. Tạo Data URL tức thì (0ms, không phụ thuộc vào máy chủ ngoài img.vietqr.io)
@@ -82,6 +143,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       order,
+      originalAmount,
+      discountAmount,
+      appliedVoucherCode: appliedVoucherCode || null,
       qrUrl,
       qrDataUrl,
       sepayQrUrl,
