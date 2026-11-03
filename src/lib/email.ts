@@ -224,7 +224,7 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
     .container { max-width: 600px; margin: 0 auto; background: #111827; border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
     .header { background: linear-gradient(135deg, #1e1b4b 0%, #451a03 100%); padding: 30px 24px; text-align: center; border-bottom: 1px solid rgba(245, 158, 11, 0.2); }
     .logo-badge { display: inline-block; background: #f59e0b; color: #0f172a; font-weight: bold; font-size: 14px; padding: 6px 14px; border-radius: 9999px; margin-bottom: 12px; letter-spacing: 1px; }
-    .title { font-size: 22px; font-weight: bold; color: #fbbf24; margin: 0; font-family: 'Times New Roman', Georgia, serif; }
+    .title { font-size: 22px; font-weight: bold; color: #fbbf24; margin: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     .content { padding: 28px 24px; }
     .greeting { font-size: 16px; margin-bottom: 16px; color: #f3f4f6; }
     .status-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: center; }
@@ -243,6 +243,9 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
 <body>
   <div class="container">
     <div class="header">
+      <div style="margin-bottom: 12px;">
+        <img src="https://www.tuvithayton.vn/android-chrome-192x192.png" alt="Tử Vi Thầy Tôn" width="60" height="60" style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid #fbbf24; display: inline-block;" />
+      </div>
       <div class="logo-badge">✦ TỬ VI ĐẨU SỐ • THẦY TÔN ✦</div>
       <h1 class="title">XÁC NHẬN KÍCH HOẠT DỊCH VỤ</h1>
     </div>
@@ -795,11 +798,14 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; color: #e2e8f0; margin: 0; padding: 16px;">
   <div style="max-width: 600px; margin: 0 auto; background: #111827; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.55);">
-    <div style="background: linear-gradient(135deg, #1e1b4b 0%, #451a03 100%); padding: 28px 22px; text-align: center; border-bottom: 1px solid rgba(245, 158, 11, 0.25);">
+    <div style="background: linear-gradient(135deg, #1e1b4b 0%, #451a03 100%); padding: 26px 22px; text-align: center; border-bottom: 1px solid rgba(245, 158, 11, 0.25);">
+      <div style="margin-bottom: 10px;">
+        <img src="https://www.tuvithayton.vn/android-chrome-192x192.png" alt="Tử Vi Thầy Tôn" width="56" height="56" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #fbbf24; display: inline-block;" />
+      </div>
       <div style="display: inline-block; background: #f59e0b; color: #0f172a; font-weight: bold; font-size: 12px; padding: 5px 14px; border-radius: 9999px; margin-bottom: 10px; letter-spacing: 0.8px;">
         ${badgeText}
       </div>
-      <h1 style="font-size: 20px; font-weight: bold; color: #fbbf24; margin: 0; font-family: Georgia, 'Times New Roman', serif; line-height: 1.4;">
+      <h1 style="font-size: 20px; font-weight: 800; color: #fbbf24; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.4;">
         ${headerTitle}
       </h1>
     </div>

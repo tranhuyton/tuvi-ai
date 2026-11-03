@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.2" baseProfile="tiny-ps" viewBox="0 0 512 512">
+  <title>Tử Vi Thầy Tôn</title>
+  <rect x="0" y="0" width="512" height="512" fill="#0b0f19" />
+  <circle cx="256" cy="256" r="236" fill="#0f172a" stroke="#f59e0b" stroke-width="12" />
+  <polygon points="256,30 270,126 256,116 242,126" fill="#fbbf24" />
+  <polygon points="256,482 270,386 256,396 242,386" fill="#fbbf24" />
+  <polygon points="482,256 386,270 396,256 386,242" fill="#fbbf24" />
+  <polygon points="30,256 126,270 116,256 126,242" fill="#fbbf24" />
+  <polygon points="416,96 344,174 354,162 366,172" fill="#f59e0b" />
+  <polygon points="416,416 366,340 354,350 344,338" fill="#f59e0b" />
+  <polygon points="96,416 168,338 158,350 146,340" fill="#f59e0b" />
+  <polygon points="96,96 146,172 158,162 168,174" fill="#f59e0b" />
+  <circle cx="256" cy="256" r="126" fill="#0f172a" stroke="#f59e0b" stroke-width="6" />
+  <path d="M 256 130 A 126 126 0 0 1 256 382 A 63 63 0 0 1 256 256 A 63 63 0 0 0 256 130 Z" fill="#f59e0b" />
+  <circle cx="256" cy="193" r="20" fill="#0f172a" />
+  <circle cx="256" cy="319" r="20" fill="#fbbf24" />
+</svg>
