@@ -6,6 +6,8 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   from?: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
 }
 
 export interface PaymentEmailDetails {
@@ -60,10 +62,12 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
   const smtpPort = Number(process.env.SMTP_PORT || 587);
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
-  const defaultSender = 'Tử Vi Thầy Tôn <noreply@tuvithayton.vn>';
+  const defaultSender = 'Tử Vi Thầy Tôn <thayton@tuvithayton.vn>';
   const smtpFrom = options.from || process.env.SMTP_FROM || defaultSender;
+  const replyToEmail =
+    options.replyTo || process.env.REPLY_TO_EMAIL || gmailUser || 'tranhuyton@gmail.com';
 
-  // 1. Thử gửi qua Resend API nếu có cấu hình
+  // 1. Thử gửi qua Resend API nếu có cấu hình (Tên miền riêng đã xác thực DKIM/SPF)
   if (resendApiKey) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
@@ -73,10 +77,12 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
           Authorization: `Bearer ${resendApiKey}`,
         },
         body: JSON.stringify({
-          from: smtpFrom.includes('@') ? smtpFrom : 'Tử Vi Thầy Tôn <onboarding@resend.dev>',
+          from: smtpFrom.includes('@') ? smtpFrom : defaultSender,
           to: validToList,
+          reply_to: replyToEmail,
           subject,
           html,
+          ...(options.headers ? { headers: options.headers } : {}),
         }),
       });
       const data = await res.json();
@@ -101,14 +107,15 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
         },
       });
 
-      const gmailSender =
-        options.from || process.env.SMTP_FROM || `"Tử Vi Thầy Tôn" <${gmailUser}>`;
+      const gmailSender = `"Tử Vi Thầy Tôn" <${gmailUser}>`;
 
       const info = await transporter.sendMail({
         from: gmailSender,
+        replyTo: replyToEmail,
         to: validToList.join(','),
         subject,
         html,
+        headers: options.headers,
       });
 
       console.log('[EMAIL GMAIL] Gửi email thành công qua Gmail:', info.messageId);
@@ -823,5 +830,6 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
     to: recipientEmail,
     subject,
     html,
+    headers: unsubscribeUrl ? { 'List-Unsubscribe': `<${unsubscribeUrl}>` } : undefined,
   });
 }
