@@ -260,31 +260,18 @@ export default function AdminPage() {
         </header>
 
         {/* Thanh Chuyển Tab */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
+        <div className="flex items-center gap-1.5 border-b border-slate-800 pb-2 overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('studio')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'studio'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
             <span>🔮 Studio An Sao &amp; Test Luận Giải</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('course')}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
-              activeTab === 'course'
-                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            <GraduationCap className="w-4 h-4" />
-            <span>🎓 Khóa Học 699k (Đủ 24 Bài)</span>
           </button>
 
           <button
@@ -293,13 +280,13 @@ export default function AdminPage() {
               setActiveTab('transactions');
               fetchAdminData();
             }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'transactions'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="w-3.5 h-3.5 shrink-0" />
             <span>💰 Lịch Sử Giao Dịch &amp; Lá Số ({charts.length})</span>
           </button>
 
@@ -309,13 +296,13 @@ export default function AdminPage() {
               setActiveTab('users');
               fetchAdminData();
             }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'users'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
             }`}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-3.5 h-3.5 shrink-0" />
             <span>👥 Quản Lý Khách Hàng ({users.length})</span>
           </button>
 
@@ -325,13 +312,13 @@ export default function AdminPage() {
               setActiveTab('affiliates');
               fetchAffiliatesData();
             }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'affiliates'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
             }`}
           >
-            <Share2 className="w-4 h-4" />
+            <Share2 className="w-3.5 h-3.5 shrink-0" />
             <span>🤝 Cộng Tác Viên / Affiliate ({affiliates.length})</span>
           </button>
 
@@ -341,14 +328,27 @@ export default function AdminPage() {
               setActiveTab('testers');
               fetchTestersData();
             }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition whitespace-nowrap cursor-pointer ${
               activeTab === 'testers'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
             }`}
           >
-            <FlaskConical className="w-4 h-4" />
+            <FlaskConical className="w-3.5 h-3.5 shrink-0" />
             <span>🧪 Tài Khoản Tester ({testers.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('course')}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-[13px] font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === 'course'
+                ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
+                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+            <span>🎓 Khóa Học 699k (Đủ 24 Bài)</span>
           </button>
         </div>
 
