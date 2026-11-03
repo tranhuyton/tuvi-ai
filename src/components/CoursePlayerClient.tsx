@@ -9,7 +9,6 @@ import {
   SkipBack,
   Volume2,
   Lock,
-  Unlock,
   CheckCircle2,
   BookOpen,
   Headphones,
@@ -579,7 +578,13 @@ export default function CoursePlayerClient({
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold text-xs">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Học Viên Chính Thức ({unlockedCode})</span>
+                  <span>
+                    {unlockedCode === 'VIP-ADMIN'
+                      ? 'Quản Trị Viên (Thầy Tôn)'
+                      : unlockedCode === 'VIP-TESTER'
+                      ? 'Tài Khoản Tester VIP'
+                      : `Học Viên Chính Thức (${unlockedCode})`}
+                  </span>
                 </span>
               )}
             </div>
@@ -605,7 +610,11 @@ export default function CoursePlayerClient({
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Mở khóa tự động 24/7 ngay khi quét QR</span>
+                  <span>
+                    {isUnlocked
+                      ? 'Đã mở trọn bộ 24 bài giảng • Học trọn đời'
+                      : 'Mở khóa tự động 24/7 ngay khi quét QR'}
+                  </span>
                 </span>
               </div>
 
@@ -686,7 +695,7 @@ export default function CoursePlayerClient({
               {isUnlocked ? (
                 <div className="space-y-3 text-center py-2">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
-                    <Unlock className="w-6 h-6" />
+                    <Award className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wider text-emerald-400 font-bold">
@@ -696,7 +705,19 @@ export default function CoursePlayerClient({
                       Quyền Truy Cập Trọn Đời
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
-                      Mã kích hoạt: <span className="text-amber-300 font-mono font-bold">{unlockedCode}</span>
+                      {unlockedCode === 'VIP-ADMIN' ? (
+                        <span>
+                          Tài khoản: <span className="text-amber-300 font-bold">Quản trị viên (Thầy Tôn)</span>
+                        </span>
+                      ) : unlockedCode === 'VIP-TESTER' ? (
+                        <span>
+                          Tài khoản: <span className="text-amber-300 font-bold">Tester VIP</span>
+                        </span>
+                      ) : (
+                        <span>
+                          Mã đơn học viên: <span className="text-amber-300 font-mono font-bold">{unlockedCode}</span>
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
@@ -818,9 +839,15 @@ export default function CoursePlayerClient({
                   <BookOpen className="w-4 h-4 text-amber-400" />
                   <span>Giáo Trình 24 Bài Học</span>
                 </h2>
-                <span className="text-[11px] text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  Học thử 2 bài đầu
-                </span>
+                {isUnlocked ? (
+                  <span className="text-[11px] text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">
+                    Đã mở 24/24 bài
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                    Học thử 2 bài đầu
+                  </span>
+                )}
               </div>
 
               {/* Ô tìm kiếm tên sao / cách cục */}
@@ -870,7 +897,6 @@ export default function CoursePlayerClient({
               {filteredLessons.map((lesson) => {
                 const isCurrent = lesson.id === activeLesson.id;
                 const isDone = completedLessons.includes(lesson.id);
-                const lessonUnlocked = isUnlocked || lesson.isFreePreview;
 
                 return (
                   <button
@@ -905,12 +931,14 @@ export default function CoursePlayerClient({
                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90">
                           Bài {lesson.number} • {lesson.duration}
                         </span>
-                        {lesson.isFreePreview ? (
+                        {isUnlocked ? (
+                          isDone ? (
+                            <span className="text-[10px] font-bold text-emerald-400">Đã học</span>
+                          ) : null
+                        ) : lesson.isFreePreview ? (
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             Học thử
                           </span>
-                        ) : lessonUnlocked ? (
-                          <Unlock className="w-3 h-3 text-emerald-400 shrink-0" />
                         ) : (
                           <Lock className="w-3 h-3 text-slate-500 shrink-0" />
                         )}

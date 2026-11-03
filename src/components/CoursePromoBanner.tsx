@@ -11,7 +11,6 @@ import {
   Compass,
   BookOpen,
   ShieldCheck,
-  Unlock,
   ArrowRight,
 } from 'lucide-react';
 import { COURSE_INFO, COURSE_MODULES } from '@/lib/courseData';
@@ -205,7 +204,7 @@ export default function CoursePromoBanner() {
           {user && isUnlocked ? (
             <div className="space-y-3.5 text-center py-2">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
-                <Unlock className="w-6 h-6" />
+                <GraduationCap className="w-6 h-6" />
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wider text-emerald-400 font-bold">
