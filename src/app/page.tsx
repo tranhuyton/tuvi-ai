@@ -16,6 +16,7 @@ import FloatingContact from '@/components/FloatingContact';
 import AboutThayTon from '@/components/AboutThayTon';
 import HomeFunnelContent from '@/components/HomeFunnelContent';
 import BookingBanner from '@/components/BookingBanner';
+import CoursePromoBanner from '@/components/CoursePromoBanner';
 import { useAuth } from '@/context/AuthContext';
 import {
   saveOrUpdateChart,
@@ -1979,6 +1980,9 @@ export default function HomePage() {
 
             {!isEditing && (
               <>
+                {/* Khối Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast + Giáo trình tương tác 699K) */}
+                <CoursePromoBanner />
+
                 {/* Khối Nội dung Trang chủ Chuẩn SEO & GEO (Bài 1 - Mã H) */}
                 <HomeFunnelContent />
 
@@ -2077,6 +2081,9 @@ export default function HomePage() {
               onUpgradeToExpert={() => openUpgradeExpertModal()}
             />
 
+            {/* Khối Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast + Giáo trình tương tác 699K) */}
+            <CoursePromoBanner />
+
             {/* Mục Giới thiệu về Thầy Tôn */}
             <AboutThayTon />
 
@@ -2158,6 +2165,10 @@ export default function HomePage() {
 
       <footer className="max-w-[1060px] w-full mx-auto text-center text-xs text-slate-400 py-5 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-5 text-xs text-slate-400 font-medium flex-wrap">
+          <a href="/khoa-hoc" className="text-amber-300 hover:text-amber-200 font-semibold transition">
+            Khóa Học Tử Vi
+          </a>
+          <span className="text-slate-700">•</span>
           <a href="/thay-ton" className="hover:text-amber-400 transition">
             Hồ Sơ Thầy Tôn
           </a>

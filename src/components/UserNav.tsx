@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -110,7 +111,7 @@ export default function UserNav({
         {/* Bộ chọn màu nền giao diện */}
         <ThemeSelector />
 
-        {/* Nút tắt nhanh Về Thầy Tôn & Menu Cẩm Nang */}
+        {/* Nút tắt nhanh Về Thầy Tôn, Khóa Học & Menu Cẩm Nang */}
         <a
           href="/thay-ton"
           className="hidden xl:inline-flex items-center gap-1 h-8 sm:h-9 px-2.5 rounded-xl text-xs font-medium text-slate-200 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner whitespace-nowrap"
@@ -118,6 +119,15 @@ export default function UserNav({
         >
           <span>{t('nav.about', 'Về Thầy Tôn')}</span>
         </a>
+
+        <Link
+          href="/khoa-hoc"
+          className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold bg-gradient-to-r from-amber-500/20 via-amber-600/15 to-purple-600/20 hover:from-amber-500/30 hover:to-purple-500/30 text-amber-300 hover:text-amber-200 border border-amber-400/50 transition shadow-sm shadow-amber-500/10 whitespace-nowrap"
+          title="Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn (Podcast + Giáo Trình)"
+        >
+          <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span>Khóa Học</span>
+        </Link>
 
         <GuideMenuDropdown />
 
@@ -192,6 +202,16 @@ export default function UserNav({
 
                 {/* Các thao tác nhanh */}
                 <div className="py-1.5 space-y-0.5">
+                  {/* Khóa Học Tử Vi Online */}
+                  <Link
+                    href="/khoa-hoc"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs text-amber-300 font-semibold hover:text-amber-200 hover:bg-slate-800/80 transition"
+                  >
+                    <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Khóa Học Tử Vi Thực Chiến</span>
+                  </Link>
+
                   {/* Lá Số Đã Lưu */}
                   {onOpenSavedCharts && (
                     <button

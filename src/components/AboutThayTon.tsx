@@ -9,6 +9,7 @@ import {
   Compass,
   ArrowRight,
   MapPin,
+  GraduationCap,
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { ABOUT_DATA } from '@/lib/i18n/aboutData';
@@ -81,6 +82,14 @@ export default function AboutThayTon() {
           >
             <Compass className="w-4 h-4 shrink-0" />
             <span>Tư Vấn Phong Thủy Theo Lá Số</span>
+          </Link>
+
+          <Link
+            href="/khoa-hoc"
+            className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 hover:text-amber-100 font-semibold text-xs sm:text-sm border border-purple-400/40 transition"
+          >
+            <GraduationCap className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>Khóa Học Tử Vi Online (699.000đ)</span>
           </Link>
         </div>
       </div>

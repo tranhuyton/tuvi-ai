@@ -239,6 +239,22 @@ export default function CoursePlayerClient({
     verifyAccess();
   }, [user?.id, user?.email, profile?.email, testerInfo?.isTester]);
 
+  // Tự động mở bảng thanh toán QR nếu khách bấm nút "Đăng Ký & Mở Khóa Ngay" từ Trang Chủ (?buy=1)
+  useEffect(() => {
+    if (typeof window === 'undefined' || isCheckingAccess) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('buy') === '1') {
+        if (!isUnlocked) {
+          setIsPaymentModalOpen(true);
+        }
+        window.history.replaceState(null, '', '/khoa-hoc');
+      }
+    } catch {
+      // ignore
+    }
+  }, [isCheckingAccess, isUnlocked]);
+
   // 2. Đối chiếu các sao trong bài học hiện tại với Lá Số Cá Nhân của học viên
   const personalStarMatches: StarMatchOnChart[] = useMemo(() => {
     if (!userLaSo || !Array.isArray(userLaSo.cungs) || !activeLesson.relatedStars?.length) {

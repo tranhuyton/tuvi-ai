@@ -383,7 +383,7 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
     .container { max-width: 600px; margin: 0 auto; background: #111827; border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 16px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.6); }
     .header { background: linear-gradient(135deg, #1e1b4b 0%, #451a03 100%); padding: 30px 24px; text-align: center; border-bottom: 1px solid rgba(245, 158, 11, 0.3); }
     .logo-badge { display: inline-block; background: #f59e0b; color: #0f172a; font-weight: bold; font-size: 13px; padding: 6px 16px; border-radius: 9999px; margin-bottom: 12px; letter-spacing: 1px; }
-    .title { font-size: 21px; font-weight: bold; color: #fbbf24; margin: 0; font-family: 'Times New Roman', Georgia, serif; }
+    .title { font-size: 21px; font-weight: 800; color: #fbbf24; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
     .content { padding: 28px 24px; }
     .alert-box { background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: center; }
     .alert-title { color: #fbbf24; font-weight: bold; font-size: 16px; margin: 0 0 6px 0; }

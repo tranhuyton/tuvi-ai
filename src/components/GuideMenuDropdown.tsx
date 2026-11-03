@@ -10,6 +10,7 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
+  GraduationCap,
 } from 'lucide-react';
 
 export default function GuideMenuDropdown() {
@@ -69,6 +70,16 @@ export default function GuideMenuDropdown() {
                 <span>Luận Mệnh &amp; Tham Vấn</span>
               </div>
               <ul className="space-y-1 text-xs">
+                <li>
+                  <Link
+                    href="/khoa-hoc"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/35 text-amber-300 hover:text-amber-200 hover:bg-amber-500/25 font-bold transition"
+                  >
+                    <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Khóa Học Tử Vi Thực Chiến (699K)</span>
+                  </Link>
+                </li>
                 <li>
                   <Link
                     href="/thay-ton"
@@ -448,14 +459,25 @@ export default function GuideMenuDropdown() {
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
 
-            <Link
-              href="/#lap-la-so"
-              onClick={() => setIsOpen(false)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold text-xs shadow-sm hover:from-amber-400 hover:to-yellow-500 transition"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Lập Lá Số Miễn Phí (0đ)</span>
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/khoa-hoc"
+                onClick={() => setIsOpen(false)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-400/45 text-amber-200 font-bold text-xs shadow-sm transition"
+              >
+                <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                <span>Khóa Học Tử Vi (699K)</span>
+              </Link>
+
+              <Link
+                href="/#lap-la-so"
+                onClick={() => setIsOpen(false)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold text-xs shadow-sm hover:from-amber-400 hover:to-yellow-500 transition"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Lập Lá Số Miễn Phí (0đ)</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}
