@@ -19,6 +19,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import AuthModal from '@/components/AuthModal';
 import { generateVietQrDataUrl, buildVietQrString } from '@/lib/vietqr';
 import {
   getBrowserMetaAttribution,
@@ -222,18 +224,76 @@ export default function PaymentModal({
   }, [isOpen, user, profile, fallbackEmail]);
 
   // Hàm tạo hoặc lấy lại đơn hàng
+  const [requireAuthPrompt, setRequireAuthPrompt] = useState<boolean>(false);
+
   const createOrFetchOrder = useCallback(async (isRefresh = false) => {
     setIsCreatingOrder(true);
     setOrderError(null);
     setQrFallbackStage(0);
 
     try {
-      const initialEmail =
-        customerEmailRef.current ||
+      // Xác thực trực tiếp phiên đăng nhập (chống race condition vừa đăng ký xong qua AuthModal mà React state chưa kịp cập nhật)
+      let accessToken = '';
+      let liveUser: { id: string; email?: string; user_metadata?: Record<string, any> } | null = null;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.access_token) {
+          accessToken = sessionData.session.access_token;
+        }
+        if (sessionData?.session?.user) {
+          liveUser = sessionData.session.user;
+        } else {
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData?.user) {
+            liveUser = userData.user;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      const resolvedUserId = (liveUser?.id || user?.id || fallbackUserId || '').trim();
+      const resolvedEmail = (
+        liveUser?.email ||
         user?.email ||
         profile?.email ||
         fallbackEmail ||
-        (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
+        ''
+      ).trim();
+
+      // CHỐT CHẶN TUYỆT ĐỐI TẠI PAYMENT MODAL: Chưa có tài khoản đăng nhập -> Bắt buộc mở bảng Đăng ký / Đăng nhập, TUYỆT ĐỐI không sinh mã QR!
+      if (!resolvedUserId || !resolvedEmail) {
+        setRequireAuthPrompt(true);
+        setOrderCode('');
+        setQrUrl('');
+        setQrDataUrl('');
+        setSepayQrUrl('');
+        setIsCreatingOrder(false);
+        return;
+      }
+
+      setRequireAuthPrompt(false);
+      if (resolvedEmail && customerEmailRef.current !== resolvedEmail) {
+        customerEmailRef.current = resolvedEmail;
+        setCustomerEmail(resolvedEmail);
+      }
+
+      const cleanInputName = (hoTen || '').trim();
+      const isGenericName =
+        !cleanInputName ||
+        ['đương số', 'duong so', 'học viên tử vi', 'hoc vien tu vi'].includes(
+          cleanInputName.toLowerCase()
+        );
+      const resolvedHoTen = isGenericName
+        ? (
+            profile?.full_name ||
+            liveUser?.user_metadata?.full_name ||
+            user?.user_metadata?.full_name ||
+            resolvedEmail.split('@')[0] ||
+            cleanInputName ||
+            'Khách thành viên'
+          ).trim()
+        : cleanInputName;
 
       const affiliateCode =
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
@@ -246,14 +306,17 @@ export default function PaymentModal({
       const metaAttribution = getBrowserMetaAttribution();
       const res = await fetch('/api/payment/create-order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
           paymentType,
           price: finalPrice,
-          hoTen,
-          email: initialEmail,
+          hoTen: resolvedHoTen,
+          email: resolvedEmail,
           chartId,
-          userId: user?.id || fallbackUserId,
+          userId: resolvedUserId,
           affiliateCode: affiliateCode || undefined,
           voucherCode: appliedVoucher,
           ...metaAttribution,
@@ -263,6 +326,14 @@ export default function PaymentModal({
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
+        if (res.status === 401 || data?.requireAuth) {
+          setRequireAuthPrompt(true);
+          setOrderCode('');
+          setQrUrl('');
+          setQrDataUrl('');
+          setSepayQrUrl('');
+          return;
+        }
         if (data?.voucherExpired && onVoucherExpired) {
           onVoucherExpired();
           return;
@@ -274,7 +345,7 @@ export default function PaymentModal({
         const code = data.order.orderCode;
         const confirmedAmount = Number(data.order.amount) || finalPrice;
         setOrderAmount(confirmedAmount);
-        activeOrderKeyRef.current = `${paymentType}_${confirmedAmount}_${appliedVoucher || 'none'}_${chartId || 'default'}_${hoTen}`;
+        activeOrderKeyRef.current = `${paymentType}_${confirmedAmount}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId}`;
         setOrderCode(code);
         trackInitiateCheckout(paymentType, confirmedAmount || 0, code);
         setQrUrl(data.qrUrl || `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${confirmedAmount}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(chuTk)}`);
@@ -307,11 +378,12 @@ export default function PaymentModal({
     } finally {
       setIsCreatingOrder(false);
     }
-  }, [user?.id, user?.email, profile?.email, fallbackUserId, fallbackEmail, voucherCode, onVoucherExpired, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
+  }, [user?.id, user?.email, user?.user_metadata?.full_name, profile?.email, profile?.full_name, fallbackUserId, fallbackEmail, voucherCode, onVoucherExpired, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
 
   // Tạo đơn hàng khi modal mở ra (tái sử dụng đơn pending nếu cùng gói để không sinh mã rác và hiện QR tức thì)
   useEffect(() => {
     if (!isOpen) {
+      setRequireAuthPrompt(false);
       if (orderStatus !== 'PENDING') {
         setOrderStatus('IDLE');
         activeOrderKeyRef.current = null;
@@ -324,19 +396,25 @@ export default function PaymentModal({
       return;
     }
 
+    const effectiveKeyUser = user?.id || fallbackUserId || '';
     const appliedVoucher =
       paymentType === 'reading_vip' || paymentType === 'reading_expert'
         ? voucherCode || 'none'
         : 'none';
-    const targetKey = `${paymentType}_${finalPrice}_${appliedVoucher}_${chartId || 'default'}_${hoTen}`;
-    // Nếu modal đang mở và đã có đơn pending cho gói này rồi thì không tạo lại để hiện mã ngay lập tức 0ms
-    if (activeOrderKeyRef.current === targetKey && orderCode && orderStatus === 'PENDING') {
+    const targetKey = `${paymentType}_${finalPrice}_${appliedVoucher}_${chartId || 'default'}_${effectiveKeyUser}`;
+    // Nếu modal đang mở và đã có đơn pending hợp lệ cho đúng user & gói này rồi thì không tạo lại để hiện mã ngay lập tức 0ms
+    if (
+      effectiveKeyUser &&
+      activeOrderKeyRef.current === targetKey &&
+      orderCode &&
+      orderStatus === 'PENDING'
+    ) {
       return;
     }
 
     setOrderAmount(null);
     createOrFetchOrder();
-  }, [isOpen, paymentType, finalPrice, voucherCode, hoTen, chartId, orderCode, orderStatus, createOrFetchOrder]);
+  }, [isOpen, paymentType, finalPrice, voucherCode, chartId, user?.id, fallbackUserId, orderCode, orderStatus, createOrFetchOrder]);
 
   // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s)
   useEffect(() => {
@@ -537,6 +615,22 @@ export default function PaymentModal({
   };
 
   if (!isOpen) return null;
+
+  if (requireAuthPrompt) {
+    return (
+      <AuthModal
+        isOpen={true}
+        defaultTab="signup"
+        onClose={onClose}
+        customNotice={`Quý khách vui lòng tạo tài khoản hoặc đăng nhập (chỉ mất 5 giây) trước khi thanh toán để hệ thống gắn gói "${title}" và lưu trữ trọn đời vào tài khoản của quý khách.`}
+        onSuccess={() => {
+          setRequireAuthPrompt(false);
+          activeOrderKeyRef.current = null;
+          createOrFetchOrder(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">

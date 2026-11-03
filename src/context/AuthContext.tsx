@@ -175,28 +175,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: error.message };
       }
 
-      if (data.user) {
-        // Tự động lưu vào bảng tuvi_profiles (thử kèm phone, nếu cột phone chưa có thì fallback)
-        const { error: upsertErr } = await supabase.from('tuvi_profiles').upsert({
-          id: data.user.id,
+      if (
+        !data.user ||
+        (Array.isArray(data.user.identities) && data.user.identities.length === 0)
+      ) {
+        return {
+          error:
+            'Email này đã được đăng ký tài khoản trước đó. Quý khách vui lòng chuyển sang tab Đăng Nhập.',
+        };
+      }
+
+      let activeUser = data.user;
+      if (!data.session) {
+        const { data: signInData, error: signInErr } =
+          await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password: pass,
+          });
+        if (signInErr || !signInData?.user) {
+          return {
+            error:
+              signInErr?.message ||
+              'Không thể khởi tạo phiên đăng nhập. Quý khách vui lòng chuyển sang tab Đăng Nhập.',
+          };
+        }
+        activeUser = signInData.user;
+      }
+
+      // Tự động lưu vào bảng tuvi_profiles (thử kèm phone, nếu cột phone chưa có thì fallback)
+      const { error: upsertErr } = await supabase.from('tuvi_profiles').upsert({
+        id: activeUser.id,
+        email: trimmedEmail,
+        full_name: trimmedName,
+        ...(trimmedPhone ? { phone: trimmedPhone } : {}),
+        updated_at: new Date().toISOString(),
+      });
+      if (upsertErr) {
+        await supabase.from('tuvi_profiles').upsert({
+          id: activeUser.id,
           email: trimmedEmail,
           full_name: trimmedName,
-          ...(trimmedPhone ? { phone: trimmedPhone } : {}),
           updated_at: new Date().toISOString(),
         });
-        if (upsertErr) {
-          await supabase.from('tuvi_profiles').upsert({
-            id: data.user.id,
-            email: trimmedEmail,
-            full_name: trimmedName,
-            updated_at: new Date().toISOString(),
-          });
-        }
-
-        setUser(data.user);
-        await fetchProfile(data.user);
-        trackCompleteRegistration('email', Boolean(trimmedPhone));
       }
+
+      setUser(activeUser);
+      await fetchProfile(activeUser);
+      trackCompleteRegistration('email', Boolean(trimmedPhone));
 
       return {
         message: 'Đăng ký tài khoản thành công!',

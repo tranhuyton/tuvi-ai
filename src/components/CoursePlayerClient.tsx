@@ -34,12 +34,14 @@ import {
   type CourseLesson,
 } from '@/lib/courseData';
 import PaymentModal from '@/components/PaymentModal';
+import AuthModal from '@/components/AuthModal';
 import GuideMenuDropdown from '@/components/GuideMenuDropdown';
 import {
   CourseVisualShowcase,
   CourseLessonIllustration,
 } from '@/components/MetaphysicalIllustration';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { trackViewCourse, trackPlayCourseLesson } from '@/lib/metaPixel';
 import type { LaSoData } from '@/types/tuvi';
 
@@ -67,6 +69,27 @@ export default function CoursePlayerClient({
   const [unlockedCode, setUnlockedCode] = useState<string>(forceUnlock ? 'VIP-ADMIN' : '');
   const [isCheckingAccess, setIsCheckingAccess] = useState<boolean>(!forceUnlock);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const pendingOpenPaymentRef = useRef<boolean>(false);
+
+  // Bắt buộc tạo tài khoản / đăng nhập trước khi mở bảng QR thanh toán Khóa học 699.000đ
+  const openCoursePayment = async () => {
+    if (user?.id) {
+      setIsPaymentModalOpen(true);
+      return;
+    }
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user?.id) {
+        setIsPaymentModalOpen(true);
+        return;
+      }
+    } catch {
+      // ignore
+    }
+    pendingOpenPaymentRef.current = true;
+    setIsAuthModalOpen(true);
+  };
 
   // Khôi phục bằng Mã đơn TVxxxxx hoặc Email
   const [showRestoreBox, setShowRestoreBox] = useState<boolean>(false);
@@ -262,7 +285,7 @@ export default function CoursePlayerClient({
       const params = new URLSearchParams(window.location.search);
       if (params.get('buy') === '1') {
         if (!isUnlocked) {
-          setIsPaymentModalOpen(true);
+          openCoursePayment();
         }
         window.history.replaceState(null, '', '/khoa-hoc');
       }
@@ -367,7 +390,7 @@ export default function CoursePlayerClient({
 
   const handleTogglePlay = () => {
     if (!canAccessActiveLesson) {
-      setIsPaymentModalOpen(true);
+      openCoursePayment();
       return;
     }
     if (!audioRef.current) return;
@@ -577,7 +600,7 @@ export default function CoursePlayerClient({
               {!isUnlocked ? (
                 <button
                   type="button"
-                  onClick={() => setIsPaymentModalOpen(true)}
+                  onClick={() => openCoursePayment()}
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
                 >
                   <QrCode className="w-3.5 h-3.5" />
@@ -772,7 +795,7 @@ export default function CoursePlayerClient({
 
                   <button
                     type="button"
-                    onClick={() => setIsPaymentModalOpen(true)}
+                    onClick={() => openCoursePayment()}
                     className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition cursor-pointer"
                   >
                     <QrCode className="w-4 h-4 shrink-0" />
@@ -1088,7 +1111,7 @@ export default function CoursePlayerClient({
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => setIsPaymentModalOpen(true)}
+                      onClick={() => openCoursePayment()}
                       className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition cursor-pointer"
                     >
                       <QrCode className="w-5 h-5" />
@@ -1454,7 +1477,7 @@ export default function CoursePlayerClient({
               {!isUnlocked && (
                 <button
                   type="button"
-                  onClick={() => setIsPaymentModalOpen(true)}
+                  onClick={() => openCoursePayment()}
                   className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold text-xs cursor-pointer"
                 >
                   Mở Khóa 24 Bài (699k)
@@ -1464,6 +1487,31 @@ export default function CoursePlayerClient({
           </div>
         </div>
       )}
+
+      {/* MODAL ĐĂNG KÝ / ĐĂNG NHẬP TÀI KHOẢN TRƯỚC KHI THANH TOÁN KHÓA HỌC */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        defaultTab="signup"
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          pendingOpenPaymentRef.current = false;
+        }}
+        customNotice="Quý khách vui lòng tạo tài khoản hoặc đăng nhập (chỉ mất 5 giây) trước khi thanh toán để hệ thống gắn quyền truy cập trọn đời Khóa Học 24 Bài vào tài khoản của quý khách."
+        onSuccess={async () => {
+          setIsAuthModalOpen(false);
+          if (pendingOpenPaymentRef.current) {
+            pendingOpenPaymentRef.current = false;
+            try {
+              const { data } = await supabase.auth.getUser();
+              if (data?.user?.id) {
+                setIsPaymentModalOpen(true);
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }}
+      />
 
       {/* MODAL QUÉT MÃ VIETQR MỞ KHÓA TỰ ĐỘNG 699.000Đ */}
       <PaymentModal

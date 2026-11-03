@@ -260,14 +260,27 @@ export async function markOrderPaid(
   saveOrdersToFile();
 
   try {
-    await supabase
-      .from('tuvi_orders')
-      .update({
+    await supabase.from('tuvi_orders').upsert(
+      {
+        id: order.id,
+        order_code: order.orderCode,
+        payment_type: order.paymentType,
+        amount: order.amount,
+        ho_ten: order.hoTen || 'Khách thành viên',
+        email: order.email || null,
         status: 'PAID',
+        created_at: order.createdAt,
         paid_at: order.paidAt,
         transaction_id: transactionId || null,
-      })
-      .eq('order_code', order.orderCode);
+        chart_id: order.chartId || null,
+        user_id: order.userId || null,
+        affiliate_code: order.affiliateCode || null,
+        commission_amount: order.commissionAmount || 0,
+        voucher_code: order.voucherCode || null,
+        discount_amount: order.discountAmount || 0,
+      },
+      { onConflict: 'order_code' }
+    );
   } catch (err) {
     // ignore
   }

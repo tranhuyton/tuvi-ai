@@ -10,11 +10,27 @@ import {
   extractRequestCapiMeta,
   sendMetaCapiEvent,
 } from '@/lib/metaCapi';
+import { adminSupabase } from '@/lib/supabaseAdmin';
 
 const BANK_CODE = 'VPB';
 const STK = 'AGBSPVUONG2026';
 const CHU_TK = 'TRAN THI DIEP';
 const BANK_NAME = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
+
+const GENERIC_CUSTOMER_NAMES = new Set([
+  '',
+  'đương số',
+  'duong so',
+  'học viên tử vi',
+  'hoc vien tu vi',
+  'khách hàng',
+  'khach hang',
+]);
+
+function isGenericCustomerName(name?: string | null): boolean {
+  if (!name) return true;
+  return GENERIC_CUSTOMER_NAMES.has(name.trim().toLowerCase());
+}
 
 function getStandardPrice(paymentType: string, customFallback?: number): number {
   if (paymentType === 'course_tuvi') return 699000;
@@ -54,10 +70,39 @@ export async function POST(req: Request) {
     const originalAmount = finalAmount;
     let appliedVoucherCode: string | undefined;
     let discountAmount = 0;
-    let effectiveUserId: string | undefined = userId || undefined;
-    let effectiveEmail: string | undefined = email || undefined;
+    let effectiveUserId: string | undefined =
+      typeof userId === 'string' && userId.trim() ? userId.trim() : undefined;
+    let effectiveEmail: string | undefined =
+      typeof email === 'string' && email.trim() ? email.trim() : undefined;
+    let effectiveChartId: string | undefined =
+      typeof chartId === 'string' && chartId.trim() ? chartId.trim() : undefined;
+    let effectiveHoTen: string =
+      typeof hoTen === 'string' && hoTen.trim() ? hoTen.trim() : 'Đương số';
 
-    // Xác thực mã giảm giá (Chỉ áp dụng cho 2 gói mở khóa Luận Giải: reading_vip 119k & reading_expert 269k)
+    // 1. Ưu tiên xác thực Bearer Access Token từ phiên đăng nhập trực tiếp (nếu có)
+    let verifiedAuthUser: {
+      id: string;
+      email?: string;
+      user_metadata?: Record<string, any>;
+    } | null = null;
+
+    const authHeader = req.headers.get('authorization') || '';
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      const token = authHeader.slice(7).trim();
+      if (token) {
+        try {
+          const { data: tokenData } = await adminSupabase.auth.getUser(token);
+          if (tokenData?.user) {
+            verifiedAuthUser = tokenData.user;
+            effectiveUserId = tokenData.user.id;
+          }
+        } catch {
+          // fallback sang xác thực userId bên dưới
+        }
+      }
+    }
+
+    // 2. Xác thực mã giảm giá (Chỉ áp dụng cho 2 gói mở khóa Luận Giải: reading_vip 119k & reading_expert 269k)
     if (
       voucherCode &&
       typeof voucherCode === 'string' &&
@@ -91,7 +136,100 @@ export async function POST(req: Request) {
         if (!effectiveEmail && check.voucher.email) {
           effectiveEmail = check.voucher.email;
         }
+        if (!effectiveChartId && check.voucher.chartId) {
+          effectiveChartId = check.voucher.chartId;
+        }
       }
+    }
+
+    // 3. CHỐT CHẶN BẮT BUỘC SERVER-SIDE: Không cho phép tạo mã thanh toán nếu chưa có tài khoản hợp lệ trong auth.users
+    if (!verifiedAuthUser && effectiveUserId) {
+      try {
+        const { data: adminUserData } = await adminSupabase.auth.admin.getUserById(
+          effectiveUserId
+        );
+        if (adminUserData?.user) {
+          verifiedAuthUser = adminUserData.user;
+        }
+      } catch {
+        verifiedAuthUser = null;
+      }
+    }
+
+    if (!verifiedAuthUser || !verifiedAuthUser.id || !verifiedAuthUser.email) {
+      return NextResponse.json(
+        {
+          success: false,
+          requireAuth: true,
+          error:
+            'Quý khách vui lòng đăng ký hoặc đăng nhập tài khoản trước khi mở mã QR thanh toán để hệ thống lưu giữ quyền lợi trọn đời.',
+        },
+        { status: 401 }
+      );
+    }
+
+    effectiveUserId = verifiedAuthUser.id;
+    effectiveEmail = verifiedAuthUser.email.trim();
+
+    // 4. Tự động đồng bộ chartId & họ tên thật từ hồ sơ / lá số của tài khoản để không bao giờ bị "Đương số / Chưa nhập email"
+    if (effectiveChartId) {
+      try {
+        const { data: chartRow } = await adminSupabase
+          .from('tuvi_charts')
+          .select('id, user_id, duong_so_data')
+          .eq('id', effectiveChartId)
+          .maybeSingle();
+
+        if (chartRow) {
+          if (isGenericCustomerName(effectiveHoTen) && chartRow.duong_so_data?.hoTen) {
+            effectiveHoTen = String(chartRow.duong_so_data.hoTen).trim();
+          }
+        }
+      } catch {
+        // ignore
+      }
+    } else if (paymentType !== 'course_tuvi') {
+      // Nếu là gói gắn với lá số (reading / chat) nhưng client chưa kịp gửi chartId, tự gắn lá số mới nhất của tài khoản
+      try {
+        const { data: latestCharts } = await adminSupabase
+          .from('tuvi_charts')
+          .select('id, duong_so_data')
+          .eq('user_id', effectiveUserId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (latestCharts && latestCharts.length > 0) {
+          effectiveChartId = latestCharts[0].id;
+          if (
+            isGenericCustomerName(effectiveHoTen) &&
+            latestCharts[0].duong_so_data?.hoTen
+          ) {
+            effectiveHoTen = String(latestCharts[0].duong_so_data.hoTen).trim();
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (isGenericCustomerName(effectiveHoTen)) {
+      let profileName = String(verifiedAuthUser.user_metadata?.full_name || '').trim();
+      if (!profileName) {
+        try {
+          const { data: prof } = await adminSupabase
+            .from('tuvi_profiles')
+            .select('full_name')
+            .eq('id', effectiveUserId)
+            .maybeSingle();
+          if (prof?.full_name) {
+            profileName = String(prof.full_name).trim();
+          }
+        } catch {
+          // ignore
+        }
+      }
+      effectiveHoTen =
+        profileName || effectiveEmail.split('@')[0] || 'Khách thành viên';
     }
 
     const cleanAffCode = affiliateCode ? String(affiliateCode).trim().toLowerCase() : undefined;
@@ -118,9 +256,9 @@ export async function POST(req: Request) {
     const order = await createOrder({
       paymentType,
       amount: finalAmount,
-      hoTen,
+      hoTen: effectiveHoTen,
       email: effectiveEmail,
-      chartId,
+      chartId: effectiveChartId,
       userId: effectiveUserId,
       affiliateCode: cleanAffCode,
       commissionAmount: expectedCommission,
