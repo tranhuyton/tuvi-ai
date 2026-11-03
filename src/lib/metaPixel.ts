@@ -63,15 +63,64 @@ export function trackLeadChart(hoTen: string, tier: string, namDuong?: number, g
   });
 }
 
+function readBrowserCookie(name: string): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  try {
+    const match = document.cookie
+      .split(';')
+      .map((c) => c.trim())
+      .find((c) => c.startsWith(`${name}=`));
+    if (!match) return undefined;
+    return decodeURIComponent(match.slice(name.length + 1));
+  } catch {
+    return undefined;
+  }
+}
+
+export function getBrowserMetaAttribution(): {
+  fbp?: string;
+  fbc?: string;
+  fbclid?: string;
+  sourceUrl?: string;
+} {
+  if (typeof window === 'undefined') return {};
+  try {
+    const fbp = readBrowserCookie('_fbp');
+    let fbclid: string | undefined;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      fbclid = params.get('fbclid') || localStorage.getItem('tuvi_fbclid') || undefined;
+    } catch {
+      // ignore
+    }
+    const fbc =
+      readBrowserCookie('_fbc') ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem('tuvi_fbc') || undefined : undefined);
+
+    return {
+      fbp,
+      fbc,
+      fbclid,
+      sourceUrl: window.location.href,
+    };
+  } catch {
+    return {};
+  }
+}
+
 export function trackInitiateCheckout(paymentType: string, price: number, orderCode?: string) {
-  trackMetaEvent('InitiateCheckout', {
-    content_name: paymentType,
-    content_ids: [orderCode || paymentType],
-    content_type: 'product',
-    value: price,
-    currency: 'VND',
-    num_items: 1,
-  });
+  trackMetaEvent(
+    'InitiateCheckout',
+    {
+      content_name: paymentType,
+      content_ids: [orderCode || paymentType],
+      content_type: 'product',
+      value: price,
+      currency: 'VND',
+      num_items: 1,
+    },
+    orderCode ? `ic_${orderCode}` : undefined
+  );
 }
 
 export function trackPurchase(paymentType: string, price: number, orderCode?: string) {

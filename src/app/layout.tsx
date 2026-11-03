@@ -267,6 +267,7 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
+try{var p=new URLSearchParams(window.location.search),clid=p.get('fbclid');if(clid){localStorage.setItem('tuvi_fbclid',clid);localStorage.setItem('tuvi_fbc','fb.1.'+Date.now()+'.'+clid);}}catch(e){}
 fbq('init', '2104187747130873');
 fbq('track', 'PageView');`,
           }}

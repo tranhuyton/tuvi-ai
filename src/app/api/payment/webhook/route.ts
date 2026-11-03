@@ -3,6 +3,7 @@ import { getOrderByCode, markOrderPaid } from '@/lib/orderStore';
 import { sendPaymentSuccessEmail } from '@/lib/email';
 import { adminSupabase as supabase } from '@/lib/supabaseAdmin';
 import { markVoucherUsedAndCancelAllForUser } from '@/lib/voucherStore';
+import { decodeOrderCapiMeta, sendMetaCapiEvent } from '@/lib/metaCapi';
 
 export const dynamic = 'force-dynamic';
 
@@ -208,6 +209,9 @@ export async function POST(req: Request) {
         continue;
       }
 
+      // Đọc lại ngữ cảnh trình duyệt (fbp/fbc/ip/ua) đã lưu tạm trước khi ghi đè transaction_id ngân hàng
+      const savedCapiMeta = decodeOrderCapiMeta(order.transactionId);
+
       // Đánh dấu đơn hàng là đã thanh toán
       await markOrderPaid(order.orderCode, tx.txId);
       console.log(`[PAYMENT WEBHOOK] ĐÃ KÍCH HOẠT ĐƠN HÀNG THÀNH CÔNG: ${order.orderCode}`);
@@ -315,6 +319,51 @@ export async function POST(req: Request) {
         console.warn('[PAYMENT WEBHOOK] Không thể cập nhật chart:', e);
       }
 
+      // Bắn sự kiện Purchase qua Meta Conversions API (Server-Side) để không bao giờ rơi đơn chuyển khoản VietQR
+      let capiSent = false;
+      try {
+        let resolvedEmail = order.email || null;
+        let resolvedPhone: string | null = null;
+
+        if (order.userId) {
+          try {
+            const { data: userRes } = await supabase.auth.admin.getUserById(order.userId);
+            const authUser = userRes?.user;
+            if (authUser) {
+              if (!resolvedEmail && authUser.email) {
+                resolvedEmail = authUser.email;
+              }
+              const metaPhone =
+                authUser.phone ||
+                authUser.user_metadata?.phone ||
+                authUser.user_metadata?.so_dien_thoai ||
+                authUser.user_metadata?.phoneNumber;
+              if (metaPhone && typeof metaPhone === 'string') {
+                resolvedPhone = metaPhone;
+              }
+            }
+          } catch {
+            // ignore auth lookup error
+          }
+        }
+
+        capiSent = await sendMetaCapiEvent({
+          eventName: 'Purchase',
+          eventId: order.orderCode,
+          value: order.amount,
+          currency: 'VND',
+          paymentType: order.paymentType,
+          orderCode: order.orderCode,
+          email: resolvedEmail,
+          phone: resolvedPhone,
+          fullName: order.hoTen,
+          userId: order.userId,
+          meta: savedCapiMeta,
+        });
+      } catch (capiErr) {
+        console.warn('[PAYMENT WEBHOOK] Lỗi gửi Meta CAPI Purchase:', capiErr);
+      }
+
       // Gửi email thông báo cho khách hàng nếu có email
       let emailResult = null;
       if (order.email) {
@@ -332,6 +381,7 @@ export async function POST(req: Request) {
         code: order.orderCode,
         status: 'PAID',
         emailSent: emailResult?.success ?? false,
+        capiSent,
       });
     }
 

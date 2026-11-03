@@ -5,6 +5,11 @@ import {
   activateAndValidateVoucher,
   getDiscountedReadingPrice,
 } from '@/lib/voucherStore';
+import {
+  encodeOrderCapiMeta,
+  extractRequestCapiMeta,
+  sendMetaCapiEvent,
+} from '@/lib/metaCapi';
 
 const BANK_CODE = 'VPB';
 const STK = 'AGBSPVUONG2026';
@@ -103,6 +108,13 @@ export async function POST(req: Request) {
       }
     }
 
+    const capiMeta = extractRequestCapiMeta(req, {
+      fbp: typeof body.fbp === 'string' ? body.fbp : undefined,
+      fbc: typeof body.fbc === 'string' ? body.fbc : undefined,
+      fbclid: typeof body.fbclid === 'string' ? body.fbclid : undefined,
+      sourceUrl: typeof body.sourceUrl === 'string' ? body.sourceUrl : undefined,
+    });
+
     const order = await createOrder({
       paymentType,
       amount: finalAmount,
@@ -114,21 +126,38 @@ export async function POST(req: Request) {
       commissionAmount: expectedCommission,
       voucherCode: appliedVoucherCode,
       discountAmount,
+      initialTransactionMeta: encodeOrderCapiMeta(capiMeta),
     });
 
-    // 1. Tạo Data URL tức thì (0ms, không phụ thuộc vào máy chủ ngoài img.vietqr.io)
+    // 1. Tạo Data URL tức thì song song với bắn Server-Side CAPI InitiateCheckout
     let qrDataUrl = '';
-    try {
-      qrDataUrl = await generateVietQrDataUrl({
-        bankBinOrCode: BANK_CODE,
-        accountNumber: STK,
-        amount: order.amount,
-        memo: order.orderCode,
-        accountName: CHU_TK,
-      });
-    } catch (qrErr) {
-      console.warn('[API CREATE-ORDER] Không thể tạo local QR DataURL:', qrErr);
-    }
+    await Promise.all([
+      (async () => {
+        try {
+          qrDataUrl = await generateVietQrDataUrl({
+            bankBinOrCode: BANK_CODE,
+            accountNumber: STK,
+            amount: order.amount,
+            memo: order.orderCode,
+            accountName: CHU_TK,
+          });
+        } catch (qrErr) {
+          console.warn('[API CREATE-ORDER] Không thể tạo local QR DataURL:', qrErr);
+        }
+      })(),
+      sendMetaCapiEvent({
+        eventName: 'InitiateCheckout',
+        eventId: `ic_${order.orderCode}`,
+        value: order.amount,
+        paymentType: order.paymentType,
+        orderCode: order.orderCode,
+        email: order.email,
+        fullName: order.hoTen,
+        userId: order.userId,
+        meta: capiMeta,
+        timeoutMs: 1800,
+      }),
+    ]);
 
     // 2. URL VietQR fallback truyền thống
     const qrUrl = `https://img.vietqr.io/image/${BANK_CODE}-${STK}-compact2.png?amount=${order.amount}&addInfo=${encodeURIComponent(

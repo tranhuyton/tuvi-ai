@@ -20,7 +20,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { generateVietQrDataUrl, buildVietQrString } from '@/lib/vietqr';
-import { trackInitiateCheckout, trackPurchase } from '@/lib/metaPixel';
+import {
+  getBrowserMetaAttribution,
+  trackInitiateCheckout,
+  trackPurchase,
+} from '@/lib/metaPixel';
 import QRCode from 'qrcode';
 
 export type PaymentPurpose =
@@ -239,6 +243,7 @@ export default function PaymentModal({
           ? voucherCode || undefined
           : undefined;
 
+      const metaAttribution = getBrowserMetaAttribution();
       const res = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -251,6 +256,7 @@ export default function PaymentModal({
           userId: user?.id || fallbackUserId,
           affiliateCode: affiliateCode || undefined,
           voucherCode: appliedVoucher,
+          ...metaAttribution,
         }),
       });
 

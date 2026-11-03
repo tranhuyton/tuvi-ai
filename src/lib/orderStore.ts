@@ -108,6 +108,7 @@ export async function createOrder(data: {
   commissionAmount?: number;
   voucherCode?: string;
   discountAmount?: number;
+  initialTransactionMeta?: string;
 }): Promise<OrderItem> {
   loadOrdersFromFile();
 
@@ -124,6 +125,7 @@ export async function createOrder(data: {
     email: data.email?.trim() || undefined,
     status: 'PENDING',
     createdAt: now,
+    transactionId: data.initialTransactionMeta || undefined,
     chartId: data.chartId,
     userId: data.userId,
     affiliateCode: data.affiliateCode?.trim() || undefined,
@@ -147,6 +149,7 @@ export async function createOrder(data: {
       email: newOrder.email || null,
       status: 'PENDING',
       created_at: newOrder.createdAt,
+      transaction_id: newOrder.transactionId || null,
       chart_id: newOrder.chartId || null,
       user_id: newOrder.userId || null,
       affiliate_code: newOrder.affiliateCode || null,
