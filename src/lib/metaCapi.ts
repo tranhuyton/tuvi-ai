@@ -124,18 +124,43 @@ export function extractRequestCapiMeta(
 }
 
 /**
- * Đóng gói thông tin CAPI tạm vào trường transaction_id khi đơn còn PENDING
+ * Đóng gói thông tin CAPI tạm vào trường transaction_id (giới hạn cứng <= 245 ký tự cho cột varchar(255))
  */
 export function encodeOrderCapiMeta(meta?: OrderCapiMeta | null): string | undefined {
   if (!meta) return undefined;
-  const compact: OrderCapiMeta = {};
-  if (meta.fbp) compact.fbp = meta.fbp.slice(0, 180);
-  if (meta.fbc) compact.fbc = meta.fbc.slice(0, 260);
-  if (meta.ip) compact.ip = meta.ip.slice(0, 64);
-  if (meta.ua) compact.ua = meta.ua.slice(0, 280);
-  if (meta.url) compact.url = meta.url.slice(0, 300);
-  if (Object.keys(compact).length === 0) return undefined;
-  return `${CAPI_META_PREFIX}${JSON.stringify(compact)}`;
+  const maxLen = 245;
+
+  // Ưu tiên cao nhất cho điểm chất lượng khớp sự kiện Meta (EMQ): fbc > fbp > ip > ua
+  const candidates: OrderCapiMeta[] = [
+    {
+      fbc: meta.fbc?.slice(0, 130),
+      fbp: meta.fbp?.slice(0, 50),
+      ip: meta.ip?.slice(0, 45),
+    },
+    {
+      fbp: meta.fbp?.slice(0, 50),
+      ip: meta.ip?.slice(0, 45),
+      ua: meta.ua?.slice(0, 90),
+    },
+    {
+      fbp: meta.fbp?.slice(0, 50),
+      ip: meta.ip?.slice(0, 45),
+    },
+  ];
+
+  for (const cand of candidates) {
+    const clean: OrderCapiMeta = {};
+    if (cand.fbc) clean.fbc = cand.fbc;
+    if (cand.fbp) clean.fbp = cand.fbp;
+    if (cand.ip) clean.ip = cand.ip;
+    if (cand.ua) clean.ua = cand.ua;
+    if (Object.keys(clean).length === 0) continue;
+    const encoded = `${CAPI_META_PREFIX}${JSON.stringify(clean)}`;
+    if (encoded.length <= maxLen) {
+      return encoded;
+    }
+  }
+  return undefined;
 }
 
 export function decodeOrderCapiMeta(raw?: string | null): OrderCapiMeta | null {

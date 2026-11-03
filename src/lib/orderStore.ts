@@ -140,7 +140,7 @@ export async function createOrder(data: {
 
   // Thử đồng bộ với bảng Supabase tuvi_orders nếu tồn tại
   try {
-    await supabase.from('tuvi_orders').insert({
+    const baseRow = {
       id: newOrder.id,
       order_code: newOrder.orderCode,
       payment_type: newOrder.paymentType,
@@ -156,7 +156,12 @@ export async function createOrder(data: {
       commission_amount: newOrder.commissionAmount || 0,
       voucher_code: newOrder.voucherCode || null,
       discount_amount: newOrder.discountAmount || 0,
-    });
+    };
+    const { error: insErr } = await supabase.from('tuvi_orders').insert(baseRow);
+    if (insErr && baseRow.transaction_id) {
+      console.warn('[ORDER STORE] Retry insert without transaction_id:', insErr.message);
+      await supabase.from('tuvi_orders').insert({ ...baseRow, transaction_id: null });
+    }
   } catch (err) {
     // Bỏ qua nếu bảng tuvi_orders chưa được tạo trong Supabase
   }
