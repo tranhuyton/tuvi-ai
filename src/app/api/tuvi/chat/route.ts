@@ -267,6 +267,18 @@ export async function POST(req: NextRequest) {
       daiVanInfo = `Đại vận hiện tại: ${cungDaiVan.daiVan} - ${cungDaiVan.daiVan + 9} tuổi tại Cung ${cungDaiVan.chi} (${cungDaiVan.cungName}). (Hiện ${tuoiAmXem} tuổi Âm, không được nhầm đại vận). `;
     }
 
+    const chiNamXem = ((namXemCanChi || '').split(' ')[1] || '').trim();
+    const chiNamXemLower = chiNamXem.toLowerCase();
+    const cungTieuVan = cungs.find((c) => {
+      const tv = (c.tieuVan || '').trim().toLowerCase();
+      return Boolean(chiNamXemLower) && (tv === `năm ${chiNamXemLower}` || tv === chiNamXemLower);
+    });
+    const cungLuuThaiTue = cungs.find((c) => Boolean(chiNamXem) && c.chi === chiNamXem);
+    let tieuVanInfo = '';
+    if (cungTieuVan && cungLuuThaiTue) {
+      tieuVanInfo = `Tiểu Vận (Tiểu Hạn) năm ${laSo.namXem || ''} (${namXemCanChi}) đóng tại Cung ${cungTieuVan.chi} (${cungTieuVan.cungName}); Lưu Niên Thái Tuế đóng tại Cung ${cungLuuThaiTue.chi} (${cungLuuThaiTue.cungName}) — tuyệt đối không nhầm Tiểu Vận với Lưu Thái Tuế! `;
+    }
+
     let contextChat = '';
     if (thongTinThem && thongTinThem.trim()) {
       contextChat += `Hoàn cảnh: ${thongTinThem.trim()}. `;
@@ -334,7 +346,7 @@ THỜI ĐIỂM HIỆN TẠI THỰC TẾ (GIỜ VIỆT NAM): Hôm nay là ${curDa
 Mệnh: ${banMenh || ''}, Cục: ${tenCuc || ''}, Sinh khắc: ${sinhKhac || ''}.
 Âm Dương: ${thuanNghichLy || ''} (Bắt buộc khẳng định đúng thế "${thuanNghichLy}", tuyệt đối không nói ngược).
 Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
-Năm xem hạn: ${namXemCanChi} (${laSo.namXem || curYearA}), ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${contextChat}
+Năm xem hạn: ${namXemCanChi} (${laSo.namXem || curYearA}), ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${tieuVanInfo}${contextChat}
 12 CUNG & NGUYỆT VẬN:
 ${cungDataStr}
 

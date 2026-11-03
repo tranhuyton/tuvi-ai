@@ -705,6 +705,26 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
   res += '(QUY TẮC TỬ VI BẮT BUỘC: Đối với bất kỳ cung nào là "Vô Chính Diệu" — không có chính tinh — bạn BẮT BUỘC phải mượn Chính tinh từ Cung Xung Chiếu và kết hợp toàn bộ các sao hội chiếu từ Tam Phương Tứ Chính [Xung Chiếu + 2 Cung Tam Hợp] kèm Tuần/Triệt để luận giải, tuyệt đối không luận sơ sài hoặc chỉ nhìn bản cung!)\n';
   const { cungs, tuanGoc, trietGoc, namXemCanChi, namXem } = laSo;
 
+  const chiNamXem = ((namXemCanChi || '').split(' ')[1] || '').trim();
+  const chiNamXemLower = chiNamXem.toLowerCase();
+  const cungTieuVan = cungs.find((c) => {
+    const tv = (c.tieuVan || '').trim().toLowerCase();
+    return Boolean(chiNamXemLower) && (tv === `năm ${chiNamXemLower}` || tv === chiNamXemLower);
+  });
+  const cungLuuThaiTue = cungs.find((c) => Boolean(chiNamXem) && c.chi === chiNamXem);
+  if (cungTieuVan || cungLuuThaiTue) {
+    res += `\n=== TỌA ĐỘ HẠN NĂM ${namXem} (${namXemCanChi}) CHUẨN XÁC 100% (BẮT BUỘC PHÂN BIỆT RÕ) ===\n`;
+    if (cungTieuVan) {
+      res += `- Cung Tiểu Vận (Tiểu Hạn) năm ${namXem} (${namXemCanChi}): Đóng tại Cung ${cungTieuVan.chi} (${cungTieuVan.cungName}${cungTieuVan.isThan ? ' - Thân Cư' : ''}) — ghi "${cungTieuVan.tieuVan}".\n`;
+    }
+    if (cungLuuThaiTue) {
+      res += `- Cung Lưu Niên Thái Tuế năm ${namXem} (${namXemCanChi}): Đóng tại Cung ${cungLuuThaiTue.chi} (${cungLuuThaiTue.cungName}${cungLuuThaiTue.isThan ? ' - Thân Cư' : ''}) — nơi L.Thái Tuế tọa thủ.\n`;
+    }
+    if (cungTieuVan && cungLuuThaiTue && cungTieuVan.chi !== cungLuuThaiTue.chi) {
+      res += `(NGHIÊM CẤM NHẦM LẪN: Tiểu Vận năm ${namXem} đóng tại Cung ${cungTieuVan.chi} (${cungTieuVan.cungName}), KHÔNG PHẢI Cung ${cungLuuThaiTue.chi}! Cung ${cungLuuThaiTue.chi} (${cungLuuThaiTue.cungName}) là Cung Lưu Niên Thái Tuế!).\n`;
+    }
+  }
+
   const formatCungSummary = (idx: number) => {
     const c = cungs[idx];
     const ct = c.chinhTinh.map((s) => (s.dacHam ? `${s.ten} (${s.dacHam})` : s.ten)).join(', ') || 'Vô Chính Diệu';
