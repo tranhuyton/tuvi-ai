@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   GraduationCap,
   Headphones,
-  Sparkles,
   CheckCircle2,
   QrCode,
   Play,
@@ -16,16 +15,34 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { COURSE_INFO, COURSE_MODULES } from '@/lib/courseData';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CoursePromoBanner() {
+  const { user, profile, testerInfo } = useAuth();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Dọn cờ VIP-ADMIN cũ từng lưu nhầm trong localStorage của trình duyệt
     try {
-      const unlocked = localStorage.getItem('tuvi_course_unlocked') === 'true';
-      setIsUnlocked(unlocked);
+      if (localStorage.getItem('tuvi_course_order_code') === 'VIP-ADMIN') {
+        localStorage.removeItem('tuvi_course_order_code');
+        localStorage.removeItem('tuvi_course_unlocked');
+      }
+    } catch {
+      // ignore
+    }
+
+    // Chưa đăng nhập: luôn hiển thị bảng giá 699.000đ & nút mua / học thử trên trang chủ
+    if (!user) {
+      setIsUnlocked(false);
+      setCompletedCount(0);
+      return;
+    }
+
+    try {
       const savedCompleted = localStorage.getItem('tuvi_course_completed');
       if (savedCompleted) {
         const parsed = JSON.parse(savedCompleted);
@@ -34,7 +51,41 @@ export default function CoursePromoBanner() {
     } catch {
       // ignore
     }
-  }, []);
+
+    const emailLower = (user.email || profile?.email || '').toLowerCase();
+    const isEmailAdmin =
+      emailLower.includes('tranhuyton') ||
+      emailLower.includes('tonhuytran') ||
+      emailLower.includes('thayton') ||
+      emailLower === 'diep.anh.12135@gmail.com';
+
+    if (isEmailAdmin || testerInfo?.isTester) {
+      setIsUnlocked(true);
+      return;
+    }
+
+    let cancelled = false;
+    fetch('/api/course/check-access', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        email: emailLower || undefined,
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        setIsUnlocked(Boolean(data?.unlocked));
+      })
+      .catch(() => {
+        if (!cancelled) setIsUnlocked(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, profile?.email, testerInfo?.isTester]);
 
   return (
     <section
@@ -151,7 +202,7 @@ export default function CoursePromoBanner() {
 
         {/* CỘT PHẢI (4 CỘT): THẺ HỌC PHÍ & NÚT MUA / HỌC THỬ */}
         <div className="lg:col-span-4 bg-slate-950/90 border border-amber-500/45 rounded-2xl p-5 space-y-4 shadow-xl">
-          {isUnlocked ? (
+          {user && isUnlocked ? (
             <div className="space-y-3.5 text-center py-2">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto">
                 <Unlock className="w-6 h-6" />

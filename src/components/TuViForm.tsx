@@ -403,7 +403,7 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               {t('form.viewYear', 'Năm xem hạn (Dương lịch)')}
             </label>
             <span className="text-xs text-amber-400/90 font-medium">
-              {t('form.viewYearDefault', `Mặc định năm ${currentYear}`)}
+              {t('form.viewYearDefault', `Mặc định năm ${currentYear}`, { year: currentYear })}
             </span>
           </div>
           <input

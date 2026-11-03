@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         email.includes('thayton'));
     const isAdminPin = adminPin && ADMIN_PINS.includes(adminPin);
 
-    if (isAdminEmail || isAdminPin || orderCode === 'VIP-ADMIN') {
+    if (isAdminEmail || isAdminPin) {
       return NextResponse.json({
         success: true,
         unlocked: true,

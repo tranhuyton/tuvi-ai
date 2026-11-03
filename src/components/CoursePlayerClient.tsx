@@ -143,66 +143,76 @@ export default function CoursePlayerClient({
         }
       }
 
-      const savedAdminPin = localStorage.getItem('tuvi_admin_pin') || '';
-      const isLocalAdmin = ['thayton2026', '0935058688'].includes(savedAdminPin);
-      const localUnlocked = localStorage.getItem('tuvi_course_unlocked') === 'true';
-      const savedOrderCode = localStorage.getItem('tuvi_course_order_code') || '';
-      if (forceUnlock || isLocalAdmin || localUnlocked) {
+      // Dọn cờ VIP-ADMIN cũ từng lưu vào localStorage để khách/Admin khi đăng xuất thấy đúng giao diện chưa mua
+      const rawSavedCode = localStorage.getItem('tuvi_course_order_code') || '';
+      if (rawSavedCode === 'VIP-ADMIN' || rawSavedCode === 'VIP-TESTER') {
+        localStorage.removeItem('tuvi_course_order_code');
+        localStorage.removeItem('tuvi_course_unlocked');
+      }
+
+      if (forceUnlock) {
         setIsUnlocked(true);
-        setUnlockedCode(
-          forceUnlock || isLocalAdmin ? 'VIP-ADMIN' : savedOrderCode || 'ĐÃ KÍCH HOẠT'
-        );
+        setUnlockedCode('VIP-ADMIN');
       }
     } catch {
       // ignore
     }
   }, [forceUnlock]);
 
-  // Kiểm tra quyền truy cập tự động với API khi có user hoặc mã đơn lưu trong máy
+  // Kiểm tra quyền truy cập tự động với API khi có user hoặc mã đơn thực tế (TVxxxxx) lưu trong máy
   useEffect(() => {
     const verifyAccess = async () => {
       setIsCheckingAccess(true);
       try {
-        const savedAdminPin =
-          typeof window !== 'undefined' ? localStorage.getItem('tuvi_admin_pin') || '' : '';
-        const isLocalAdmin = ['thayton2026', '0935058688'].includes(savedAdminPin);
-        const emailLower = (user?.email || profile?.email || '').toLowerCase();
-        const isEmailAdmin =
-          emailLower.includes('tranhuyton') ||
-          emailLower.includes('tonhuytran') ||
-          emailLower.includes('thayton') ||
-          emailLower === 'diep.anh.12135@gmail.com';
-
-        if (forceUnlock || isLocalAdmin || isEmailAdmin) {
+        if (forceUnlock) {
           setIsUnlocked(true);
           setUnlockedCode('VIP-ADMIN');
           setIsCheckingAccess(false);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('tuvi_course_unlocked', 'true');
-            localStorage.setItem('tuvi_course_order_code', 'VIP-ADMIN');
-          }
           return;
         }
 
-        if (testerInfo?.isTester) {
+        // Chỉ mở quyền Admin / Tester khi ĐANG ĐĂNG NHẬP vào tài khoản tương ứng (hoặc nhúng trong trang /admin)
+        const savedAdminPin =
+          embeddedInAdmin && typeof window !== 'undefined'
+            ? localStorage.getItem('tuvi_admin_pin') || ''
+            : '';
+        const isEmbeddedAdmin = embeddedInAdmin && ['thayton2026', '0935058688'].includes(savedAdminPin);
+        const emailLower = user ? (user.email || profile?.email || '').toLowerCase() : '';
+        const isEmailAdmin =
+          Boolean(user) &&
+          (emailLower.includes('tranhuyton') ||
+            emailLower.includes('tonhuytran') ||
+            emailLower.includes('thayton') ||
+            emailLower === 'diep.anh.12135@gmail.com');
+
+        if (isEmbeddedAdmin || isEmailAdmin) {
+          setIsUnlocked(true);
+          setUnlockedCode('VIP-ADMIN');
+          setIsCheckingAccess(false);
+          return;
+        }
+
+        if (user && testerInfo?.isTester) {
           setIsUnlocked(true);
           setUnlockedCode('VIP-TESTER');
           setIsCheckingAccess(false);
           return;
         }
 
-        const savedOrderCode =
+        const rawOrderCode =
           typeof window !== 'undefined'
-            ? localStorage.getItem('tuvi_course_order_code') ||
-              localStorage.getItem('tuvi_last_paid_code') ||
-              ''
+            ? localStorage.getItem('tuvi_course_order_code') || ''
             : '';
-        const savedEmail =
-          user?.email ||
-          profile?.email ||
-          (typeof window !== 'undefined' ? localStorage.getItem('tuvi_customer_email') || '' : '');
+        // Chỉ chấp nhận mã giao dịch thực tế dạng TVxxxxx (bỏ qua các nhãn nội bộ như VIP-ADMIN)
+        const validSavedOrderCode = /^TV[A-Z0-9]{4,}$/i.test(rawOrderCode.trim())
+          ? rawOrderCode.trim().toUpperCase()
+          : '';
 
-        if (!user?.id && !savedEmail && !savedOrderCode) {
+        const activeEmail = user ? emailLower : '';
+
+        if (!user?.id && !activeEmail && !validSavedOrderCode) {
+          setIsUnlocked(false);
+          setUnlockedCode('');
           setIsCheckingAccess(false);
           return;
         }
@@ -212,9 +222,8 @@ export default function CoursePlayerClient({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: user?.id,
-            email: savedEmail,
-            orderCode: savedOrderCode,
-            adminPin: savedAdminPin,
+            email: activeEmail || undefined,
+            orderCode: validSavedOrderCode || undefined,
           }),
         });
 
@@ -223,10 +232,13 @@ export default function CoursePlayerClient({
           if (data.unlocked) {
             setIsUnlocked(true);
             setUnlockedCode(data.orderCode || 'ĐÃ KÍCH HOẠT');
-            if (typeof window !== 'undefined') {
+            if (typeof window !== 'undefined' && data.orderCode && data.orderCode !== 'VIP-ADMIN') {
               localStorage.setItem('tuvi_course_unlocked', 'true');
-              if (data.orderCode) localStorage.setItem('tuvi_course_order_code', data.orderCode);
+              localStorage.setItem('tuvi_course_order_code', data.orderCode);
             }
+          } else {
+            setIsUnlocked(false);
+            setUnlockedCode('');
           }
         }
       } catch {
@@ -237,7 +249,7 @@ export default function CoursePlayerClient({
     };
 
     verifyAccess();
-  }, [user?.id, user?.email, profile?.email, testerInfo?.isTester]);
+  }, [user, profile?.email, testerInfo?.isTester, forceUnlock, embeddedInAdmin]);
 
   // Tự động mở bảng thanh toán QR nếu khách bấm nút "Đăng Ký & Mở Khóa Ngay" từ Trang Chủ (?buy=1)
   useEffect(() => {

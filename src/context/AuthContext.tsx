@@ -210,6 +210,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('tuvi_active_session');
+        localStorage.removeItem('tuvi_course_unlocked');
+        localStorage.removeItem('tuvi_course_order_code');
+        localStorage.removeItem('tuvi_last_paid_code');
+        localStorage.removeItem('tuvi_customer_email');
       }
       await supabase.auth.signOut();
       setUser(null);
