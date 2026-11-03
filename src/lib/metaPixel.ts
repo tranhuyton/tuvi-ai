@@ -101,3 +101,22 @@ export function trackContact(channel: 'phone' | 'zalo', location?: string) {
     contact_channel: channel,
   });
 }
+
+export function trackViewCourse() {
+  trackMetaEvent('ViewContent', {
+    content_name: 'Khoa Hoc Tu Vi Dau So Thuc Chien Cung Thay Ton',
+    content_ids: ['course_tuvi'],
+    content_type: 'product',
+    value: 699000,
+    currency: 'VND',
+  });
+}
+
+export function trackPlayCourseLesson(lessonId: string, isFreePreview: boolean) {
+  trackMetaCustomEvent('NghePodcastKhoaHoc', {
+    lesson_id: lessonId,
+    is_free_preview: isFreePreview,
+    value: 699000,
+    currency: 'VND',
+  });
+}

@@ -40,6 +40,7 @@ import {
   CourseLessonIllustration,
 } from '@/components/MetaphysicalIllustration';
 import { useAuth } from '@/context/AuthContext';
+import { trackViewCourse, trackPlayCourseLesson } from '@/lib/metaPixel';
 import type { LaSoData } from '@/types/tuvi';
 
 interface StarMatchOnChart {
@@ -153,10 +154,14 @@ export default function CoursePlayerClient({
         setIsUnlocked(true);
         setUnlockedCode('VIP-ADMIN');
       }
+
+      if (!embeddedInAdmin) {
+        trackViewCourse();
+      }
     } catch {
       // ignore
     }
-  }, [forceUnlock]);
+  }, [forceUnlock, embeddedInAdmin]);
 
   // Kiểm tra quyền truy cập tự động với API khi có user hoặc mã đơn thực tế (TVxxxxx) lưu trong máy
   useEffect(() => {
@@ -350,6 +355,9 @@ export default function CoursePlayerClient({
         .play()
         .then(() => {
           setIsPlaying(true);
+          if (!embeddedInAdmin && chapterIndex === 0) {
+            trackPlayCourseLesson(activeLesson.id, Boolean(activeLesson.isFreePreview));
+          }
         })
         .catch(() => {
           setIsPlaying(false);
