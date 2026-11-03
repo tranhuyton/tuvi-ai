@@ -138,32 +138,40 @@ export async function createOrder(data: {
   ordersMap.set(orderCode, newOrder);
   saveOrdersToFile();
 
-  // Thử đồng bộ với bảng Supabase tuvi_orders nếu tồn tại
-  try {
-    const baseRow = {
-      id: newOrder.id,
-      order_code: newOrder.orderCode,
-      payment_type: newOrder.paymentType,
-      amount: newOrder.amount,
-      ho_ten: newOrder.hoTen,
-      email: newOrder.email || null,
-      status: 'PENDING',
-      created_at: newOrder.createdAt,
-      transaction_id: newOrder.transactionId || null,
-      chart_id: newOrder.chartId || null,
-      user_id: newOrder.userId || null,
-      affiliate_code: newOrder.affiliateCode || null,
-      commission_amount: newOrder.commissionAmount || 0,
-      voucher_code: newOrder.voucherCode || null,
-      discount_amount: newOrder.discountAmount || 0,
-    };
-    const { error: insErr } = await supabase.from('tuvi_orders').insert(baseRow);
-    if (insErr && baseRow.transaction_id) {
-      console.warn('[ORDER STORE] Retry insert without transaction_id:', insErr.message);
-      await supabase.from('tuvi_orders').insert({ ...baseRow, transaction_id: null });
+  // Đồng bộ bắt buộc với bảng Supabase tuvi_orders (bảo toàn 100% đơn hàng cho Admin & Webhook đa instance)
+  const baseRow = {
+    id: newOrder.id,
+    order_code: newOrder.orderCode,
+    payment_type: String(newOrder.paymentType || 'reading_vip').slice(0, 50),
+    amount: newOrder.amount,
+    ho_ten: String(newOrder.hoTen || 'Khách thành viên').slice(0, 180),
+    email: newOrder.email ? String(newOrder.email).slice(0, 180) : null,
+    status: 'PENDING',
+    created_at: newOrder.createdAt,
+    transaction_id: newOrder.transactionId ? String(newOrder.transactionId).slice(0, 240) : null,
+    chart_id: newOrder.chartId || null,
+    user_id: newOrder.userId || null,
+    affiliate_code: newOrder.affiliateCode ? String(newOrder.affiliateCode).slice(0, 100) : null,
+    commission_amount: newOrder.commissionAmount || 0,
+    voucher_code: newOrder.voucherCode ? String(newOrder.voucherCode).slice(0, 60) : null,
+    discount_amount: newOrder.discountAmount || 0,
+  };
+
+  const { error: insErr } = await supabase.from('tuvi_orders').insert(baseRow);
+  if (insErr) {
+    console.warn('[ORDER STORE] Retry core insert into tuvi_orders after error:', insErr.message);
+    const { error: retryErr } = await supabase.from('tuvi_orders').insert({
+      ...baseRow,
+      transaction_id: null,
+      affiliate_code: null,
+      voucher_code: null,
+      commission_amount: 0,
+      discount_amount: 0,
+    });
+    if (retryErr) {
+      ordersMap.delete(orderCode);
+      throw new Error(`Không thể lưu đơn hàng vào cơ sở dữ liệu: ${retryErr.message}`);
     }
-  } catch (err) {
-    // Bỏ qua nếu bảng tuvi_orders chưa được tạo trong Supabase
   }
 
   return newOrder;
@@ -260,29 +268,51 @@ export async function markOrderPaid(
   saveOrdersToFile();
 
   try {
-    await supabase.from('tuvi_orders').upsert(
-      {
-        id: order.id,
-        order_code: order.orderCode,
-        payment_type: order.paymentType,
-        amount: order.amount,
-        ho_ten: order.hoTen || 'Khách thành viên',
-        email: order.email || null,
-        status: 'PAID',
-        created_at: order.createdAt,
-        paid_at: order.paidAt,
-        transaction_id: transactionId || null,
-        chart_id: order.chartId || null,
-        user_id: order.userId || null,
-        affiliate_code: order.affiliateCode || null,
-        commission_amount: order.commissionAmount || 0,
-        voucher_code: order.voucherCode || null,
-        discount_amount: order.discountAmount || 0,
-      },
-      { onConflict: 'order_code' }
-    );
+    const cleanTxId = transactionId
+      ? String(transactionId).slice(0, 240)
+      : order.transactionId &&
+        !order.transactionId.startsWith('fbmeta:') &&
+        !order.transactionId.startsWith('capi:')
+      ? String(order.transactionId).slice(0, 240)
+      : null;
+
+    const paidRow = {
+      id: order.id,
+      order_code: order.orderCode,
+      payment_type: String(order.paymentType || 'reading_vip').slice(0, 50),
+      amount: order.amount,
+      ho_ten: String(order.hoTen || 'Khách thành viên').slice(0, 180),
+      email: order.email ? String(order.email).slice(0, 180) : null,
+      status: 'PAID',
+      created_at: order.createdAt,
+      paid_at: order.paidAt,
+      transaction_id: cleanTxId,
+      chart_id: order.chartId || null,
+      user_id: order.userId || null,
+      affiliate_code: order.affiliateCode ? String(order.affiliateCode).slice(0, 100) : null,
+      commission_amount: order.commissionAmount || 0,
+      voucher_code: order.voucherCode ? String(order.voucherCode).slice(0, 60) : null,
+      discount_amount: order.discountAmount || 0,
+    };
+
+    const { error: upErr } = await supabase
+      .from('tuvi_orders')
+      .upsert(paidRow, { onConflict: 'order_code' });
+
+    if (upErr) {
+      console.warn('[ORDER STORE] Retry core upsert in markOrderPaid:', upErr.message);
+      await supabase.from('tuvi_orders').upsert(
+        {
+          ...paidRow,
+          transaction_id: null,
+          affiliate_code: null,
+          voucher_code: null,
+        },
+        { onConflict: 'order_code' }
+      );
+    }
   } catch (err) {
-    // ignore
+    console.error('[ORDER STORE] Lỗi lưu PAID vào tuvi_orders:', err);
   }
 
   return order;
