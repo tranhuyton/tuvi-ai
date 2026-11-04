@@ -1561,7 +1561,13 @@ export default function HomePage() {
         updateChartReading(chart.id, finalReadingHtml).catch(() => {});
       }
 
-      setReadingHtml(finalReadingHtml);
+      const isBrokenReading =
+        !chart.reading_html ||
+        chart.reading_html.trim().length < 400 ||
+        chart.reading_html.includes('gửi lại đề bài') ||
+        chart.reading_html.includes('thầy đang bận chút xíu');
+
+      setReadingHtml(isBrokenReading ? undefined : finalReadingHtml);
       setReadingError(undefined);
       setChatHistory(chatMessages || []);
       let loadedQuota: QuestionsQuota = {
@@ -1621,8 +1627,8 @@ export default function HomePage() {
       quotaRef.current = loadedQuota;
       setQuestionsQuota(loadedQuota);
 
-      // Tự động nâng cấp lên Pro hoặc Expert nếu phát hiện có đơn PAID nhưng database chưa lưu hoặc cần sinh bài luận mới
-      if (detectedTier === 'pro' || detectedTier === 'expert') {
+      // Tự động nâng cấp lên Pro hoặc Expert (hoặc tự phục hồi bài luận nếu trước đó bị gián đoạn API)
+      if (detectedTier === 'pro' || detectedTier === 'expert' || isBrokenReading) {
         const cleanDuongSo: DuLieuDuongSo = {
           ...chart.duong_so_data,
           tier: detectedTier,
@@ -1635,7 +1641,7 @@ export default function HomePage() {
         };
 
         const needsNewReading =
-          !chart.reading_html ||
+          isBrokenReading ||
           Boolean(chart.laso_data?.needsReadingUpgrade) ||
           (detectedTier === 'pro' && (!chart.duong_so_data?.tier || chart.duong_so_data?.tier === 'free') && !chart.reading_html?.includes('Bản Pro') && !chart.reading_html?.includes('CHUYÊN SÂU')) ||
           (detectedTier === 'expert' && chart.duong_so_data?.tier !== 'expert' && !chart.reading_html?.includes('CHUYÊN GIA EXPERT'));
@@ -1831,7 +1837,17 @@ export default function HomePage() {
               getChartDetails(session.chartId)
                 .then(async ({ chart, chatMessages }) => {
                   if (chart) {
-                    if (chart.reading_html) setReadingHtml(cleanReadingHtml(chart.reading_html));
+                    const isBrokenDbReading =
+                      !chart.reading_html ||
+                      chart.reading_html.trim().length < 400 ||
+                      chart.reading_html.includes('gửi lại đề bài') ||
+                      chart.reading_html.includes('thầy đang bận chút xíu');
+
+                    if (!isBrokenDbReading && chart.reading_html) {
+                      setReadingHtml(cleanReadingHtml(chart.reading_html));
+                    } else if (isBrokenDbReading) {
+                      setReadingHtml(undefined);
+                    }
                     if (chatMessages && chatMessages.length > 0) setChatHistory(chatMessages);
                     let detectedTier: ServiceTier =
                       chart.duong_so_data?.tier ||
@@ -1875,8 +1891,8 @@ export default function HomePage() {
                     tierRef.current = detectedTier;
                     setCurrentTier(detectedTier);
 
-                    // Tự động nâng cấp nếu phát hiện đơn hàng đã thanh toán hoặc cần sinh bài luận mới
-                    if (detectedTier === 'pro' || detectedTier === 'expert') {
+                    // Tự động nâng cấp nếu phát hiện đơn hàng đã thanh toán hoặc cần sinh bài luận mới (kể cả khi bài cũ bị lỗi API)
+                    if (detectedTier === 'pro' || detectedTier === 'expert' || isBrokenDbReading) {
                       const cleanDuongSo: DuLieuDuongSo = {
                         ...chart.duong_so_data,
                         tier: detectedTier,
@@ -1903,7 +1919,7 @@ export default function HomePage() {
                       };
 
                       const needsNewReading =
-                        !chart.reading_html ||
+                        isBrokenDbReading ||
                         Boolean(chart.laso_data?.needsReadingUpgrade) ||
                         (detectedTier === 'pro' &&
                           (!chart.duong_so_data?.tier || chart.duong_so_data?.tier === 'free') &&

@@ -61,6 +61,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
+    const isValidReadingText =
+      Boolean(result.text) &&
+      result.text!.trim().length >= 500 &&
+      !result.text!.includes('gửi lại đề bài') &&
+      !result.text!.includes('thầy đang bận chút xíu');
+
+    if (!isValidReadingText) {
+      return NextResponse.json(
+        {
+          error:
+            '❌ Thầy đang định tâm quán tưởng cho khách trước. Quý khách vui lòng thử lại sau giây lát!',
+        },
+        { status: 503 }
+      );
+    }
+
     // Tự động lưu kết quả luận giải trực tiếp vào database từ máy chủ
     // (Đảm bảo dù khách hàng có tắt trình duyệt giữa chừng khi đang chờ luận giải thì mở lại vẫn có đủ kết quả)
     if (chartId && result.text) {

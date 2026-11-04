@@ -614,14 +614,22 @@ async function callSingleGeminiVision(
     });
   }
 
-  edgeEndpoints.push({
-    url: `${SUPABASE_URL}/functions/v1/omni-vision-solver`,
-    label: 'Supabase omni-vision-solver (dự phòng)',
-    body: {
-      prompt: parts.find((p) => p.text)?.text || '',
-      content: 'Luận giải chi tiết lá số theo dữ liệu được cung cấp.',
-    },
-  });
+  // Dự phòng cuối cùng qua tuvi-interpreter (gemini-2.5-flash) thay vì gọi sang omni-vision-solver (tránh trả về câu lỗi bài tập)
+  if (modelName !== 'gemini-2.5-flash') {
+    edgeEndpoints.push({
+      url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
+      label: 'Supabase tuvi-interpreter (gemini-2.5-flash fallback)',
+      body: {
+        parts,
+        model: 'gemini-2.5-flash',
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: maxTokens,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      },
+    });
+  }
 
   let lastError = 'Thiên bàn tạm thời chưa thể kết nối';
 
@@ -646,10 +654,15 @@ async function callSingleGeminiVision(
       }
 
       const data = await response.json();
-      const rawText = data.result || data.text;
+      const rawText = String(data.result || data.text || '').trim();
 
-      if (!rawText) {
-        lastError = `[${label}] Chưa nhận được lời bình giải`;
+      if (
+        !rawText ||
+        rawText.includes('gửi lại đề bài') ||
+        rawText.includes('thầy đang bận chút xíu')
+      ) {
+        lastError = `[${label}] Cổng AI đang bận hoặc hết hạn mức tạm thời`;
+        console.warn(lastError, '- Bỏ qua kết quả lỗi...');
         continue;
       }
 
