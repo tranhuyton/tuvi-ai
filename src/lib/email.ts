@@ -107,7 +107,13 @@ export async function sendEmail(options: SendEmailOptions): Promise<{
         },
       });
 
-      const gmailSender = `"Tử Vi Thầy Tôn" <${gmailUser}>`;
+      const customSenderName =
+        options.from && !options.from.includes('@')
+          ? options.from.trim()
+          : options.from && options.from.includes('<')
+          ? options.from.split('<')[0].trim().replace(/^"|"$/g, '')
+          : 'Tử Vi Thầy Tôn';
+      const gmailSender = `"${customSenderName || 'Tử Vi Thầy Tôn'}" <${gmailUser}>`;
 
       const info = await transporter.sendMail({
         from: gmailSender,
