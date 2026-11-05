@@ -4,6 +4,7 @@ import { sendPaymentSuccessEmail } from '@/lib/email';
 import { adminSupabase as supabase } from '@/lib/supabaseAdmin';
 import { markVoucherUsedAndCancelAllForUser } from '@/lib/voucherStore';
 import { decodeOrderCapiMeta, sendMetaCapiEvent } from '@/lib/metaCapi';
+import { sendGa4ServerPurchase } from '@/lib/ga4Mp';
 
 export const dynamic = 'force-dynamic';
 
@@ -319,8 +320,9 @@ export async function POST(req: Request) {
         console.warn('[PAYMENT WEBHOOK] Không thể cập nhật chart:', e);
       }
 
-      // Bắn sự kiện Purchase qua Meta Conversions API (Server-Side) để không bao giờ rơi đơn chuyển khoản VietQR
+      // Bắn sự kiện Purchase qua Meta Conversions API & GA4 Measurement Protocol (Server-Side)
       let capiSent = false;
+      let ga4Sent = false;
       try {
         let resolvedEmail = order.email || null;
         let resolvedPhone: string | null = null;
@@ -347,21 +349,32 @@ export async function POST(req: Request) {
           }
         }
 
-        capiSent = await sendMetaCapiEvent({
-          eventName: 'Purchase',
-          eventId: order.orderCode,
-          value: order.amount,
-          currency: 'VND',
-          paymentType: order.paymentType,
-          orderCode: order.orderCode,
-          email: resolvedEmail,
-          phone: resolvedPhone,
-          fullName: order.hoTen,
-          userId: order.userId,
-          meta: savedCapiMeta,
-        });
+        const [capiOk, ga4Ok] = await Promise.all([
+          sendMetaCapiEvent({
+            eventName: 'Purchase',
+            eventId: order.orderCode,
+            value: order.amount,
+            currency: 'VND',
+            paymentType: order.paymentType,
+            orderCode: order.orderCode,
+            email: resolvedEmail,
+            phone: resolvedPhone,
+            fullName: order.hoTen,
+            userId: order.userId,
+            meta: savedCapiMeta,
+          }),
+          sendGa4ServerPurchase({
+            orderCode: order.orderCode,
+            paymentType: order.paymentType,
+            amount: order.amount,
+            gaClientId: savedCapiMeta?.gaCid,
+            userId: order.userId,
+          }),
+        ]);
+        capiSent = capiOk;
+        ga4Sent = ga4Ok;
       } catch (capiErr) {
-        console.warn('[PAYMENT WEBHOOK] Lỗi gửi Meta CAPI Purchase:', capiErr);
+        console.warn('[PAYMENT WEBHOOK] Lỗi gửi Server-Side Purchase:', capiErr);
       }
 
       // Gửi email thông báo cho khách hàng nếu có email
@@ -382,6 +395,7 @@ export async function POST(req: Request) {
         status: 'PAID',
         emailSent: emailResult?.success ?? false,
         capiSent,
+        ga4Sent,
       });
     }
 

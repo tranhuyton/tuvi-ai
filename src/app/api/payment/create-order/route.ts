@@ -250,6 +250,7 @@ export async function POST(req: Request) {
       fbp: typeof body.fbp === 'string' ? body.fbp : undefined,
       fbc: typeof body.fbc === 'string' ? body.fbc : undefined,
       fbclid: typeof body.fbclid === 'string' ? body.fbclid : undefined,
+      gaCid: typeof body.gaCid === 'string' ? body.gaCid : undefined,
       sourceUrl: typeof body.sourceUrl === 'string' ? body.sourceUrl : undefined,
     });
 

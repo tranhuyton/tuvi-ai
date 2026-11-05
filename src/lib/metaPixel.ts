@@ -1,3 +1,14 @@
+import {
+  getBrowserGaClientId,
+  trackGa4BeginCheckout,
+  trackGa4Contact,
+  trackGa4GenerateChart,
+  trackGa4PlayCourseLesson,
+  trackGa4Purchase,
+  trackGa4SignUp,
+  trackGa4ViewCourse,
+} from './googleAnalytics';
+
 export const META_PIXEL_ID = '2104187747130873';
 
 declare global {
@@ -46,6 +57,7 @@ export function trackCompleteRegistration(method: string = 'email', hasPhone: bo
     registration_method: method,
     has_phone: hasPhone,
   });
+  trackGa4SignUp(method, hasPhone);
 }
 
 export function trackLeadChart(hoTen: string, tier: string, namDuong?: number, gioiTinh?: string) {
@@ -61,6 +73,7 @@ export function trackLeadChart(hoTen: string, tier: string, namDuong?: number, g
     birth_year: namDuong,
     gender: gioiTinh,
   });
+  trackGa4GenerateChart(tier, namDuong, gioiTinh);
 }
 
 function readBrowserCookie(name: string): string | undefined {
@@ -81,11 +94,13 @@ export function getBrowserMetaAttribution(): {
   fbp?: string;
   fbc?: string;
   fbclid?: string;
+  gaCid?: string;
   sourceUrl?: string;
 } {
   if (typeof window === 'undefined') return {};
   try {
     const fbp = readBrowserCookie('_fbp');
+    const gaCid = getBrowserGaClientId();
     let fbclid: string | undefined;
     try {
       const params = new URLSearchParams(window.location.search);
@@ -101,6 +116,7 @@ export function getBrowserMetaAttribution(): {
       fbp,
       fbc,
       fbclid,
+      gaCid,
       sourceUrl: window.location.href,
     };
   } catch {
@@ -108,7 +124,12 @@ export function getBrowserMetaAttribution(): {
   }
 }
 
-export function trackInitiateCheckout(paymentType: string, price: number, orderCode?: string) {
+export function trackInitiateCheckout(
+  paymentType: string,
+  price: number,
+  orderCode?: string,
+  voucherCode?: string
+) {
   trackMetaEvent(
     'InitiateCheckout',
     {
@@ -121,9 +142,11 @@ export function trackInitiateCheckout(paymentType: string, price: number, orderC
     },
     orderCode ? `ic_${orderCode}` : undefined
   );
+  trackGa4BeginCheckout(paymentType, price, orderCode, voucherCode);
 }
 
 export function trackPurchase(paymentType: string, price: number, orderCode?: string) {
+  trackGa4Purchase(paymentType, price, orderCode);
   if (typeof window !== 'undefined' && orderCode) {
     const trackedKey = `fbq_purchased_${orderCode}`;
     if (sessionStorage.getItem(trackedKey)) return;
@@ -149,6 +172,7 @@ export function trackContact(channel: 'phone' | 'zalo', location?: string) {
     content_category: location || 'website',
     contact_channel: channel,
   });
+  trackGa4Contact(channel, location);
 }
 
 export function trackViewCourse() {
@@ -159,6 +183,7 @@ export function trackViewCourse() {
     value: 699000,
     currency: 'VND',
   });
+  trackGa4ViewCourse();
 }
 
 export function trackPlayCourseLesson(lessonId: string, isFreePreview: boolean) {
@@ -168,4 +193,5 @@ export function trackPlayCourseLesson(lessonId: string, isFreePreview: boolean) 
     value: 699000,
     currency: 'VND',
   });
+  trackGa4PlayCourseLesson(lessonId, isFreePreview);
 }

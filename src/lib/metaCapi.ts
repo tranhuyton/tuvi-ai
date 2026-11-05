@@ -6,6 +6,7 @@ const CAPI_META_PREFIX = 'capi:';
 export interface OrderCapiMeta {
   fbp?: string;
   fbc?: string;
+  gaCid?: string;
   ip?: string;
   ua?: string;
   url?: string;
@@ -97,6 +98,7 @@ export function extractRequestCapiMeta(
     fbp?: string;
     fbc?: string;
     fbclid?: string;
+    gaCid?: string;
     sourceUrl?: string;
   }
 ): OrderCapiMeta {
@@ -117,10 +119,19 @@ export function extractRequestCapiMeta(
     }
   }
 
+  let gaCid = (clientInput?.gaCid || '').trim() || undefined;
+  if (!gaCid && cookies['_ga']) {
+    const parts = cookies['_ga'].split('.');
+    gaCid =
+      parts.length >= 4
+        ? `${parts[parts.length - 2]}.${parts[parts.length - 1]}`
+        : cookies['_ga'].trim() || undefined;
+  }
+
   const url =
     (clientInput?.sourceUrl || req.headers.get('referer') || '').trim() || undefined;
 
-  return { fbp, fbc, ip, ua, url };
+  return { fbp, fbc, gaCid, ip, ua, url };
 }
 
 /**
@@ -130,8 +141,14 @@ export function encodeOrderCapiMeta(meta?: OrderCapiMeta | null): string | undef
   if (!meta) return undefined;
   const maxLen = 245;
 
-  // Ưu tiên cao nhất cho điểm chất lượng khớp sự kiện Meta (EMQ): fbc > fbp > ip > ua
+  // Ưu tiên cao nhất cho điểm chất lượng khớp sự kiện Meta (EMQ) & GA4 MP: fbc > fbp > gaCid > ip > ua
   const candidates: OrderCapiMeta[] = [
+    {
+      fbc: meta.fbc?.slice(0, 110),
+      fbp: meta.fbp?.slice(0, 45),
+      gaCid: meta.gaCid?.slice(0, 32),
+      ip: meta.ip?.slice(0, 42),
+    },
     {
       fbc: meta.fbc?.slice(0, 130),
       fbp: meta.fbp?.slice(0, 50),
@@ -139,11 +156,13 @@ export function encodeOrderCapiMeta(meta?: OrderCapiMeta | null): string | undef
     },
     {
       fbp: meta.fbp?.slice(0, 50),
+      gaCid: meta.gaCid?.slice(0, 32),
       ip: meta.ip?.slice(0, 45),
-      ua: meta.ua?.slice(0, 90),
+      ua: meta.ua?.slice(0, 65),
     },
     {
       fbp: meta.fbp?.slice(0, 50),
+      gaCid: meta.gaCid?.slice(0, 32),
       ip: meta.ip?.slice(0, 45),
     },
   ];
@@ -152,6 +171,7 @@ export function encodeOrderCapiMeta(meta?: OrderCapiMeta | null): string | undef
     const clean: OrderCapiMeta = {};
     if (cand.fbc) clean.fbc = cand.fbc;
     if (cand.fbp) clean.fbp = cand.fbp;
+    if (cand.gaCid) clean.gaCid = cand.gaCid;
     if (cand.ip) clean.ip = cand.ip;
     if (cand.ua) clean.ua = cand.ua;
     if (Object.keys(clean).length === 0) continue;

@@ -27,6 +27,7 @@ import {
   trackInitiateCheckout,
   trackPurchase,
 } from '@/lib/metaPixel';
+import { trackGa4PaymentQrAction } from '@/lib/googleAnalytics';
 import QRCode from 'qrcode';
 
 export type PaymentPurpose =
@@ -347,7 +348,7 @@ export default function PaymentModal({
         setOrderAmount(confirmedAmount);
         activeOrderKeyRef.current = `${paymentType}_${confirmedAmount}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId}`;
         setOrderCode(code);
-        trackInitiateCheckout(paymentType, confirmedAmount || 0, code);
+        trackInitiateCheckout(paymentType, confirmedAmount || 0, code, appliedVoucher);
         setQrUrl(data.qrUrl || `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${confirmedAmount}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(chuTk)}`);
         setSepayQrUrl(data.sepayQrUrl || `https://qr.sepay.vn/img?bank=VPBank&acc=${stk}&template=compact&amount=${confirmedAmount}&des=${encodeURIComponent(code)}`);
 
@@ -538,18 +539,21 @@ export default function PaymentModal({
   const handleCopyStk = () => {
     navigator.clipboard.writeText(stk);
     setCopiedStk(true);
+    trackGa4PaymentQrAction('copy_stk', paymentType, effectiveAmount || 0, orderCode);
     setTimeout(() => setCopiedStk(false), 2000);
   };
 
   const handleCopyContent = () => {
     navigator.clipboard.writeText(orderCode || 'TUVI');
     setCopiedContent(true);
+    trackGa4PaymentQrAction('copy_content', paymentType, effectiveAmount || 0, orderCode);
     setTimeout(() => setCopiedContent(false), 2000);
   };
 
   const handleCopyAmount = () => {
     navigator.clipboard.writeText(String(effectiveAmount));
     setCopiedAmount(true);
+    trackGa4PaymentQrAction('copy_amount', paymentType, effectiveAmount || 0, orderCode);
     setTimeout(() => setCopiedAmount(false), 2000);
   };
 
@@ -558,11 +562,13 @@ export default function PaymentModal({
     const text = `Ngân hàng: VPBank\nSố TK: ${stk}\nChủ TK: ${chuTk}\nSố tiền: ${effectiveAmount.toLocaleString('vi-VN')} đ\nNội dung CK: ${orderCode}`;
     navigator.clipboard.writeText(text);
     setCopiedAll(true);
+    trackGa4PaymentQrAction('copy_all', paymentType, effectiveAmount || 0, orderCode);
     setTimeout(() => setCopiedAll(false), 2000);
   };
 
   // Tải ảnh mã QR về máy (hỗ trợ lưu ảnh quét trong App Ngân Hàng)
   const handleDownloadQr = () => {
+    trackGa4PaymentQrAction('download_qr', paymentType, effectiveAmount || 0, orderCode);
     try {
       let downloadSrc = '';
       if (qrFallbackStage === 3 && canvasRef.current) {

@@ -247,6 +247,15 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${beVietnam.variable} ${lora.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
+        {/* Google Tag (GTM-M5V95KJ4 / GA4 G-K09KG9PV1Y) */}
+        <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-M5V95KJ4" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());`,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem('tuvi_theme')||'cosmic';document.documentElement.setAttribute('data-theme',t);if(t==='custom'){var c=localStorage.getItem('tuvi_custom_color');if(c){document.documentElement.style.setProperty('--bg-color',c);}}}catch(e){}})();`,
