@@ -79,6 +79,9 @@ export interface LaSoData {
   namXem: number;
   namXemCanChi: string;
   tuoiAmXem: number;
+  luuNienDaiHanIdx?: number;
+  luuNienDaiHanChi?: string;
+  luuNienDaiHanCungName?: string;
   tier?: ServiceTier;
   quota?: QuestionsQuota;
   needsReadingUpgrade?: boolean;

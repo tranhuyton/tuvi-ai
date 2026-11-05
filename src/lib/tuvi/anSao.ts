@@ -587,6 +587,19 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
     });
   }
 
+  const activeDaiVanCung = cungs.find(
+    (c) => c.daiVan <= tuoiAmXem && tuoiAmXem < c.daiVan + 10
+  );
+  const luuNienDaiHanIdx = activeDaiVanCung
+    ? computeLuuNienDaiHanIdx(
+        activeDaiVanCung.cungId,
+        tuoiAmXem - activeDaiVanCung.daiVan,
+        thuanNghich
+      )
+    : undefined;
+  const luuNienDaiHanCung =
+    luuNienDaiHanIdx !== undefined ? cungs[luuNienDaiHanIdx] : undefined;
+
   return {
     duongSo: data,
     amLich: {
@@ -618,7 +631,290 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
     namXem,
     namXemCanChi,
     tuoiAmXem,
+    luuNienDaiHanIdx,
+    luuNienDaiHanChi: luuNienDaiHanCung?.chi,
+    luuNienDaiHanCungName: luuNienDaiHanCung?.cungName,
     cungs,
+  };
+}
+
+/**
+ * Công thức chuẩn Tử Vi Đẩu Số tính cung Lưu Niên Đại Hạn (Quá cung từ Đại Vận 10 năm):
+ * - Năm 1 (step = 0): Tại bản cung Đại Vận
+ * - Năm 2 (step = 1): Nhảy sang cung Xung Chiếu của Đại Vận
+ * - Năm 3 (step = 2): Từ cung Xung Chiếu lùi 1 cung ngược chiều thuận/nghịch của Đại Vận
+ * - Năm 4 (step = 3): Quay trở lại cung Xung Chiếu
+ * - Năm 5..9 (step = 4..8): Từ cung Xung Chiếu tiến lần lượt 1..5 cung xuôi chiều thuận/nghịch
+ * - Năm 10 (step = 9): Tiến thêm 1 cung, về lại đúng bản cung Đại Vận (khép kín vòng 10 năm)
+ */
+export function computeLuuNienDaiHanIdx(
+  dvIdx: number,
+  step: number,
+  thuanNghich: number
+): number {
+  const dir = thuanNghich >= 0 ? 1 : -1;
+  if (step <= 0) return mod12(dvIdx);
+  if (step === 1) return mod12(dvIdx + 6);
+  if (step === 2) return mod12(dvIdx + 6 - dir);
+  if (step === 3) return mod12(dvIdx + 6);
+  return mod12(dvIdx + 6 + (step - 3) * dir);
+}
+
+/**
+ * Xác định chiều đi Đại Vận (+1: Dương Nam / Âm Nữ thuận hành; -1: Âm Nam / Dương Nữ nghịch hành)
+ * Tương thích ngược 100% với cả lá số mới và lá số đã lưu từ trước trong Supabase
+ */
+export function resolveThuanNghich(laSo: LaSoData): 1 | -1 {
+  if (typeof laSo.canNamIdx === 'number' && laSo.duongSo?.gioiTinh) {
+    const amDuongNam = laSo.canNamIdx % 2 === 0 ? 1 : -1;
+    const isNam = laSo.duongSo.gioiTinh === 'Nam' ? 1 : -1;
+    return amDuongNam * isNam >= 0 ? 1 : -1;
+  }
+  if (laSo.amDuongTxt) {
+    const txt = laSo.amDuongTxt.toLowerCase();
+    const isDuong = txt.includes('dương');
+    const isNam = txt.includes('nam');
+    return isDuong === isNam ? 1 : -1;
+  }
+  if (Array.isArray(laSo.cungs) && laSo.cungs.length === 12) {
+    const minDvCung = laSo.cungs.reduce(
+      (best, cur) => (cur.daiVan < best.daiVan ? cur : best),
+      laSo.cungs[0]
+    );
+    const nextClockwise = laSo.cungs[(minDvCung.cungId + 1) % 12];
+    if (nextClockwise && nextClockwise.daiVan === minDvCung.daiVan + 10) {
+      return 1;
+    }
+    return -1;
+  }
+  return 1;
+}
+
+export interface TamHanAnalysis {
+  thuanNghich: 1 | -1;
+  cungDaiVan?: CungLaSo;
+  startAge?: number;
+  endAge?: number;
+  namThuTrongDaiVan?: number;
+  buocNhayMoTa?: string;
+  cungLuuNienDaiHan?: CungLaSo;
+  cungTieuVan?: CungLaSo;
+  cungLuuThaiTue?: CungLaSo;
+  daiVanCoordLabel: string;
+  lndhCoordLabel: string;
+  tieuVanCoordLabel: string;
+  luuThaiTueCoordLabel: string;
+  triggers: string[];
+  luuCatTaiLndh: string[];
+  luuCatChieuLndh: string[];
+  luuHungTaiLndh: string[];
+  luuHungChieuLndh: string[];
+}
+
+const CAT_LUU_TRONG_DIEM = new Set([
+  'L.Lộc Tồn',
+  'L.Thiên Mã',
+  'L.Hóa Lộc',
+  'L.Hóa Quyền',
+  'L.Hóa Khoa',
+]);
+
+const HUNG_LUU_TRONG_DIEM = new Set([
+  'L.Hóa Kị',
+  'L.Hóa Kỵ',
+  'L.Kình Dương',
+  'L.Đà La',
+  'L.Tang Môn',
+  'L.Bạch Hổ',
+  'L.Thiên Khốc',
+  'L.Thiên Hư',
+]);
+
+/**
+ * Phân tích tổng hợp tọa độ Đại Vận 10 năm + Tam Hạn năm xem (Lưu Thái Tuế - LN. Đại Hạn - Tiểu Hạn)
+ * kèm phát hiện tự động các thế Trùng Phùng và Sao Lưu kích hoạt vào LN. Đại Hạn
+ */
+export function computeTamHanAnalysis(laSo: LaSoData): TamHanAnalysis {
+  const { cungs = [], tuoiAmXem, namXemCanChi = '' } = laSo;
+  const thuanNghich = resolveThuanNghich(laSo);
+
+  const formatCoord = (c?: CungLaSo) =>
+    c ? `Cung ${c.chi} (${c.cungName}${c.isThan ? ' - Thân Cư' : ''})` : '';
+
+  const cungDaiVan = cungs.find(
+    (c) => c.daiVan <= tuoiAmXem && tuoiAmXem < c.daiVan + 10
+  );
+
+  let startAge: number | undefined;
+  let endAge: number | undefined;
+  let namThuTrongDaiVan: number | undefined;
+  let buocNhayMoTa: string | undefined;
+  let cungLuuNienDaiHan: CungLaSo | undefined;
+
+  if (cungDaiVan) {
+    startAge = cungDaiVan.daiVan;
+    endAge = startAge + 9;
+    const step = tuoiAmXem - startAge; // 0..9
+    namThuTrongDaiVan = step + 1;
+    const lndhIdx =
+      typeof laSo.luuNienDaiHanIdx === 'number' &&
+      laSo.luuNienDaiHanIdx >= 0 &&
+      laSo.luuNienDaiHanIdx < 12
+        ? laSo.luuNienDaiHanIdx
+        : computeLuuNienDaiHanIdx(cungDaiVan.cungId, step, thuanNghich);
+    cungLuuNienDaiHan = cungs[lndhIdx];
+
+    const chieuTxt = thuanNghich === 1 ? 'thuận' : 'nghịch';
+    if (step === 0) {
+      buocNhayMoTa = 'Năm thứ 1/10 của Đại vận (khởi tại bản cung Đại vận)';
+    } else if (step === 1) {
+      buocNhayMoTa = 'Năm thứ 2/10 của Đại vận (nhảy sang cung Xung chiếu Đại vận)';
+    } else if (step === 2) {
+      buocNhayMoTa = `Năm thứ 3/10 của Đại vận (từ cung Xung chiếu lùi 1 cung ngược chiều ${chieuTxt})`;
+    } else if (step === 3) {
+      buocNhayMoTa = 'Năm thứ 4/10 của Đại vận (quay trở lại cung Xung chiếu Đại vận)';
+    } else if (step >= 4 && step <= 8) {
+      buocNhayMoTa = `Năm thứ ${step + 1}/10 của Đại vận (từ Xung chiếu tiến ${step - 3} cung theo chiều ${chieuTxt})`;
+    } else {
+      buocNhayMoTa = 'Năm thứ 10/10 khép lại Đại vận (về lại bản cung Đại vận trước khi chuyển vận mới)';
+    }
+  }
+
+  const chiNamXem = (namXemCanChi.split(' ')[1] || '').trim();
+  const chiNamXemLower = chiNamXem.toLowerCase();
+  const cungTieuVan = cungs.find((c) => {
+    const tv = (c.tieuVan || '').trim().toLowerCase();
+    return Boolean(chiNamXemLower) && (tv === `năm ${chiNamXemLower}` || tv === chiNamXemLower);
+  });
+  const cungLuuThaiTue = cungs.find((c) => Boolean(chiNamXem) && c.chi === chiNamXem);
+
+  const daiVanCoordLabel = formatCoord(cungDaiVan);
+  const lndhCoordLabel = formatCoord(cungLuuNienDaiHan);
+  const tieuVanCoordLabel = formatCoord(cungTieuVan);
+  const luuThaiTueCoordLabel = formatCoord(cungLuuThaiTue);
+
+  const triggers: string[] = [];
+  const lttIdx = cungLuuThaiTue?.cungId;
+  const lndhIdx = cungLuuNienDaiHan?.cungId;
+  const tvIdx = cungTieuVan?.cungId;
+  const dvIdx = cungDaiVan?.cungId;
+
+  if (
+    lttIdx !== undefined &&
+    lndhIdx !== undefined &&
+    tvIdx !== undefined &&
+    lttIdx === lndhIdx &&
+    lndhIdx === tvIdx
+  ) {
+    triggers.push(
+      `TAM HẠN TRÙNG PHÙNG ĐỒNG CUNG tại ${luuThaiTueCoordLabel}: Cả Lưu Thái Tuế (50%), LN. Đại hạn (30%) và Tiểu Hạn (20%) hội tụ cùng một cung! Đây là năm bản lề xoay chuyển cục diện cực mạnh của đương số — cát tinh hội thì bứt phá vượt bậc, sát kỵ hội thì biến động lớn cần phòng bị kỹ.`
+    );
+  } else {
+    if (
+      lttIdx !== undefined &&
+      lndhIdx !== undefined &&
+      tvIdx !== undefined &&
+      lttIdx % 4 === lndhIdx % 4 &&
+      lndhIdx % 4 === tvIdx % 4
+    ) {
+      triggers.push(
+        `TAM HẠN HỘI TAM HỢP: Ba trụ hạn năm (Lưu Thái Tuế tại ${cungLuuThaiTue!.chi} - LN. Đại hạn tại ${cungLuuNienDaiHan!.chi} - Tiểu Hạn tại ${cungTieuVan!.chi}) cùng nằm trong một vòng Tam hợp, tạo sự cộng hưởng Thiên - Địa - Nhân xuyên suốt cả năm.`
+      );
+    }
+    if (lndhIdx !== undefined && lttIdx !== undefined && lndhIdx === lttIdx) {
+      triggers.push(
+        `LN. ĐẠI HẠN TRÙNG LƯU THÁI TUẾ tại ${lndhCoordLabel}: Mạch trung hạn 10 năm giao cắt trực diện với sóng thời cuộc năm xem — năm bản lề dễ có bước ngoặt cấu trúc về công việc, cơ ngơi, nơi ở hoặc gia đạo (mức độ cát/hung nhân đôi).`
+      );
+    }
+    if (tvIdx !== undefined && lttIdx !== undefined && tvIdx === lttIdx) {
+      triggers.push(
+        `TUẾ HẠN TRÙNG PHÙNG (Tiểu Hạn trùng Lưu Thái Tuế) tại ${luuThaiTueCoordLabel}: Tâm niệm chủ quan và biến chuyển ngoại cảnh chập làm một — quyết định đưa ra sẽ ứng nghiệm thành kết quả hoặc hệ quả thực tế rất nhanh, hầu như không có độ trễ.`
+      );
+    }
+    if (lndhIdx !== undefined && tvIdx !== undefined && lndhIdx === tvIdx) {
+      triggers.push(
+        `LN. ĐẠI HẠN TRÙNG TIỂU HẠN tại ${lndhCoordLabel}: Mong cầu nội tâm của đương số năm nay hướng đúng vào lĩnh vực trọng tâm mà Đại vận 10 năm đang kích hoạt.`
+      );
+    }
+  }
+
+  if (lndhIdx !== undefined && dvIdx !== undefined) {
+    if (lndhIdx === dvIdx) {
+      triggers.push(
+        `NĂM ĐẦU/CUỐI CHU KỲ ĐẠI VẬN (Năm thứ ${namThuTrongDaiVan}/10): LN. Đại hạn trùng ngay gốc Đại vận 10 năm (${daiVanCoordLabel}), đánh dấu cột mốc định hình hoặc chuyển giao vận trình thập kỷ.`
+      );
+    } else if (lndhIdx === (dvIdx + 6) % 12) {
+      triggers.push(
+        `LN. ĐẠI HẠN XUNG CHIẾU GỐC ĐẠI VẬN (Năm thứ ${namThuTrongDaiVan}/10): LN. Đại hạn tại ${lndhCoordLabel} chiếu thẳng về gốc Đại vận (${daiVanCoordLabel}), dễ tạo lực thúc đẩy dịch chuyển hoặc cọ xát với nền tảng hiện hữu.`
+      );
+    }
+  }
+
+  const luuCatTaiLndh: string[] = [];
+  const luuCatChieuLndh: string[] = [];
+  const luuHungTaiLndh: string[] = [];
+  const luuHungChieuLndh: string[] = [];
+
+  if (cungLuuNienDaiHan && lndhIdx !== undefined && cungs.length === 12) {
+    (cungLuuNienDaiHan.saoLuu || []).forEach((sl) => {
+      if (CAT_LUU_TRONG_DIEM.has(sl.ten)) luuCatTaiLndh.push(sl.ten);
+      if (HUNG_LUU_TRONG_DIEM.has(sl.ten)) luuHungTaiLndh.push(sl.ten);
+    });
+
+    const relatedIndices = [(lndhIdx + 6) % 12, (lndhIdx + 4) % 12, (lndhIdx + 8) % 12];
+    relatedIndices.forEach((rIdx) => {
+      const rCung = cungs[rIdx];
+      if (!rCung) return;
+      (rCung.saoLuu || []).forEach((sl) => {
+        if (CAT_LUU_TRONG_DIEM.has(sl.ten)) {
+          luuCatChieuLndh.push(`${sl.ten} (hội chiếu từ ${rCung.chi})`);
+        }
+        if (HUNG_LUU_TRONG_DIEM.has(sl.ten)) {
+          luuHungChieuLndh.push(`${sl.ten} (hội chiếu từ ${rCung.chi})`);
+        }
+      });
+    });
+
+    if (luuHungTaiLndh.length > 0 || luuHungChieuLndh.length > 0) {
+      const hungList = [
+        ...luuHungTaiLndh.map((s) => `${s} [tọa thủ bản cung]`),
+        ...luuHungChieuLndh,
+      ].join(', ');
+      triggers.push(
+        `SAO LƯU HUNG SÁT KÍCH NỔ VÀO LN. ĐẠI HẠN (${lndhCoordLabel}): Xuất hiện ${hungList} bắn vào mắt xích LN. Đại hạn -> Cần quản trị rủi ro chặt chẽ tại phương diện ${cungLuuNienDaiHan.cungName} để tránh làm tổn hao nền tảng của Đại vận 10 năm.`
+      );
+    }
+
+    if (luuCatTaiLndh.length > 0 || luuCatChieuLndh.length > 0) {
+      const catList = [
+        ...luuCatTaiLndh.map((s) => `${s} [tọa thủ bản cung]`),
+        ...luuCatChieuLndh,
+      ].join(', ');
+      triggers.push(
+        `SAO LƯU CÁT LỘC HỘI TỤ TẠI LN. ĐẠI HẠN (${lndhCoordLabel}): Đón ${catList} chiếu/thủ vào mắt xích LN. Đại hạn -> Điểm sáng trợ lực mạnh mẽ để gặt hái thành quả thực tế tại phương diện ${cungLuuNienDaiHan.cungName}.`
+      );
+    }
+  }
+
+  return {
+    thuanNghich,
+    cungDaiVan,
+    startAge,
+    endAge,
+    namThuTrongDaiVan,
+    buocNhayMoTa,
+    cungLuuNienDaiHan,
+    cungTieuVan,
+    cungLuuThaiTue,
+    daiVanCoordLabel,
+    lndhCoordLabel,
+    tieuVanCoordLabel,
+    luuThaiTueCoordLabel,
+    triggers,
+    luuCatTaiLndh,
+    luuCatChieuLndh,
+    luuHungTaiLndh,
+    luuHungChieuLndh,
   };
 }
 
@@ -705,23 +1001,44 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
   res += '(QUY TẮC TỬ VI BẮT BUỘC: Đối với bất kỳ cung nào là "Vô Chính Diệu" — không có chính tinh — bạn BẮT BUỘC phải mượn Chính tinh từ Cung Xung Chiếu và kết hợp toàn bộ các sao hội chiếu từ Tam Phương Tứ Chính [Xung Chiếu + 2 Cung Tam Hợp] kèm Tuần/Triệt để luận giải, tuyệt đối không luận sơ sài hoặc chỉ nhìn bản cung!)\n';
   const { cungs, tuanGoc, trietGoc, namXemCanChi, namXem } = laSo;
 
-  const chiNamXem = ((namXemCanChi || '').split(' ')[1] || '').trim();
-  const chiNamXemLower = chiNamXem.toLowerCase();
-  const cungTieuVan = cungs.find((c) => {
-    const tv = (c.tieuVan || '').trim().toLowerCase();
-    return Boolean(chiNamXemLower) && (tv === `năm ${chiNamXemLower}` || tv === chiNamXemLower);
-  });
-  const cungLuuThaiTue = cungs.find((c) => Boolean(chiNamXem) && c.chi === chiNamXem);
-  if (cungTieuVan || cungLuuThaiTue) {
-    res += `\n=== TỌA ĐỘ HẠN NĂM ${namXem} (${namXemCanChi}) CHUẨN XÁC 100% (BẮT BUỘC PHÂN BIỆT RÕ) ===\n`;
-    if (cungTieuVan) {
-      res += `- Cung Tiểu Vận (Tiểu Hạn) năm ${namXem} (${namXemCanChi}): Đóng tại Cung ${cungTieuVan.chi} (${cungTieuVan.cungName}${cungTieuVan.isThan ? ' - Thân Cư' : ''}) — ghi "${cungTieuVan.tieuVan}".\n`;
+  const tamHan = computeTamHanAnalysis(laSo);
+  const {
+    cungDaiVan,
+    startAge,
+    endAge,
+    buocNhayMoTa,
+    cungLuuNienDaiHan,
+    cungTieuVan,
+    cungLuuThaiTue,
+    daiVanCoordLabel,
+    lndhCoordLabel,
+    tieuVanCoordLabel,
+    luuThaiTueCoordLabel,
+    triggers,
+  } = tamHan;
+
+  if (cungLuuThaiTue || cungLuuNienDaiHan || cungTieuVan) {
+    res += `\n=== KIẾN TRÚC ĐẠI VẬN & TAM HẠN NĂM ${namXem} (${namXemCanChi}) [CHÍNH XÁC 100% - CẤM NHẦM LẪN] ===\n`;
+    if (cungDaiVan && startAge !== undefined && endAge !== undefined) {
+      res += `0. ĐẠI VẬN 10 NĂM HIỆN TẠI (${startAge} - ${endAge} tuổi): Đóng tại ${daiVanCoordLabel}.\n`;
+    } else {
+      res += `0. ĐẠI VẬN 10 NĂM: Đang ở giai đoạn Đồng Hạn (trước tuổi vào Đại vận đầu tiên).\n`;
     }
     if (cungLuuThaiTue) {
-      res += `- Cung Lưu Niên Thái Tuế năm ${namXem} (${namXemCanChi}): Đóng tại Cung ${cungLuuThaiTue.chi} (${cungLuuThaiTue.cungName}${cungLuuThaiTue.isThan ? ' - Thân Cư' : ''}) — nơi L.Thái Tuế tọa thủ.\n`;
+      res += `1. CUNG LƯU THÁI TUẾ (Trọng số 50% — Thiên Thời / Bối cảnh ngoại cảnh & Kết quả thực tế): Đóng tại ${luuThaiTueCoordLabel} (nơi L.Thái Tuế tọa thủ).\n`;
     }
-    if (cungTieuVan && cungLuuThaiTue && cungTieuVan.chi !== cungLuuThaiTue.chi) {
-      res += `(NGHIÊM CẤM NHẦM LẪN: Tiểu Vận năm ${namXem} đóng tại Cung ${cungTieuVan.chi} (${cungTieuVan.cungName}), KHÔNG PHẢI Cung ${cungLuuThaiTue.chi}! Cung ${cungLuuThaiTue.chi} (${cungLuuThaiTue.cungName}) là Cung Lưu Niên Thái Tuế!).\n`;
+    if (cungLuuNienDaiHan) {
+      res += `2. CUNG LƯU NIÊN ĐẠI HẠN [LN. Đại hạn] (Trọng số 30% — Địa Lợi / Nền tảng chịu lực trung hạn & Lĩnh vực Đại vận dồn lực): Đóng tại ${lndhCoordLabel}${buocNhayMoTa ? ` — ${buocNhayMoTa}` : ''}.\n`;
+    }
+    if (cungTieuVan) {
+      res += `3. CUNG TIỂU VẬN / TIỂU HẠN (Trọng số 20% — Nhân Hòa / Nội tâm, mong cầu chủ quan & ngòi nổ tâm lý): Đóng tại ${tieuVanCoordLabel} (nơi ghi "${cungTieuVan.tieuVan}" trên lá số).\n`;
+    }
+    res += `(QUY TẮC TỌA ĐỘ NGHIÊM NGẶT: Ba khái niệm Lưu Thái Tuế [${cungLuuThaiTue?.chi || '—'}], LN. Đại hạn [${cungLuuNienDaiHan?.chi || '—'}] và Tiểu Hạn [${cungTieuVan?.chi || '—'}] có công thức hoàn toàn riêng biệt — TUYỆT ĐỐI KHÔNG GỘP HOẶC GỌI NHẦM TÊN CUNG NÀY SANG CUNG KHÁC!).\n`;
+    if (triggers.length > 0) {
+      res += `* TÍN HIỆU TRÙNG PHÙNG & ĐIỂM KÍCH NỔ ĐẶC BIỆT NĂM ${namXem} (Bắt buộc phân tích nhấn mạnh):\n`;
+      triggers.forEach((tr) => {
+        res += `  - ${tr}\n`;
+      });
     }
   }
 
@@ -759,8 +1076,9 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
 
     const tieuVanStr = cung.tieuVan ? (cung.tieuVan.startsWith('năm') ? cung.tieuVan : `năm ${cung.tieuVan}`) : '';
     const nguyetVanStr = cung.nguyetVan ? (cung.nguyetVan.startsWith('tháng') ? cung.nguyetVan : `tháng ${cung.nguyetVan}`) : '';
+    const lndhTag = cungLuuNienDaiHan?.cungId === i ? ` | ★ LN. Đại hạn năm ${namXem}` : '';
 
-    res += `- Cung ${cung.chi} (${cName}) [Đại vận: ${cung.daiVan} | Tiểu vận: ${tieuVanStr} | Nguyệt hạn: ${nguyetVanStr}]:\n`;
+    res += `- Cung ${cung.chi} (${cName}) [Đại vận: ${cung.daiVan} | Tiểu vận: ${tieuVanStr} | Nguyệt hạn: ${nguyetVanStr}${lndhTag}]:\n`;
     res += `  + Chính tinh: ${chinhStr}\n`;
     if (isVoChinhDieu) {
       const doiIdx = (i + 6) % 12;
@@ -850,8 +1168,10 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
         }
       });
 
+      const nextTamHan = computeTamHanAnalysis(nextLaSo);
       res += `\n--- DỮ LIỆU NỐI TIẾP SANG NĂM KẾ TIẾP: NĂM ${nextYear} (${nextLaSo.namXemCanChi} - ${nextLaSo.tuoiAmXem} TUỔI ÂM) ---\n`;
       res += `(Dùng khi cần vạch lộ trình dài hạn từ cuối năm ${namXem || namAm} nối tiếp sang đầu năm ${nextYear}):\n`;
+      res += `- Tọa độ Tam Hạn năm ${nextYear} (${nextLaSo.namXemCanChi}): Lưu Thái Tuế tại ${nextTamHan.luuThaiTueCoordLabel || '—'} | LN. Đại hạn tại ${nextTamHan.lndhCoordLabel || '—'} | Tiểu Hạn tại ${nextTamHan.tieuVanCoordLabel || '—'}.\n`;
       res += `- Tổng hợp Sao Lưu năm ${nextLaSo.namXemCanChi} (${nextYear}): ${nextLuuStars.join('; ')}.\n`;
       for (let m = 1; m <= 6; m++) {
         const mStr = `tháng ${m}`;

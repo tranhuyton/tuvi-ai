@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { LaSoData } from '@/types/tuvi';
 import CungView from './CungView';
 import { GIO_ARR } from '@/lib/tuvi/constants';
+import { computeTamHanAnalysis } from '@/lib/tuvi/anSao';
 import { Download, RefreshCw, ZoomIn, ZoomOut, BookOpen, Pencil } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -56,7 +57,9 @@ const TT_COORDS: Record<number, { l: string; t: string }> = {
 
 export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: LaSoBanCoProps) {
   const {
+    language,
     t,
+    tCung,
     tCanChi,
     tNapAm,
     tTenCuc,
@@ -128,6 +131,14 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
   const gioObj = GIO_ARR[duongSo.gioSinhVal];
   const gioMatch = gioObj?.label.match(/\((.*?)\)/);
   const gioText = gioMatch ? gioMatch[1] : (gioObj?.label || duongSo.gioSinhVal);
+
+  const tamHan = computeTamHanAnalysis(laSo);
+  const lndhCung = tamHan.cungLuuNienDaiHan;
+  const lndhDisplay = lndhCung
+    ? language === 'vi'
+      ? `Cung ${lndhCung.chi} (${lndhCung.cungName})`
+      : `${tCanChi(lndhCung.chi)} (${tCung(lndhCung.cungName)})`
+    : '';
 
   const safeMenhIdx =
     typeof menhCungIdx === 'number' && !isNaN(menhCungIdx) && menhCungIdx in THIEN_BAN_POINTS
@@ -449,6 +460,19 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                       {tuoiAmXem} {t('chart.ageUnit', 'tuổi')}
                     </span>
                   </div>
+                  {lndhDisplay && (
+                    <div
+                      className="flex items-baseline pt-0.5"
+                      title={tamHan.buocNhayMoTa || undefined}
+                    >
+                      <span className="min-w-[4rem] sm:min-w-[4.5rem] pr-1.5 text-black whitespace-nowrap">
+                        {t('chart.lnDaiHan', 'LN. Đại hạn:')}
+                      </span>
+                      <span className="text-[#003399] font-bold whitespace-nowrap">
+                        {lndhDisplay}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Âm Dương */}

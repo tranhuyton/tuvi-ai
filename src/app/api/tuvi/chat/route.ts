@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LaSoData, ChatMessage } from '@/types/tuvi';
-import { buildCungDataPrompt, getCurrentVietnamTimeInfo } from '@/lib/tuvi/anSao';
+import {
+  buildCungDataPrompt,
+  getCurrentVietnamTimeInfo,
+  computeTamHanAnalysis,
+} from '@/lib/tuvi/anSao';
 import { callGeminiVision } from '@/lib/gemini';
 import { createClient } from '@supabase/supabase-js';
 
@@ -248,7 +252,6 @@ export async function POST(req: NextRequest) {
       banMenh,
       namXemCanChi,
       tuoiAmXem,
-      cungs,
       amDuongTxt,
       thuanNghichLy,
       thanCuName,
@@ -258,26 +261,16 @@ export async function POST(req: NextRequest) {
     } = laSo;
     const cungDataStr = buildCungDataPrompt(laSo);
 
-    // Tính chính xác Đại Vận hiện tại
-    const cungDaiVan = cungs.find(
-      (c) => c.daiVan <= tuoiAmXem && tuoiAmXem < c.daiVan + 10
-    );
+    // Tính chính xác Đại Vận & Tam Hạn năm xem (Lưu Thái Tuế 50% - LN. Đại hạn 30% - Tiểu Hạn 20%)
+    const tamHan = computeTamHanAnalysis(laSo);
     let daiVanInfo = '';
-    if (cungDaiVan) {
-      daiVanInfo = `Đại vận hiện tại: ${cungDaiVan.daiVan} - ${cungDaiVan.daiVan + 9} tuổi tại Cung ${cungDaiVan.chi} (${cungDaiVan.cungName}). (Hiện ${tuoiAmXem} tuổi Âm, không được nhầm đại vận). `;
+    if (tamHan.cungDaiVan && tamHan.startAge !== undefined && tamHan.endAge !== undefined) {
+      daiVanInfo = `Đại vận hiện tại: ${tamHan.startAge} - ${tamHan.endAge} tuổi tại ${tamHan.daiVanCoordLabel} (${tamHan.buocNhayMoTa || `${tuoiAmXem} tuổi Âm`}, cấm nhầm đại vận). `;
+    } else {
+      daiVanInfo = `Đang ở giai đoạn Đồng Hạn (${tuoiAmXem} tuổi Âm). `;
     }
 
-    const chiNamXem = ((namXemCanChi || '').split(' ')[1] || '').trim();
-    const chiNamXemLower = chiNamXem.toLowerCase();
-    const cungTieuVan = cungs.find((c) => {
-      const tv = (c.tieuVan || '').trim().toLowerCase();
-      return Boolean(chiNamXemLower) && (tv === `năm ${chiNamXemLower}` || tv === chiNamXemLower);
-    });
-    const cungLuuThaiTue = cungs.find((c) => Boolean(chiNamXem) && c.chi === chiNamXem);
-    let tieuVanInfo = '';
-    if (cungTieuVan && cungLuuThaiTue) {
-      tieuVanInfo = `Tiểu Vận (Tiểu Hạn) năm ${laSo.namXem || ''} (${namXemCanChi}) đóng tại Cung ${cungTieuVan.chi} (${cungTieuVan.cungName}); Lưu Niên Thái Tuế đóng tại Cung ${cungLuuThaiTue.chi} (${cungLuuThaiTue.cungName}) — tuyệt đối không nhầm Tiểu Vận với Lưu Thái Tuế! `;
-    }
+    const tieuVanInfo = `Tam Hạn năm ${laSo.namXem || ''} (${namXemCanChi}): [1] Lưu Thái Tuế (50% - Kết quả thực tế) tại ${tamHan.luuThaiTueCoordLabel || '—'}; [2] LN. Đại hạn (30% - Nền tảng chịu lực) tại ${tamHan.lndhCoordLabel || '—'}; [3] Tiểu Hạn (20% - Tâm lý chủ quan) tại ${tamHan.tieuVanCoordLabel || '—'} — tuyệt đối phân biệt rành mạch 3 cung này! `;
 
     let contextChat = '';
     if (thongTinThem && thongTinThem.trim()) {
@@ -354,6 +347,7 @@ QUY TẮC BẮT BUỘC VỀ THỜI GIAN THỰC TẾ, CUNG VÔ CHÍNH DIỆU & NG
 - QUY TẮC SỐ 1 (THỜI GIAN THỰC TẾ HIỆN TẠI): Hôm nay là **${curDateSummary}**. Các tháng từ Tháng 1 đến Tháng ${curMonthA - 1} Âm lịch năm ${curYearA} ĐÃ TRÔI QUA TRONG QUÁ KHỨ! Bạn TUYỆT ĐỐI CẤM viết câu phỏng đoán mù mờ như "Hiện tại nếu đang ở Tháng 3 Âm lịch..." hay đoán mò tháng! Phải khẳng định chuẩn xác hiện tại đang ở **Tháng ${curMonthA} Âm lịch**. Mọi sự việc khách hỏi "hôm nay", "vừa mới", "hiện tại" phải được giải mã trực tiếp bằng Nguyệt vận **Tháng ${curMonthA} Âm lịch**; và mọi lộ trình/sách lược hành động sắp tới cho đương số BẮT BUỘC phải bắt đầu từ **Tháng ${curMonthA} Âm lịch hiện tại đến Tháng 12 Âm lịch năm ${curYearA}** (và nối tiếp sang các tháng đầu năm ${curYearA + 1} theo bảng dữ liệu nối tiếp ở trên nếu lộ trình kéo dài sang năm mới). TUYỆT ĐỐI CẤM khuyên khách lập kế hoạch tương lai vào các tháng đã qua (Tháng 1 đến Tháng ${curMonthA - 1} Âm lịch năm ${curYearA})!
 - QUY TẮC SỐ 2 (CUNG VÔ CHÍNH DIỆU): Khi luận giải bất kỳ cung nào không có chính tinh (Vô Chính Diệu), bạn BẮT BUỘC phải nhìn và kết hợp các Chính tinh + Phụ tinh hội chiếu từ Tam Phương Tứ Chính (đặc biệt là mượn Chính tinh của Cung Xung Chiếu kết hợp 2 Cung Tam Hợp và Tuần/Triệt tại bản cung) để phân tích sâu sắc, tuyệt đối không chỉ nhìn mỗi bản cung.
 - QUY TẮC SỐ 3 (TRA CỨU NGUYỆT VẬN CHUẨN 100%): Khi nhắc đến bất kỳ tháng Âm lịch nào, bạn BẮT BUỘC phải tra cứu chính xác theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên để biết tháng đó rơi vào cung nào, có các chính tinh, phụ tinh và đặc biệt là các SAO LƯU nào thủ hoặc chiếu (L.Thái Tuế, L.Tang Môn, L.Bạch Hổ, L.Kình Dương, L.Đà La, L.Thiên Mã, L.Lộc Tồn, L.Thiên Khốc, L.Thiên Hư, L.Đẩu Quân, L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị...). Tuyệt đối KHÔNG được tự suy đoán hay nói nhầm sang cung khác.
+- QUY TẮC SỐ 4 (PHỄU TAM HẠN & MA TRẬN 4 THẾ ĐẠI VẬN x HẠN NĂM): Khi khách hỏi về vận hạn năm hoặc quyết định hành động (kinh doanh, mở rộng, đầu tư, mua đất, chuyển việc, hôn nhân, gia đạo, sức khỏe), BẮT BUỘC tuân thủ nguyên lý Cấp nhỏ phục tùng cấp lớn (Gốc -> Đại Vận 10 năm -> Hạn Năm) và tổng hợp nhân - quả theo trọng số Tam Hạn: đọc tâm thế khởi niệm ở Tiểu Hạn (20% tại ${tamHan.tieuVanCoordLabel || 'bản cung'}) -> đối chiếu sức chịu đựng & độ đồng pha ở Đại Vận + LN. Đại hạn (30% tại ${tamHan.lndhCoordLabel || 'bản cung'}) -> chốt kết quả ngoại cảnh thực tế ở Lưu Thái Tuế + Sao Lưu/Lưu Tứ Hóa (50% tại ${tamHan.luuThaiTueCoordLabel || 'bản cung'}) cùng các Tín hiệu Trùng Phùng/Kích Nổ Đặc Biệt. Đặc biệt cảnh giác nếu Đại Vận xấu mà năm sáng (chỉ nên thu hồi vốn, cơ cấu an toàn, cấm vay mượn mở rộng dài hạn) hoặc Đại Vận tốt mà năm có Sát Kỵ lệch pha đánh vào Phu Thê/Tử Tức/Tật Ách. Văn phong bậc Thầy Mệnh lý Thực chứng: điềm đạm, sắc bén, thấu tình đạt lý, không mê tín hù dọa, không lạm dụng biệt ngữ chứng khoán tiếng Anh.
 ${requirementText}${langInstruction}`;
 
     const modelToUse =
