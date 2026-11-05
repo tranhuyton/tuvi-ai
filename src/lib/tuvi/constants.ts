@@ -266,6 +266,7 @@ export const STAR_NGU_HANH_COLOR: Record<string, string> = {
   'L.Đà La': '#555555',
   'L.Bạch Hổ': '#555555',
   'LN.Văn Tinh': '#555555',
+  'LN.Đại Hạn': '#555555',
 
   // 2. THỦY - Đen tuyền (#000000)
   'THIÊN ĐỒNG': '#000000',

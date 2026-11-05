@@ -364,11 +364,14 @@ NHIỆM VỤ PHẦN 3 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.150 - 
 QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <h3>IV. VẬN HẠN NĂM ${namXem}...</h3> dưới đây. TUYỆT ĐỐI KHÔNG viết lời chào mở đầu, KHÔNG lặp lại các chương I, II, III.
 
 <h3>IV. VẬN HẠN NĂM ${namXem} (${namXemCanChi} - TAM HẠN HỢP THAM) &amp; BẢN ĐỒ VẬN KHÍ 4 MÙA - 12 THÁNG ÂM LỊCH</h3>
-- Khai mở Chương IV (khoảng 300 - 350 từ) bằng cách xác định rõ đương số đang đứng ở Thế nào trong **Ma Trận 4 Thế (Đại Vận x Hạn Năm)** và luận giải sắc bén theo đúng **Mạch 3 Bước Nhân - Quả của Tam Hạn**:
-  1) **Đọc vị Nội tâm qua Cung Tiểu Hạn (20%)** tại **${tieuVanCoordLabel || 'bản cung Tiểu hạn'}**;
-  2) **Đo sức chịu lực &amp; độ đồng pha qua Đại Vận &amp; Cung LN. Đại hạn (30%)** tại **${lndhCoordLabel || 'cung LN. Đại hạn'}**;
-  3) **Chốt kết quả thực tế &amp; Điểm kích nổ qua Cung Lưu Thái Tuế (50%)** tại **${luuThaiTueCoordLabel || 'bản cung Lưu Thái Tuế'}** cùng hệ thống Sao Lưu + Lưu Tứ Hóa (nếu có cung Vô Chính Diệu thì bắt buộc kết hợp sao từ Tam Phương Tứ Chính hội chiếu; tuyệt đối không gọi nhầm tên 3 cung này lẫn sang nhau).
-- Khảo sát biến động qua 4 Mùa &amp; 12 Tháng Âm lịch (BẮT BUỘC tra cứu chính xác 100% từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên, chỉ rõ từng tháng rơi vào cung nào và cát hung ra sao, viết cô đọng súc tích khoảng 550 - 680 từ cho toàn bộ 12 tháng):
+<h4>1. Định Vị Chiến Lược (Đại Vận × Hạn Năm) &amp; Hợp Tham Tam Hạn Năm ${namXem}</h4>
+- BẮT BUỘC trình bày mục 1 này thành các ý rõ ràng (khoảng 300 - 360 từ, dùng thẻ &lt;p&gt; và &lt;ul&gt;&lt;li&gt;&lt;b&gt;...&lt;/b&gt;&lt;/li&gt;&lt;/ul&gt;), nêu đích danh đủ cả 3 cung Tam Hạn, tuyệt đối KHÔNG được bỏ sót Tiểu Hạn hay LN. Đại hạn:
+  + <b>Vị thế Chiến lược (Đại Vận × Hạn Năm):</b> Xác định rõ đương số đang đứng ở Thế nào trong Ma Trận 4 Thế (Thuận Thủy Hành Chu / Bình Địa Phong Ba / Hàn Cốc Hồi Xuân / Tuyết Thượng Gia Sương) và phương châm tổng quát năm nay (Tiến công hay Phòng thủ).
+  + <b>Bước 1 — Nội tâm khởi niệm qua Cung Tiểu Hạn (20% - ${tieuVanCoordLabel || 'bản cung Tiểu hạn'}):</b> Đọc vị tâm thế, mong cầu chủ quan hoặc nỗi trăn trở của đương số năm nay (nếu Vô Chính Diệu bắt buộc xét Tam Phương Tứ Chính).
+  + <b>Bước 2 — Nền tảng chịu lực qua Cung Lưu Niên Đại Hạn (30% - ${lndhCoordLabel || 'cung LN. Đại hạn'}):</b> Phân tích mắt xích quá cung từ Đại vận 10 năm, xem lĩnh vực này đồng pha hay lệch pha với mong muốn ở Tiểu Hạn, có Sao Lưu cát/hung nào kích nổ trực tiếp vào LN. Đại hạn hay không.
+  + <b>Bước 3 — Kết quả thực tế qua Cung Lưu Thái Tuế &amp; Sao Lưu (50% - ${luuThaiTueCoordLabel || 'bản cung Lưu Thái Tuế'}):</b> Chốt kết quả ngoại cảnh thực tế qua L.Thái Tuế, Lưu Lộc Mã, Lưu Kình Đà, Lưu Tang Hổ, Lưu Khốc Hư, Lưu Tứ Hóa và các thế Trùng Phùng (nếu có).
+<h4>2. Khảo Sát Biến Động 4 Mùa &amp; 12 Tháng Âm Lịch Năm ${namXem}</h4>
+- BẮT BUỘC tra cứu chính xác 100% từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên, chỉ rõ từng tháng rơi vào cung nào và cát hung ra sao (viết cô đọng súc tích khoảng 550 - 650 từ cho toàn bộ 12 tháng):
   + Mùa Xuân (Tháng 1, Tháng 2, Tháng 3 Âm lịch).
   + Mùa Hạ (Tháng 4, Tháng 5, Tháng 6 Âm lịch).
   + Mùa Thu (Tháng 7, Tháng 8, Tháng 9 Âm lịch).
@@ -437,10 +440,13 @@ ${tuongPhapInstruction}
 - Cơ hội phát triển vượt bậc ở giai đoạn nào, và những cạm bẫy hung tinh (Kình, Đà, Hỏa, Linh, Không, Kiếp...) cần phải né tránh ở tuổi ${tuoiAmXem}.
 
 <h3>IV. VẬN HẠN NĂM ${namXem} (TAM HẠN HỢP THAM) &amp; BẢN ĐỒ 4 MÙA VẬN KHÍ</h3>
-- Xác định rõ đương số đang nằm ở Thế nào trong **Ma Trận 4 Thế (Đại Vận x Hạn Năm)** và phân tích mạch lạc theo **Mạch 3 Bước Nhân - Quả của Tam Hạn**:
-  1) **Nội tâm khởi niệm tại Cung Tiểu Hạn (20%):** **${tieuVanCoordLabel || 'bản cung Tiểu hạn'}**;
-  2) **Nền tảng chịu lực &amp; độ đồng pha tại Cung LN. Đại hạn (30%):** **${lndhCoordLabel || 'cung LN. Đại hạn'}**;
-  3) **Kết quả thực tế &amp; Điểm kích nổ tại Cung Lưu Thái Tuế (50%):** **${luuThaiTueCoordLabel || 'bản cung Lưu Thái Tuế'}** cùng dàn Lưu Tinh &amp; Lưu Tứ Hóa. TUYỆT ĐỐI CẤM gọi nhầm tên 3 tọa độ này lẫn sang nhau!
+<h4>1. Định Vị Chiến Lược &amp; Hợp Tham Tam Hạn Năm ${namXem}</h4>
+- BẮT BUỘC trình bày rõ đủ 4 ý (dùng thẻ &lt;ul&gt;&lt;li&gt;&lt;b&gt;...&lt;/b&gt;&lt;/li&gt;&lt;/ul&gt;, tuyệt đối không bỏ sót Tiểu Hạn hay LN. Đại hạn):
+  + <b>Vị thế Chiến lược (Đại Vận × Hạn Năm):</b> Chỉ rõ đương số đang thuộc Thế nào trong Ma Trận 4 Thế và chiến lược chủ đạo (Tiến công hay Phòng thủ).
+  + <b>Bước 1 — Nội tâm khởi niệm tại Cung Tiểu Hạn (20% - ${tieuVanCoordLabel || 'bản cung Tiểu hạn'}):</b> Phân tích mong cầu chủ quan và tâm thế bên trong.
+  + <b>Bước 2 — Nền tảng chịu lực tại Cung Lưu Niên Đại Hạn (30% - ${lndhCoordLabel || 'cung LN. Đại hạn'}):</b> Đối chiếu độ đồng pha/lệch pha với Đại vận và các Sao Lưu tác động vào LN. Đại hạn.
+  + <b>Bước 3 — Kết quả thực tế tại Cung Lưu Thái Tuế (50% - ${luuThaiTueCoordLabel || 'bản cung Lưu Thái Tuế'}):</b> Phân tích dàn Sao Lưu &amp; Lưu Tứ Hóa để chốt kết quả ngoại cảnh thực tế.
+<h4>2. Khảo Sát Biến Động 4 Mùa Xuân - Hạ - Thu - Đông</h4>
 - Khảo sát biến động qua 4 mùa (QUY TẮC BẮT BUỘC: Tra cứu chính xác tọa độ các cung cho từng tháng từ Tháng 1 đến Tháng 12 Âm lịch theo đúng 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên; tháng nào rơi vào cung Vô Chính Diệu thì bắt buộc xét các sao từ Tam Phương Tứ Chính hội chiếu):
   + Mùa Xuân (Tháng 1, 2, 3 Âm): Khởi sắc hay trì trệ, việc nên mở màn (đối chiếu đúng các cung của Tháng 1, 2, 3 theo Bảng tra cứu Nguyệt Vận).
   + Mùa Hạ (Tháng 4, 5, 6 Âm): Đỉnh cao tài lộc hay thử thách quan hệ (đối chiếu đúng các cung của Tháng 4, 5, 6 theo Bảng tra cứu Nguyệt Vận).
@@ -496,7 +502,7 @@ Bài luận phải mạch lạc, chuẩn xác, đáng tin cậy, bao quát các 
 
 <h3>III. ĐẠI VẬN HIỆN TẠI (${startAge ? `${startAge} - ${endAge} TUỔI` : 'GIAI ĐOẠN HIỆN TẠI'}) &amp; TAM HẠN NĂM ${namXem}</h3>
 - ${daiVanInstruction}
-- Tổng hợp sắc bén **Tam Hạn năm ${namXem} (${namXemCanChi})** theo mạch Nhân - Quả: đối chiếu tâm thế chủ quan tại **Cung Tiểu Hạn** (**${tieuVanCoordLabel || 'bản cung Tiểu hạn'}** - 20%) với nền tảng chịu lực tại **Cung LN. Đại hạn** (**${lndhCoordLabel || 'cung LN. Đại hạn'}** - 30%) và kết quả ngoại cảnh thực tế tại **Cung Lưu Thái Tuế** (**${luuThaiTueCoordLabel || 'bản cung Lưu Thái Tuế'}** - 50%, kèm Sao Lưu). Chốt rõ năm nay đương số nên Tiến công bứt phá hay Phòng thủ giữ gốc, chỉ ra cơ hội sáng nhất và điểm rủi ro lớn nhất cần lưu tâm (tuyệt đối không gọi nhầm tên 3 cung này lẫn sang nhau).
+- Tổng hợp sắc bén <b>Tam Hạn năm ${namXem} (${namXemCanChi})</b> theo mạch Nhân - Quả: đối chiếu tâm thế chủ quan tại <b>Cung Tiểu Hạn (${tieuVanCoordLabel || 'bản cung Tiểu hạn'} - 20%)</b> với nền tảng chịu lực tại <b>Cung LN. Đại hạn (${lndhCoordLabel || 'cung LN. Đại hạn'} - 30%)</b> và kết quả ngoại cảnh thực tế tại <b>Cung Lưu Thái Tuế (${luuThaiTueCoordLabel || 'bản cung Lưu Thái Tuế'} - 50%, kèm Sao Lưu)</b>. Chốt rõ năm nay đương số nên Tiến công bứt phá hay Phòng thủ giữ gốc, chỉ ra cơ hội sáng nhất và điểm rủi ro lớn nhất cần lưu tâm (tuyệt đối không gọi nhầm tên 3 cung này lẫn sang nhau).
 
 <h3>IV. LỜI KHUYÊN &amp; ĐỊNH HƯỚNG TỪ THẦY TÔN</h3>
 - Đúc kết lời khuyên thiết thực giúp đương số hành xử đắc thời.

@@ -57,9 +57,7 @@ const TT_COORDS: Record<number, { l: string; t: string }> = {
 
 export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: LaSoBanCoProps) {
   const {
-    language,
     t,
-    tCung,
     tCanChi,
     tNapAm,
     tTenCuc,
@@ -133,12 +131,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
   const gioText = gioMatch ? gioMatch[1] : (gioObj?.label || duongSo.gioSinhVal);
 
   const tamHan = computeTamHanAnalysis(laSo);
-  const lndhCung = tamHan.cungLuuNienDaiHan;
-  const lndhDisplay = lndhCung
-    ? language === 'vi'
-      ? `Cung ${lndhCung.chi} (${lndhCung.cungName})`
-      : `${tCanChi(lndhCung.chi)} (${tCung(lndhCung.cungName)})`
-    : '';
+  const lndhCungId = tamHan.cungLuuNienDaiHan?.cungId;
 
   const safeMenhIdx =
     typeof menhCungIdx === 'number' && !isNaN(menhCungIdx) && menhCungIdx in THIEN_BAN_POINTS
@@ -328,10 +321,28 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
             {/* 12 Cung */}
             {cungs.map((cung) => {
               const pos = GRID_STYLES[cung.cungId];
+              const hasLndhStar = cung.phuTinhTot.some(
+                (s) => s.ten === 'LN.Đại Hạn' || s.ten === 'LN. Đại hạn'
+              );
+              const renderedCung =
+                lndhCungId === cung.cungId && !hasLndhStar
+                  ? {
+                      ...cung,
+                      phuTinhTot: [
+                        ...cung.phuTinhTot,
+                        {
+                          ten: 'LN.Đại Hạn',
+                          loai: 'tot' as const,
+                          color: '#555555',
+                          isLuu: true,
+                        },
+                      ],
+                    }
+                  : cung;
               return (
                 <CungView
                   key={cung.cungId}
-                  cung={cung}
+                  cung={renderedCung}
                   className="min-h-[200px] sm:min-h-[225px]"
                   style={{
                     gridColumn: pos.gridColumn,
@@ -460,19 +471,6 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                       {tuoiAmXem} {t('chart.ageUnit', 'tuổi')}
                     </span>
                   </div>
-                  {lndhDisplay && (
-                    <div
-                      className="flex items-baseline pt-0.5"
-                      title={tamHan.buocNhayMoTa || undefined}
-                    >
-                      <span className="min-w-[4rem] sm:min-w-[4.5rem] pr-1.5 text-black whitespace-nowrap">
-                        {t('chart.lnDaiHan', 'LN. Đại hạn:')}
-                      </span>
-                      <span className="text-[#003399] font-bold whitespace-nowrap">
-                        {lndhDisplay}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Âm Dương */}

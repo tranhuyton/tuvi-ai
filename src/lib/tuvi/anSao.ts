@@ -503,6 +503,26 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
   addHoaLuuStar(hoaKhoaLuuStar, 'L.Hóa Khoa', 'tot');
   addHoaLuuStar(hoaKyLuuStar, 'L.Hóa Kị', 'xau');
 
+  // 10. An sao chỉ báo Lưu Niên Đại Hạn (LN.Đại Hạn) trực tiếp vào ô cung quá cung từ Đại Vận 10 năm
+  let activeDaiVanIdx = -1;
+  for (let i = 0; i < 12; i++) {
+    if (daiVanArr[i] <= tuoiAmXem && tuoiAmXem < daiVanArr[i] + 10) {
+      activeDaiVanIdx = i;
+      break;
+    }
+  }
+  const luuNienDaiHanIdx =
+    activeDaiVanIdx >= 0
+      ? computeLuuNienDaiHanIdx(
+          activeDaiVanIdx,
+          tuoiAmXem - daiVanArr[activeDaiVanIdx],
+          thuanNghich
+        )
+      : undefined;
+  if (luuNienDaiHanIdx !== undefined) {
+    s[luuNienDaiHanIdx].t.push('LN.Đại Hạn');
+  }
+
   // Tuần & Triệt
   const trietMap: Record<number, number> = {
     0: 8, 5: 8, 1: 6, 6: 6, 2: 4, 7: 4, 3: 2, 8: 2, 4: 0, 9: 0
@@ -587,16 +607,6 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
     });
   }
 
-  const activeDaiVanCung = cungs.find(
-    (c) => c.daiVan <= tuoiAmXem && tuoiAmXem < c.daiVan + 10
-  );
-  const luuNienDaiHanIdx = activeDaiVanCung
-    ? computeLuuNienDaiHanIdx(
-        activeDaiVanCung.cungId,
-        tuoiAmXem - activeDaiVanCung.daiVan,
-        thuanNghich
-      )
-    : undefined;
   const luuNienDaiHanCung =
     luuNienDaiHanIdx !== undefined ? cungs[luuNienDaiHanIdx] : undefined;
 
