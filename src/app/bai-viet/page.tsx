@@ -350,6 +350,10 @@ export default function BaiVietIndexPage() {
             </a>
           </div>
         </section>
+
+        <footer className="pt-5 border-t border-slate-800/60 text-center text-[11px] text-slate-500 leading-relaxed max-w-3xl mx-auto">
+          Miễn trừ trách nhiệm: Toàn bộ nội dung chuyên khảo Tử Vi, Tướng Pháp, Phong Thủy và Hỏi đáp AI trên hệ thống mang tính chất nghiên cứu văn hóa Á Đông, chiêm nghiệm tâm lý và định hướng tham khảo — hoàn toàn không phải bói toán mê tín dị đoan và không thay thế cho tư vấn y tế, pháp lý hay tài chính chuyên ngành.
+        </footer>
       </div>
     </main>
   );

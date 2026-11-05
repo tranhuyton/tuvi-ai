@@ -820,7 +820,7 @@ export const SEO_ARTICLES: SeoArticle[] = [
       'Học vấn quốc tế bài bản: Chuyên Toán - Tin ĐH Tổng Hợp Hà Nội & Cử nhân, Thạc sỹ Tài chính - Kế toán Đại học Lancaster (Top 5 Vương Quốc Anh).',
       'Kinh nghiệm thực chiến: Từng làm việc tại các hãng Kiểm toán Quốc tế, hơn 15 năm giảng dạy Kinh tế - Tài chính - Ngôn ngữ Anh học thuật và hơn 18 năm nghiên cứu Tử Vi Đẩu Số.',
       'Triết lý luận giải 3 Không: Không mê tín dị đoan — Không hù dọa trục lợi — Không phán chung chung mơ hồ.',
-      'Địa chỉ phòng xem trực tiếp 1-1: R2B 2219, Khu đô thị Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội (Hotline/Zalo: 0935.058.688).',
+      'Khu vực đàm đạo trực tiếp 1-1: Khu đô thị Royal City, Thanh Xuân, Hà Nội — chỉ tiếp khách đặt lịch hẹn trước (Hotline/Zalo: 0935.058.688).',
     ],
     sections: [
       {
@@ -852,7 +852,7 @@ export const SEO_ARTICLES: SeoArticle[] = [
       {
         question: 'Tôi muốn đặt lịch gặp trực tiếp Thầy Tôn tại Hà Nội hoặc xem Online 1-1 qua Video Call thì liên hệ thế nào?',
         answer:
-          'Quý đương số vui lòng gọi điện hoặc nhắn tin qua Zalo số 0935.058.688 để đặt lịch hẹn trước. Phòng xem trực tiếp của Thầy Tôn đặt tại R2B 2219, Khu đô thị Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội.',
+          'Quý đương số vui lòng gọi điện hoặc nhắn tin qua Zalo số 0935.058.688 để đặt lịch hẹn trước. Buổi đàm đạo trực tiếp 1-1 cùng Thầy Tôn diễn ra tại khu vực Khu đô thị Royal City, Thanh Xuân, Hà Nội (chỉ tiếp khách hẹn trước — địa chỉ chi tiết được gửi riêng qua Zalo sau khi xác nhận lịch).',
       },
     ],
     primaryCtaText: 'Lập Lá Số Trải Nghiệm Phương Pháp Thầy Tôn (0đ)',

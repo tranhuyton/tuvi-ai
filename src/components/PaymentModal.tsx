@@ -953,6 +953,10 @@ export default function PaymentModal({
                   </div>
                 )}
               </div>
+
+              <p className="text-[11px] text-slate-400/90 leading-relaxed text-center px-1">
+                Miễn trừ trách nhiệm: Nội dung luận giải và hỏi đáp trên hệ thống mang tính nghiên cứu văn hóa Á Đông, chiêm nghiệm tâm lý và ứng dụng AI tham khảo — không phải bói toán mê tín dị đoan và không thay thế tư vấn chuyên ngành.
+              </p>
             </>
           )}
         </div>

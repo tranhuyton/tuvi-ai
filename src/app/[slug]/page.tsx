@@ -221,7 +221,7 @@ function buildPageJsonLd(page: FunnelPageData) {
         telephone: '+84935058688',
         address: {
           '@type': 'PostalAddress',
-          streetAddress: 'R2B 2219, Royal City, 72 Nguyễn Trãi',
+          streetAddress: 'Khu đô thị Royal City, 72A Nguyễn Trãi',
           addressLocality: 'Thanh Xuân',
           addressRegion: 'Hà Nội',
           addressCountry: 'VN',
@@ -668,7 +668,7 @@ export default async function FunnelSlugPage({
               <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                  Văn phòng: R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội
+                  Khu vực tham vấn: Khu đô thị Royal City, Thanh Xuân, Hà Nội (Đặt lịch hẹn trước qua Zalo)
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-amber-300 font-medium">
                   <PhoneCall className="w-3.5 h-3.5" />
@@ -763,6 +763,10 @@ export default async function FunnelSlugPage({
             </div>
           </div>
         </section>
+
+        <footer className="mt-8 pt-5 border-t border-slate-800/60 text-center text-[11px] text-slate-500 leading-relaxed max-w-3xl mx-auto">
+          Miễn trừ trách nhiệm: Toàn bộ nội dung luận giải Tử Vi, Tướng Pháp, Phong Thủy và Hỏi đáp AI trên hệ thống mang tính chất nghiên cứu văn hóa Á Đông, chiêm nghiệm tâm lý và định hướng tham khảo — hoàn toàn không phải bói toán mê tín dị đoan và không thay thế cho tư vấn y tế, pháp lý hay tài chính chuyên ngành. Mọi quyết định thực tế thuộc quyền tự chủ của quý độc giả.
+        </footer>
       </div>
     </main>
   );

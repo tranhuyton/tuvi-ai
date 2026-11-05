@@ -576,13 +576,16 @@ export async function exportReadingToPdf({
             ☯ Tử Vi Phong Thủy Thầy Tôn
           </div>
           <div style="font-size: 14px; color: #000000; font-weight: 600; display: flex; flex-direction: column; gap: 3px;">
-            <div><strong style="color: #000000; font-weight: 800;">Địa chỉ:</strong> R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội</div>
+            <div><strong style="color: #000000; font-weight: 800;">Khu vực tham vấn:</strong> Khu đô thị Royal City, Thanh Xuân, Hà Nội (Đặt lịch hẹn trước qua Zalo)</div>
             <div><strong style="color: #000000; font-weight: 800;">Hotline/Zalo:</strong> <span style="font-weight: 900; color: #000000;">0935 058 688</span></div>
             <div><strong style="color: #000000; font-weight: 800;">Website:</strong> <span style="font-weight: 900; color: #000000;">https://tuvithayton.vn</span></div>
             <div><strong style="color: #000000; font-weight: 800;">Email:</strong> tranhuyton@gmail.com • thayton@tuvithayton.vn</div>
           </div>
           <div style="font-style: italic; font-size: 12.5px; color: #000000; font-weight: 600; margin-top: 6px; line-height: 1.4;">
             "Mệnh do trời định, Vận do nhân tạo. Thấu triệt bản mệnh là nấc thang đầu tiên để tu tâm tích phúc, xu cát tị hung, kiến tạo cuộc đời an khang thịnh vượng."
+          </div>
+          <div style="font-size: 10.5px; color: #334155; margin-top: 5px; line-height: 1.35;">
+            Miễn trừ trách nhiệm: Tài liệu mang tính chất nghiên cứu văn hóa Á Đông, chiêm nghiệm tâm lý và định hướng tham khảo — không phải bói toán mê tín dị đoan và không thay thế tư vấn chuyên ngành.
           </div>
         </div>
 

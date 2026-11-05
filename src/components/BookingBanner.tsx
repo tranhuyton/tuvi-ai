@@ -51,10 +51,10 @@ export default function BookingBanner() {
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-bold text-amber-300">
-                1. Gặp Trực Tiếp Tại Văn Phòng
+                1. Đàm Đạo Riêng 1-1 Tại Hà Nội
               </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội (Đặt lịch hẹn trước).
+                Khu đô thị Royal City, Thanh Xuân, Hà Nội (Chỉ tiếp khách hẹn trước — địa chỉ chi tiết gửi riêng qua Zalo).
               </p>
             </div>
           </div>
@@ -93,9 +93,9 @@ export default function BookingBanner() {
           <div className="flex items-center justify-center lg:justify-start gap-2 text-xs sm:text-sm text-amber-300/95 text-center lg:text-left">
             <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
-              {t('booking.addressLabel', 'Phòng xem trực tiếp:')}{' '}
+              {t('booking.addressLabel', 'Khu vực tham vấn trực tiếp:')}{' '}
               <strong className="text-slate-100">
-                {t('booking.addressValue', 'R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội')}
+                {t('booking.addressValue', 'Khu đô thị Royal City, Thanh Xuân, Hà Nội (Đặt lịch hẹn trước qua Zalo)')}
               </strong>
             </span>
           </div>

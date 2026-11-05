@@ -2369,6 +2369,12 @@ export default function HomePage() {
             {t('footer.admin')}
           </a>
         </p>
+        <p className="text-slate-500/85 text-[11px] leading-relaxed max-w-3xl mx-auto px-3 pt-1">
+          {t(
+            'footer.disclaimer',
+            'Miễn trừ trách nhiệm: Toàn bộ nội dung luận giải Tử Vi, Tướng Pháp, Phong Thủy và Hỏi đáp AI trên hệ thống mang tính chất nghiên cứu văn hóa Á Đông, chiêm nghiệm tâm lý và định hướng tham khảo — hoàn toàn không phải bói toán mê tín dị đoan và không thay thế cho tư vấn y tế, pháp lý hay tài chính chuyên ngành. Mọi quyết định thực tế thuộc quyền tự chủ của quý độc giả.'
+          )}
+        </p>
       </footer>
     </main>
   );

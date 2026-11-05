@@ -203,9 +203,9 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
     // Booking Banner
     'booking.title': 'Đặt Lịch Xem Tử Vi & Tư Vấn Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn (Online & Offline)',
-    'booking.desc': 'Quý đương số, gia chủ, chủ doanh nghiệp hoặc nhà đầu tư mong muốn được đàm đạo riêng 1-1 cùng Thầy Tôn (Trần Huy Tôn) — trực tiếp tại phòng khách Royal City (Hà Nội), khảo sát thực địa hoặc qua Video Call Quốc tế — để xem Lá số Tử Vi chuyên sâu, soi Diện tướng & Chỉ tay thực chứng, bấm quẻ Dịch và Tư vấn Phong Thủy Nhà Ở, Biệt Thự, Chung Cư, Văn Phòng Kinh Doanh, Xem Ngày Giờ Động Thổ / Nhập Trạch / Khai Trương? Xin vui lòng liên hệ đặt lịch trước.',
-    'booking.addressLabel': 'Phòng xem trực tiếp (Offline):',
-    'booking.addressValue': 'R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội',
+    'booking.desc': 'Quý đương số, gia chủ, chủ doanh nghiệp hoặc nhà đầu tư mong muốn được đàm đạo riêng 1-1 cùng Thầy Tôn (Trần Huy Tôn) — trực tiếp tại khu vực Royal City (Hà Nội, đặt lịch hẹn trước), khảo sát thực địa hoặc qua Video Call Quốc tế — để xem Lá số Tử Vi chuyên sâu, soi Diện tướng & Chỉ tay thực chứng, bấm quẻ Dịch và Tư vấn Phong Thủy Nhà Ở, Biệt Thự, Chung Cư, Văn Phòng Kinh Doanh, Xem Ngày Giờ Động Thổ / Nhập Trạch / Khai Trương? Xin vui lòng liên hệ đặt lịch trước.',
+    'booking.addressLabel': 'Khu vực tham vấn trực tiếp:',
+    'booking.addressValue': 'Khu đô thị Royal City, Thanh Xuân, Hà Nội (Đặt lịch hẹn trước — địa chỉ chi tiết gửi riêng qua Zalo)',
     'booking.callBtn': 'Gọi Đặt Lịch: 0935.058.688',
     'booking.zaloBtn': 'Nhắn Zalo: 0935.058.688',
 
@@ -223,9 +223,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.testimonials': 'Đánh Giá & Cảm Nhận',
     'footer.contact': 'Liên hệ:',
     'footer.email': 'Email:',
-    'footer.addressLabel': 'Địa chỉ:',
-    'footer.addressValue': 'R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân, Hà Nội',
+    'footer.addressLabel': 'Khu vực:',
+    'footer.addressValue': 'Khu đô thị Royal City, Thanh Xuân, Hà Nội (Theo lịch hẹn trước)',
     'footer.copyright': '© {year} Tử Vi & Phong Thủy Thầy Tôn. Kế thừa tinh hoa Dịch học, Tử Vi Đẩu Số & Phong Thủy chính tông — Soi sáng căn duyên, kích hoạt vượng khí, hanh thông bản mệnh.',
+    'footer.disclaimer': 'Miễn trừ trách nhiệm: Toàn bộ nội dung luận giải Tử Vi, Tướng Pháp, Phong Thủy và Hỏi đáp AI trên hệ thống mang tính chất nghiên cứu văn hóa Á Đông, chiêm nghiệm tâm lý và định hướng tham khảo — hoàn toàn không phải bói toán mê tín dị đoan và không thay thế cho tư vấn y tế, pháp lý hay tài chính chuyên ngành. Mọi quyết định thực tế thuộc quyền tự chủ của quý độc giả.',
 
     // Theme
     'theme.btnLabel': 'Giao diện',
@@ -441,8 +442,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Booking Banner
     'booking.title': 'Book a 1-on-1 Zi Wei & Feng Shui Consultation with Master Ton (Online & Offline)',
     'booking.desc': 'Would you like a direct 1-on-1 consultation with Master Ton (In-person in Hanoi, on-site property audit, or Online via Video Call) for Zi Wei Dou Shu, Residential & Corporate Feng Shui, Auspicious Date Selection, Physiognomy, Palmistry, and I-Ching Divination? Please contact us in advance to schedule your session.',
-    'booking.addressLabel': 'In-Person Consultation Venue:',
-    'booking.addressValue': 'R2B 2219, Royal City, 72 Nguyen Trai, Thanh Xuan, Hanoi',
+    'booking.addressLabel': 'In-Person Consultation Area:',
+    'booking.addressValue': 'Royal City, Thanh Xuan, Hanoi (By appointment only — details sent via Zalo)',
     'booking.callBtn': 'Call to Book: +84 93 505 8688',
     'booking.zaloBtn': 'Chat via Zalo / WhatsApp',
 
@@ -460,9 +461,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.testimonials': 'Testimonials & Reviews',
     'footer.contact': 'Contact:',
     'footer.email': 'Email:',
-    'footer.addressLabel': 'Address:',
-    'footer.addressValue': 'R2B 2219, Royal City, 72 Nguyen Trai, Thanh Xuan, Hanoi, Vietnam',
+    'footer.addressLabel': 'Location:',
+    'footer.addressValue': 'Royal City, Thanh Xuan, Hanoi, Vietnam (By appointment only)',
     'footer.copyright': '© {year} Master Ton Astrology. Inheriting millennium-old I-Ching wisdom — Illuminating life paths, unlocking prosperity.',
+    'footer.disclaimer': 'Disclaimer: All Zi Wei Dou Shu, Physiognomy, Feng Shui analyses, and AI-assisted insights on this platform are intended solely for East Asian cultural research, self-reflection, and general reference — strictly free of superstition and not a substitute for professional medical, legal, or financial advice.',
 
     // Theme
     'theme.btnLabel': 'Theme',
@@ -668,8 +670,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Booking Banner
     'booking.title': '预约顿师亲测大谈（线下见面对谈 & 线上1对1视频详批）',
     'booking.desc': '您若渴望由顿师亲自批命（河内线下大谈或线上1对1视频会诊），结合面相、手相、奇门遁甲起卦与全盘大运推演，请提前联络预约。',
-    'booking.addressLabel': '线下亲测会所地址：',
-    'booking.addressValue': '越南河内青春郡阮廌路72号皇家城 (Royal City) R2B栋 2219号',
+    'booking.addressLabel': '河内线下约谈区域：',
+    'booking.addressValue': '越南河内青春郡皇家城 (Royal City)（仅限提前预约，具体地点预约后私信发送）',
     'booking.callBtn': '致电预约：+84 93 505 8688',
     'booking.zaloBtn': 'Zalo / 微信联络顿师',
 
@@ -687,9 +689,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.testimonials': '名家评价与感悟',
     'footer.contact': '咨询热线：',
     'footer.email': '电子邮箱：',
-    'footer.addressLabel': '会所地址：',
-    'footer.addressValue': '越南河内青春郡阮廌路72号皇家城 (Royal City) R2B栋 2219号',
+    'footer.addressLabel': '所在区域：',
+    'footer.addressValue': '越南河内青春郡皇家城 (Royal City)（仅限预约）',
     'footer.copyright': '© {year} 顿师紫微斗数。承继千载易学古法精粹 — 洞悉宿世宿命，开阖康泰坦途。',
+    'footer.disclaimer': '免责声明：本平台所有紫微斗数、相法、风水推演及AI辅助解析仅供东方传统文化学术研究、心理参悟与人生规划参考，绝无封建迷信色彩，亦不构成任何医疗、法律或金融投资之专业意见。',
 
     // Theme
     'theme.btnLabel': '主题',
@@ -895,8 +898,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Booking Banner
     'booking.title': '톤 대사 1:1 심층 상담 예약 (오프라인 대면 & 온라인 화상 대담)',
     'booking.desc': '톤 대사님과 1:1로 직접 마주하여(하노이 오프라인 대면 또는 온라인 화상 통화), 관상과 손금을 살피고 기문둔갑을 포국하여 인생의 운명을 심도 있게 조언받고자 하시는 분은 사전 예약해 주시기 바랍니다.',
-    'booking.addressLabel': '오프라인 대면 상담소 주소:',
-    'booking.addressValue': '베트남 하노이시 타잉쑤언구 응우옌짜이 72 로얄시티 R2B 2219호',
+    'booking.addressLabel': '하노이 대면 상담 지역:',
+    'booking.addressValue': '베트남 하노이시 타잉쑤언구 로얄시티 (사전 예약제 — 상세 위치는 개별 안내)',
     'booking.callBtn': '예약 전화: +84 93 505 8688',
     'booking.zaloBtn': 'Zalo / 카카오 문의: 0935.058.688',
 
@@ -914,9 +917,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.testimonials': '전문가 후기 & 평점',
     'footer.contact': '문의 전화:',
     'footer.email': '이메일:',
-    'footer.addressLabel': '상담소 주소:',
-    'footer.addressValue': '베트남 하노이 타잉쑤언구 응우옌짜이 72 로얄시티 R2B 2219호',
+    'footer.addressLabel': '지역:',
+    'footer.addressValue': '베트남 하노이 타잉쑤언구 로얄시티 (사전 예약제)',
     'footer.copyright': '© {year} 톤 대사 자미두수. 천년 주역과 정통 비전의 계승 — 타고난 운명을 밝히고 형통한 삶을 열어갑니다.',
+    'footer.disclaimer': '면책 조항: 본 시스템의 모든 자미두수, 관상·수상, 풍수 분석 및 AI 상담 내용은 동양 전통문화 연구와 심리적 성찰을 위한 참고 자료일 뿐 미신적 점술이 아니며, 전문적인 의료·법률·재무 자문을 대체하지 않습니다.',
 
     // Theme
     'theme.btnLabel': '테마',
@@ -1122,8 +1126,8 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     // Booking Banner
     'booking.title': 'トン先生 1対1本格鑑定予約（対面面談・オンライン通話）',
     'booking.desc': 'トン先生と直接対面（ハノイ対面相談またはオンラインビデオ通話）し、面相・手相を拝見しながら奇門遁甲や紫微斗数で人生の開運指針を深めたい方は、事前予約をお願いいたします。',
-    'booking.addressLabel': '対面相談室所在地:',
-    'booking.addressValue': 'ベトナム ハノイ市タインスアン区グエンチャイ72 ロイヤルシティ R2B 2219号',
+    'booking.addressLabel': 'ハノイ対面相談エリア:',
+    'booking.addressValue': 'ベトナム ハノイ市タインスアン区 ロイヤルシティ（完全予約制・詳細は個別案内）',
     'booking.callBtn': '予約電話: +84 93 505 8688',
     'booking.zaloBtn': '公式チャット相談: 0935.058.688',
 
@@ -1141,9 +1145,10 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'footer.testimonials': '専門家の推薦・ご感想',
     'footer.contact': 'お問い合わせ電話:',
     'footer.email': 'メールアドレス:',
-    'footer.addressLabel': '鑑定室住所:',
-    'footer.addressValue': 'ベトナム ハノイ市タインスアン区グエンチャイ72 ロイヤルシティ R2B 2219号',
+    'footer.addressLabel': 'エリア:',
+    'footer.addressValue': 'ベトナム ハノイ市タインスアン区 ロイヤルシティ（完全予約制）',
     'footer.copyright': '© {year} トン先生の紫微斗数. 千年の易学と正統秘伝の継承 — 天命を照らし、吉祥なる人生を拓く。',
+    'footer.disclaimer': '免責事項：当サイトの紫微斗数・相法・風水鑑定およびAI解析は、東洋伝統文化の学術研究・自己省察・参考情報として提供されるものであり、迷信的な占いではなく、専門的な医療・法律・金融アドバイスに代わるものではありません。',
 
     // Theme
     'theme.btnLabel': 'テーマ',

@@ -150,7 +150,7 @@ const seoGeoJsonLd = {
       priceRange: '0 VNĐ - 269.000 VNĐ',
       address: {
         '@type': 'PostalAddress',
-        streetAddress: 'R2B 2219, Royal City, 72 Nguyễn Trãi, Thanh Xuân',
+        streetAddress: 'Khu đô thị Royal City, 72A Nguyễn Trãi, Thanh Xuân',
         addressLocality: 'Hà Nội',
         addressCountry: 'VN',
       },
