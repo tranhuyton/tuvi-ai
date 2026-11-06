@@ -410,11 +410,18 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
 
                 {/* Bảng Năm - Tháng - Ngày - Giờ */}
                 <div className="space-y-0.5">
+                  <div className="flex items-baseline text-[10px] text-gray-500 font-semibold border-b border-gray-200/80 pb-0.5 mb-0.5">
+                    <span className="w-16 sm:w-18"></span>
+                    <span className="w-12 sm:w-14">{t('chart.solarShort', 'Dương')}</span>
+                    <span className="w-10 sm:w-12">{t('chart.lunarShort', 'Âm')}</span>
+                    <span>Can Chi</span>
+                  </div>
+
                   {/* Năm */}
                   <div className="flex items-baseline">
                     <span className="w-16 sm:w-18 text-black">{t('chart.year', 'Năm:')}</span>
                     <span className="w-12 sm:w-14 font-medium">{duongSo.namDuong}</span>
-                    <span className="w-8 sm:w-10"></span>
+                    <span className="w-10 sm:w-12 text-black">{amLich.namAm}</span>
                     <span className="text-[#003399] font-bold">{tCanChi(namCanChi)}</span>
                   </div>
 
@@ -422,7 +429,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                   <div className="flex items-baseline">
                     <span className="w-16 sm:w-18 text-black">{t('chart.month', 'Tháng:')}</span>
                     <span className="w-12 sm:w-14 font-medium">{duongSo.thangDuong}</span>
-                    <span className="w-8 sm:w-10 text-black">
+                    <span className="w-10 sm:w-12 text-black">
                       {amLich.thangAmGoc}
                       {amLich.isLeap ? ' (N)' : ''}
                     </span>
@@ -433,14 +440,14 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                   <div className="flex items-baseline">
                     <span className="w-16 sm:w-18 text-black">{t('chart.day', 'Ngày:')}</span>
                     <span className="w-12 sm:w-14 font-medium">{duongSo.ngayDuong}</span>
-                    <span className="w-8 sm:w-10 text-black">{amLich.ngayAm}</span>
+                    <span className="w-10 sm:w-12 text-black">{amLich.ngayAm}</span>
                     <span className="text-[#003399] font-bold">{tCanChi(ngayCanChi)}</span>
                   </div>
 
                   {/* Giờ */}
                   <div className="flex items-baseline">
                     <span className="w-16 sm:w-18 text-black">{t('chart.hour', 'Giờ:')}</span>
-                    <span className="w-20 sm:w-22 font-medium truncate pr-1">{gioText}</span>
+                    <span className="w-22 sm:w-26 font-medium truncate pr-1">{gioText}</span>
                     <span className="text-[#003399] font-bold">{tCanChi(gioCanChi)}</span>
                   </div>
                 </div>
