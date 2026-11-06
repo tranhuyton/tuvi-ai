@@ -17,6 +17,8 @@ interface TuViFormProps {
   initialData?: DuLieuDuongSo | null;
   onCancelEdit?: () => void;
   activeVoucher?: ClientVoucherInfo | null;
+  variant?: 'default' | 'van-han';
+  defaultTier?: ServiceTier;
 }
 
 function isHeicFile(file: File): boolean {
@@ -69,10 +71,21 @@ function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<stri
   });
 }
 
-export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onRequireAuth, initialData, onCancelEdit, activeVoucher }: TuViFormProps) {
+export default function TuViForm({
+  onSubmit,
+  isLoading,
+  onOpenSavedCharts,
+  onRequireAuth,
+  initialData,
+  onCancelEdit,
+  activeVoucher,
+  variant = 'default',
+  defaultTier,
+}: TuViFormProps) {
   const { user } = useAuth();
   const { t, tHour, tCanChi } = useLanguage();
   const currentYear = new Date().getFullYear();
+  const isVanHanLanding = variant === 'van-han';
   const [hoTen, setHoTen] = useState(initialData?.hoTen || '');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>(initialData?.gioiTinh || 'Nam');
   const [ngayDuong, setNgayDuong] = useState(initialData?.ngayDuong ?? 15);
@@ -90,7 +103,9 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
   const [isConvertingTay, setIsConvertingTay] = useState(false);
 
   // Lựa chọn gói dịch vụ
-  const [selectedTier, setSelectedTier] = useState<ServiceTier>(initialData?.tier || 'free');
+  const [selectedTier, setSelectedTier] = useState<ServiceTier>(
+    initialData?.tier || defaultTier || (isVanHanLanding ? 'pro' : 'free')
+  );
 
   React.useEffect(() => {
     if (initialData) {
@@ -277,7 +292,11 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
         <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/35 text-[11px] sm:text-xs font-bold text-amber-300 uppercase tracking-wider">
             <Sparkles className="w-3 h-3 text-amber-400" />
-            <span>{t('form.heroBadge', 'Tử Vi Cổ Truyền 108 Sao & Nhân Tướng Học Thực Chứng')}</span>
+            <span>
+              {isVanHanLanding
+                ? 'Bước 1: Nhập Ngày Giờ Sinh & Năm Muốn Giải Mã'
+                : t('form.heroBadge', 'Tử Vi Cổ Truyền 108 Sao & Nhân Tướng Học Thực Chứng')}
+            </span>
           </span>
           <div className="flex items-center gap-2 flex-wrap">
             {onOpenSavedCharts ? (
@@ -293,19 +312,29 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
             ) : null}
           </div>
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif leading-snug">
-          Lập Lá Số Tử Vi Miễn Phí và Bình Giải Trọn Đời Cùng Thầy Tôn
-        </h1>
+        {isVanHanLanding ? (
+          <h2 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif leading-snug">
+            Nhập Thông Tin Đương Số Để Giải Mã 3 Tầng Vận Hạn
+          </h2>
+        ) : (
+          <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif leading-snug">
+            Lập Lá Số Tử Vi Miễn Phí và Bình Giải Trọn Đời Cùng Thầy Tôn
+          </h1>
+        )}
         <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed">
-          {t(
-            'form.desc',
-            'Lập lá số bàn cờ 108 tinh đẩu chuẩn xác theo giờ sinh • Tặng ngay bài bình giải Khởi Nguyên miễn phí • Kết hợp độc quyền Diện Tướng Khuôn Mặt & Thủ Tướng Chỉ Tay từ Thầy Tôn'
-          )}
+          {isVanHanLanding
+            ? 'Hệ thống tự động an 108+ chính phụ tinh theo giờ sinh, xác định chính xác tọa độ Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế và mở khóa bài luận giải chuyên sâu.'
+            : t(
+                'form.desc',
+                'Lập lá số bàn cờ 108 tinh đẩu chuẩn xác theo giờ sinh • Tặng ngay bài bình giải Khởi Nguyên miễn phí • Kết hợp độc quyền Diện Tướng Khuôn Mặt & Thủ Tướng Chỉ Tay từ Thầy Tôn'
+              )}
         </p>
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3 pt-2.5 border-t border-slate-800/70 text-[11px] sm:text-xs text-slate-300 font-medium">
           <div className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2 py-1.5 text-emerald-300">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="truncate">{t('form.trustFree', 'An Sao & Luận Giải 0đ')}</span>
+            <span className="truncate">
+              {isVanHanLanding ? 'Đủ 3 Cung Vận Hạn' : t('form.trustFree', 'An Sao & Luận Giải 0đ')}
+            </span>
           </div>
           <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/25 rounded-lg px-2 py-1.5 text-amber-300">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -462,14 +491,35 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
 
         {/* Năm xem hạn (Mặc định: Năm hiện tại) */}
         <div>
-          <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+          <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
             <label className="block text-sm sm:text-xs uppercase tracking-wider text-slate-300 font-semibold">
               <Calendar className="w-4 h-4 sm:w-3.5 sm:h-3.5 inline mr-1 text-amber-400" />
               {t('form.viewYear', 'Năm xem hạn (Dương lịch)')}
             </label>
-            <span className="text-xs text-amber-400/90 font-medium">
-              {t('form.viewYearDefault', `Mặc định năm ${currentYear}`, { year: currentYear })}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setNamXem(2026)}
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold border transition cursor-pointer ${
+                  namXem === 2026
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
+                    : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/50'
+                }`}
+              >
+                2026 (Bính Ngọ)
+              </button>
+              <button
+                type="button"
+                onClick={() => setNamXem(2027)}
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold border transition cursor-pointer ${
+                  namXem === 2027
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
+                    : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/50'
+                }`}
+              >
+                2027 (Đinh Mùi)
+              </button>
+            </div>
           </div>
           <input
             type="number"
@@ -660,22 +710,28 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Gói Cơ Bản (Miễn Phí) */}
+            {/* Gói Cơ Bản (Miễn Phí) — Đặt trên ở Trang chủ, đặt gọn phía dưới ở Landing Page Vận Hạn */}
             <div
               onClick={() => setSelectedTier('free')}
-              className={`relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+              className={`${isVanHanLanding ? 'order-3 sm:col-span-2 p-3.5' : 'p-4 sm:p-4'} relative rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'free'
                   ? 'bg-slate-800/95 border-emerald-400 ring-2 ring-emerald-400 shadow-md shadow-emerald-500/15'
                   : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 opacity-85 hover:opacity-100'
               }`}
             >
-              <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
-                {t('form.freeBadge', '🎁 Trải Nghiệm Miễn Phí')}
-              </div>
+              {!isVanHanLanding && (
+                <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
+                  {t('form.freeBadge', '🎁 Trải Nghiệm Miễn Phí')}
+                </div>
+              )}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-base text-slate-100 flex items-center gap-1.5 font-serif">
-                    <span>{t('form.freeTitle', '📜 Bản Khởi Nguyên (Miễn Phí)')}</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-1.5 font-serif">
+                    <span>
+                      {isVanHanLanding
+                        ? '📜 Hoặc lập lá số & xem thử Bản Khởi Nguyên cơ bản'
+                        : t('form.freeTitle', '📜 Bản Khởi Nguyên (Miễn Phí)')}
+                    </span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                     {t('form.freePrice', '0 VNĐ')}
@@ -688,15 +744,17 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                   )}
                 </p>
               </div>
-              <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-emerald-300/90 font-medium flex items-center justify-between">
-                <span>{t('form.freeQnA', '✓ An sao & Bình giải 0đ • Hỏi thêm: 49k/2 câu')}</span>
-              </div>
+              {!isVanHanLanding && (
+                <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-emerald-300/90 font-medium flex items-center justify-between">
+                  <span>{t('form.freeQnA', '✓ An sao & Bình giải 0đ • Hỏi thêm: 49k/2 câu')}</span>
+                </div>
+              )}
             </div>
 
             {/* Gói Chuyên Sâu (Bản Pro) */}
             <div
               onClick={() => setSelectedTier('pro')}
-              className={`relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+              className={`${isVanHanLanding ? 'order-1 sm:col-span-2' : ''} relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'pro'
                   ? 'bg-gradient-to-b from-amber-950/40 to-slate-900 border-amber-400 ring-2 ring-amber-400 shadow-lg shadow-amber-500/20'
                   : 'bg-slate-950/60 border-slate-800 hover:border-amber-500/40 opacity-85 hover:opacity-100'
@@ -723,10 +781,12 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
                   </span>
                 </div>
                 <p className="text-sm sm:text-xs text-slate-200 leading-relaxed">
-                  {t(
-                    'form.proDesc',
-                    'Đại Pháp Bí Truyền Chuyên Sâu (~2.500 từ, chi tiết gấp 2,5 lần). Mổ xẻ Tứ Trụ (Mệnh - Thân - Tài - Quan - Phu Thê), kết hợp soi Ảnh Khuôn Mặt & Chỉ Tay thực tế, Đại Vận 10 năm & Vận khí 4 Mùa.'
-                  )}
+                  {isVanHanLanding
+                    ? 'Luận chuyên sâu (~2.500 từ): Giải mã trọn vẹn 3 cung Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế, Tứ Trụ (Mệnh - Tài - Quan - Phu Thê), vận khí 4 Mùa kết hợp soi Ảnh Khuôn Mặt & Chỉ Tay thực tế.'
+                    : t(
+                        'form.proDesc',
+                        'Đại Pháp Bí Truyền Chuyên Sâu (~2.500 từ, chi tiết gấp 2,5 lần). Mổ xẻ Tứ Trụ (Mệnh - Thân - Tài - Quan - Phu Thê), kết hợp soi Ảnh Khuôn Mặt & Chỉ Tay thực tế, Đại Vận 10 năm & Vận khí 4 Mùa.'
+                      )}
                 </p>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-amber-400 font-medium flex items-center justify-between">
@@ -734,10 +794,10 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               </div>
             </div>
 
-            {/* Gói Chuyên Gia (Bản Expert - Gemini 4 Argon) */}
+            {/* Gói Chuyên Gia (Bản Expert) */}
             <div
               onClick={() => setSelectedTier('expert')}
-              className={`sm:col-span-2 relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+              className={`${isVanHanLanding ? 'order-2' : ''} sm:col-span-2 relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'expert'
                   ? 'bg-gradient-to-br from-purple-950/60 via-indigo-950/50 to-slate-900 border-purple-400 ring-2 ring-purple-400 shadow-lg shadow-purple-500/25'
                   : 'bg-slate-950/70 border-purple-500/30 hover:border-purple-400/60 opacity-90 hover:opacity-100'
