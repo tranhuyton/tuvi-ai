@@ -1468,7 +1468,18 @@ export default function HomePage() {
     try {
       const { chart, chatMessages, error } = await getChartDetails(chartId);
       if (error || !chart) {
-        alert('Không thể tải lá số: ' + (error || 'Không tìm thấy'));
+        if (user) {
+          const { charts } = await getUserCharts();
+          if (charts && charts.length > 0 && charts[0].id !== chartId) {
+            await handleSelectSavedChart(charts[0].id);
+            return;
+          }
+        }
+        try {
+          localStorage.removeItem('tuvi_active_session');
+          window.history.replaceState(null, '', '/');
+        } catch {}
+        alert('Lá số này đã được xóa hoặc không còn tồn tại.');
         return;
       }
 
@@ -1969,6 +1980,17 @@ export default function HomePage() {
                           readingHtml: chart.reading_html || undefined,
                         }).catch(console.error);
                       }
+                    }
+                  } else {
+                    // Lá số trong phiên lưu cũ đã bị xóa trên DB -> tự động chuyển sang lá số hiện có mới nhất
+                    try {
+                      localStorage.removeItem('tuvi_active_session');
+                    } catch {}
+                    const { charts } = await getUserCharts();
+                    if (charts && charts.length > 0) {
+                      await handleSelectSavedChart(charts[0].id);
+                    } else {
+                      handleReset();
                     }
                   }
                 })
