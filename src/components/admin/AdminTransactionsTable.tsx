@@ -144,12 +144,16 @@ export default function AdminTransactionsTable({
     setIsExportingPdfAdmin(true);
     setAdminPdfProgressText('Đang tạo PDF...');
     try {
-      const resolvedLaSo = previewChart.laso_data?.cungs
-        ? previewChart.laso_data
-        : lapLaSoTuVi(
-            { ...previewChart.duong_so_data, anhMat: undefined, anhTay: undefined },
-            previewChart.duong_so_data?.namXem || 2026
-          );
+      const resolvedLaSo = previewChart.duong_so_data
+        ? {
+            ...lapLaSoTuVi(
+              { ...previewChart.duong_so_data, anhMat: undefined, anhTay: undefined },
+              previewChart.duong_so_data?.namXem || 2026
+            ),
+            tier: previewChart.duong_so_data.tier || previewChart.laso_data?.tier,
+            quota: previewChart.laso_data?.quota,
+          }
+        : previewChart.laso_data;
       await exportReadingToPdf({
         duongSo: previewChart.duong_so_data,
         laSo: resolvedLaSo,

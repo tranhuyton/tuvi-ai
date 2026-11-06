@@ -2,7 +2,8 @@
 
 import React, { useState, ChangeEvent } from 'react';
 import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
-import { GIO_ARR } from '@/lib/tuvi/constants';
+import { GIO_ARR, CAN_ARR, CHI_ARR } from '@/lib/tuvi/constants';
+import { solar2Lunar, isValidSolarDate } from '@/lib/tuvi/lunar';
 import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, Gem, PhoneCall, BookOpen, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -70,7 +71,7 @@ function compressImage(blob: Blob, maxWidth = 800, quality = 0.65): Promise<stri
 
 export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onRequireAuth, initialData, onCancelEdit, activeVoucher }: TuViFormProps) {
   const { user } = useAuth();
-  const { t, tHour } = useLanguage();
+  const { t, tHour, tCanChi } = useLanguage();
   const currentYear = new Date().getFullYear();
   const [hoTen, setHoTen] = useState(initialData?.hoTen || '');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>(initialData?.gioiTinh || 'Nam');
@@ -179,10 +180,59 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
   const onSubmitRef = React.useRef(onSubmit);
   onSubmitRef.current = onSubmit;
 
+  const lunarPreview = React.useMemo(() => {
+    const d = Number(ngayDuong);
+    const m = Number(thangDuong);
+    const y = Number(namDuong);
+    if (!d || !m || !y || y < 1800 || y > 2200 || m < 1 || m > 12) {
+      return { valid: false, error: 'Vui lòng nhập ngày, tháng, năm hợp lệ (1900 - 2100).' };
+    }
+    if (!isValidSolarDate(d, m, y)) {
+      const maxDay = new Date(y, m, 0).getDate();
+      return {
+        valid: false,
+        error: `Ngày ${d}/${m}/${y} Dương lịch không tồn tại (Tháng ${m}/${y} chỉ có ${maxDay} ngày).`,
+      };
+    }
+    let nd = d;
+    let td = m;
+    let ny = y;
+    const isLateTy = gioSinhVal === '0_23';
+    if (isLateTy) {
+      const dim = new Date(ny, td, 0).getDate();
+      if (nd < dim) nd++;
+      else {
+        nd = 1;
+        td++;
+        if (td > 12) {
+          td = 1;
+          ny++;
+        }
+      }
+    }
+    const [ngayAm, thangAm, namAm, isLeap] = solar2Lunar(nd, td, ny, 7.0);
+    const canIdx = (namAm + 6) % 10;
+    const chiIdx = (namAm + 8) % 12;
+    const namCanChi = `${CAN_ARR[canIdx]} ${CHI_ARR[chiIdx]}`;
+    return {
+      valid: true,
+      ngayAm,
+      thangAm,
+      namAm,
+      isLeap,
+      namCanChi,
+      isLateTy,
+    };
+  }, [ngayDuong, thangDuong, namDuong, gioSinhVal]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!hoTen.trim()) {
       alert('Vui lòng nhập họ và tên đương số!');
+      return;
+    }
+    if (!lunarPreview.valid) {
+      alert(lunarPreview.error || 'Ngày tháng năm sinh Dương lịch không hợp lệ!');
       return;
     }
 
@@ -393,6 +443,21 @@ export default function TuViForm({ onSubmit, isLoading, onOpenSavedCharts, onReq
               </span>
             </div>
           </div>
+          {lunarPreview.valid ? (
+            <p className="mt-2 text-xs text-amber-300/95 bg-amber-500/10 border border-amber-500/25 rounded-lg px-3 py-1.5 font-medium">
+              🌙 {t('form.lunar', 'Âm lịch')}:{' '}
+              <strong>
+                {lunarPreview.ngayAm}/{lunarPreview.thangAm}
+                {lunarPreview.isLeap ? ' (Nhuận)' : ''}/{lunarPreview.namAm}
+              </strong>{' '}
+              • Năm <strong>{tCanChi(lunarPreview.namCanChi!)}</strong>
+              {lunarPreview.isLateTy ? ' (Tính sang ngày hôm sau do Giờ Tý Dạ 23h-24h)' : ''}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-red-300 bg-red-500/15 border border-red-500/35 rounded-lg px-3 py-1.5 font-medium">
+              ⚠️ {lunarPreview.error}
+            </p>
+          )}
         </div>
 
         {/* Năm xem hạn (Mặc định: Năm hiện tại) */}

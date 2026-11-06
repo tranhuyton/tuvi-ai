@@ -1844,7 +1844,19 @@ export default function HomePage() {
                       chart.reading_html.includes('thầy đang bận chút xíu');
 
                     if (!isBrokenDbReading && chart.reading_html) {
-                      setReadingHtml(cleanReadingHtml(chart.reading_html));
+                      const cleanedDbReading = cleanReadingHtml(chart.reading_html);
+                      setReadingHtml(cleanedDbReading);
+                      try {
+                        localStorage.setItem(
+                          'tuvi_active_session',
+                          JSON.stringify({
+                            ...session,
+                            userId: user.id,
+                            laSo: activeLaSo,
+                            readingHtml: cleanedDbReading,
+                          })
+                        );
+                      } catch {}
                     } else if (isBrokenDbReading) {
                       setReadingHtml(undefined);
                     }
