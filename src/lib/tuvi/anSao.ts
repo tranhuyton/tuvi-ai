@@ -1028,24 +1028,24 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
   } = tamHan;
 
   if (cungLuuThaiTue || cungLuuNienDaiHan || cungTieuVan) {
-    res += `\n=== KIẾN TRÚC ĐẠI VẬN & TAM HẠN NĂM ${namXem} (${namXemCanChi}) [CHÍNH XÁC 100% - CẤM NHẦM LẪN] ===\n`;
+    res += `\n=== TỌA ĐỘ ĐẠI VẬN & 3 CUNG HẠN NĂM ${namXem} (${namXemCanChi}) [CHÍNH XÁC 100% - CẤM NHẦM LẪN] ===\n`;
     if (cungDaiVan && startAge !== undefined && endAge !== undefined) {
-      res += `0. ĐẠI VẬN 10 NĂM HIỆN TẠI (${startAge} - ${endAge} tuổi): Đóng tại ${daiVanCoordLabel}.\n`;
+      res += `- ĐẠI VẬN 10 NĂM HIỆN TẠI (${startAge} - ${endAge} tuổi): Đóng tại ${daiVanCoordLabel}.\n`;
     } else {
-      res += `0. ĐẠI VẬN 10 NĂM: Đang ở giai đoạn Đồng Hạn (trước tuổi vào Đại vận đầu tiên).\n`;
-    }
-    if (cungLuuThaiTue) {
-      res += `1. CUNG LƯU THÁI TUẾ (Trọng số 50% — Thiên Thời / Bối cảnh ngoại cảnh & Kết quả thực tế): Đóng tại ${luuThaiTueCoordLabel} (nơi L.Thái Tuế tọa thủ).\n`;
-    }
-    if (cungLuuNienDaiHan) {
-      res += `2. CUNG LƯU NIÊN ĐẠI HẠN [LN. Đại hạn] (Trọng số 30% — Địa Lợi / Nền tảng chịu lực trung hạn & Lĩnh vực Đại vận dồn lực): Đóng tại ${lndhCoordLabel}${buocNhayMoTa ? ` — ${buocNhayMoTa}` : ''}.\n`;
+      res += `- ĐẠI VẬN 10 NĂM: Đang ở giai đoạn Đồng Hạn (trước tuổi vào Đại vận đầu tiên).\n`;
     }
     if (cungTieuVan) {
-      res += `3. CUNG TIỂU VẬN / TIỂU HẠN (Trọng số 20% — Nhân Hòa / Nội tâm, mong cầu chủ quan & ngòi nổ tâm lý): Đóng tại ${tieuVanCoordLabel} (nơi ghi "${cungTieuVan.tieuVan}" trên lá số).\n`;
+      res += `- CUNG TIỂU HẠN (phản ánh tâm tư, suy nghĩ, mong muốn bên trong của đương số trong năm): Đóng tại ${tieuVanCoordLabel} (nơi ghi "${cungTieuVan.tieuVan}" trên lá số).\n`;
     }
-    res += `(QUY TẮC TỌA ĐỘ NGHIÊM NGẶT: Ba khái niệm Lưu Thái Tuế [${cungLuuThaiTue?.chi || '—'}], LN. Đại hạn [${cungLuuNienDaiHan?.chi || '—'}] và Tiểu Hạn [${cungTieuVan?.chi || '—'}] có công thức hoàn toàn riêng biệt — TUYỆT ĐỐI KHÔNG GỘP HOẶC GỌI NHẦM TÊN CUNG NÀY SANG CUNG KHÁC!).\n`;
+    if (cungLuuNienDaiHan) {
+      res += `- CUNG LƯU NIÊN ĐẠI HẠN [LN.Đại Hạn] (điểm rơi của Đại vận 10 năm vào năm nay, chỉ ra lĩnh vực trọng tâm chịu tác động của mạch vận lớn): Đóng tại ${lndhCoordLabel}${buocNhayMoTa ? ` — ${buocNhayMoTa}` : ''}.\n`;
+    }
+    if (cungLuuThaiTue) {
+      res += `- CUNG LƯU THÁI TUẾ (phản ánh hoàn cảnh bên ngoài, biến chuyển và kết quả sự việc thực tế trong năm): Đóng tại ${luuThaiTueCoordLabel} (nơi L.Thái Tuế tọa thủ).\n`;
+    }
+    res += `(QUY TẮC TỌA ĐỘ NGHIÊM NGẶT: Ba cung Tiểu Hạn [${cungTieuVan?.chi || '—'}], Lưu Niên Đại Hạn [${cungLuuNienDaiHan?.chi || '—'}] và Lưu Thái Tuế [${cungLuuThaiTue?.chi || '—'}] có vị trí riêng biệt — TUYỆT ĐỐI KHÔNG GỘP HOẶC GỌI NHẦM TÊN CUNG NÀY SANG CUNG KHÁC!).\n`;
     if (triggers.length > 0) {
-      res += `* TÍN HIỆU TRÙNG PHÙNG & ĐIỂM KÍCH NỔ ĐẶC BIỆT NĂM ${namXem} (Bắt buộc phân tích nhấn mạnh):\n`;
+      res += `* LƯU Ý ĐẶC BIỆT GIỮA CÁC CUNG HẠN NĂM ${namXem}:\n`;
       triggers.forEach((tr) => {
         res += `  - ${tr}\n`;
       });

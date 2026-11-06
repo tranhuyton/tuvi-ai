@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
     } = laSo;
     const cungDataStr = buildCungDataPrompt(laSo);
 
-    // Tính chính xác Đại Vận & Tam Hạn năm xem (Lưu Thái Tuế 50% - LN. Đại hạn 30% - Tiểu Hạn 20%)
+    // Tính chính xác Đại Vận & 3 cung hạn năm xem (Tiểu Hạn - Lưu Niên Đại Hạn - Lưu Thái Tuế)
     const tamHan = computeTamHanAnalysis(laSo);
     let daiVanInfo = '';
     if (tamHan.cungDaiVan && tamHan.startAge !== undefined && tamHan.endAge !== undefined) {
@@ -270,7 +270,7 @@ export async function POST(req: NextRequest) {
       daiVanInfo = `Đang ở giai đoạn Đồng Hạn (${tuoiAmXem} tuổi Âm). `;
     }
 
-    const tieuVanInfo = `Tam Hạn năm ${laSo.namXem || ''} (${namXemCanChi}): [1] Lưu Thái Tuế (50% - Kết quả thực tế) tại ${tamHan.luuThaiTueCoordLabel || '—'}; [2] LN. Đại hạn (30% - Nền tảng chịu lực) tại ${tamHan.lndhCoordLabel || '—'}; [3] Tiểu Hạn (20% - Tâm lý chủ quan) tại ${tamHan.tieuVanCoordLabel || '—'} — tuyệt đối phân biệt rành mạch 3 cung này! `;
+    const tieuVanInfo = `Ba cung hạn năm ${laSo.namXem || ''} (${namXemCanChi}): Cung Tiểu Hạn (tâm tư, mong muốn bên trong) tại ${tamHan.tieuVanCoordLabel || '—'}; Cung Lưu Niên Đại Hạn (điểm rơi của Đại vận 10 năm vào năm nay) tại ${tamHan.lndhCoordLabel || '—'}; Cung Lưu Thái Tuế (hoàn cảnh thực tế bên ngoài) tại ${tamHan.luuThaiTueCoordLabel || '—'} — phân biệt rành mạch 3 cung này, diễn đạt giản dị dễ hiểu, không ghi các con số phần trăm hay nhãn Bước 1/2/3! `;
 
     let contextChat = '';
     if (thongTinThem && thongTinThem.trim()) {
