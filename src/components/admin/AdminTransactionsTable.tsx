@@ -144,9 +144,15 @@ export default function AdminTransactionsTable({
     setIsExportingPdfAdmin(true);
     setAdminPdfProgressText('Đang tạo PDF...');
     try {
+      const resolvedLaSo = previewChart.laso_data?.cungs
+        ? previewChart.laso_data
+        : lapLaSoTuVi(
+            { ...previewChart.duong_so_data, anhMat: undefined, anhTay: undefined },
+            previewChart.duong_so_data?.namXem || 2026
+          );
       await exportReadingToPdf({
         duongSo: previewChart.duong_so_data,
-        laSo: previewChart.laso_data,
+        laSo: resolvedLaSo,
         readingHtml: previewReadingHtml,
         tier: previewChart.duong_so_data?.tier || 'free',
         chartTitle: previewChart.title,
@@ -965,9 +971,10 @@ export default function AdminTransactionsTable({
                         </div>
                       )}
                     </div>
-                    {(previewChart.duong_so_data?.anhMat || previewChart.duong_so_data?.anhTay) && (
+                    {(previewChart.duong_so_data?.anhMat?.startsWith('data:') ||
+                      previewChart.duong_so_data?.anhTay?.startsWith('data:')) && (
                       <div className="flex items-center gap-4">
-                        {previewChart.duong_so_data?.anhMat && (
+                        {previewChart.duong_so_data?.anhMat?.startsWith('data:') && (
                           <div className="flex flex-col items-center gap-1">
                             <img
                               src={previewChart.duong_so_data.anhMat}
@@ -977,7 +984,7 @@ export default function AdminTransactionsTable({
                             <span className="text-[10px] text-emerald-300 font-medium">📸 Ảnh Diện Tướng</span>
                           </div>
                         )}
-                        {previewChart.duong_so_data?.anhTay && (
+                        {previewChart.duong_so_data?.anhTay?.startsWith('data:') && (
                           <div className="flex flex-col items-center gap-1">
                             <img
                               src={previewChart.duong_so_data.anhTay}
