@@ -76,13 +76,38 @@ function generateRandomSuffix(length = 6): string {
 }
 
 /**
- * Kiểm tra xem khách hàng đã có bất kỳ đơn hàng PAID nào chưa (Chốt chặn Stop-on-Purchase)
+ * Kiểm tra xem lá số mục tiêu (hoặc tài khoản nếu không gắn chartId) đã có đơn hàng PAID chưa (Chốt chặn Stop-on-Purchase)
  */
 export async function hasUserPurchasedAnything(
   userId?: string | null,
-  email?: string | null
+  email?: string | null,
+  chartId?: string | null
 ): Promise<boolean> {
   try {
+    // Nếu voucher được cấp riêng cho một lá số cụ thể (ví dụ lá số Trần Đức Thọ), chỉ chặn khi chính lá số đó đã được mua / nâng cấp
+    if (chartId) {
+      const { data: paidForChart } = await adminSupabase
+        .from('tuvi_orders')
+        .select('id')
+        .eq('chart_id', chartId)
+        .eq('status', 'PAID')
+        .in('payment_type', ['reading_vip', 'reading_expert', 'upgrade_expert'])
+        .limit(1);
+      if (paidForChart && paidForChart.length > 0) return true;
+
+      const { data: targetChart } = await adminSupabase
+        .from('tuvi_charts')
+        .select('id, duong_so_data, laso_data')
+        .eq('id', chartId)
+        .maybeSingle();
+
+      if (targetChart) {
+        const cTier = targetChart.duong_so_data?.tier || targetChart.laso_data?.tier || 'free';
+        if (cTier === 'pro' || cTier === 'expert') return true;
+        return false;
+      }
+    }
+
     if (userId) {
       const { data: byUser } = await adminSupabase
         .from('tuvi_orders')
@@ -228,8 +253,8 @@ export async function activateAndValidateVoucher(
       return { valid: false, reason: row.status };
     }
 
-    // Chốt chặn Stop-on-Purchase: Nếu khách đã mua gói bất kỳ rồi thì tự động vô hiệu hóa mã
-    const alreadyBought = await hasUserPurchasedAnything(row.user_id, row.email);
+    // Chốt chặn Stop-on-Purchase: Nếu lá số mục tiêu (hoặc tài khoản nếu không gắn chart_id) đã mua rồi thì tự động vô hiệu hóa mã
+    const alreadyBought = await hasUserPurchasedAnything(row.user_id, row.email, row.chart_id);
     if (alreadyBought) {
       await adminSupabase
         .from('tuvi_vouchers')

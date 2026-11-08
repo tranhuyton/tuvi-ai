@@ -154,14 +154,22 @@ async function runDripJob(req: NextRequest) {
     });
   }
 
-  // 2. Lấy toàn bộ đơn hàng PAID, danh sách Tester, lịch sử Email đã gửi, và Lá số của các ứng viên
+  // 2. Lấy toàn bộ đơn hàng PAID & PENDING, danh sách Tester, lịch sử Email đã gửi, và Lá số của các ứng viên
   const [
     { data: paidOrders },
+    { data: pendingOrders },
     { data: testers },
     { data: emailLogs },
     { data: candidateCharts },
   ] = await Promise.all([
-    adminSupabase.from('tuvi_orders').select('user_id, email').eq('status', 'PAID'),
+    adminSupabase.from('tuvi_orders').select('user_id, email, chart_id').eq('status', 'PAID'),
+    adminSupabase
+      .from('tuvi_orders')
+      .select('user_id, chart_id, created_at')
+      .eq('status', 'PENDING')
+      .in('payment_type', ['reading_vip', 'reading_expert'])
+      .in('user_id', candidateIds)
+      .order('created_at', { ascending: true }),
     adminSupabase.from('tuvi_testers').select('email'),
     adminSupabase
       .from('tuvi_email_logs')
@@ -176,9 +184,11 @@ async function runDripJob(req: NextRequest) {
 
   const paidUserIds = new Set<string>();
   const paidEmails = new Set<string>();
+  const paidChartIds = new Set<string>();
   for (const o of paidOrders || []) {
     if (o.user_id) paidUserIds.add(o.user_id);
     if (o.email) paidEmails.add(o.email.trim().toLowerCase());
+    if (o.chart_id) paidChartIds.add(o.chart_id);
   }
 
   const testerEmails = new Set<string>(
@@ -197,13 +207,41 @@ async function runDripJob(req: NextRequest) {
   }
 
   const usersWithUpgradedChart = new Set<string>();
+  const upgradedNamesByUser = new Map<string, Set<string>>();
   const latestFreeChartByUser = new Map<string, any>();
+  const freeChartById = new Map<string, any>();
   for (const c of candidateCharts || []) {
     const tier = c.duong_so_data?.tier || c.laso_data?.tier || 'free';
-    if (tier === 'pro' || tier === 'expert') {
+    const normName = (c.duong_so_data?.hoTen || '').trim().toLowerCase();
+    if (tier === 'pro' || tier === 'expert' || paidChartIds.has(c.id)) {
       usersWithUpgradedChart.add(c.user_id);
-    } else if (!latestFreeChartByUser.has(c.user_id)) {
-      latestFreeChartByUser.set(c.user_id, c);
+      if (normName) {
+        if (!upgradedNamesByUser.has(c.user_id)) {
+          upgradedNamesByUser.set(c.user_id, new Set());
+        }
+        upgradedNamesByUser.get(c.user_id)!.add(normName);
+      }
+    } else {
+      freeChartById.set(c.id, c);
+      if (!latestFreeChartByUser.has(c.user_id)) {
+        latestFreeChartByUser.set(c.user_id, c);
+      }
+    }
+  }
+
+  // Nếu khách đã mua 1 lá số nhưng sau đó lập thêm lá số người thân (Bản Miễn Phí) và từng bấm mở QR (PENDING) mà chưa thanh toán (ví dụ: Trần Đức Thọ) -> Vẫn gửi mã ưu đãi cho lá số đang chờ đó!
+  const unpaidPendingFreeChartByUser = new Map<string, any>();
+  for (const po of pendingOrders || []) {
+    if (po.user_id && po.chart_id && freeChartById.has(po.chart_id)) {
+      const candChart = freeChartById.get(po.chart_id);
+      const candName = (candChart?.duong_so_data?.hoTen || '').trim().toLowerCase();
+      const alreadyUpgradedNames = upgradedNamesByUser.get(po.user_id);
+      if (candName && alreadyUpgradedNames && alreadyUpgradedNames.has(candName)) {
+        continue;
+      }
+      if (!unpaidPendingFreeChartByUser.has(po.user_id)) {
+        unpaidPendingFreeChartByUser.set(po.user_id, candChart);
+      }
     }
   }
 
@@ -219,11 +257,16 @@ async function runDripJob(req: NextRequest) {
 
   for (const profile of profileMap.values()) {
     const cleanEmail = profile.email.trim().toLowerCase();
-
-    // Chốt chặn Stop-on-Purchase kép: Đã có đơn PAID hoặc đã có lá số Pro/Expert hoặc là Tester -> Bỏ qua ngay
-    if (paidUserIds.has(profile.id) || paidEmails.has(cleanEmail)) continue;
-    if (usersWithUpgradedChart.has(profile.id)) continue;
     if (testerEmails.has(cleanEmail)) continue;
+
+    const unpaidPendingChart = unpaidPendingFreeChartByUser.get(profile.id) || null;
+    const hasBoughtBefore =
+      paidUserIds.has(profile.id) ||
+      paidEmails.has(cleanEmail) ||
+      usersWithUpgradedChart.has(profile.id);
+
+    // Chốt chặn Stop-on-Purchase: Nếu đã mua rồi và KHÔNG có lá số Miễn Phí nào khác đang chờ thanh toán QR (PENDING) -> Bỏ qua
+    if (hasBoughtBefore && !unpaidPendingChart) continue;
 
     const createdMs = new Date(profile.created_at).getTime();
     if (isNaN(createdMs)) continue;
@@ -274,7 +317,7 @@ async function runDripJob(req: NextRequest) {
         profile,
         stage: targetStage,
         ageHours: Number(ageHours.toFixed(2)),
-        chart: latestFreeChartByUser.get(profile.id) || null,
+        chart: unpaidPendingChart || latestFreeChartByUser.get(profile.id) || null,
       });
     }
   }
