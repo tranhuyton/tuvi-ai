@@ -2428,19 +2428,19 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       <footer className="max-w-[1060px] w-full mx-auto text-center text-xs text-slate-400 py-5 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-5 text-xs text-slate-400 font-medium flex-wrap">
           <a href="/khoa-hoc" className="text-amber-300 hover:text-amber-200 font-semibold transition">
-            Khóa Học Tử Vi
+            {t('nav.course', 'Khóa Học Tử Vi')}
           </a>
           <span className="text-slate-700">•</span>
           <a href="/thay-ton" className="hover:text-amber-400 transition">
-            Hồ Sơ Thầy Tôn
+            {t('nav.about', 'Hồ Sơ Thầy Tôn')}
           </a>
           <span className="text-slate-700">•</span>
           <a href="/phong-thuy" className="hover:text-amber-400 transition">
-            Phong Thủy Cải Vận
+            {t('about.btnFengShui', 'Phong Thủy Cải Vận')}
           </a>
           <span className="text-slate-700">•</span>
           <a href="/bai-viet" className="hover:text-amber-400 transition">
-            Cẩm Nang Tử Vi
+            {t('nav.guide', 'Cẩm Nang Tử Vi')}
           </a>
           <span className="text-slate-700">•</span>
           <a

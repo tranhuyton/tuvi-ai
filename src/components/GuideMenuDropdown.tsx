@@ -13,11 +13,13 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { translateFunnelPageTitle } from '@/lib/i18n/homeFunnelData';
 
 export default function GuideMenuDropdown() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const tp = (url: string, fallbackVi: string) => translateFunnelPageTitle(url, fallbackVi, language);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -97,7 +99,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-amber-300 hover:bg-slate-800/80 transition"
                   >
-                    • Bản Chuyên Sâu Pro (119.000đ)
+                    • {tp('/luan-giai-tu-vi-chuyen-sau', 'Bản Chuyên Sâu Pro (119.000đ)')}
                   </Link>
                 </li>
                 <li>
@@ -106,7 +108,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-amber-300 hover:bg-slate-800/80 transition"
                   >
-                    • Bản Chuyên Gia 12 Cung (269.000đ)
+                    • {tp('/luan-giai-tu-vi-chuyen-gia', 'Bản Chuyên Gia 12 Cung (269.000đ)')}
                   </Link>
                 </li>
                 <li>
@@ -115,7 +117,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-amber-300 hover:bg-slate-800/80 transition"
                   >
-                    • Hỏi Đáp Tử Vi Cùng AI Thầy Tôn
+                    • {tp('/hoi-dap-tu-vi-ai', 'Hỏi Đáp Tử Vi Cùng AI Thầy Tôn')}
                   </Link>
                 </li>
                 <li>
@@ -124,7 +126,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-amber-300 hover:bg-slate-800/80 transition"
                   >
-                    • Đặt Lịch Xem Trực Tiếp 1-1
+                    • {tp('/dat-lich-xem-tu-vi', 'Đặt Lịch Xem Trực Tiếp 1-1')}
                   </Link>
                 </li>
                 <li>
@@ -133,7 +135,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-amber-300 hover:bg-slate-800/80 transition"
                   >
-                    • Định Hướng Học Tập &amp; Nghề Cho Con
+                    • {tp('/dinh-huong-hoc-tap-nghe-nghiep-cho-con', 'Định Hướng Học Tập & Nghề Cho Con')}
                   </Link>
                 </li>
                 <li>
@@ -142,7 +144,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-amber-300 hover:bg-slate-800/80 transition"
                   >
-                    • Diện Tướng, Chỉ Tay &amp; Lá Số Tử Vi
+                    • {tp('/dien-tuong-chi-tay-tu-vi', 'Diện Tướng, Chỉ Tay & Lá Số Tử Vi')}
                   </Link>
                 </li>
                 <li>
@@ -151,7 +153,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-amber-300 hover:bg-slate-800/80 transition"
                   >
-                    • Liên Hệ &amp; Hướng Dẫn Đặt Lịch
+                    • {tp('/lien-he', 'Liên Hệ & Hướng Dẫn Đặt Lịch')}
                   </Link>
                 </li>
               </ul>
@@ -170,7 +172,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-emerald-200 hover:text-emerald-300 hover:bg-slate-800/80 font-semibold transition"
                   >
-                    ✦ Tư Vấn Phong Thủy Theo Lá Số
+                    ✦ {tp('/phong-thuy', 'Tư Vấn Phong Thủy Theo Lá Số')}
                   </Link>
                 </li>
                 <li>
@@ -179,7 +181,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-emerald-300 hover:bg-slate-800/80 transition"
                   >
-                    • Phong Thủy Nhà Ở, Chung Cư
+                    • {tp('/phong-thuy-nha-o', 'Phong Thủy Nhà Ở, Chung Cư')}
                   </Link>
                 </li>
                 <li>
@@ -188,7 +190,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-emerald-300 hover:bg-slate-800/80 transition"
                   >
-                    • Phong Thủy Văn Phòng, Cửa Hàng
+                    • {tp('/phong-thuy-van-phong', 'Phong Thủy Văn Phòng, Cửa Hàng')}
                   </Link>
                 </li>
                 <li>
@@ -197,7 +199,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-emerald-300 hover:bg-slate-800/80 transition"
                   >
-                    • Phong Thủy Cải Vận Hợp Mệnh
+                    • {tp('/phong-thuy-cai-van', 'Phong Thủy Cải Vận Hợp Mệnh')}
                   </Link>
                 </li>
                 <li>
@@ -206,7 +208,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-emerald-300 hover:bg-slate-800/80 transition"
                   >
-                    • Hành Dụng Thần &amp; Ngũ Hành Bổ Khuyết
+                    • {tp('/hanh-dung-than-ngu-hanh', 'Hành Dụng Thần & Ngũ Hành Bổ Khuyết')}
                   </Link>
                 </li>
                 <li>
@@ -215,7 +217,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-emerald-300 hover:bg-slate-800/80 transition"
                   >
-                    • Xem Ngày Tốt Động Thổ, Khai Trương
+                    • {tp('/xem-ngay-tot', 'Xem Ngày Tốt Động Thổ, Khai Trương')}
                   </Link>
                 </li>
                 <li>
@@ -224,7 +226,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-emerald-300 hover:bg-slate-800/80 transition"
                   >
-                    • Xem Tuổi Làm Nhà Năm 2027
+                    • {tp('/xem-tuoi-lam-nha-2027', 'Xem Tuổi Làm Nhà Năm 2027')}
                   </Link>
                 </li>
                 <li>
@@ -233,7 +235,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-emerald-300 hover:bg-slate-800/80 transition"
                   >
-                    • Tuổi Mở Hàng &amp; Khai Trương 2027
+                    • {tp('/xem-tuoi-khai-truong-2027', 'Tuổi Mở Hàng & Khai Trương 2027')}
                   </Link>
                 </li>
                 <li>
@@ -242,7 +244,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-emerald-300 hover:bg-slate-800/80 transition"
                   >
-                    • Tử Vi &amp; Phong Thủy Kết Hợp Ra Sao?
+                    • {tp('/tu-vi-va-phong-thuy', 'Tử Vi & Phong Thủy Kết Hợp Ra Sao?')}
                   </Link>
                 </li>
               </ul>
@@ -261,7 +263,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-indigo-200 hover:text-indigo-300 hover:bg-slate-800/80 font-semibold transition"
                   >
-                    ✦ Cách Xem Lá Số Tử Vi Cho Người Mới
+                    ✦ {tp('/cach-xem-la-so-tu-vi', 'Cách Xem Lá Số Tử Vi Cho Người Mới')}
                   </Link>
                 </li>
                 <li>
@@ -270,7 +272,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • 14 Chính Tinh: Ý Nghĩa &amp; Đắc, Hãm
+                    • {tp('/14-chinh-tinh-tu-vi', '14 Chính Tinh: Ý Nghĩa & Đắc, Hãm')}
                   </Link>
                 </li>
                 <li>
@@ -279,7 +281,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • 4 Cách Cục Lớn (Tử Phủ, Sát Phá Tham...)
+                    • {tp('/cac-cach-cuc-trong-tu-vi', '4 Cách Cục Lớn (Tử Phủ, Sát Phá Tham...)')}
                   </Link>
                 </li>
                 <li>
@@ -288,7 +290,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • Tứ Hóa: Lộc, Quyền, Khoa, Kỵ
+                    • {tp('/tu-hoa-trong-tu-vi', 'Tứ Hóa: Lộc, Quyền, Khoa, Kỵ')}
                   </Link>
                 </li>
                 <li>
@@ -297,7 +299,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • Lục Sát Tinh: Kình Đà, Không Kiếp, Hỏa Linh
+                    • {tp('/luc-sat-tinh-trong-tu-vi', 'Lục Sát Tinh: Kình Đà, Không Kiếp, Hỏa Linh')}
                   </Link>
                 </li>
                 <li>
@@ -306,7 +308,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • Đào Hoa, Hồng Loan &amp; Lục Cát Tinh
+                    • {tp('/dao-hoa-hong-loan-luc-cat-tinh', 'Đào Hoa, Hồng Loan & Lục Cát Tinh')}
                   </Link>
                 </li>
                 <li>
@@ -315,7 +317,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • Vòng Thái Tuế &amp; Vòng Lộc Tồn
+                    • {tp('/vong-thai-tue-loc-ton', 'Vòng Thái Tuế & Vòng Lộc Tồn')}
                   </Link>
                 </li>
                 <li>
@@ -324,7 +326,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • Tuần, Triệt Trong Tử Vi Tốt Hay Xấu?
+                    • {tp('/tuan-triet-trong-tu-vi', 'Tuần, Triệt Trong Tử Vi Tốt Hay Xấu?')}
                   </Link>
                 </li>
                 <li>
@@ -333,7 +335,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • Mệnh Vô Chính Diệu Tốt Hay Xấu?
+                    • {tp('/menh-vo-chinh-dieu', 'Mệnh Vô Chính Diệu Tốt Hay Xấu?')}
                   </Link>
                 </li>
                 <li>
@@ -342,7 +344,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-indigo-300 hover:bg-slate-800/80 transition"
                   >
-                    • Không Nhớ Giờ Sinh Lập Lá Số Thế Nào?
+                    • {tp('/khong-nho-gio-sinh', 'Không Nhớ Giờ Sinh Lập Lá Số Thế Nào?')}
                   </Link>
                 </li>
               </ul>
@@ -361,7 +363,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-purple-200 hover:text-purple-300 hover:bg-slate-800/80 font-semibold transition"
                   >
-                    ✦ Tử Vi Năm 2027 Đinh Mùi (12 Tuổi)
+                    ✦ {tp('/tu-vi-2027', 'Tử Vi Năm 2027 Đinh Mùi (12 Tuổi)')}
                   </Link>
                 </li>
                 <li>
@@ -370,7 +372,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Cách Xem Đại Vận 10 Năm &amp; Tiểu Vận
+                    • {tp('/cach-xem-dai-van-tieu-van', 'Cách Xem Đại Vận 10 Năm & Tiểu Vận')}
                   </Link>
                 </li>
                 <li>
@@ -379,7 +381,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Xem Hạn Kết Hôn &amp; Hạn Sinh Con
+                    • {tp('/xem-han-ket-hon-sinh-con', 'Xem Hạn Kết Hôn & Hạn Sinh Con')}
                   </Link>
                 </li>
                 <li>
@@ -388,7 +390,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Xem Tuổi Vợ Chồng &amp; Hợp Làm Ăn
+                    • {tp('/xem-tuoi-hop-vo-chong-lam-an', 'Xem Tuổi Vợ Chồng & Hợp Làm Ăn')}
                   </Link>
                 </li>
                 <li>
@@ -397,7 +399,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Cung Phu Thê: Hôn Nhân &amp; Bạn Đời
+                    • {tp('/cung-phu-the-trong-tu-vi', 'Cung Phu Thê: Hôn Nhân & Bạn Đời')}
                   </Link>
                 </li>
                 <li>
@@ -406,7 +408,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Cung Tài Bạch: Kiếm Tiền &amp; Giữ Tiền
+                    • {tp('/cung-tai-bach-trong-tu-vi', 'Cung Tài Bạch: Kiếm Tiền & Giữ Tiền')}
                   </Link>
                 </li>
                 <li>
@@ -415,7 +417,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Cung Quan Lộc: Định Hướng Nghề Nghiệp
+                    • {tp('/cung-quan-loc-trong-tu-vi', 'Cung Quan Lộc: Định Hướng Nghề Nghiệp')}
                   </Link>
                 </li>
                 <li>
@@ -424,7 +426,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Cung Điền Trạch: Đất Đai &amp; Mua Nhà
+                    • {tp('/cung-dien-trach-trong-tu-vi', 'Cung Điền Trạch: Đất Đai & Mua Nhà')}
                   </Link>
                 </li>
                 <li>
@@ -433,7 +435,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Cung Tử Tức &amp; Phúc Đức: Con Cái, Âm Đức
+                    • {tp('/cung-tu-tuc-va-phuc-duc', 'Cung Tử Tức & Phúc Đức: Con Cái, Âm Đức')}
                   </Link>
                 </li>
                 <li>
@@ -442,7 +444,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-slate-200 hover:text-purple-300 hover:bg-slate-800/80 transition"
                   >
-                    • Cung Thân &amp; Thiên Di: Hậu Vận, Xuất Ngoại
+                    • {tp('/cung-than-va-thien-di', 'Cung Thân & Thiên Di: Hậu Vận, Xuất Ngoại')}
                   </Link>
                 </li>
               </ul>
