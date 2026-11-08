@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { SavedChart, getUserCharts, deleteChart } from '@/lib/tuviService';
 import { X, BookOpen, Trash2, Calendar, MessageSquare, Sparkles, Gem, Search, PlusCircle } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface SavedChartsModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function SavedChartsModal({
   onUpgradeExpertChart,
   activeChartId,
 }: SavedChartsModalProps) {
+  const { t } = useLanguage();
   const [charts, setCharts] = useState<SavedChart[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,10 +79,10 @@ export default function SavedChartsModal({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold font-serif text-amber-400 flex items-center gap-2">
-                Sổ Tay Mệnh Số Của Bạn
+                {t('saved.title', 'Sổ Tay Mệnh Số Của Bạn')}
               </h2>
               <p className="text-sm sm:text-xs text-slate-300">
-                {charts.length} lá số đã lưu kèm trọn bộ lời bình giải &amp; lịch sử hỏi đáp
+                {t('saved.subtitle', `${charts.length} lá số đã lưu kèm trọn bộ lời bình giải & lịch sử hỏi đáp`)}
               </p>
             </div>
           </div>
@@ -98,7 +100,7 @@ export default function SavedChartsModal({
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Tìm kiếm theo tên đương số..."
+              placeholder={t('form.fullNamePlaceholder', 'Tìm kiếm theo tên đương số...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -112,7 +114,7 @@ export default function SavedChartsModal({
             className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm rounded-xl transition cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Lập Lá Số Mới</span>
+            <span>{t('chart.newChartBtn', 'Lập Lá Số Mới')}</span>
           </button>
         </div>
 
@@ -121,16 +123,16 @@ export default function SavedChartsModal({
           {isLoading ? (
             <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
               <div className="w-6 h-6 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-              <p className="text-sm sm:text-xs">Đang mở sổ tay mệnh số...</p>
+              <p className="text-sm sm:text-xs">{t('reading.loadingNormal', 'Đang mở sổ tay mệnh số...')}</p>
             </div>
           ) : filteredCharts.length === 0 ? (
             <div className="py-12 text-center text-slate-400">
               <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500">
                 <BookOpen className="w-6 h-6" />
               </div>
-              <p className="text-base sm:text-sm font-medium">Chưa có lá số nào trong sổ tay</p>
+              <p className="text-base sm:text-sm font-medium">{t('saved.emptyTitle', 'Chưa có lá số nào trong sổ tay')}</p>
               <p className="text-sm sm:text-xs text-slate-400 mt-1">
-                Lập một lá số mới để Thầy Tôn bình giải và tự động lưu vào đây nhé!
+                {t('saved.emptyDesc', 'Lập một lá số mới để Thầy Tôn bình giải và tự động lưu vào đây nhé!')}
               </p>
             </div>
           ) : (

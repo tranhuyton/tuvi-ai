@@ -15,9 +15,11 @@ import {
 } from 'lucide-react';
 import { COURSE_INFO, COURSE_MODULES } from '@/lib/courseData';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function CoursePromoBanner() {
   const { user, profile, testerInfo } = useAuth();
+  const { t } = useLanguage();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
 
@@ -108,31 +110,29 @@ export default function CoursePromoBanner() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-xs font-bold uppercase tracking-wider">
               <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>Học Viện Tử Vi Thực Chiến Online</span>
+              <span>{t('course.badge1', 'Học Viện Tử Vi Thực Chiến Online')}</span>
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-400/35 text-purple-200 text-xs font-semibold">
               <Headphones className="w-3.5 h-3.5 text-purple-300 shrink-0" />
-              <span>24 Podcast Audio + Giáo Trình Tương Tác</span>
+              <span>{t('course.badge2', '24 Podcast Audio + Giáo Trình Tương Tác')}</span>
             </span>
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-300 text-xs font-semibold">
               <Play className="w-3 h-3 fill-emerald-300 shrink-0" />
-              <span>Học thử miễn phí 2 bài đầu</span>
+              <span>{t('course.badge3', 'Học thử miễn phí 2 bài đầu')}</span>
             </span>
           </div>
 
           <div className="space-y-2">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-serif text-amber-300 leading-snug">
               <Link href="/khoa-hoc" className="hover:text-amber-200 transition-colors">
-                {COURSE_INFO.title}
+                {t('course.title', COURSE_INFO.title)}
               </Link>
             </h2>
             <p className="text-xs sm:text-sm md:text-base text-slate-200 leading-relaxed">
-              Tự tay đọc hiểu bản mệnh &amp; vận hạn của chính mình và người thân: Hệ thống hóa trọn bộ{' '}
-              <strong className="text-amber-200">
-                14 Chính Tinh, Lục Cát, Lục Sát, Tứ Hóa, 4 Đại Cách Cục &amp; Quy Trình 5 Bước Chấm Hạn Năm
-              </strong>{' '}
-              qua giọng giảng Podcast của Thầy Tôn, tích hợp công cụ{' '}
-              <strong className="text-emerald-300">Soi Sao Tự Động khớp trực tiếp lên Lá Số cá nhân</strong>.
+              {t(
+                'course.desc',
+                'Tự tay đọc hiểu bản mệnh & vận hạn của chính mình và người thân: Hệ thống hóa trọn bộ 14 Chính Tinh, Lục Cát, Lục Sát, Tứ Hóa, 4 Đại Cách Cục & Quy Trình 5 Bước Chấm Hạn Năm qua giọng giảng Podcast của Thầy Tôn, tích hợp công cụ Soi Sao Tự Động khớp trực tiếp lên Lá Số cá nhân.'
+              )}
             </p>
           </div>
 
@@ -160,7 +160,7 @@ export default function CoursePromoBanner() {
                     alt="Thầy Tôn"
                     className="w-6 h-6 rounded-full object-cover border border-amber-400"
                   />
-                  <span className="text-[11px] font-bold text-amber-300">Thầy Tôn giảng dạy</span>
+                  <span className="text-[11px] font-bold text-amber-300">{t('nav.about', 'Thầy Tôn')}</span>
                 </div>
               </div>
 
@@ -171,10 +171,10 @@ export default function CoursePromoBanner() {
                     className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/90 group-hover:border-slate-700 transition"
                   >
                     <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                      Học phần {mod.id}
+                      {t(`course.mod${mod.id}Lessons`, `${mod.id}`)}
                     </div>
                     <div className="text-xs font-semibold text-slate-100 line-clamp-2 mt-0.5 leading-snug">
-                      {mod.title}
+                      {t(`course.mod${mod.id}Title`, mod.title)}
                     </div>
                   </div>
                 ))}
@@ -186,15 +186,15 @@ export default function CoursePromoBanner() {
           <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-amber-200 font-medium">
               <Headphones className="w-3.5 h-3.5 text-amber-400" />
-              <span>8+ giờ Podcast chuẩn phòng thu</span>
+              <span>{t('course.feat1', '8+ giờ Podcast chuẩn phòng thu')}</span>
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-emerald-200 font-medium">
               <Compass className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Tự động tìm sao trên Lá Số của bạn</span>
+              <span>{t('course.feat3', 'Tự động tìm sao trên Lá Số của bạn')}</span>
             </span>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-purple-200 font-medium">
               <BookOpen className="w-3.5 h-3.5 text-purple-400" />
-              <span>Flashcard 14 Chính Tinh &amp; Ghi chú riêng</span>
+              <span>{t('course.feat2', 'Flashcard 14 Chính Tinh & Ghi chú riêng')}</span>
             </span>
           </div>
         </div>
@@ -208,13 +208,13 @@ export default function CoursePromoBanner() {
               </div>
               <div>
                 <div className="text-xs uppercase tracking-wider text-emerald-400 font-bold">
-                  Bạn Đã Sở Hữu Khóa Học Này
+                  {t('course.unlockedBadge', 'Bạn Đã Sở Hữu Khóa Học Này')}
                 </div>
                 <div className="text-lg font-bold text-white mt-0.5">
-                  Trọn Bộ 24 Bài Giảng Thực Chiến
+                  {t('course.badge2', 'Trọn Bộ 24 Bài Giảng Thực Chiến')}
                 </div>
                 <p className="text-xs text-slate-300 mt-1">
-                  Tiến độ hiện tại: <strong className="text-amber-300">{completedCount}/24 bài học</strong>
+                  {t('course.unlockedDesc', 'Toàn bộ 24 bài giảng Podcast & Giáo trình đã sẵn sàng.')} ({completedCount}/24)
                 </p>
               </div>
               <Link
@@ -222,7 +222,7 @@ export default function CoursePromoBanner() {
                 className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition"
               >
                 <Headphones className="w-4 h-4 shrink-0" />
-                <span>Vào Lớp Học Tiếp Ngay</span>
+                <span>{t('course.enterClassBtn', 'Vào Lớp Học Tiếp Ngay')}</span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </Link>
             </div>
@@ -230,7 +230,7 @@ export default function CoursePromoBanner() {
             <>
               <div className="flex items-baseline justify-between border-b border-slate-800 pb-3">
                 <div>
-                  <span className="text-xs text-slate-400 block">Học phí trọn gói (1 lần):</span>
+                  <span className="text-xs text-slate-400 block">{t('course.priceLabel', 'Học phí trọn gói (1 lần):')}</span>
                   <span className="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono">
                     699.000đ
                   </span>
@@ -238,7 +238,7 @@ export default function CoursePromoBanner() {
                 <div className="text-right">
                   <span className="text-xs text-slate-500 line-through block">1.490.000đ</span>
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/35">
-                    Ưu đãi -53%
+                    {t('course.saveBadge', 'Ưu đãi -53%')}
                   </span>
                 </div>
               </div>
@@ -246,25 +246,19 @@ export default function CoursePromoBanner() {
               <ul className="space-y-2 text-xs text-slate-200">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>
-                    Mở khóa ngay toàn bộ <strong>24 bài Podcast &amp; Giáo trình chuyên sâu</strong>
-                  </span>
+                  <span>{t('course.feat1', 'Mở khóa ngay toàn bộ 24 bài Podcast & Giáo trình chuyên sâu')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>
-                    Đối chiếu trực tiếp từng sao lên <strong>Lá số của chính bạn</strong>
-                  </span>
+                  <span>{t('course.feat3', 'Đối chiếu trực tiếp từng sao lên Lá số của chính bạn')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>
-                    Sở hữu <strong>trọn đời</strong> trên cả Điện thoại &amp; Máy tính
-                  </span>
+                  <span>{t('course.feat2', 'Sở hữu trọn đời trên cả Điện thoại & Máy tính')}</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Thanh toán VietQR tự động kích hoạt 24/7 trong 5 giây</span>
+                  <span>{t('course.feat4', 'Thanh toán VietQR tự động kích hoạt 24/7 trong 5 giây')}</span>
                 </li>
               </ul>
 
@@ -274,7 +268,7 @@ export default function CoursePromoBanner() {
                   className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5"
                 >
                   <QrCode className="w-4 h-4 shrink-0" />
-                  <span>Đăng Ký &amp; Mở Khóa Ngay (699.000đ)</span>
+                  <span>{t('course.registerBtn', 'Đăng Ký & Mở Khóa Ngay (699.000đ)')}</span>
                 </Link>
 
                 <Link
@@ -282,7 +276,7 @@ export default function CoursePromoBanner() {
                   className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 hover:text-amber-200 border border-amber-500/35 font-bold text-xs flex items-center justify-center gap-1.5 transition"
                 >
                   <Play className="w-3.5 h-3.5 fill-amber-300 shrink-0" />
-                  <span>Nghe Thử Miễn Phí 2 Bài Đầu &amp; Xem Giáo Trình</span>
+                  <span>{t('course.previewBtn', 'Nghe Thử Miễn Phí 2 Bài Đầu & Xem Giáo Trình')}</span>
                 </Link>
               </div>
             </>

@@ -19,6 +19,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import AuthModal from '@/components/AuthModal';
 import { generateVietQrDataUrl, buildVietQrString } from '@/lib/vietqr';
@@ -75,6 +76,7 @@ export default function PaymentModal({
   chartId,
 }: PaymentModalProps) {
   const { user, profile } = useAuth();
+  const { t } = useLanguage();
 
   // Trạng thái đơn hàng
   const [orderCode, setOrderCode] = useState<string>('');
@@ -706,7 +708,7 @@ export default function PaymentModal({
               </div>
               <div>
                 <h4 className="text-lg sm:text-xl font-bold font-serif text-emerald-400">
-                  Thanh Toán Thành Công!
+                  {t('payment.successTitle', 'Thanh Toán Thành Công!')}
                 </h4>
                 <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-md">
                   Giao dịch <span className="text-amber-400 font-mono font-bold">{orderCode}</span> đã được xác nhận tự động. Đang kích hoạt quyền lợi và gửi email thông báo...
@@ -714,7 +716,7 @@ export default function PaymentModal({
               </div>
               <div className="flex items-center gap-2 text-sm text-amber-300 bg-amber-950/50 px-3.5 py-2 rounded-full border border-amber-500/30">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Đang chuyển hướng tới nội dung của bạn...</span>
+                <span>{t('reading.loadingNormal', 'Đang chuyển hướng tới nội dung của bạn...')}</span>
               </div>
             </div>
           ) : (
@@ -722,7 +724,7 @@ export default function PaymentModal({
               {/* Dải thông tin tóm tắt số tiền & bảo mật */}
               <div className="flex items-center justify-between gap-2 flex-wrap px-3.5 py-2.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs sm:text-sm">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-slate-300 font-medium">Số tiền:</span>
+                  <span className="text-slate-300 font-medium">{t('payment.amountLabel', 'Số tiền')}:</span>
                   {activeVoucherForReading && originalPrice && originalPrice > effectiveAmount && (
                     <span className="text-slate-400 line-through font-mono text-xs sm:text-sm">
                       {originalPrice.toLocaleString('vi-VN')}đ
@@ -739,7 +741,7 @@ export default function PaymentModal({
                 </div>
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/30">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  Tự động duyệt 24/7
+                  {t('payment.autoUnlockBadge', 'Tự động duyệt 24/7')}
                 </span>
               </div>
 
@@ -755,7 +757,7 @@ export default function PaymentModal({
                     <span className="font-bold text-slate-700 text-xs tracking-wide">NAPAS 247</span>
                   </div>
                   <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                    ⚡ Quét là nhận diện ngay
+                    ⚡ {t('payment.scanTitle', 'Quét là nhận diện ngay')}
                   </span>
                 </div>
 
@@ -803,10 +805,10 @@ export default function PaymentModal({
                     onClick={handleDownloadQr}
                     disabled={isCreatingOrder || !orderCode}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs sm:text-sm font-semibold border border-slate-300 transition cursor-pointer disabled:opacity-50"
-                    title="Tải ảnh mã QR về máy để mở trong App Ngân Hàng"
+                    title={t('payment.downloadQr', 'Tải ảnh mã QR về máy để mở trong App Ngân Hàng')}
                   >
                     <Download className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span>Lưu ảnh QR</span>
+                    <span>{t('payment.downloadQr', 'Lưu ảnh QR')}</span>
                   </button>
 
                   <button
@@ -814,17 +816,17 @@ export default function PaymentModal({
                     onClick={handleCopyAll}
                     disabled={!orderCode}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs sm:text-sm font-semibold border border-amber-300 transition cursor-pointer disabled:opacity-50"
-                    title="Sao chép toàn bộ thông tin chuyển khoản"
+                    title={t('payment.copyBtn', 'Sao chép toàn bộ thông tin chuyển khoản')}
                   >
                     {copiedAll ? (
                       <>
                         <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span className="text-emerald-700">Đã sao chép!</span>
+                        <span className="text-emerald-700">{t('payment.copiedBtn', 'Đã sao chép!')}</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-4 h-4 text-amber-700 shrink-0" />
-                        <span>Sao chép tất cả</span>
+                        <span>{t('payment.copyBtn', 'Sao chép tất cả')}</span>
                       </>
                     )}
                   </button>
@@ -832,36 +834,36 @@ export default function PaymentModal({
 
                 {/* Hướng dẫn ngắn gọn */}
                 <div className="mt-2 text-center text-xs text-slate-500">
-                  💡 Dùng App Ngân hàng quét QR để tự điền đúng nội dung và số tiền.
+                  💡 {t('payment.scanDesc', 'Dùng App Ngân hàng quét QR để tự điền đúng nội dung và số tiền.')}
                 </div>
               </div>
 
               {/* Thông tin tài khoản thủ công (Sao chép 1 chạm) */}
               <div className="space-y-2 text-xs sm:text-sm bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
                 <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
-                  <span className="text-slate-400">Ngân hàng:</span>
+                  <span className="text-slate-400">{t('payment.bankLabel', 'Ngân hàng')}:</span>
                   <span className="font-semibold text-slate-200">{bankName}</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
-                  <span className="text-slate-400">Chủ tài khoản:</span>
+                  <span className="text-slate-400">{t('payment.accountNameLabel', 'Chủ tài khoản')}:</span>
                   <span className="font-semibold text-amber-300">{chuTk}</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
-                  <span className="text-slate-400">Số tài khoản:</span>
+                  <span className="text-slate-400">{t('payment.accountNoLabel', 'Số tài khoản')}:</span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-amber-400 text-sm sm:text-base">{stk}</span>
                     <button
                       type="button"
                       onClick={handleCopyStk}
                       className="p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
-                      title="Sao chép số tài khoản"
+                      title={t('payment.copyBtn', 'Sao chép số tài khoản')}
                     >
                       {copiedStk ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-slate-800/80">
-                  <span className="text-slate-400">Số tiền:</span>
+                  <span className="text-slate-400">{t('payment.amountLabel', 'Số tiền')}:</span>
                   <div className="flex items-center gap-2">
                     {activeVoucherForReading && originalPrice && originalPrice > effectiveAmount && (
                       <span className="text-xs text-slate-500 line-through font-mono">
@@ -875,7 +877,7 @@ export default function PaymentModal({
                       type="button"
                       onClick={handleCopyAmount}
                       className="p-1 text-slate-400 hover:text-white rounded bg-slate-800 hover:bg-slate-700 transition cursor-pointer"
-                      title="Sao chép số tiền"
+                      title={t('payment.copyBtn', 'Sao chép số tiền')}
                     >
                       {copiedAmount ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -883,7 +885,7 @@ export default function PaymentModal({
                 </div>
                 <div className="flex justify-between items-center py-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-slate-400">Nội dung CK:</span>
+                    <span className="text-slate-400">{t('payment.memoLabel', 'Nội dung CK')}:</span>
                     <button
                       type="button"
                       onClick={handleRefreshOrder}
@@ -996,14 +998,14 @@ export default function PaymentModal({
           <div className="p-3.5 sm:p-4 border-t border-slate-800 bg-slate-900/95 flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-2 text-xs text-slate-300">
               <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400 shrink-0" />
-              <span>Đang chờ chuyển khoản... Tự động mở khóa ngay</span>
+              <span>{t('payment.waitingStatus', 'Đang chờ chuyển khoản... Tự động mở khóa ngay')}</span>
             </div>
             <button
               type="button"
               onClick={onClose}
               className="py-1.5 px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer"
             >
-              Đóng
+              {t('floating.close', 'Đóng')}
             </button>
           </div>
         )}

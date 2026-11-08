@@ -291,7 +291,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
             className="inline-flex items-center gap-1.5 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>{isExporting ? 'Đang xuất ảnh...' : t('chart.downloadBtn', 'Tải Ảnh Lá Số')}</span>
+            <span>{isExporting ? t('chart.exportingImg', 'Đang xuất ảnh...') : t('chart.downloadBtn', 'Tải Ảnh Lá Số')}</span>
           </button>
         </div>
       </div>
@@ -414,7 +414,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                     <span className="w-16 sm:w-18"></span>
                     <span className="w-12 sm:w-14">{t('chart.solarShort', 'Dương')}</span>
                     <span className="w-10 sm:w-12">{t('chart.lunarShort', 'Âm')}</span>
-                    <span>Can Chi</span>
+                    <span>{t('chart.canChiHeader', 'Can Chi')}</span>
                   </div>
 
                   {/* Năm */}
@@ -431,7 +431,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                     <span className="w-12 sm:w-14 font-medium">{duongSo.thangDuong}</span>
                     <span className="w-10 sm:w-12 text-black">
                       {amLich.thangAmGoc}
-                      {amLich.isLeap ? ' (N)' : ''}
+                      {amLich.isLeap ? ` ${t('chart.leapShort', '(N)')}` : ''}
                     </span>
                     <span className="text-[#003399] font-bold">{tCanChi(thangCanChi)}</span>
                   </div>
@@ -465,9 +465,9 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                         type="button"
                         onClick={onEdit}
                         className="print:hidden text-[10px] text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer ml-1"
-                        title="Đổi năm xem để an lại lá số và bình giải nguyệt vận"
+                        title={t('chart.editChartBtn', 'Đổi năm xem để an lại lá số và bình giải nguyệt vận')}
                       >
-                        [Đổi năm]
+                        {t('chart.changeYearBtn', '[Đổi năm]')}
                       </button>
                     )}
                   </div>

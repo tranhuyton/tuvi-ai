@@ -12,8 +12,10 @@ import {
   ArrowRight,
   GraduationCap,
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function GuideMenuDropdown() {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -52,7 +54,7 @@ export default function GuideMenuDropdown() {
         title="Danh mục 38 chuyên đề Tử Vi Đẩu Số & Phong Thủy Thầy Tôn"
       >
         <BookOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-        <span className="hidden sm:inline">Cẩm Nang</span>
+        <span className="hidden sm:inline">{t('nav.guide', 'Cẩm Nang')}</span>
         <ChevronDown
           className={`w-3 h-3 text-amber-400/80 transition-transform duration-200 shrink-0 ${
             isOpen ? 'rotate-180 text-amber-300' : ''
@@ -67,7 +69,7 @@ export default function GuideMenuDropdown() {
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-400 pb-1.5 border-b border-slate-800">
                 <Crown className="w-3.5 h-3.5 shrink-0" />
-                <span>Luận Mệnh &amp; Tham Vấn</span>
+                <span>{t('guide.col1Title', 'Luận Mệnh & Tham Vấn')}</span>
               </div>
               <ul className="space-y-1 text-xs">
                 <li>
@@ -77,7 +79,7 @@ export default function GuideMenuDropdown() {
                     className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/35 text-amber-300 hover:text-amber-200 hover:bg-amber-500/25 font-bold transition"
                   >
                     <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>Khóa Học Tử Vi Thực Chiến (699K)</span>
+                    <span>{t('guide.courseBtn', 'Khóa Học Tử Vi Thực Chiến (699K)')}</span>
                   </Link>
                 </li>
                 <li>
@@ -86,7 +88,7 @@ export default function GuideMenuDropdown() {
                     onClick={() => setIsOpen(false)}
                     className="block px-2 py-1 rounded-lg text-amber-200 hover:text-amber-300 hover:bg-slate-800/80 font-semibold transition"
                   >
-                    ✦ Hồ Sơ Chuyên Gia Thầy Tôn
+                    ✦ {t('nav.about', 'Hồ Sơ Chuyên Gia Thầy Tôn')}
                   </Link>
                 </li>
                 <li>
@@ -159,7 +161,7 @@ export default function GuideMenuDropdown() {
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-400 pb-1.5 border-b border-slate-800">
                 <Compass className="w-3.5 h-3.5 shrink-0" />
-                <span>Phong Thủy &amp; Trạch Nhật</span>
+                <span>{t('guide.col2Title', 'Phong Thủy & Trạch Nhật')}</span>
               </div>
               <ul className="space-y-1 text-xs">
                 <li>
@@ -250,7 +252,7 @@ export default function GuideMenuDropdown() {
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-indigo-400 pb-1.5 border-b border-slate-800">
                 <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                <span>Tinh Đẩu &amp; Cách Cục</span>
+                <span>{t('guide.col3Title', 'Tinh Đẩu & Cách Cục')}</span>
               </div>
               <ul className="space-y-1 text-xs">
                 <li>
@@ -350,7 +352,7 @@ export default function GuideMenuDropdown() {
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-purple-400 pb-1.5 border-b border-slate-800">
                 <Layers className="w-3.5 h-3.5 shrink-0" />
-                <span>12 Cung Vị &amp; Vận Hạn</span>
+                <span>{t('guide.col4Title', '12 Cung Vị & Vận Hạn')}</span>
               </div>
               <ul className="space-y-1 text-xs">
                 <li>
@@ -455,7 +457,7 @@ export default function GuideMenuDropdown() {
               className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition"
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Xem Toàn Bộ 38 Chuyên Đề Trong Thư Viện</span>
+              <span>{t('guide.viewAll38', 'Xem Toàn Bộ 38 Chuyên Đề Trong Thư Viện')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
 
@@ -466,7 +468,7 @@ export default function GuideMenuDropdown() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-400/45 text-amber-200 font-bold text-xs shadow-sm transition"
               >
                 <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
-                <span>Khóa Học Tử Vi (699K)</span>
+                <span>{t('guide.courseBtn', 'Khóa Học Tử Vi (699K)')}</span>
               </Link>
 
               <Link
@@ -475,7 +477,7 @@ export default function GuideMenuDropdown() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold text-xs shadow-sm hover:from-amber-400 hover:to-yellow-500 transition"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Lập Lá Số Miễn Phí (0đ)</span>
+                <span>{t('guide.freeChartBtn', 'Lập Lá Số Miễn Phí (0đ)')}</span>
               </Link>
             </div>
           </div>

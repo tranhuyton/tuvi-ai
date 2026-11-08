@@ -314,33 +314,33 @@ export default function TuViForm({
         </div>
         {isVanHanLanding ? (
           <h2 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif leading-snug">
-            Nhập Thông Tin Đương Số Để Giải Mã 3 Tầng Vận Hạn
+            {t('form.title', 'Nhập Thông Tin Đương Số Để Giải Mã 3 Tầng Vận Hạn')}
           </h2>
         ) : (
           <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-amber-400 font-serif leading-snug">
-            Lập Lá Số Tử Vi Miễn Phí và Bình Giải Trọn Đời Cùng Thầy Tôn
+            {t('form.title', 'Lập Lá Số Tử Vi Miễn Phí và Bình Giải Trọn Đời Cùng Thầy Tôn')}
           </h1>
         )}
         <p className="text-xs sm:text-sm text-slate-200 mt-1.5 leading-relaxed">
-          {isVanHanLanding
-            ? 'Hệ thống tự động an 108+ chính phụ tinh theo giờ sinh, xác định chính xác tọa độ Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế và mở khóa bài luận giải chuyên sâu.'
-            : t(
-                'form.desc',
-                'Lập lá số bàn cờ 108 tinh đẩu chuẩn xác theo giờ sinh • Tặng ngay bài bình giải Khởi Nguyên miễn phí • Kết hợp độc quyền Diện Tướng Khuôn Mặt & Thủ Tướng Chỉ Tay từ Thầy Tôn'
-              )}
+          {t(
+            'form.desc',
+            isVanHanLanding
+              ? 'Hệ thống tự động an 108+ chính phụ tinh theo giờ sinh, xác định chính xác tọa độ Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế và mở khóa bài luận giải chuyên sâu.'
+              : 'Lập lá số bàn cờ 108 tinh đẩu chuẩn xác theo giờ sinh • Tặng ngay bài bình giải Khởi Nguyên miễn phí • Kết hợp độc quyền Diện Tướng Khuôn Mặt & Thủ Tướng Chỉ Tay từ Thầy Tôn'
+          )}
         </p>
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3 pt-2.5 border-t border-slate-800/70 text-[11px] sm:text-xs text-slate-300 font-medium">
           <div className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2 py-1.5 text-emerald-300">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span className="truncate">
-              {isVanHanLanding ? 'Đủ 3 Cung Vận Hạn' : t('form.trustFree', 'An Sao & Luận Giải 0đ')}
+              {t('form.trustFree', isVanHanLanding ? 'Đủ 3 Cung Vận Hạn' : 'An Sao & Luận Giải 0đ')}
             </span>
           </div>
           <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/25 rounded-lg px-2 py-1.5 text-amber-300">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span className="truncate">{t('form.trustFacePalm', 'Xem Mặt & Chỉ Tay')}</span>
           </div>
-          <div className="flex items-center gap-1 bg-blue-500/10 border border-blue-500/25 rounded-lg px-2 py-1.5 text-blue-300">
+          <div className="flex items-center gap-1 bg-blue-500/10 border border-blue-500/25 rounded-lg px-2 py-1.5 text-blue-400">
             <BookOpen className="w-3.5 h-3.5 text-blue-400 shrink-0" />
             <span className="truncate">{t('form.trustPdf', 'Lưu Sổ & Tải PDF')}</span>
           </div>
@@ -352,7 +352,7 @@ export default function TuViForm({
           <div className="text-xs sm:text-sm text-amber-200 font-medium flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
             <span>
-              Đang chỉnh sửa lá số của <strong>{initialData.hoTen}</strong> (Bạn có thể đổi năm xem để an lại lá số &amp; xem nguyệt vận mới)
+              {t('form.editingBanner', 'Đang chỉnh sửa lá số của')} <strong>{initialData.hoTen}</strong>
             </span>
           </div>
           {onCancelEdit && (
@@ -361,7 +361,7 @@ export default function TuViForm({
               onClick={onCancelEdit}
               className="text-xs text-slate-400 hover:text-white underline cursor-pointer shrink-0 font-medium"
             >
-              Hủy sửa
+              {t('form.cancelEdit', 'Hủy sửa')}
             </button>
           )}
         </div>
@@ -477,10 +477,10 @@ export default function TuViForm({
               🌙 {t('form.lunar', 'Âm lịch')}:{' '}
               <strong>
                 {lunarPreview.ngayAm}/{lunarPreview.thangAm}
-                {lunarPreview.isLeap ? ' (Nhuận)' : ''}/{lunarPreview.namAm}
+                {lunarPreview.isLeap ? t('form.leapMonth', ' (Nhuận)') : ''}/{lunarPreview.namAm}
               </strong>{' '}
-              • Năm <strong>{tCanChi(lunarPreview.namCanChi!)}</strong>
-              {lunarPreview.isLateTy ? ' (Tính sang ngày hôm sau do Giờ Tý Dạ 23h-24h)' : ''}
+              • {t('form.lunarYearPrefix', 'Năm')} <strong>{tCanChi(lunarPreview.namCanChi!)}</strong>
+              {lunarPreview.isLateTy ? ` ${t('form.lateRatHint', '(Tính sang ngày hôm sau do Giờ Tý Dạ 23h-24h)')}` : ''}
             </p>
           ) : (
             <p className="mt-2 text-xs text-red-300 bg-red-500/15 border border-red-500/35 rounded-lg px-3 py-1.5 font-medium">
@@ -506,7 +506,7 @@ export default function TuViForm({
                     : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/50'
                 }`}
               >
-                2026 (Bính Ngọ)
+                2026 ({tCanChi('Bính Ngọ')})
               </button>
               <button
                 type="button"
@@ -517,7 +517,7 @@ export default function TuViForm({
                     : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-amber-400/50'
                 }`}
               >
-                2027 (Đinh Mùi)
+                2027 ({tCanChi('Đinh Mùi')})
               </button>
             </div>
           </div>
@@ -860,7 +860,7 @@ export default function TuViForm({
           ) : initialData && selectedTier === (initialData.tier || 'free') ? (
             <>
               <Sparkles className="w-5 h-5 text-amber-300" />
-              <span>Cập Nhật &amp; An Lại Lá Số (Năm {namXem})</span>
+              <span>{t('form.btnUpdateChart', 'Cập Nhật & An Lại Lá Số (Năm {year})', { year: namXem })}</span>
             </>
           ) : selectedTier === 'expert' ? (
             <>

@@ -15,7 +15,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { ABOUT_DATA } from '@/lib/i18n/aboutData';
 
 export default function AboutThayTon() {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const data = ABOUT_DATA[language] || ABOUT_DATA.vi;
 
   return (
@@ -72,7 +72,7 @@ export default function AboutThayTon() {
             className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition"
           >
             <ShieldCheck className="w-4 h-4 shrink-0" />
-            <span>Xem Hồ Sơ &amp; Phương Pháp Luận Giải Của Thầy Tôn</span>
+            <span>{t('about.btnProfile', 'Xem Hồ Sơ & Phương Pháp Luận Giải Của Thầy Tôn')}</span>
             <ArrowRight className="w-4 h-4 shrink-0" />
           </Link>
 
@@ -81,7 +81,7 @@ export default function AboutThayTon() {
             className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-300 font-semibold text-xs sm:text-sm border border-amber-500/30 transition"
           >
             <Compass className="w-4 h-4 shrink-0" />
-            <span>Tư Vấn Phong Thủy Theo Lá Số</span>
+            <span>{t('about.btnFengShui', 'Tư Vấn Phong Thủy Theo Lá Số')}</span>
           </Link>
 
           <Link
@@ -89,7 +89,7 @@ export default function AboutThayTon() {
             className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 hover:text-amber-100 font-semibold text-xs sm:text-sm border border-purple-400/40 transition"
           >
             <GraduationCap className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>Khóa Học Tử Vi Online (699.000đ)</span>
+            <span>{t('about.btnCourse', 'Khóa Học Tử Vi Online (699.000đ)')}</span>
           </Link>
         </div>
       </div>

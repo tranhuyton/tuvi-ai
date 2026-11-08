@@ -123,10 +123,10 @@ export default function UserNav({
         <Link
           href="/khoa-hoc"
           className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl text-[11px] sm:text-xs font-bold bg-gradient-to-r from-amber-500/20 via-amber-600/15 to-purple-600/20 hover:from-amber-500/30 hover:to-purple-500/30 text-amber-300 hover:text-amber-200 border border-amber-400/50 transition shadow-sm shadow-amber-500/10 whitespace-nowrap"
-          title="Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn (Podcast + Giáo Trình)"
+          title={t('nav.courseFull', 'Khóa Học Tử Vi Thực Chiến')}
         >
           <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span>Khóa Học</span>
+          <span>{t('nav.course', 'Khóa Học')}</span>
         </Link>
 
         <GuideMenuDropdown />
@@ -142,7 +142,7 @@ export default function UserNav({
               className="inline-flex items-center gap-1 sm:gap-1.5 h-8 sm:h-9 px-2 sm:px-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-[11px] sm:text-xs rounded-xl transition shadow-md shadow-amber-500/20 whitespace-nowrap cursor-pointer"
             >
               <LogIn className="w-3.5 h-3.5 shrink-0" />
-              <span className="sm:hidden">Đăng Nhập</span>
+              <span className="sm:hidden">{t('nav.loginShort', 'Đăng Nhập')}</span>
               <span className="hidden sm:inline">{t('nav.login', 'Đăng Nhập')}</span>
             </button>
           </div>
@@ -209,7 +209,7 @@ export default function UserNav({
                     className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs text-amber-300 font-semibold hover:text-amber-200 hover:bg-slate-800/80 transition"
                   >
                     <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>Khóa Học Tử Vi Thực Chiến</span>
+                    <span>{t('nav.courseFull', 'Khóa Học Tử Vi Thực Chiến')}</span>
                   </Link>
 
                   {/* Lá Số Đã Lưu */}

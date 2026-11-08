@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { X, Lock, Mail, User, Phone, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, KeyRound } from 'lucide-react';
 
 export type AuthModalTab = 'signin' | 'signup' | 'forgot' | 'update_password';
@@ -22,6 +23,7 @@ export default function AuthModal({
   onSuccess,
 }: AuthModalProps) {
   const { user, profile, isPasswordRecovery, signIn, signUp, resetPasswordForEmail, updatePassword, setIsPasswordRecovery } = useAuth();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<AuthModalTab>(defaultTab);
 
   const [email, setEmail] = useState('');
@@ -197,19 +199,17 @@ export default function AuthModal({
             )}
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold font-serif text-amber-400">
-            {tab === 'signin' && 'Đăng Nhập Tài Khoản'}
-            {tab === 'signup' && 'Đăng Ký Thành Viên'}
-            {tab === 'forgot' && 'Khôi Phục Mật Khẩu'}
-            {tab === 'update_password' && (isPasswordRecovery ? 'Đặt Lại Mật Khẩu Mới' : 'Thông Tin & Đổi Mật Khẩu')}
+            {tab === 'signin' && t('auth.titleLogin', 'Đăng Nhập Tài Khoản')}
+            {tab === 'signup' && t('auth.titleRegister', 'Đăng Ký Thành Viên')}
+            {tab === 'forgot' && t('auth.titleForgot', 'Khôi Phục Mật Khẩu')}
+            {tab === 'update_password' && (isPasswordRecovery ? t('auth.titleForgot', 'Đặt Lại Mật Khẩu Mới') : t('auth.titleProfile', 'Thông Tin & Đổi Mật Khẩu'))}
           </h2>
           <p className="text-sm sm:text-xs text-slate-300 mt-1">
             {tab === 'forgot'
-              ? 'Nhập email tài khoản để nhận liên kết đặt lại mật khẩu an toàn'
+              ? t('auth.descForgot', 'Nhập email tài khoản để nhận liên kết đặt lại mật khẩu an toàn')
               : tab === 'update_password'
-              ? isPasswordRecovery
-                ? 'Thiết lập mật khẩu mới để bảo mật tài khoản của quý khách'
-                : 'Cập nhật họ tên, số điện thoại liên hệ hoặc đổi mật khẩu tài khoản'
-              : 'Lưu giữ trọn vẹn lá số, lời bình giải và lịch sử đàm đạo cùng Thầy Tôn'}
+              ? t('auth.descProfile', 'Cập nhật họ tên, số điện thoại liên hệ hoặc đổi mật khẩu tài khoản')
+              : t('auth.descLogin', 'Lưu giữ trọn vẹn lá số, lời bình giải và lịch sử đàm đạo cùng Thầy Tôn')}
           </p>
         </div>
 
@@ -237,7 +237,7 @@ export default function AuthModal({
                   : 'text-slate-300 hover:text-white'
               }`}
             >
-              Đăng Nhập
+              {t('auth.tabLogin', 'Đăng Nhập')}
             </button>
             <button
               type="button"
@@ -252,7 +252,7 @@ export default function AuthModal({
                   : 'text-slate-300 hover:text-white'
               }`}
             >
-              Đăng Ký
+              {t('auth.tabRegister', 'Đăng Ký')}
             </button>
           </div>
         )}
@@ -293,13 +293,13 @@ export default function AuthModal({
           {tab === 'signup' && (
             <>
               <div>
-                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Họ và tên của bạn</label>
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">{t('auth.fullNameLabel', 'Họ và tên của bạn')}</label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
-                    placeholder="Ví dụ: Trần Văn An"
+                    placeholder={t('form.fullNamePlaceholder', 'Ví dụ: Trần Văn An')}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -309,13 +309,13 @@ export default function AuthModal({
 
               <div>
                 <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
-                  Số điện thoại <span className="text-slate-400 font-normal">(Không bắt buộc)</span>
+                  {t('auth.phoneLabel', 'Số điện thoại')}
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
-                    placeholder="Ví dụ: 0912 345 678"
+                    placeholder="0912 345 678"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -327,7 +327,7 @@ export default function AuthModal({
 
           {tab !== 'update_password' && (
             <div>
-              <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Địa chỉ Email</label>
+              <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">{t('auth.emailLabel', 'Địa chỉ Email')}</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -345,7 +345,7 @@ export default function AuthModal({
           {(tab === 'signin' || tab === 'signup') && (
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm sm:text-xs font-semibold text-slate-300">Mật khẩu</label>
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300">{t('auth.passwordLabel', 'Mật khẩu')}</label>
                 {tab === 'signin' && (
                   <button
                     type="button"
@@ -356,7 +356,7 @@ export default function AuthModal({
                     }}
                     className="text-xs text-amber-400 hover:text-amber-300 hover:underline font-medium cursor-pointer"
                   >
-                    Quên mật khẩu?
+                    {t('auth.forgotLink', 'Quên mật khẩu?')}
                   </button>
                 )}
               </div>
@@ -365,7 +365,7 @@ export default function AuthModal({
                 <input
                   type="password"
                   required
-                  placeholder="Tối thiểu 6 ký tự"
+                  placeholder="••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -377,12 +377,12 @@ export default function AuthModal({
           {tab === 'update_password' && (
             <>
               <div>
-                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">Họ và tên của bạn</label>
+                <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">{t('auth.fullNameLabel', 'Họ và tên của bạn')}</label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="Ví dụ: Trần Văn An"
+                    placeholder={t('form.fullNamePlaceholder', 'Ví dụ: Trần Văn An')}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -392,13 +392,13 @@ export default function AuthModal({
 
               <div>
                 <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
-                  Số điện thoại <span className="text-slate-400 font-normal">(Không bắt buộc)</span>
+                  {t('auth.phoneLabel', 'Số điện thoại')}
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
-                    placeholder="Ví dụ: 0912 345 678"
+                    placeholder="0912 345 678"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -408,20 +408,14 @@ export default function AuthModal({
 
               <div className="pt-2 border-t border-slate-800/80">
                 <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
-                  {isPasswordRecovery ? (
-                    'Mật khẩu mới'
-                  ) : (
-                    <>
-                      Mật khẩu mới <span className="text-slate-400 font-normal">(Bỏ trống nếu không đổi)</span>
-                    </>
-                  )}
+                  {t('auth.newPasswordLabel', 'Mật khẩu mới (Bỏ trống nếu không đổi)')}
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
                     required={isPasswordRecovery}
-                    placeholder={isPasswordRecovery ? 'Tối thiểu 6 ký tự' : 'Nhập mật khẩu mới nếu muốn thay đổi'}
+                    placeholder="••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -431,14 +425,14 @@ export default function AuthModal({
 
               <div>
                 <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
-                  Xác nhận mật khẩu mới
+                  {t('auth.confirmPasswordLabel', 'Xác nhận mật khẩu mới')}
                 </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
                     required={isPasswordRecovery || password.length > 0}
-                    placeholder="Nhập lại mật khẩu mới"
+                    placeholder="••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
@@ -454,16 +448,14 @@ export default function AuthModal({
             className="w-full mt-2 py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-base sm:text-sm transition shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isLoading
-              ? 'Đang xử lý...'
+              ? '...'
               : tab === 'signin'
-              ? 'Đăng Nhập Ngay'
+              ? t('auth.submitLogin', 'Đăng Nhập Ngay')
               : tab === 'signup'
-              ? 'Tạo Tài Khoản Mới'
+              ? t('auth.submitRegister', 'Tạo Tài Khoản Mới')
               : tab === 'forgot'
-              ? 'Gửi Link Đặt Lại Mật Khẩu'
-              : isPasswordRecovery
-              ? 'Lưu Mật Khẩu Mới'
-              : 'Lưu Thông Tin Tài Khoản'}
+              ? t('auth.submitForgot', 'Gửi Link Đặt Lại Mật Khẩu')
+              : t('auth.submitProfile', 'Lưu Thông Tin Tài Khoản')}
           </button>
 
           {tab === 'forgot' && (
@@ -478,7 +470,7 @@ export default function AuthModal({
                 className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-400 transition cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Quay lại trang Đăng Nhập</span>
+                <span>{t('auth.backToLogin', 'Quay lại trang Đăng Nhập')}</span>
               </button>
             </div>
           )}

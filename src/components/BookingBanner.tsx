@@ -28,7 +28,7 @@ export default function BookingBanner() {
         <div className="space-y-2.5 text-center sm:text-left">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Tham Vấn Mệnh Lý &amp; Phong Thủy 1-1</span>
+            <span>{t('booking.badge', 'Tham Vấn Mệnh Lý & Phong Thủy 1-1')}</span>
           </div>
 
           <h2 className="font-bold text-amber-300 text-xl sm:text-2xl font-serif leading-snug">
@@ -51,10 +51,13 @@ export default function BookingBanner() {
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-bold text-amber-300">
-                1. Đàm Đạo Riêng 1-1 Tại Hà Nội
+                {t('booking.card1Title', '1. Đàm Đạo Riêng 1-1 Tại Hà Nội')}
               </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Khu đô thị Royal City, Thanh Xuân, Hà Nội (Chỉ tiếp khách hẹn trước — địa chỉ chi tiết gửi riêng qua Zalo).
+                {t(
+                  'booking.card1Desc',
+                  'Khu đô thị Royal City, Thanh Xuân, Hà Nội (Chỉ tiếp khách hẹn trước — địa chỉ chi tiết gửi riêng qua Zalo).'
+                )}
               </p>
             </div>
           </div>
@@ -65,10 +68,13 @@ export default function BookingBanner() {
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-bold text-blue-300">
-                2. Xem Online Qua Video Call
+                {t('booking.card2Title', '2. Xem Online Qua Video Call')}
               </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Thuận tiện cho khách ở các tỉnh thành khác và kiều bào đang sinh sống tại nước ngoài.
+                {t(
+                  'booking.card2Desc',
+                  'Thuận tiện cho khách ở các tỉnh thành khác và kiều bào đang sinh sống tại nước ngoài.'
+                )}
               </p>
             </div>
           </div>
@@ -79,10 +85,13 @@ export default function BookingBanner() {
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-bold text-emerald-300">
-                3. Khảo Sát Phong Thủy &amp; Trạch Nhật
+                {t('booking.card3Title', '3. Khảo Sát Phong Thủy & Trạch Nhật')}
               </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Tư vấn mặt bằng Nhà ở, Chung cư, Văn phòng, Cửa hàng &amp; Chọn ngày giờ khởi sự.
+                {t(
+                  'booking.card3Desc',
+                  'Tư vấn mặt bằng Nhà ở, Chung cư, Văn phòng, Cửa hàng & Chọn ngày giờ khởi sự.'
+                )}
               </p>
             </div>
           </div>
@@ -105,7 +114,7 @@ export default function BookingBanner() {
               href="/dat-lich-xem-tu-vi"
               className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-amber-300 border border-slate-700 text-xs sm:text-sm font-semibold transition"
             >
-              <span>Quy Trình Xem 1-1</span>
+              <span>{t('booking.processBtn', 'Quy Trình Xem 1-1')}</span>
               <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
             </Link>
 

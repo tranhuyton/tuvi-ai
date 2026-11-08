@@ -20,9 +20,31 @@ const BOLD_STARS = new Set([
 ]);
 
 export default function CungView({ cung, className = '', style }: CungViewProps) {
-  const { tCung, language } = useLanguage();
+  const { tCung, tCanChi, tStar, language } = useLanguage();
   const displayName = tCung(cung.cungName);
   const thanLabel = language === 'zh' || language === 'ja' ? '身' : language === 'ko' ? '신' : language === 'en' ? 'BODY' : 'THÂN';
+  const rawTieuVanChi = cung.tieuVan.replace(/^năm\s+/i, '').trim();
+  const tieuVanDisplay =
+    language === 'vi'
+      ? cung.tieuVan.startsWith('năm')
+        ? cung.tieuVan
+        : `năm ${cung.tieuVan}`
+      : language === 'zh' || language === 'ja'
+      ? `${tCanChi(rawTieuVanChi)}年`
+      : language === 'ko'
+      ? `${tCanChi(rawTieuVanChi)}년`
+      : `Yr ${tCanChi(rawTieuVanChi)}`;
+  const rawNguyetVanNum = cung.nguyetVan.replace(/^tháng\s+/i, '').trim();
+  const nguyetVanDisplay =
+    language === 'vi'
+      ? cung.nguyetVan.startsWith('tháng')
+        ? cung.nguyetVan
+        : `tháng ${cung.nguyetVan}`
+      : language === 'zh' || language === 'ja'
+      ? `${rawNguyetVanNum}月`
+      : language === 'ko'
+      ? `${rawNguyetVanNum}월`
+      : `Mo ${rawNguyetVanNum}`;
 
   return (
     <div
@@ -36,7 +58,7 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
       >
         {/* Can Chi viết tắt (VD: Q. Tị, G. Ngọ, Ấ. Mùi...) */}
         <span className="font-bold text-[#003399] text-[10.5px] sm:text-[11px] whitespace-nowrap shrink-0">
-          {cung.canChi}
+          {tCanChi(cung.canChi)}
         </span>
 
         {/* Tên Cung (VD: MỆNH, PHỤ MẪU, PHÚC ĐỨC THÂN...) */}
@@ -65,7 +87,7 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
             const starColor = CHINH_TINH_COLORS[ct.ten] || STAR_NGU_HANH_COLOR[ct.ten] || ct.color || '#000000';
             return (
               <div key={idx} style={{ color: starColor }} className="whitespace-nowrap">
-                <span>{ct.ten}</span>
+                <span>{language === 'vi' ? ct.ten : tStar(ct.ten)}</span>
                 {ct.dacHam && (
                   <span className="text-[10px] sm:text-[11px] font-sans font-normal ml-0.5">
                     ({ct.dacHam})
@@ -137,13 +159,13 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
         style={{ paddingTop: '4px', paddingBottom: '10px' }}
       >
         <span className="whitespace-nowrap text-left text-slate-800 shrink-0">
-          {cung.tieuVan.startsWith('năm') ? cung.tieuVan : `năm ${cung.tieuVan}`}
+          {tieuVanDisplay}
         </span>
         <span className="font-bold text-black whitespace-nowrap px-0.5 text-center shrink-0">
           {cung.truongSinh}
         </span>
         <span className="whitespace-nowrap text-right text-slate-800 shrink-0">
-          {cung.nguyetVan.startsWith('tháng') ? cung.nguyetVan : `tháng ${cung.nguyetVan}`}
+          {nguyetVanDisplay}
         </span>
       </div>
     </div>
