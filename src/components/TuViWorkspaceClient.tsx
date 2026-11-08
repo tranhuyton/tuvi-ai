@@ -425,8 +425,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
         try {
           const parsed = JSON.parse(storedQuotaStr);
           let bAllowed = Number(parsed.basicAllowed || 0);
-          let pAllowed = Number(parsed.proAllowed || 0);
-          let eAllowed = Number(parsed.expertAllowed || 0);
+          let pAllowed = currentTier === 'free' ? 0 : Number(parsed.proAllowed || 0);
+          let eAllowed = currentTier === 'free' ? 0 : Number(parsed.expertAllowed || 0);
           if (currentTier === 'pro' && pAllowed === 0) {
             pAllowed = 2; // Luôn đảm bảo khách VIP Pro có tối thiểu 2 câu Pro
           }
@@ -1618,8 +1618,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
             const parsed = JSON.parse(storedQuotaStr);
             loadedQuota = {
               basicAllowed: Number(parsed.basicAllowed || 0),
-              proAllowed: detectedTier === 'pro' ? Math.max(2, Number(parsed.proAllowed || 0)) : Number(parsed.proAllowed || 0),
-              expertAllowed: detectedTier === 'expert' ? Math.max(2, Number(parsed.expertAllowed || 0)) : Number(parsed.expertAllowed || 0),
+              proAllowed: detectedTier === 'pro' ? Math.max(2, Number(parsed.proAllowed || 0)) : detectedTier === 'free' ? 0 : Number(parsed.proAllowed || 0),
+              expertAllowed: detectedTier === 'expert' ? Math.max(2, Number(parsed.expertAllowed || 0)) : detectedTier === 'free' ? 0 : Number(parsed.expertAllowed || 0),
             };
           } catch {}
         } else {
@@ -1639,8 +1639,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       if (chart.laso_data?.quota) {
         loadedQuota = {
           basicAllowed: Math.max(loadedQuota.basicAllowed, Number(chart.laso_data.quota.basicAllowed || 0)),
-          proAllowed: detectedTier === 'pro' ? Math.max(2, Number(chart.laso_data.quota.proAllowed || 0)) : Number(chart.laso_data.quota.proAllowed || 0),
-          expertAllowed: detectedTier === 'expert' ? Math.max(2, Number(chart.laso_data.quota.expertAllowed || 0)) : Number(chart.laso_data.quota.expertAllowed || 0),
+          proAllowed: detectedTier === 'pro' ? Math.max(2, Number(chart.laso_data.quota.proAllowed || 0)) : detectedTier === 'free' ? 0 : Number(chart.laso_data.quota.proAllowed || 0),
+          expertAllowed: detectedTier === 'expert' ? Math.max(2, Number(chart.laso_data.quota.expertAllowed || 0)) : detectedTier === 'free' ? 0 : Number(chart.laso_data.quota.expertAllowed || 0),
         };
       }
       if (detectedTier === 'pro') {
@@ -1907,7 +1907,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                     } else if (isBrokenDbReading) {
                       setReadingHtml(undefined);
                     }
-                    if (chatMessages && chatMessages.length > 0) setChatHistory(chatMessages);
+                    if (Array.isArray(chatMessages)) setChatHistory(chatMessages);
                     let detectedTier: ServiceTier =
                       chart.duong_so_data?.tier ||
                       chart.laso_data?.tier ||
@@ -1949,6 +1949,15 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
 
                     tierRef.current = detectedTier;
                     setCurrentTier(detectedTier);
+                    if (detectedTier === 'free') {
+                      const freeQuota: QuestionsQuota = {
+                        basicAllowed: Number(chart.laso_data?.quota?.basicAllowed || 0),
+                        proAllowed: 0,
+                        expertAllowed: 0,
+                      };
+                      quotaRef.current = freeQuota;
+                      setQuestionsQuota(freeQuota);
+                    }
 
                     // Tự động nâng cấp nếu phát hiện đơn hàng đã thanh toán hoặc cần sinh bài luận mới (kể cả khi bài cũ bị lỗi API)
                     if (detectedTier === 'pro' || detectedTier === 'expert' || isBrokenDbReading) {
