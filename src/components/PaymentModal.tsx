@@ -111,6 +111,7 @@ export default function PaymentModal({
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeOrderKeyRef = useRef<string | null>(null);
+  const orderCodeRef = useRef<string>('');
 
   const bankName = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
   const stk = 'AGBSPVUONG2026';
@@ -231,6 +232,10 @@ export default function PaymentModal({
     setIsCreatingOrder(true);
     setOrderError(null);
     setQrFallbackStage(0);
+    // Xóa ngay mã đơn cũ trước khi khởi tạo đơn mới để tuyệt đối không bao giờ poll nhầm đơn đã thanh toán của lá số trước
+    orderCodeRef.current = '';
+    setOrderCode('');
+    setOrderStatus('IDLE');
 
     try {
       // Xác thực trực tiếp phiên đăng nhập (chống race condition vừa đăng ký xong qua AuthModal mà React state chưa kịp cập nhật)
@@ -265,6 +270,7 @@ export default function PaymentModal({
       // CHỐT CHẶN TUYỆT ĐỐI TẠI PAYMENT MODAL: Chưa có tài khoản đăng nhập -> Bắt buộc mở bảng Đăng ký / Đăng nhập, TUYỆT ĐỐI không sinh mã QR!
       if (!resolvedUserId || !resolvedEmail) {
         setRequireAuthPrompt(true);
+        orderCodeRef.current = '';
         setOrderCode('');
         setQrUrl('');
         setQrDataUrl('');
@@ -329,6 +335,7 @@ export default function PaymentModal({
       if (!res.ok) {
         if (res.status === 401 || data?.requireAuth) {
           setRequireAuthPrompt(true);
+          orderCodeRef.current = '';
           setOrderCode('');
           setQrUrl('');
           setQrDataUrl('');
@@ -347,6 +354,7 @@ export default function PaymentModal({
         const confirmedAmount = Number(data.order.amount) || finalPrice;
         setOrderAmount(confirmedAmount);
         activeOrderKeyRef.current = `${paymentType}_${confirmedAmount}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId}`;
+        orderCodeRef.current = code;
         setOrderCode(code);
         trackInitiateCheckout(paymentType, confirmedAmount || 0, code, appliedVoucher);
         setQrUrl(data.qrUrl || `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${confirmedAmount}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(chuTk)}`);
@@ -386,6 +394,12 @@ export default function PaymentModal({
     if (!isOpen) {
       setRequireAuthPrompt(false);
       if (orderStatus !== 'PENDING') {
+        orderCodeRef.current = '';
+        setOrderCode('');
+        setQrUrl('');
+        setQrDataUrl('');
+        setSepayQrUrl('');
+        setOrderAmount(null);
         setOrderStatus('IDLE');
         activeOrderKeyRef.current = null;
       }
@@ -403,7 +417,7 @@ export default function PaymentModal({
         ? voucherCode || 'none'
         : 'none';
     const targetKey = `${paymentType}_${finalPrice}_${appliedVoucher}_${chartId || 'default'}_${effectiveKeyUser}`;
-    // Nếu modal đang mở và đã có đơn pending hợp lệ cho đúng user & gói này rồi thì không tạo lại để hiện mã ngay lập tức 0ms
+    // Nếu modal đang mở và đã có đơn pending hợp lệ cho đúng user & gói & lá số này rồi thì không tạo lại để hiện mã ngay lập tức 0ms
     if (
       effectiveKeyUser &&
       activeOrderKeyRef.current === targetKey &&
@@ -413,21 +427,31 @@ export default function PaymentModal({
       return;
     }
 
+    // Nếu chuyển sang lá số khác hoặc gói khác, xóa sạch mã đơn cũ ngay lập tức trước khi gọi API tạo đơn mới
+    orderCodeRef.current = '';
+    setOrderCode('');
+    setOrderStatus('IDLE');
     setOrderAmount(null);
     createOrFetchOrder();
   }, [isOpen, paymentType, finalPrice, voucherCode, chartId, user?.id, fallbackUserId, orderCode, orderStatus, createOrFetchOrder]);
 
-  // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s)
+  // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s, CHỈ khi đã có đơn PENDING hợp lệ của lá số hiện tại)
   useEffect(() => {
-    if (!isOpen || !orderCode || orderStatus === 'PAID') return;
+    if (!isOpen || !orderCode || orderStatus !== 'PENDING' || isCreatingOrder) return;
 
+    const codeToPoll = orderCode;
     const checkPaymentStatus = async () => {
       try {
-        const res = await fetch(`/api/payment/check-status?code=${orderCode}`);
+        if (orderCodeRef.current !== codeToPoll) return;
+        const res = await fetch(`/api/payment/check-status?code=${codeToPoll}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.status === 'PAID') {
-            handlePaymentSuccess();
+          if (
+            data.status === 'PAID' &&
+            data.orderCode === codeToPoll &&
+            orderCodeRef.current === codeToPoll
+          ) {
+            handlePaymentSuccess(codeToPoll);
           }
         }
       } catch (err) {
@@ -440,23 +464,29 @@ export default function PaymentModal({
     return () => {
       if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
     };
-  }, [isOpen, orderCode, orderStatus]);
+  }, [isOpen, orderCode, orderStatus, isCreatingOrder]);
 
   // Xử lý khi phát hiện thanh toán thành công
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (confirmedCode?: string) => {
     if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+    const paidCode = confirmedCode || orderCodeRef.current || orderCode;
+    orderCodeRef.current = '';
     setOrderStatus('PAID');
     activeOrderKeyRef.current = null;
-    trackPurchase(paymentType, effectiveAmount || 0, orderCode);
+    trackPurchase(paymentType, effectiveAmount || 0, paidCode);
 
     // Lưu email và quyền lợi mở khóa vào localStorage để bền vững qua các lần F5
     if (typeof window !== 'undefined') {
       if (customerEmail) localStorage.setItem('tuvi_customer_email', customerEmail);
-      if (orderCode) localStorage.setItem('tuvi_last_paid_code', orderCode);
+      if (paidCode) localStorage.setItem('tuvi_last_paid_code', paidCode);
     }
 
     // Tự động mở khóa và đóng modal sau 1.8 giây hiển thị chúc mừng
     setTimeout(() => {
+      setOrderCode('');
+      setQrUrl('');
+      setQrDataUrl('');
+      setSepayQrUrl('');
       onConfirm();
       onClose();
     }, 1800);
