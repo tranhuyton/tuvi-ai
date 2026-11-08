@@ -28,7 +28,6 @@ import {
   Minimize2,
 } from 'lucide-react';
 import {
-  COURSE_INFO,
   COURSE_MODULES,
   COURSE_LESSONS,
   type CourseLesson,
@@ -36,11 +35,20 @@ import {
 import PaymentModal from '@/components/PaymentModal';
 import AuthModal from '@/components/AuthModal';
 import GuideMenuDropdown from '@/components/GuideMenuDropdown';
+import LanguageSelector from '@/components/LanguageSelector';
+import ThemeSelector from '@/components/ThemeSelector';
 import {
   CourseVisualShowcase,
   CourseLessonIllustration,
 } from '@/components/MetaphysicalIllustration';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import {
+  EXTERNAL_PAGE_UI,
+  getLocalizedCourseTitle,
+  getLocalizedCourseLesson,
+  getLocalizedCourseShowcaseModules,
+} from '@/lib/i18n/externalPagesI18n';
 import { supabase } from '@/lib/supabase';
 import { trackViewCourse, trackPlayCourseLesson } from '@/lib/metaPixel';
 import type { LaSoData } from '@/types/tuvi';
@@ -63,6 +71,16 @@ export default function CoursePlayerClient({
   embeddedInAdmin = false,
 }: CoursePlayerClientProps = {}) {
   const { user, profile, testerInfo } = useAuth();
+  const { language } = useLanguage();
+  const ui = EXTERNAL_PAGE_UI[language];
+  const localizedShowcaseMods = useMemo(
+    () => getLocalizedCourseShowcaseModules(language),
+    [language]
+  );
+  const localizedLessons: CourseLesson[] = useMemo(
+    () => COURSE_LESSONS.map((l) => getLocalizedCourseLesson(l, language)),
+    [language]
+  );
 
   // Trạng thái mở khóa khóa học
   const [isUnlocked, setIsUnlocked] = useState<boolean>(forceUnlock);
@@ -124,8 +142,8 @@ export default function CoursePlayerClient({
   const lessonTopRef = useRef<HTMLDivElement | null>(null);
 
   const activeLesson: CourseLesson = useMemo(() => {
-    return COURSE_LESSONS.find((l) => l.id === activeLessonId) || COURSE_LESSONS[0];
-  }, [activeLessonId]);
+    return localizedLessons.find((l) => l.id === activeLessonId) || localizedLessons[0];
+  }, [activeLessonId, localizedLessons]);
 
   const currentChapterAudioUrl = useMemo(() => {
     const chap = activeLesson.podcastChapters[activeChapterIdx];
@@ -503,7 +521,7 @@ export default function CoursePlayerClient({
 
   // Lọc danh sách bài học theo Học phần & Từ khóa
   const filteredLessons = useMemo(() => {
-    return COURSE_LESSONS.filter((l) => {
+    return localizedLessons.filter((l) => {
       if (selectedModule !== 0 && l.moduleId !== selectedModule) return false;
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
@@ -513,7 +531,7 @@ export default function CoursePlayerClient({
         l.relatedStars.some((s) => s.toLowerCase().includes(q))
       );
     });
-  }, [selectedModule, searchQuery]);
+  }, [selectedModule, searchQuery, localizedLessons]);
 
   // Chặn phím tắt Copy / Print khi đang đọc bài học (Bỏ qua nếu đang ở trong Admin)
   const handleProtectedKeyDown = (e: React.KeyboardEvent) => {
@@ -580,22 +598,24 @@ export default function CoursePlayerClient({
                 className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-serif font-bold text-sm sm:text-base transition"
               >
                 <Compass className="w-5 h-5 shrink-0" />
-                <span>TỬ VI &amp; PHONG THỦY THẦY TÔN</span>
+                <span>{ui.brandName}</span>
               </Link>
               <span className="text-slate-600 hidden sm:inline">/</span>
               <span className="text-xs sm:text-sm font-semibold text-amber-200 hidden sm:inline">
-                🎓 Học Viện Tử Vi Thực Chiến
+                {ui.courseNavSub}
               </span>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <LanguageSelector />
+              <ThemeSelector />
               <GuideMenuDropdown />
               <Link
                 href="/#lap-la-so"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-semibold transition"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Lập Lá Số Miễn Phí</span>
+                <span>{ui.freeChartBtn}</span>
               </Link>
               {!isUnlocked ? (
                 <button
@@ -604,17 +624,17 @@ export default function CoursePlayerClient({
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
                 >
                   <QrCode className="w-3.5 h-3.5" />
-                  <span>Mở Khóa 699.000đ</span>
+                  <span>{ui.courseUnlockBtn}</span>
                 </button>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold text-xs">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   <span>
                     {unlockedCode === 'VIP-ADMIN'
-                      ? 'Quản Trị Viên (Thầy Tôn)'
+                      ? ui.courseAdminBadge
                       : unlockedCode === 'VIP-TESTER'
-                      ? 'Tài Khoản Tester VIP'
-                      : `Học Viên Chính Thức (${unlockedCode})`}
+                      ? ui.courseTesterBadge
+                      : ui.courseStudentBadge.replace('{code}', unlockedCode)}
                   </span>
                 </span>
               )}
@@ -627,7 +647,7 @@ export default function CoursePlayerClient({
           {/* Ảnh nền nghệ thuật Học Viện Tinh Đẩu & Podcast */}
           <img
             src="/images/course-hero-podcast.png"
-            alt="Học Viện Tử Vi Đẩu Số Thực Chiến & Podcast Thầy Tôn"
+            alt={getLocalizedCourseTitle(language)}
             className="absolute inset-0 w-full h-full object-cover opacity-25 pointer-events-none select-none"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/80 to-slate-950/70 pointer-events-none" />
@@ -637,20 +657,18 @@ export default function CoursePlayerClient({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-bold uppercase tracking-wider">
                   <Headphones className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Podcast Audio + Giáo Trình Tương Tác</span>
+                  <span>{ui.courseHeroBadge1}</span>
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>
-                    {isUnlocked
-                      ? 'Đã mở trọn bộ 24 bài giảng • Học trọn đời'
-                      : 'Mở khóa tự động 24/7 ngay khi quét QR'}
+                    {isUnlocked ? ui.courseHeroUnlockedBadge : ui.courseHeroAutoBadge}
                   </span>
                 </span>
               </div>
 
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-serif text-white leading-tight">
-                {COURSE_INFO.title}
+                {getLocalizedCourseTitle(language)}
               </h1>
 
               {/* Khung ảnh minh họa nổi bật phân biệt Học Viện Podcast với các trang bài viết */}
@@ -659,19 +677,19 @@ export default function CoursePlayerClient({
                   <div className="sm:col-span-5 relative h-44 sm:h-full min-h-[165px] overflow-hidden">
                     <img
                       src="/images/course-hero-podcast.png"
-                      alt="Minh họa Khóa học Tử Vi & Podcast Audio Thầy Tôn"
+                      alt={getLocalizedCourseTitle(language)}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-slate-950/85 via-transparent to-transparent" />
                     <div className="absolute bottom-2.5 left-2.5 flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-950/90 border border-amber-400/50 backdrop-blur-md">
                       <img
                         src="/avatar-thay-ton.jpg"
-                        alt="Thầy Tôn"
+                        alt={ui.courseInstructorTitle}
                         className="w-7 h-7 rounded-full object-cover border border-amber-400"
                       />
                       <div className="text-[11px] leading-tight">
-                        <div className="font-bold text-amber-300">Thầy Tôn giảng dạy</div>
-                        <div className="text-[10px] text-slate-300">18+ năm nghiên cứu</div>
+                        <div className="font-bold text-amber-300">{ui.courseInstructorTitle}</div>
+                        <div className="text-[10px] text-slate-300">{ui.courseInstructorSub}</div>
                       </div>
                     </div>
                   </div>
@@ -679,20 +697,21 @@ export default function CoursePlayerClient({
                   <div className="sm:col-span-7 p-4 space-y-2.5">
                     <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Trải Nghiệm Học Tử Vi Thế Hệ Mới</span>
+                      <span>{ui.courseNextGenBadge}</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-                      Hệ thống hóa trọn bộ <strong>14 Chính Tinh, Lục Cát, Lục Sát, Tứ Hóa, 4 Đại Cách Cục &amp; Quy Trình 5 Bước Chấm Hạn Năm</strong> qua giọng giảng Podcast kết hợp giáo trình tương tác và công cụ <strong>Soi Sao Tự Động</strong> trên lá số của bạn.
-                    </p>
+                    <p
+                      className="text-xs sm:text-sm text-slate-200 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: ui.courseNextGenDescHtml }}
+                    />
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
                       <span className="text-[11px] px-2.5 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold">
-                        🎧 Nghe Podcast mọi lúc
+                        {ui.coursePill1}
                       </span>
                       <span className="text-[11px] px-2.5 py-0.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 font-semibold">
-                        🃏 Flashcard 14 Chính Tinh
+                        {ui.coursePill2}
                       </span>
                       <span className="text-[11px] px-2.5 py-0.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-semibold">
-                        🧭 Khớp thẳng lá số cá nhân
+                        {ui.coursePill3}
                       </span>
                     </div>
                   </div>
@@ -701,22 +720,22 @@ export default function CoursePlayerClient({
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                 <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-                  <div className="text-amber-400 font-bold text-base sm:text-lg">24 Bài Giảng</div>
-                  <div className="text-xs text-slate-400">4 Học phần thực chiến</div>
+                  <div className="text-amber-400 font-bold text-base sm:text-lg">{ui.courseStat1Title}</div>
+                  <div className="text-xs text-slate-400">{ui.courseStat1Sub}</div>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-                  <div className="text-amber-400 font-bold text-base sm:text-lg">Podcast + Web</div>
-                  <div className="text-xs text-slate-400">Vừa nghe vừa đọc mượt mà</div>
+                  <div className="text-amber-400 font-bold text-base sm:text-lg">{ui.courseStat2Title}</div>
+                  <div className="text-xs text-slate-400">{ui.courseStat2Sub}</div>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-                  <div className="text-emerald-400 font-bold text-base sm:text-lg">Soi Lá Số Riêng</div>
-                  <div className="text-xs text-slate-400">Tự động tìm sao trên lá số</div>
+                  <div className="text-emerald-400 font-bold text-base sm:text-lg">{ui.courseStat3Title}</div>
+                  <div className="text-xs text-slate-400">{ui.courseStat3Sub}</div>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800">
                   <div className="text-purple-300 font-bold text-base sm:text-lg">
-                    Đã học {completedLessons.length}/24
+                    {ui.courseStat4Title.replace('{done}', String(completedLessons.length))}
                   </div>
-                  <div className="text-xs text-slate-400">Lưu tiến độ &amp; ghi chú</div>
+                  <div className="text-xs text-slate-400">{ui.courseStat4Sub}</div>
                 </div>
               </div>
             </div>
@@ -730,24 +749,18 @@ export default function CoursePlayerClient({
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wider text-emerald-400 font-bold">
-                      Đã Mở Khóa Trọn Bộ 24 Bài
+                      {ui.courseUnlockedTitle}
                     </div>
                     <div className="text-lg font-bold text-white mt-0.5">
-                      Quyền Truy Cập Trọn Đời
+                      {ui.courseLifetimeTitle}
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
                       {unlockedCode === 'VIP-ADMIN' ? (
-                        <span>
-                          Tài khoản: <span className="text-amber-300 font-bold">Quản trị viên (Thầy Tôn)</span>
-                        </span>
+                        <span className="text-amber-300 font-bold">{ui.courseAdminBadge}</span>
                       ) : unlockedCode === 'VIP-TESTER' ? (
-                        <span>
-                          Tài khoản: <span className="text-amber-300 font-bold">Tester VIP</span>
-                        </span>
+                        <span className="text-amber-300 font-bold">{ui.courseTesterBadge}</span>
                       ) : (
-                        <span>
-                          Mã đơn học viên: <span className="text-amber-300 font-mono font-bold">{unlockedCode}</span>
-                        </span>
+                        <span className="text-amber-300 font-mono font-bold">{unlockedCode}</span>
                       )}
                     </p>
                   </div>
@@ -758,14 +771,14 @@ export default function CoursePlayerClient({
                     />
                   </div>
                   <p className="text-xs text-slate-300">
-                    Tiến độ hoàn thành: <strong>{completedLessons.length}/24 bài học</strong>
+                    {ui.courseProgressLabel} <strong>{completedLessons.length}/24</strong>
                   </p>
                 </div>
               ) : (
                 <>
                   <div className="flex items-baseline justify-between border-b border-slate-800 pb-3">
                     <div>
-                      <span className="text-xs text-slate-400 block">Học phí trọn gói (1 lần):</span>
+                      <span className="text-xs text-slate-400 block">{ui.courseTuitionLabel}</span>
                       <span className="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono">
                         699.000đ
                       </span>
@@ -773,7 +786,7 @@ export default function CoursePlayerClient({
                     <div className="text-right">
                       <span className="text-xs text-slate-500 line-through block">1.490.000đ</span>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        Tiết kiệm 53%
+                        {ui.courseSave53}
                       </span>
                     </div>
                   </div>
@@ -781,15 +794,15 @@ export default function CoursePlayerClient({
                   <ul className="space-y-2 text-xs text-slate-200">
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Mở khóa ngay lập tức toàn bộ <strong>24 tập Podcast &amp; Chuyên khảo</strong></span>
+                      <span dangerouslySetInnerHTML={{ __html: ui.courseBullet1Html }} />
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Tự động đối chiếu vị trí từng sao trên <strong>Lá số của chính bạn</strong></span>
+                      <span dangerouslySetInnerHTML={{ __html: ui.courseBullet2Html }} />
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <span>Học trọn đời trên cả Điện thoại &amp; Máy tính, cập nhật bài mới miễn phí</span>
+                      <span dangerouslySetInnerHTML={{ __html: ui.courseBullet3Html }} />
                     </li>
                   </ul>
 
@@ -799,7 +812,7 @@ export default function CoursePlayerClient({
                     className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition cursor-pointer"
                   >
                     <QrCode className="w-4 h-4 shrink-0" />
-                    <span>Quét Mã QR Mở Khóa Ngay (699.000đ)</span>
+                    <span>{ui.courseQrBtn}</span>
                   </button>
 
                   <div className="pt-1 text-center">
@@ -808,7 +821,7 @@ export default function CoursePlayerClient({
                       onClick={() => setShowRestoreBox(!showRestoreBox)}
                       className="text-xs text-amber-300 hover:text-amber-200 underline underline-offset-4 cursor-pointer"
                     >
-                      Đã thanh toán trước đó? Nhập Mã đơn / Email để mở khóa →
+                      {ui.courseRestoreLink}
                     </button>
                   </div>
                 </>
@@ -821,14 +834,14 @@ export default function CoursePlayerClient({
                   className="pt-3 border-t border-slate-800 space-y-2 animate-fade-in"
                 >
                   <label className="block text-xs text-slate-300 font-medium">
-                    Nhập Mã giao dịch (VD: <code className="text-amber-300">TV12345</code>) hoặc Email đã mua:
+                    {ui.courseRestoreLabel}
                   </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={restoreInput}
                       onChange={(e) => setRestoreInput(e.target.value)}
-                      placeholder="TVxxxxx hoặc email@..."
+                      placeholder={ui.courseRestorePlaceholder}
                       className="flex-1 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-400"
                     />
                     <button
@@ -836,7 +849,11 @@ export default function CoursePlayerClient({
                       disabled={restoreLoading}
                       className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer disabled:opacity-50"
                     >
-                      {restoreLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Kích hoạt'}
+                      {restoreLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        ui.courseRestoreBtn
+                      )}
                     </button>
                   </div>
                   {restoreMessage && (
@@ -868,15 +885,15 @@ export default function CoursePlayerClient({
               <div className="flex items-center justify-between">
                 <h2 className="text-sm sm:text-base font-bold text-amber-300 flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-amber-400" />
-                  <span>Giáo Trình 24 Bài Học</span>
+                  <span>{ui.courseSidebarTitle}</span>
                 </h2>
                 {isUnlocked ? (
                   <span className="text-[11px] text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">
-                    Đã mở 24/24 bài
+                    {ui.courseSidebarUnlocked}
                   </span>
                 ) : (
                   <span className="text-[11px] text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                    Học thử 2 bài đầu
+                    {ui.courseSidebarPreview}
                   </span>
                 )}
               </div>
@@ -888,7 +905,7 @@ export default function CoursePlayerClient({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm nhanh sao: Tử Vi, Thái Âm, Hóa Kỵ..."
+                  placeholder={ui.courseSearchPlaceholder}
                   className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
                 />
               </div>
@@ -904,7 +921,7 @@ export default function CoursePlayerClient({
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
-                  Tất cả (24)
+                  {ui.courseFilterAll}
                 </button>
                 {COURSE_MODULES.map((m) => (
                   <button
@@ -917,7 +934,7 @@ export default function CoursePlayerClient({
                         : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                     }`}
                   >
-                    Phần {m.id}
+                    {ui.courseFilterModule} {m.id}
                   </button>
                 ))}
               </div>
@@ -960,15 +977,17 @@ export default function CoursePlayerClient({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1.5 mb-0.5">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90">
-                          Bài {lesson.number} • {lesson.duration}
+                          {ui.courseLessonPrefix} {lesson.number} • {lesson.duration}
                         </span>
                         {isUnlocked ? (
                           isDone ? (
-                            <span className="text-[10px] font-bold text-emerald-400">Đã học</span>
+                            <span className="text-[10px] font-bold text-emerald-400">
+                              {ui.courseDoneBadge}
+                            </span>
                           ) : null
                         ) : lesson.isFreePreview ? (
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                            Học thử
+                            {ui.coursePreviewBadge}
                           </span>
                         ) : (
                           <Lock className="w-3 h-3 text-slate-500 shrink-0" />
@@ -995,11 +1014,12 @@ export default function CoursePlayerClient({
               <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-bold">
-                    Bài {activeLesson.number} / 24 • Học phần {activeLesson.moduleId}
+                    {ui.courseLessonPrefix} {activeLesson.number} / 24 • {ui.courseFilterModule}{' '}
+                    {activeLesson.moduleId}
                   </span>
                   {activeLesson.isFreePreview && !isUnlocked && (
                     <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-                      Bài học thử miễn phí
+                      {ui.courseFreePreviewLesson}
                     </span>
                   )}
                 </div>
@@ -1048,7 +1068,9 @@ export default function CoursePlayerClient({
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>
-                        {completedLessons.includes(activeLesson.id) ? 'Đã học xong' : 'Đánh dấu đã học'}
+                        {completedLessons.includes(activeLesson.id)
+                          ? ui.courseMarkedDone
+                          : ui.courseMarkDone}
                       </span>
                     </button>
                   )}
@@ -1067,8 +1089,8 @@ export default function CoursePlayerClient({
                 lessonOrder={activeLesson.number}
                 moduleId={activeLesson.moduleId}
                 moduleTitle={
-                  COURSE_MODULES.find((m) => m.id === activeLesson.moduleId)?.title ||
-                  `Học phần ${activeLesson.moduleId}`
+                  localizedShowcaseMods.find((m) => m.id === activeLesson.moduleId)?.title ||
+                  `${ui.courseFilterModule} ${activeLesson.moduleId}`
                 }
                 title={activeLesson.title}
                 relatedStars={activeLesson.relatedStars}
@@ -1084,26 +1106,28 @@ export default function CoursePlayerClient({
                   </div>
                   <div className="space-y-2 max-w-xl mx-auto">
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                      Nội dung dành riêng cho Học viên chính thức
+                      {ui.courseLockedBadge}
                     </span>
                     <h3 className="text-xl sm:text-2xl font-bold font-serif text-white">
-                      Mở Khóa Bài Giảng Podcast &amp; Chuyên Khảo Này Chỉ Trong 3 Giây
+                      {ui.courseLockedTitle}
                     </h3>
-                    <p className="text-sm text-slate-300 leading-relaxed">
-                      Quét mã VietQR <strong>699.000đ</strong> để hệ thống tự động mở khóa ngay lập tức trọn bộ <strong>24 bài giảng Podcast + Giáo trình 14 Chính Tinh, Phụ Tinh, Cách Cục &amp; Vận Hạn</strong> của Thầy Tôn.
-                    </p>
+                    <p
+                      className="text-sm text-slate-300 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: ui.courseLockedDescHtml }}
+                    />
                   </div>
 
                   {/* Xem trước Thẻ Flashcard tóm tắt của bài để kích thích chuyển đổi */}
                   <div className="text-left rounded-2xl bg-slate-900/90 border border-slate-800 p-4 max-w-xl mx-auto space-y-2">
                     <div className="text-xs font-bold text-amber-300 uppercase">
-                      ✦ Tóm tắt nội dung có trong Bài {activeLesson.number}:
+                      {ui.courseLockedSummaryLabel} {activeLesson.number}:
                     </div>
                     <p className="text-xs sm:text-sm text-slate-300">
-                      • <strong>Ngũ hành &amp; Hóa khí:</strong> {activeLesson.flashcard.nguHanh} — {activeLesson.flashcard.hoaKhi}
+                      • <strong>{ui.courseLockedElementsLabel}</strong> {activeLesson.flashcard.nguHanh} —{' '}
+                      {activeLesson.flashcard.hoaKhi}
                     </p>
                     <p className="text-xs sm:text-sm text-slate-300">
-                      • <strong>Các chương Podcast ({activeLesson.duration}):</strong>{' '}
+                      • <strong>{ui.courseLockedChaptersLabel} ({activeLesson.duration}):</strong>{' '}
                       {activeLesson.podcastChapters.map((c) => c.title).join(' • ')}
                     </p>
                   </div>
@@ -1115,14 +1139,14 @@ export default function CoursePlayerClient({
                       className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition cursor-pointer"
                     >
                       <QrCode className="w-5 h-5" />
-                      <span>Quét Mã QR Mở Khóa Trọn Bộ (699.000đ)</span>
+                      <span>{ui.courseLockedQrBtn}</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveLessonId('bai-1')}
                       className="w-full sm:w-auto px-5 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-sm border border-amber-500/30 transition cursor-pointer"
                     >
-                      Nghe Học Thử Bài 1 &amp; Bài 2 Miễn Phí
+                      {ui.courseLockedPreviewBtn}
                     </button>
                   </div>
                 </div>
@@ -1136,7 +1160,6 @@ export default function CoursePlayerClient({
                           type="button"
                           onClick={handleTogglePlay}
                           className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/25 transition cursor-pointer shrink-0"
-                          title={isPlaying ? 'Tạm dừng Podcast' : 'Phát Podcast bài giảng'}
                         >
                           {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
                         </button>
@@ -1144,14 +1167,15 @@ export default function CoursePlayerClient({
                           <div className="flex items-center gap-2">
                             <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
                               <Headphones className="w-3.5 h-3.5" />
-                              Podcast Bài Giảng Thầy Tôn
+                              {ui.coursePlayerTitle}
                             </span>
                             <span className="text-xs text-slate-400 font-mono">
                               ({activeLesson.duration})
                             </span>
                           </div>
                           <div className="text-sm sm:text-base font-bold text-white mt-0.5">
-                            Phần {activeChapterIdx + 1}: {activeLesson.podcastChapters[activeChapterIdx]?.title}
+                            {ui.coursePartLabel} {activeChapterIdx + 1}:{' '}
+                            {activeLesson.podcastChapters[activeChapterIdx]?.title}
                           </div>
                         </div>
                       </div>
@@ -1164,7 +1188,6 @@ export default function CoursePlayerClient({
                           }
                           disabled={activeChapterIdx === 0}
                           className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 disabled:opacity-40 cursor-pointer"
-                          title="Phần trước"
                         >
                           <SkipBack className="w-4 h-4" />
                         </button>
@@ -1181,7 +1204,6 @@ export default function CoursePlayerClient({
                           }
                           disabled={activeChapterIdx >= activeLesson.podcastChapters.length - 1}
                           className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 disabled:opacity-40 cursor-pointer"
-                          title="Phần tiếp theo"
                         >
                           <SkipForward className="w-4 h-4" />
                         </button>
@@ -1189,7 +1211,6 @@ export default function CoursePlayerClient({
                           type="button"
                           onClick={handleChangeSpeed}
                           className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 font-mono font-bold text-xs cursor-pointer"
-                          title="Đổi tốc độ nghe Podcast"
                         >
                           {playbackRate}x
                         </button>
@@ -1203,7 +1224,8 @@ export default function CoursePlayerClient({
                           {formatAudioTime(currentTimeSec)}
                         </span>
                         <span>
-                          Chương {activeChapterIdx + 1}/{activeLesson.podcastChapters.length} •{' '}
+                          {ui.courseChapterLabel} {activeChapterIdx + 1}/
+                          {activeLesson.podcastChapters.length} •{' '}
                           {durationSec > 0 ? formatAudioTime(durationSec) : activeLesson.duration}
                         </span>
                       </div>
@@ -1214,7 +1236,6 @@ export default function CoursePlayerClient({
                         value={chapterProgress}
                         onChange={handleSeekAudio}
                         className="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                        title="Kéo để tua thời gian bài giảng"
                       />
                     </div>
 
@@ -1246,7 +1267,10 @@ export default function CoursePlayerClient({
                     <div className="p-4 rounded-xl bg-slate-950/85 border border-slate-800/90 text-xs sm:text-sm text-slate-200 leading-relaxed select-none">
                       <div className="text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-1 flex items-center gap-1.5">
                         <Volume2 className="w-3.5 h-3.5" />
-                        <span>Nội dung lời giảng Podcast ({activeLesson.podcastChapters[activeChapterIdx]?.time}):</span>
+                        <span>
+                          {ui.courseTranscriptLabel} (
+                          {activeLesson.podcastChapters[activeChapterIdx]?.time}):
+                        </span>
                       </div>
                       <p>{activeLesson.podcastChapters[activeChapterIdx]?.transcript}</p>
                     </div>
@@ -1258,15 +1282,14 @@ export default function CoursePlayerClient({
                       <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-emerald-300">
                         <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span>
-                          Đối Chiếu Trực Tiếp Các Sao Trong Bài Học Lên Lá Số Của{' '}
-                          {userHoTen ? userHoTen : 'Bạn'}
+                          {ui.courseStarMatchTitle} {userHoTen ? userHoTen : ui.courseStarMatchYou}
                         </span>
                       </div>
                       <Link
                         href="/#lap-la-so"
                         className="text-xs font-semibold text-amber-400 hover:text-amber-300 underline underline-offset-4"
                       >
-                        {userLaSo ? 'Đổi lá số khác →' : 'Lập lá số của bạn để tự động đối chiếu →'}
+                        {userLaSo ? ui.courseChangeChart : ui.courseCreateChartToMatch}
                       </Link>
                     </div>
 
@@ -1279,21 +1302,22 @@ export default function CoursePlayerClient({
                           >
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-amber-300 text-sm">
-                                ★ Sao {m.starName}
+                                ★ {ui.courseStarLabel} {m.starName}
                               </span>
                               <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
-                                Cung {m.cungName} ({m.diaChi})
+                                {ui.coursePalaceLabel} {m.cungName} ({m.diaChi})
                               </span>
                             </div>
                             <p className="text-slate-300">
-                              • Trạng thái:{' '}
+                              • {ui.courseStatusLabel}{' '}
                               <strong className="text-white">
-                                {m.dacTinh ? `(${m.dacTinh})` : 'Phụ tinh trọng điểm'}
+                                {m.dacTinh ? `(${m.dacTinh})` : ui.courseMajorAux}
                               </strong>
                               {m.coStars.length > 0 && (
                                 <>
                                   {' '}
-                                  • Đồng cung với: <strong className="text-amber-200">{m.coStars.join(', ')}</strong>
+                                  • {ui.courseCoStarsLabel}{' '}
+                                  <strong className="text-amber-200">{m.coStars.join(', ')}</strong>
                                 </>
                               )}
                             </p>
@@ -1302,11 +1326,11 @@ export default function CoursePlayerClient({
                       </div>
                     ) : (
                       <p className="text-xs text-slate-300">
-                        💡 Khi bạn lập lá số miễn phí tại Trang chủ, hệ thống sẽ tự động tìm xem sao{' '}
+                        {ui.courseNoChartHint1}{' '}
                         <strong className="text-amber-300">
                           {activeLesson.relatedStars.join(', ')}
                         </strong>{' '}
-                        đang đóng ở cung nào trên lá số của bạn ngay tại khung này!
+                        {ui.courseNoChartHint2}
                       </p>
                     )}
                   </div>
@@ -1315,30 +1339,36 @@ export default function CoursePlayerClient({
                   <div className="rounded-2xl bg-slate-950/90 border border-amber-500/35 p-4 sm:p-5 space-y-3 select-none">
                     <div className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                       <Award className="w-4 h-4" />
-                      <span>Flashcard Tóm Tắt Nhanh Tinh Đẩu &amp; Khẩu Quyết</span>
+                      <span>{ui.courseFlashcardTitle}</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
                       <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                        <span className="text-slate-400 block text-[11px]">Ngũ hành &amp; Hóa khí:</span>
+                        <span className="text-slate-400 block text-[11px]">
+                          {ui.courseFcElements}
+                        </span>
                         <span className="font-semibold text-amber-200">
                           {activeLesson.flashcard.nguHanh} • {activeLesson.flashcard.hoaKhi}
                         </span>
                       </div>
                       <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                        <span className="text-slate-400 block text-[11px]">Chủ sự trọng tâm:</span>
+                        <span className="text-slate-400 block text-[11px]">
+                          {ui.courseFcDomain}
+                        </span>
                         <span className="font-semibold text-slate-100">
                           {activeLesson.flashcard.chuSu}
                         </span>
                       </div>
                       <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 sm:col-span-2">
-                        <span className="text-slate-400 block text-[11px]">Vị trí Miếu / Vượng / Đắc / Hãm:</span>
+                        <span className="text-slate-400 block text-[11px]">
+                          {ui.courseFcBrightness}
+                        </span>
                         <span className="font-semibold text-emerald-300">
                           {activeLesson.flashcard.dacHam}
                         </span>
                       </div>
                       <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 sm:col-span-2">
                         <span className="text-amber-400 block text-[11px] font-bold">
-                          Câu phú kinh điển &amp; Nguyên tắc cốt lõi:
+                          {ui.courseFcClassicVerse}
                         </span>
                         <p className="text-slate-100 italic mt-0.5">
                           &ldquo;{activeLesson.flashcard.cauPhu}&rdquo;
@@ -1397,10 +1427,12 @@ export default function CoursePlayerClient({
                     <div className="flex items-center justify-between">
                       <label className="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-1.5">
                         <FileText className="w-4 h-4 text-amber-400" />
-                        <span>Ghi chú cá nhân của bạn cho Bài {activeLesson.number}:</span>
+                        <span>
+                          {ui.courseNotesLabel} {activeLesson.number}:
+                        </span>
                       </label>
                       {noteSavedToast && (
-                        <span className="text-xs text-emerald-400">✓ Đã tự động lưu vào máy</span>
+                        <span className="text-xs text-emerald-400">{ui.courseNotesSaved}</span>
                       )}
                     </div>
                     <textarea
@@ -1411,7 +1443,7 @@ export default function CoursePlayerClient({
                         setNoteSavedToast(true);
                         setTimeout(() => setNoteSavedToast(false), 1800);
                       }}
-                      placeholder="Ghi lại những điểm nghiệm lý đúng với lá số của bạn hoặc người thân tại đây..."
+                      placeholder={ui.courseNotesPlaceholder}
                       className="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400"
                     />
                   </div>
@@ -1424,7 +1456,7 @@ export default function CoursePlayerClient({
                       onClick={() => setActiveLessonId(`bai-${activeLesson.number - 1}`)}
                       className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-semibold disabled:opacity-40 transition cursor-pointer"
                     >
-                      ← Bài trước
+                      {ui.coursePrevLesson}
                     </button>
                     <button
                       type="button"
@@ -1432,7 +1464,10 @@ export default function CoursePlayerClient({
                       onClick={() => setActiveLessonId(`bai-${activeLesson.number + 1}`)}
                       className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-xs sm:text-sm shadow-md disabled:opacity-40 transition cursor-pointer"
                     >
-                      <span>Bài tiếp theo (Bài {Math.min(24, activeLesson.number + 1)})</span>
+                      <span>
+                        {ui.courseNextLesson} ({ui.courseLessonPrefix}{' '}
+                        {Math.min(24, activeLesson.number + 1)})
+                      </span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -1457,10 +1492,11 @@ export default function CoursePlayerClient({
               </button>
               <div className="min-w-0">
                 <div className="text-xs font-bold text-amber-300 truncate">
-                  Bài {activeLesson.number}: {activeLesson.title}
+                  {ui.courseLessonPrefix} {activeLesson.number}: {activeLesson.title}
                 </div>
                 <div className="text-[11px] text-slate-400 truncate">
-                  Podcast Chương {activeChapterIdx + 1}/{activeLesson.podcastChapters.length}:{' '}
+                  Podcast {ui.courseChapterLabel} {activeChapterIdx + 1}/
+                  {activeLesson.podcastChapters.length}:{' '}
                   {activeLesson.podcastChapters[activeChapterIdx]?.title}
                 </div>
               </div>
@@ -1480,7 +1516,7 @@ export default function CoursePlayerClient({
                   onClick={() => openCoursePayment()}
                   className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold text-xs cursor-pointer"
                 >
-                  Mở Khóa 24 Bài (699k)
+                  {ui.courseMiniUnlockBtn}
                 </button>
               )}
             </div>
@@ -1496,7 +1532,7 @@ export default function CoursePlayerClient({
           setIsAuthModalOpen(false);
           pendingOpenPaymentRef.current = false;
         }}
-        customNotice="Quý khách vui lòng tạo tài khoản hoặc đăng nhập (chỉ mất 5 giây) trước khi thanh toán để hệ thống gắn quyền truy cập trọn đời Khóa Học 24 Bài vào tài khoản của quý khách."
+        customNotice={ui.courseAuthNotice}
         onSuccess={async () => {
           setIsAuthModalOpen(false);
           if (pendingOpenPaymentRef.current) {

@@ -3,11 +3,20 @@
 import React from 'react';
 import Link from 'next/link';
 import { BookOpen, ArrowRight, Sparkles, Clock } from 'lucide-react';
-import { SEO_ARTICLES, FUNNEL_STAGE_META, FunnelStage } from '@/lib/seoArticles';
+import { SEO_ARTICLES, FunnelStage } from '@/lib/seoArticles';
+import { useLanguage } from '@/context/LanguageContext';
+import {
+  EXTERNAL_PAGE_UI,
+  getLocalizedStageMeta,
+  getLocalizedSeoArticle,
+} from '@/lib/i18n/externalPagesI18n';
 
 const STAGES: FunnelStage[] = ['TOFU', 'MOFU', 'USP_GEO', 'BOFU'];
 
 export default function KnowledgeFunnelSection() {
+  const { language } = useLanguage();
+  const ui = EXTERNAL_PAGE_UI[language];
+
   return (
     <section
       id="cam-nang-tu-vi"
@@ -19,13 +28,13 @@ export default function KnowledgeFunnelSection() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs font-semibold uppercase tracking-wider">
               <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              <span>Cẩm Nang Tử Vi, Diện Tướng & Chỉ Tay Thực Chứng</span>
+              <span>{ui.kfBadge}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold font-serif text-amber-400">
-              Thư Viện Chuyên Khảo Từ Thầy Tôn
+              {ui.kfTitle}
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Hệ thống bài viết chuyên sâu giải mã Tử Vi Đẩu Số, Bát Bộ Thần Sát, Diện Tướng & Thủ Tướng dưới lăng kính khoa học thực chứng — giúp bạn thấu hiểu lá số từ căn bản đến nâng cao.
+              {ui.kfDesc}
             </p>
           </div>
 
@@ -34,7 +43,7 @@ export default function KnowledgeFunnelSection() {
             className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-bold transition"
           >
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Xem Toàn Bộ Cẩm Nang (10 Bài)</span>
+            <span>{ui.kfViewAllBtn}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -42,7 +51,7 @@ export default function KnowledgeFunnelSection() {
         {/* 4 Nhóm bài viết theo 4 Tầng Phễu */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
           {STAGES.map((stageKey) => {
-            const meta = FUNNEL_STAGE_META[stageKey];
+            const meta = getLocalizedStageMeta(stageKey, language);
             const articles = SEO_ARTICLES.filter((a) => a.funnelStage === stageKey);
 
             const badgeColor =
@@ -65,24 +74,27 @@ export default function KnowledgeFunnelSection() {
                   </span>
 
                   <div className="space-y-2.5 pt-1">
-                    {articles.map((art) => (
-                      <Link
-                        key={art.slug}
-                        href={`/bai-viet/${art.slug}`}
-                        className="block p-3 rounded-xl bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/40 transition group"
-                      >
-                        <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400 mb-1">
-                          <span className="text-amber-400 font-semibold">{art.category}</span>
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {art.readTime}
-                          </span>
-                        </div>
-                        <h3 className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-amber-300 transition leading-snug">
-                          {art.title}
-                        </h3>
-                      </Link>
-                    ))}
+                    {articles.map((rawArt) => {
+                      const art = getLocalizedSeoArticle(rawArt, language);
+                      return (
+                        <Link
+                          key={art.slug}
+                          href={`/bai-viet/${art.slug}`}
+                          className="block p-3 rounded-xl bg-slate-900/80 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/40 transition group"
+                        >
+                          <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400 mb-1">
+                            <span className="text-amber-400 font-semibold">{art.category}</span>
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {art.readTime}
+                            </span>
+                          </div>
+                          <h3 className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-amber-300 transition leading-snug">
+                            {art.title}
+                          </h3>
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

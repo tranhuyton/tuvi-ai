@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import {
   Sparkles,
@@ -15,6 +17,12 @@ import {
   Orbit,
   Radio,
 } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
+import {
+  EXTERNAL_PAGE_UI,
+  getLocalizedVisualSpec,
+  getLocalizedCourseShowcaseModules,
+} from '@/lib/i18n/externalPagesI18n';
 
 export interface ArticleVisualSpec {
   theme: 'amber' | 'emerald' | 'indigo' | 'purple' | 'rose';
@@ -695,7 +703,10 @@ export function ArticleHeroIllustration({
   title: string;
   groupNum?: number;
 }) {
-  const spec = getFallbackArticleSpec(code, title, groupNum);
+  const { language } = useLanguage();
+  const ui = EXTERNAL_PAGE_UI[language];
+  const baseSpec = getFallbackArticleSpec(code, title, groupNum);
+  const spec = getLocalizedVisualSpec(baseSpec, code, title, groupNum, language);
   const style = THEME_STYLES[spec.theme];
 
   return (
@@ -744,7 +755,7 @@ export function ArticleHeroIllustration({
             <div className="space-y-1">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-950/80 border border-amber-400/40 text-amber-300">
                 <Sparkles className="w-3 h-3 text-amber-400" />
-                <span>Sơ Đồ Minh Họa Chuyên Đề • Thầy Tôn</span>
+                <span>{ui.illHeaderBadge}</span>
               </div>
               <h3 className="text-base sm:text-xl font-bold font-serif text-white leading-snug">
                 {spec.diagramTitle}
@@ -759,7 +770,7 @@ export function ArticleHeroIllustration({
               <span className="text-2xl leading-none">{spec.centerSymbol}</span>
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-slate-300 font-semibold">
-                  Trọng Tâm
+                  {ui.illCenterFocus}
                 </div>
                 <div className="text-xs sm:text-sm font-extrabold">{spec.centerLabel}</div>
               </div>
@@ -818,7 +829,9 @@ export function ArticleCardThumbnail({
   title: string;
   groupNum?: number;
 }) {
-  const spec = getFallbackArticleSpec(code, title, groupNum);
+  const { language } = useLanguage();
+  const baseSpec = getFallbackArticleSpec(code, title, groupNum);
+  const spec = getLocalizedVisualSpec(baseSpec, code, title, groupNum, language);
   const style = THEME_STYLES[spec.theme];
 
   return (
@@ -866,12 +879,11 @@ export function CourseVisualShowcase({
   selectedModule: number;
   onSelectModule: (modId: number) => void;
 }) {
-  const modules = [
+  const { language } = useLanguage();
+  const ui = EXTERNAL_PAGE_UI[language];
+  const localizedMods = getLocalizedCourseShowcaseModules(language);
+  const styles = [
     {
-      id: 1,
-      badge: 'HỌC PHẦN 1 • 4 BÀI',
-      title: 'Nền Tảng Âm Dương, Cục Mệnh & 12 Cung Vị',
-      desc: 'Nắm vững quy luật Sinh – Khắc, Tam Hợp Mệnh – Tài – Quan, Thân cư 6 cung và Tuần – Triệt.',
       image: '/images/cam-nang-12-cung.png',
       icon: '🧭',
       accent: 'from-amber-500/25 to-slate-950',
@@ -879,10 +891,6 @@ export function CourseVisualShowcase({
       pill: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
     },
     {
-      id: 2,
-      badge: 'HỌC PHẦN 2 • 14 BÀI',
-      title: 'Giải Mã Toàn Bộ 14 Chính Tinh (Bắc & Nam Đẩu)',
-      desc: 'Đi sâu từng ngôi sao từ Tử Vi, Thiên Phủ đến Thất Sát, Phá Quân: tâm lý, tài chính, nghề nghiệp.',
       image: '/images/cam-nang-tinh-dau.png',
       icon: '🌟',
       accent: 'from-indigo-500/25 to-slate-950',
@@ -890,10 +898,6 @@ export function CourseVisualShowcase({
       pill: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/40',
     },
     {
-      id: 3,
-      badge: 'HỌC PHẦN 3 • 3 BÀI',
-      title: 'Lục Cát Tinh, Lục Sát Tinh & Bí Pháp Tứ Hóa',
-      desc: 'Đọc vị Tả Hữu, Xương Khúc, Khôi Việt; chế hóa Kình Đà Không Kiếp và phi tinh Lộc Quyền Khoa Kỵ.',
       image: '/images/course-hero-podcast.png',
       icon: '⚡',
       accent: 'from-purple-500/25 to-slate-950',
@@ -901,10 +905,6 @@ export function CourseVisualShowcase({
       pill: 'bg-purple-500/20 text-purple-300 border-purple-400/40',
     },
     {
-      id: 4,
-      badge: 'HỌC PHẦN 4 • 3 BÀI',
-      title: '4 Đại Cách Cục & Quy Trình 5 Bước Chấm Hạn',
-      desc: 'Tổng hợp Tử Phủ Vũ Tướng, Sát Phá Tham, Cơ Nguyệt Đồng Lương, Cự Nhật & thực hành chấm hạn năm.',
       image: '/images/cam-nang-luan-menh.png',
       icon: '👑',
       accent: 'from-emerald-500/25 to-slate-950',
@@ -912,9 +912,13 @@ export function CourseVisualShowcase({
       pill: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
     },
   ];
+  const modules = localizedMods.map((mod, idx) => ({
+    ...mod,
+    ...styles[idx],
+  }));
 
   return (
-    <section aria-label="Bản đồ 4 học phần có minh họa" className="space-y-3">
+    <section aria-label={ui.courseMapHeading} className="space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-xl bg-amber-500/15 border border-amber-500/35 text-amber-300">
@@ -922,7 +926,7 @@ export function CourseVisualShowcase({
           </span>
           <div>
             <h2 className="text-sm sm:text-base font-bold text-amber-300 font-serif uppercase tracking-wider">
-              Bản Đồ 4 Học Phần Thực Chiến (Nhấn Để Lọc Theo Học Phần)
+              {ui.courseMapHeading}
             </h2>
           </div>
         </div>
@@ -932,7 +936,7 @@ export function CourseVisualShowcase({
             onClick={() => onSelectModule(0)}
             className="text-xs font-semibold text-amber-400 hover:text-amber-300 underline cursor-pointer"
           >
-            Xem lại tất cả 24 bài giảng →
+            {ui.courseMapReset}
           </button>
         )}
       </div>
@@ -1008,6 +1012,8 @@ export function CourseLessonIllustration({
   durationLabel: string;
   isPlaying: boolean;
 }) {
+  const { language } = useLanguage();
+  const ui = EXTERNAL_PAGE_UI[language];
   const bgByModule: Record<number, string> = {
     1: '/images/cam-nang-12-cung.png',
     2: '/images/cam-nang-tinh-dau.png',
@@ -1052,7 +1058,7 @@ export function CourseLessonIllustration({
               isPlaying ? 'ring-2 ring-amber-400 animate-pulse' : ''
             }`}
           >
-            <span className="text-[10px] font-bold uppercase text-amber-300/90">Bài</span>
+            <span className="text-[10px] font-bold uppercase text-amber-300/90">{ui.courseLessonPrefix}</span>
             <span className="text-lg sm:text-xl font-black font-serif text-amber-400 leading-none">
               {lessonOrder < 10 ? `0${lessonOrder}` : lessonOrder}
             </span>
@@ -1071,7 +1077,7 @@ export function CourseLessonIllustration({
             </div>
 
             <div className="text-xs sm:text-sm font-semibold text-slate-200">
-              Chòm sao &amp; Khái niệm trọng tâm trong bài giảng:
+              {ui.courseIllStarsLabel}
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
@@ -1092,12 +1098,12 @@ export function CourseLessonIllustration({
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 self-start sm:self-center shrink-0">
           <img
             src="/avatar-thay-ton.jpg"
-            alt="Giảng viên Thầy Tôn"
+            alt={ui.courseIllInstructor}
             className="w-9 h-9 rounded-full object-cover border border-amber-400/70"
           />
           <div className="text-xs">
-            <div className="font-bold text-amber-300">Giảng viên: Thầy Tôn</div>
-            <div className="text-[10.5px] text-slate-400">Podcast &amp; Giáo trình thực chiến</div>
+            <div className="font-bold text-amber-300">{ui.courseIllInstructor}</div>
+            <div className="text-[10.5px] text-slate-400">{ui.courseIllSub}</div>
           </div>
         </div>
       </div>
