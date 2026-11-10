@@ -8,6 +8,7 @@ import { exportReadingToPdf } from '@/lib/pdfExport';
 import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 import { isInAppBrowser, getInAppBrowserName } from '@/lib/inAppBrowser';
 import { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
+import { computeTamHanAnalysis } from '@/lib/tuvi/anSao';
 
 interface LuanGiaiAIProps {
   readingHtml?: string;
@@ -86,6 +87,18 @@ export default function LuanGiaiAI({
   const hasFreeVoucher = tier === 'free' && Boolean(activeVoucher);
   const vipVoucherK = activeVoucher ? Math.round(activeVoucher.prices.reading_vip / 1000) : 119;
   const expVoucherK = activeVoucher ? Math.round(activeVoucher.prices.reading_expert / 1000) : 269;
+  const tamHanSummary = React.useMemo(() => {
+    if (!laSo) return null;
+    try {
+      return computeTamHanAnalysis(laSo);
+    } catch {
+      return null;
+    }
+  }, [laSo]);
+  const ownerDisplayName = (duongSo?.hoTen || laSo?.duongSo?.hoTen || '').trim();
+  const viewYearLabel = laSo?.namXem
+    ? `${laSo.namXem}${laSo.namXemCanChi ? ` (${laSo.namXemCanChi})` : ''}`
+    : '';
 
   if (!safeReadingHtml && !isLoading && !error && !onUpgrade && !onUpgradeToExpert) {
     return null;
@@ -343,42 +356,87 @@ export default function LuanGiaiAI({
           />
 
           {tier === 'free' && (onUpgrade || onUpgradeToExpert) && (
-            <div className="mt-8 pt-6 border-t border-slate-200 bg-amber-50/70 p-4 sm:p-5 rounded-xl border border-amber-200 flex flex-col lg:flex-row items-center justify-between gap-4 print:hidden">
-              <div>
-                <h4 className="font-bold text-amber-900 text-base sm:text-lg font-serif flex items-center gap-1.5">
-                  <Crown className="w-5 h-5 text-amber-600" />
-                  {t('reading.upgradePromptTitle', 'Bạn muốn tìm hiểu sâu sắc hơn về lá số này?')}
+            <div className="mt-8 bg-gradient-to-br from-amber-50 via-orange-50/70 to-purple-50/60 p-5 sm:p-6 rounded-2xl border-2 border-amber-300/90 shadow-md space-y-4 print:hidden">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-600/15 border border-amber-500/40 text-amber-900 text-xs font-extrabold uppercase tracking-wider">
+                  <Compass className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Bản Miễn Phí Mới Chỉ Mở 25% Chiều Sâu Lá Số</span>
+                </div>
+                <h4 className="font-extrabold text-amber-950 text-base sm:text-xl font-serif leading-snug">
+                  {ownerDisplayName && viewYearLabel
+                    ? `Giải Mã Trọn Vẹn 3 Tầng Vận Hạn Năm ${viewYearLabel} Của ${ownerDisplayName}`
+                    : t('reading.upgradePromptTitle', 'Bạn muốn tìm hiểu sâu sắc hơn về lá số này?')}
                 </h4>
-                <p className="text-sm sm:text-sm text-slate-700 mt-1 max-w-xl leading-relaxed">
-                  {t(
-                    'reading.upgradePromptDesc',
-                    'Nâng cấp lên Bản Pro (119.000đ) để luận giải chi tiết gấp 2 lần, hoặc chọn Bản Chuyên Gia Expert (269.000đ) để mổ xẻ đầy đủ 12 Cung + Cung Thân với độ dài gấp 4 lần bản miễn phí!'
+
+                {tamHanSummary &&
+                  (tamHanSummary.tieuVanCoordLabel ||
+                    tamHanSummary.lndhCoordLabel ||
+                    tamHanSummary.luuThaiTueCoordLabel) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                      {tamHanSummary.tieuVanCoordLabel && (
+                        <div className="rounded-xl bg-white/90 border border-amber-200 px-3 py-2 text-xs">
+                          <div className="font-bold text-amber-800 uppercase tracking-wide text-[11px]">
+                            1. Cung Tiểu Hạn (Nội Tâm)
+                          </div>
+                          <div className="font-semibold text-slate-900 mt-0.5">
+                            {tamHanSummary.tieuVanCoordLabel}
+                          </div>
+                        </div>
+                      )}
+                      {tamHanSummary.lndhCoordLabel && (
+                        <div className="rounded-xl bg-white/90 border border-cyan-200 px-3 py-2 text-xs">
+                          <div className="font-bold text-cyan-800 uppercase tracking-wide text-[11px]">
+                            2. Cung LN.Đại Hạn (Điểm Rơi)
+                          </div>
+                          <div className="font-semibold text-slate-900 mt-0.5">
+                            {tamHanSummary.lndhCoordLabel}
+                          </div>
+                        </div>
+                      )}
+                      {tamHanSummary.luuThaiTueCoordLabel && (
+                        <div className="rounded-xl bg-white/90 border border-purple-200 px-3 py-2 text-xs">
+                          <div className="font-bold text-purple-800 uppercase tracking-wide text-[11px]">
+                            3. Lưu Thái Tuế (Kết Quả)
+                          </div>
+                          <div className="font-semibold text-slate-900 mt-0.5">
+                            {tamHanSummary.luuThaiTueCoordLabel}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
+
+                <p className="text-sm text-slate-700 leading-relaxed pt-1">
+                  Mở khóa ngay để Thầy Tôn luận giải chi tiết sự tương tác của <strong>3 cung vận hạn trên</strong>, vận khí <strong>4 Mùa / 12 Tháng Âm lịch</strong>, mổ xẻ <strong>Tài Bạch – Quan Lộc – Phu Thê – Điền Trạch</strong>, đối chiếu Khuôn Mặt &amp; Chỉ Tay + <strong>🎁 Tặng kèm 02 câu hỏi riêng cùng Thầy Tôn</strong>!
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 pt-1">
                 {onUpgrade && (
                   <button
                     type="button"
                     onClick={onUpgrade}
-                    className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer"
+                    className="flex-1 sm:flex-initial px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    {hasFreeVoucher && activeVoucher
-                      ? `⚡ Bản Pro: ${activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
-                      : t('reading.upgradeBtn', '⚡ Bản Pro (119.000đ)')}
+                    <Crown className="w-4 h-4" />
+                    <span>
+                      {hasFreeVoucher && activeVoucher
+                        ? `⚡ Mở Bản VIP Pro: ${activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
+                        : '⚡ Mở Bản VIP Pro — 119.000đ (+02 Câu Hỏi)'}
+                    </span>
                   </button>
                 )}
                 {onUpgradeToExpert && (
                   <button
                     type="button"
                     onClick={onUpgradeToExpert}
-                    className="px-4 py-2.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                    className="flex-1 sm:flex-initial px-5 py-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-extrabold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <Gem className="w-4 h-4" />
                     <span>
                       {hasFreeVoucher && activeVoucher
-                        ? `💎 Bản Expert: ${activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
-                        : t('reading.upgradeExpertBtn', '💎 Bản Expert (269.000đ)')}
+                        ? `💎 Mở Bản Expert 12 Cung: ${activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
+                        : '💎 Mở Bản Expert 12 Cung — 269.000đ (+12 Tháng)'}
                     </span>
                   </button>
                 )}

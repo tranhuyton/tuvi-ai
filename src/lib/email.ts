@@ -543,7 +543,12 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
 
 
 export interface DripFunnelEmailDetails {
-  stage: 'reminder_1h' | 'voucher_20_24h' | 'voucher_30_72h' | 'voucher_30_6m';
+  stage:
+    | 'reminder_1h'
+    | 'voucher_20_24h'
+    | 'voucher_30_72h'
+    | 'voucher_30_6m'
+    | 'course_cross_sell_36h';
   recipientEmail: string;
   customerName: string;
   chartId?: string | null;
@@ -560,11 +565,13 @@ export interface DripFunnelEmailDetails {
   ctaBaseUrl: string;
   ctaProUrl: string;
   ctaExpertUrl: string;
+  ctaCourseUrl?: string;
+  extraFamilyChartNames?: string[];
   unsubscribeUrl: string;
 }
 
 /**
- * Gửi chuỗi 4 email chăm sóc tự động & ưu đãi đếm ngược cá nhân hóa theo Lá Số
+ * Gửi chuỗi email chăm sóc tự động, ưu đãi đếm ngược & giới thiệu khóa học cá nhân hóa theo Lá Số
  */
 export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Promise<{
   success: boolean;
@@ -581,6 +588,8 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
     ctaBaseUrl,
     ctaProUrl,
     ctaExpertUrl,
+    ctaCourseUrl,
+    extraFamilyChartNames,
     unsubscribeUrl,
   } = details;
 
@@ -757,6 +766,64 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
         </a>
         <a href="${ctaProUrl}" style="display: block; max-width: 430px; margin: 0 auto; padding: 13px 20px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0b0f19 !important; text-decoration: none; font-weight: bold; font-size: 14.5px; border-radius: 12px;">
           👑 Mở Khóa Bản VIP Pro Chỉ 83.000đ (-30%) ➜
+        </a>
+      </div>
+    `;
+  } else if (stage === 'course_cross_sell_36h') {
+    const courseUrl =
+      ctaCourseUrl ||
+      'https://www.tuvithayton.vn/khoa-hoc?utm_source=email_drip&utm_medium=email&utm_campaign=course_cross_sell_36h';
+    const cleanFamilyNames = (extraFamilyChartNames || []).map((n) => n.trim()).filter(Boolean);
+    const hasExtraFamily = cleanFamilyNames.length > 0;
+    const familyParagraphHtml = hasExtraFamily
+      ? `
+        <p style="font-size: 14px; color: #fde68a; background: rgba(245, 158, 11, 0.08); border-left: 3px solid #f59e0b; padding: 12px 14px; border-radius: 0 10px 10px 0; line-height: 1.7; margin-bottom: 18px;">
+          📖 Hệ thống cũng ghi nhận quý khách đang lưu thêm lá số của <strong>${cleanFamilyNames
+            .slice(0, 3)
+            .join(', ')}</strong> trong Sổ Tay Số Mệnh. Thay vì mỗi năm hoặc mỗi thành viên trong gia đình lại tốn chi phí mở khóa từng bài luận lẻ, quý khách hoàn toàn có thể tự nắm vững quy tắc luận giải gốc để chủ động xem hạn cho cả gia đình trọn đời.
+        </p>
+      `
+      : `
+        <p style="font-size: 14px; color: #cbd5e1; line-height: 1.7; margin-bottom: 18px;">
+          Nhiều anh/chị sau khi đọc bài luận giải cá nhân thường hỏi Thầy Tôn: <em>&ldquo;Làm sao để tự hiểu vì sao năm nay cung đó phát động, và tự xem được lá số cho vợ/chồng, con cái mỗi dịp đầu năm?&rdquo;</em> Đó là lý do Thầy Tôn đúc kết trọn bộ giáo trình thực chiến dưới dạng Podcast &amp; Sơ đồ tương tác ngay trên Web.
+        </p>
+      `;
+
+    subject = hasExtraFamily
+      ? `🎓 Thư ngỏ từ Thầy Tôn gửi ${displayName}: Tự tay luận giải lá số & chấm hạn hàng năm cho cả gia đình`
+      : `🎓 Thư ngỏ từ Thầy Tôn gửi ${displayName}: Tự đọc vị 12 Cung & quy trình 5 bước chấm hạn năm`;
+    badgeText = '✦ CHÂN TRUYỀN TỬ VI ĐẨU SỐ • THẦY TÔN ✦';
+    headerTitle = 'LÀM CHỦ TỬ VI THỰC CHIẾN QUA 24 BÀI PODCAST & GIÁO TRÌNH';
+    introHtml = `
+      <p style="font-size: 15px; color: #e2e8f0; line-height: 1.7; margin-bottom: 14px;">
+        Trân trọng cảm ơn <strong>${displayName}</strong> đã tin tưởng mở khóa luận giải ${
+      hasChart ? `lá số <strong>${canChiLabel}</strong> ${menhDetail ? `(${menhDetail})` : ''}` : ''
+    } tại <strong>Tử Vi Thầy Tôn</strong>.
+      </p>
+      ${familyParagraphHtml}
+    `;
+
+    highlightBoxHtml = `
+      <div style="background: linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(69, 26, 3, 0.65) 100%); border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 14px; padding: 20px; margin-bottom: 22px;">
+        <div style="color: #fbbf24; font-weight: 800; font-size: 15.5px; margin-bottom: 10px;">
+          🎧 Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Sở Hữu Trọn Đời)
+        </div>
+        <ul style="margin: 0; padding-left: 18px; color: #e2e8f0; font-size: 13.5px; line-height: 1.8;">
+          <li><strong>24 Bài Giảng Podcast &amp; Giáo Trình Cô Đọng:</strong> Nghe tiện lợi mọi lúc mọi nơi (trên xe, buổi tối), đi bài bản từ Âm Dương Ngũ Hành, 14 Chính Tinh, Lục Cát – Lục Sát, Tứ Hóa đến 4 Cách Cục lớn.</li>
+          <li><strong>Đối Chiếu Tự Động Trên Chính Lá Số Của Bạn:</strong> Học tới sao nào, hệ thống tự động chỉ rõ sao đó đang đóng ở cung nào trên lá số của ${displayName} và người thân.</li>
+          <li><strong>Quy Trình 5 Bước Chấm Hạn Năm (Tam Hạn):</strong> Tự ghép Tiểu Hạn – Lưu Niên Đại Hạn – Lưu Thái Tuế để biết năm nào nên tiến công, năm nào nên phòng thủ.</li>
+          <li><strong>Học Phí Trọn Gói 01 Lần Duy Nhất:</strong> <strong style="color: #34d399;">699.000đ</strong> (không thu phí hàng năm, kích hoạt tự động 24/7, có sẵn bài học mở đầu <strong>nghe thử miễn phí</strong>).</li>
+        </ul>
+      </div>
+    `;
+
+    pricingBlockHtml = `
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${courseUrl}" style="display: block; max-width: 440px; margin: 0 auto 12px auto; padding: 15px 22px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0b0f19 !important; text-decoration: none; font-weight: 800; font-size: 15px; border-radius: 12px; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);">
+          🎧 Nghe Thử Bài Đầu Miễn Phí &amp; Xem Giáo Trình 24 Bài ➜
+        </a>
+        <a href="${ctaBaseUrl}" style="display: inline-block; margin-top: 6px; color: #cbd5e1; font-size: 13px; text-decoration: underline;">
+          Hoặc mở lại lá số đã lưu của ${displayName} trong Sổ Tay Số Mệnh
         </a>
       </div>
     `;
