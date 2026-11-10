@@ -2202,7 +2202,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               onCancelEdit={isEditing && laSo ? () => setIsEditing(false) : undefined}
               activeVoucher={currentTier === 'free' ? activeVoucher : null}
               variant={isVanHanLanding ? 'van-han' : 'default'}
-              defaultTier={isVanHanLanding ? 'pro' : 'free'}
+              defaultTier="free"
               onRequireAuth={(action, notice) => {
                 pendingPostAuthActionRef.current = action;
                 setAuthModalTab('signup');

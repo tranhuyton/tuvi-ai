@@ -104,7 +104,7 @@ export default function TuViForm({
 
   // Lựa chọn gói dịch vụ
   const [selectedTier, setSelectedTier] = useState<ServiceTier>(
-    initialData?.tier || defaultTier || (isVanHanLanding ? 'pro' : 'free')
+    initialData?.tier || defaultTier || 'free'
   );
 
   React.useEffect(() => {
@@ -710,28 +710,22 @@ export default function TuViForm({
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            {/* Gói Cơ Bản (Miễn Phí) — Đặt trên ở Trang chủ, đặt gọn phía dưới ở Landing Page Vận Hạn */}
+            {/* Gói Cơ Bản (Miễn Phí) */}
             <div
               onClick={() => setSelectedTier('free')}
-              className={`${isVanHanLanding ? 'order-3 sm:col-span-2 p-3.5' : 'p-4 sm:p-4'} relative rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+              className={`relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'free'
                   ? 'bg-slate-800/95 border-emerald-400 ring-2 ring-emerald-400 shadow-md shadow-emerald-500/15'
                   : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 opacity-85 hover:opacity-100'
               }`}
             >
-              {!isVanHanLanding && (
-                <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
-                  {t('form.freeBadge', '🎁 Trải Nghiệm Miễn Phí')}
-                </div>
-              )}
+              <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs sm:text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
+                {t('form.freeBadge', '🎁 Trải Nghiệm Miễn Phí')}
+              </div>
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-sm sm:text-base text-slate-100 flex items-center gap-1.5 font-serif">
-                    <span>
-                      {isVanHanLanding
-                        ? '📜 Hoặc lập lá số & xem thử Bản Khởi Nguyên cơ bản'
-                        : t('form.freeTitle', '📜 Bản Khởi Nguyên (Miễn Phí)')}
-                    </span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-base text-slate-100 flex items-center gap-1.5 font-serif">
+                    <span>{t('form.freeTitle', '📜 Bản Khởi Nguyên (Miễn Phí)')}</span>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                     {t('form.freePrice', '0 VNĐ')}
@@ -744,17 +738,15 @@ export default function TuViForm({
                   )}
                 </p>
               </div>
-              {!isVanHanLanding && (
-                <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-emerald-300/90 font-medium flex items-center justify-between">
-                  <span>{t('form.freeQnA', '✓ An sao & Bình giải 0đ • Hỏi thêm: 49k/2 câu')}</span>
-                </div>
-              )}
+              <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-emerald-300/90 font-medium flex items-center justify-between">
+                <span>{t('form.freeQnA', '✓ An sao & Bình giải 0đ • Hỏi thêm: 49k/2 câu')}</span>
+              </div>
             </div>
 
             {/* Gói Chuyên Sâu (Bản Pro) */}
             <div
               onClick={() => setSelectedTier('pro')}
-              className={`${isVanHanLanding ? 'order-1 sm:col-span-2' : ''} relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+              className={`relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'pro'
                   ? 'bg-gradient-to-b from-amber-950/40 to-slate-900 border-amber-400 ring-2 ring-amber-400 shadow-lg shadow-amber-500/20'
                   : 'bg-slate-950/60 border-slate-800 hover:border-amber-500/40 opacity-85 hover:opacity-100'
@@ -797,7 +789,7 @@ export default function TuViForm({
             {/* Gói Chuyên Gia (Bản Expert) */}
             <div
               onClick={() => setSelectedTier('expert')}
-              className={`${isVanHanLanding ? 'order-2' : ''} sm:col-span-2 relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
+              className={`sm:col-span-2 relative p-4 sm:p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                 selectedTier === 'expert'
                   ? 'bg-gradient-to-br from-purple-950/60 via-indigo-950/50 to-slate-900 border-purple-400 ring-2 ring-purple-400 shadow-lg shadow-purple-500/25'
                   : 'bg-slate-950/70 border-purple-500/30 hover:border-purple-400/60 opacity-90 hover:opacity-100'
