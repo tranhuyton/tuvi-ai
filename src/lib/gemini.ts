@@ -543,16 +543,21 @@ async function callSingleGeminiVision(
   customApiKey?: string,
   modelName = 'gemini-3.1-pro-preview'
 ): Promise<{ text?: string; error?: string }> {
-  const isExpert = modelName.includes('argon') || modelName.includes('4');
+  const isCarbon = modelName.includes('carbon');
+  const isExpert = isCarbon || modelName.includes('argon') || modelName.includes('4');
   const isPro = isExpert || modelName.includes('3.1') || modelName.includes('pro');
-  // Với gemini-4-argon, đặt thinkingBudget = 0 để model sinh văn bản ngay lập tức (tránh bị treo 70-90s ở bước suy nghĩ ngầm gây lỗi 504)
-  const targetBudget = isExpert ? 0 : isPro ? 1024 : 0;
-  const maxTokens = isExpert ? 12000 : isPro ? 12000 : 5000;
-  const timeoutMs = isExpert ? 90000 : 120000;
+  // Cấp thinkingBudget hợp lý (1536 cho gemini-4-carbon, 1024 cho argon/pro) để suy luận chuẩn tinh đẩu mà vẫn phản hồi nhanh (~35-45s), tránh lỗi 504
+  const targetBudget = isCarbon ? 1536 : isExpert ? 1024 : isPro ? 1024 : 0;
+  const maxTokens = isExpert ? 14000 : isPro ? 12000 : 5000;
+  const timeoutMs = isExpert ? 135000 : 120000;
 
   // 1. Trường hợp người dùng có nhập key riêng trong modal cài đặt
   if (customApiKey && customApiKey.trim()) {
-    const candidateModels = isExpert ? [modelName, 'gemini-3.1-pro-preview'] : [modelName];
+    const candidateModels = isCarbon
+      ? [modelName, 'gemini-4-argon', 'gemini-3.1-pro-preview']
+      : isExpert
+      ? [modelName, 'gemini-3.1-pro-preview']
+      : [modelName];
     for (const candidateModel of candidateModels) {
       try {
         const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
@@ -566,7 +571,13 @@ async function callSingleGeminiVision(
             generationConfig: {
               temperature: 0.7,
               maxOutputTokens: maxTokens,
-              thinkingConfig: { thinkingBudget: candidateModel.includes('argon') ? 0 : 1024 },
+              thinkingConfig: {
+                thinkingBudget: candidateModel.includes('carbon')
+                  ? 1536
+                  : candidateModel.includes('argon')
+                  ? 1024
+                  : 1024,
+              },
             },
           }),
           signal: AbortSignal.timeout(timeoutMs),
@@ -575,14 +586,19 @@ async function callSingleGeminiVision(
         if (!res.ok) {
           const errText = await res.text();
           if (candidateModel !== candidateModels[candidateModels.length - 1]) {
-            console.warn(`[callGeminiVision] Model ${candidateModel} trả về lỗi, chuyển sang ${candidateModels[1]}...`);
+            console.warn(`[callGeminiVision] Model ${candidateModel} trả về lỗi, chuyển sang cổng kế tiếp...`);
             continue;
           }
           return { error: `Lỗi kết nối với Key cá nhân: ${errText}` };
         }
 
         const data = await res.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const resParts = data.candidates?.[0]?.content?.parts || [];
+        const rawText =
+          resParts
+            .filter((p: { thought?: boolean; text?: string }) => !p?.thought && typeof p?.text === 'string')
+            .map((p: { text?: string }) => p.text)
+            .join('') || resParts[0]?.text;
         if (rawText) {
           return { text: formatTuViHtml(rawText) };
         }
@@ -609,7 +625,24 @@ async function callSingleGeminiVision(
     },
   ];
 
-  // Nếu gọi gemini-4-argon mà cổng upstream quá tải, tự động dự phòng bằng gemini-3.1-pro-preview
+  // Nếu gọi gemini-4-carbon mà quá tải tạm thời, dự phòng bậc 1 sang gemini-4-argon (giữ chất lượng thế hệ Gemini 4)
+  if (isCarbon) {
+    edgeEndpoints.push({
+      url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
+      label: 'Supabase tuvi-interpreter (gemini-4-argon fallback)',
+      body: {
+        parts,
+        model: 'gemini-4-argon',
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: maxTokens,
+          thinkingConfig: { thinkingBudget: 1024 },
+        },
+      },
+    });
+  }
+
+  // Nếu cổng Gemini 4 quá tải, tự động dự phòng bậc 2 bằng gemini-3.1-pro-preview
   if (isExpert && modelName !== 'gemini-3.1-pro-preview') {
     edgeEndpoints.push({
       url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,

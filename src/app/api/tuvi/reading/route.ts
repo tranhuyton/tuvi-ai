@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const targetModel =
       model ||
       (currentTier === 'expert'
-        ? 'gemini-4-argon'
+        ? 'gemini-4-carbon'
         : currentTier === 'pro'
         ? 'gemini-3.1-pro-preview'
         : 'gemini-2.5-flash');

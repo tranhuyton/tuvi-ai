@@ -227,7 +227,7 @@ export default function AdminTestStudio() {
     setTestTier(savedTier);
     setTestModel(
       savedTier === 'expert'
-        ? 'gemini-4-argon'
+        ? 'gemini-4-carbon'
         : savedTier === 'pro'
         ? 'gemini-3.1-pro-preview'
         : 'gemini-2.5-flash'
@@ -646,7 +646,7 @@ export default function AdminTestStudio() {
     try {
       const selectedModel =
         mode === 'expert'
-          ? 'gemini-4-argon'
+          ? (testModel?.includes('4') ? testModel : 'gemini-4-carbon')
           : mode === 'vip'
           ? (testModel || 'gemini-3.1-pro-preview')
           : 'gemini-2.5-flash';
@@ -1331,7 +1331,7 @@ export default function AdminTestStudio() {
                 type="button"
                 onClick={() => {
                   setTestTier('expert');
-                  setTestModel('gemini-4-argon');
+                  setTestModel('gemini-4-carbon');
                 }}
                 className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${
                   testTier === 'expert'
@@ -1350,7 +1350,8 @@ export default function AdminTestStudio() {
                 onChange={(e) => setTestModel(e.target.value)}
                 className="px-2.5 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-slate-200"
               >
-                <option value="gemini-4-argon">gemini-4-argon (Chuyên Gia Expert - Mới nhất)</option>
+                <option value="gemini-4-carbon">gemini-4-carbon (Chuyên Gia Expert - Mạnh nhất)</option>
+                <option value="gemini-4-argon">gemini-4-argon (Gemini 4 Argon - Nhanh)</option>
                 <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Chuyên Sâu Pro)</option>
                 <option value="gemini-2.5-flash">gemini-2.5-flash (Nhanh &amp; chuẩn)</option>
               </select>

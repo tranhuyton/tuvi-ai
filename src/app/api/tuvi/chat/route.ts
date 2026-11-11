@@ -8,7 +8,7 @@ import {
 import { callGeminiVision } from '@/lib/gemini';
 import { createClient } from '@supabase/supabase-js';
 
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ubkvzgwespfvrlpjuxkp.supabase.co';
 const serviceRoleKey =
@@ -353,7 +353,7 @@ ${requirementText}${langInstruction}`;
     const modelToUse =
       model ||
       (activeMode === 'expert'
-        ? 'gemini-4-argon'
+        ? 'gemini-4-carbon'
         : activeMode === 'vip'
         ? 'gemini-3.1-pro-preview'
         : 'gemini-2.5-flash');

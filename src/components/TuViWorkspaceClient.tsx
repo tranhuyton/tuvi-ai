@@ -632,7 +632,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
   ): Promise<string | null> => {
     const selectedModel =
       tier === 'expert'
-        ? 'gemini-4-argon'
+        ? 'gemini-4-carbon'
         : tier === 'pro'
         ? 'gemini-3.1-pro-preview'
         : 'gemini-2.5-flash';
@@ -1400,7 +1400,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     try {
       const selectedModel =
         mode === 'expert'
-          ? 'gemini-4-argon'
+          ? 'gemini-4-carbon'
           : mode === 'vip'
           ? 'gemini-3.1-pro-preview'
           : 'gemini-2.5-flash';

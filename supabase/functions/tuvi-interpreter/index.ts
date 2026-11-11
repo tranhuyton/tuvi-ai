@@ -59,13 +59,15 @@ serve(async (req) => {
     const targetModel = model || 'gemini-2.5-flash';
     console.log(`[tuvi-interpreter] Calling model: ${targetModel}`);
 
-    // Cấu hình tối ưu tốc độ phản hồi:
-    // - Với gemini-4-argon (Expert): maxOutputTokens 28000, thinkingBudget 2048
+    // Cấu hình tối ưu tốc độ phản hồi & chiều sâu suy luận:
+    // - Với gemini-4-carbon (Expert Flagship): maxOutputTokens 28000, thinkingBudget 1536
+    // - Với gemini-4-argon (Expert Fast): maxOutputTokens 28000, thinkingBudget 1024
     // - Với gemini-3.1-pro-preview: Cần thinkingBudget tối thiểu (1024)
     // - Với gemini-2.5-flash: Dùng thinkingBudget 0 để phản hồi tức thì siêu tốc
-    const isExpertModel = targetModel.includes('argon') || targetModel.includes('4');
+    const isCarbon = targetModel.includes('carbon');
+    const isExpertModel = isCarbon || targetModel.includes('argon') || targetModel.includes('4');
     const isProPreview = isExpertModel || targetModel.includes('3.1') || targetModel.includes('pro');
-    const defaultBudget = isExpertModel ? 2048 : isProPreview ? 1024 : 0;
+    const defaultBudget = isCarbon ? 1536 : isExpertModel ? 1024 : isProPreview ? 1024 : 0;
 
     const finalGenConfig = generationConfig || {
       temperature: 0.7,
@@ -79,12 +81,16 @@ serve(async (req) => {
       finalGenConfig.thinkingConfig.thinkingBudget = defaultBudget;
     }
 
-    const candidateModels = isExpertModel && targetModel !== 'gemini-3.1-pro-preview'
+    const candidateModels = isCarbon
+      ? [targetModel, 'gemini-4-argon', 'gemini-3.1-pro-preview']
+      : isExpertModel && targetModel !== 'gemini-3.1-pro-preview'
       ? [targetModel, 'gemini-3.1-pro-preview']
       : [targetModel];
 
     let data: any = null;
+    let usedModel = targetModel;
     for (const candidateModel of candidateModels) {
+      usedModel = candidateModel;
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${candidateModel}:generateContent?key=${GEMINI_API_KEY}`,
         {
@@ -112,9 +118,16 @@ serve(async (req) => {
       });
     }
 
-    const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const resParts = data?.candidates?.[0]?.content?.parts || [];
+    const aiText =
+      resParts
+        .filter((p: any) => !p?.thought && typeof p?.text === 'string')
+        .map((p: any) => p.text)
+        .join('') ||
+      resParts[0]?.text ||
+      '';
 
-    return new Response(JSON.stringify({ result: aiText }), {
+    return new Response(JSON.stringify({ result: aiText, model: usedModel }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: any) {
