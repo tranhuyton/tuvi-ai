@@ -224,12 +224,12 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
   return (
     <div className="w-full max-w-[760px] mx-auto">
       {/* Thanh công cụ thao tác */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3 print:hidden px-1">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5 p-2.5 sm:p-3 rounded-2xl imperial-card border border-amber-500/35 backdrop-blur-xl print:hidden">
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-sm font-semibold transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white rounded-xl border border-slate-700 hover:border-amber-500/40 text-xs sm:text-sm font-semibold transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4 text-amber-400" />
             <span>{t('chart.newChartBtn', 'Lập Lá Số Mới')}</span>
@@ -239,7 +239,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
             <button
               type="button"
               onClick={onEdit}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 rounded-xl border border-amber-500/50 text-sm font-bold transition cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 hover:text-amber-100 rounded-xl border border-amber-400/50 text-xs sm:text-sm font-bold transition cursor-pointer shadow-sm"
               title="Sửa thông tin hoặc đổi năm xem để an lại lá số & bình giải nguyệt vận"
             >
               <Pencil className="w-4 h-4 text-amber-400" />
@@ -251,7 +251,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
             <button
               type="button"
               onClick={onOpenSavedCharts}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 rounded-xl border border-amber-500/40 text-sm font-bold transition cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900/90 hover:bg-slate-800 text-amber-300 hover:text-amber-200 rounded-xl border border-amber-500/35 text-xs sm:text-sm font-bold transition cursor-pointer shadow-sm"
               title="Xem danh sách các lá số đã lưu"
             >
               <BookOpen className="w-4 h-4 text-amber-400" />
@@ -266,7 +266,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
             <button
               type="button"
               onClick={() => setIsFitMode(!isFitMode)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 sm:py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-600 text-sm font-medium transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white rounded-xl border border-slate-700 text-xs sm:text-sm font-medium transition cursor-pointer"
               title={isFitMode ? 'Phóng to 100%' : 'Co vừa màn hình'}
             >
               {isFitMode ? (
@@ -288,7 +288,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
             type="button"
             onClick={handleDownload}
             disabled={isExporting}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
+            className="btn-shimmer inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition disabled:opacity-50 cursor-pointer"
           >
             <Download className="w-4 h-4" />
             <span>{isExporting ? t('chart.exportingImg', 'Đang xuất ảnh...') : t('chart.downloadBtn', 'Tải Ảnh Lá Số')}</span>
@@ -299,7 +299,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
       {/* Khung chứa lá số - Tự động co giãn theo chiều rộng màn hình mobile & căn giữa chuẩn xác */}
       <div
         ref={containerRef}
-        className="w-full max-w-[760px] mx-auto relative bg-white rounded-xl shadow-xl overflow-hidden print:p-0 print:shadow-none"
+        className="w-full max-w-[760px] mx-auto relative bg-white rounded-2xl ring-2 ring-amber-500/45 shadow-2xl shadow-amber-950/50 overflow-hidden print:p-0 print:shadow-none print:ring-0"
         style={{
           height: scale < 1 && isFitMode ? `${boardHeight * scale}px` : 'auto',
           overflowX: scale < 1 && isFitMode ? 'hidden' : 'auto',

@@ -79,26 +79,29 @@ export default function UserNav({
   const initialLetter = (displayName || 'U').charAt(0).toUpperCase();
 
   return (
-    <header className="w-full max-w-[1060px] mx-auto mb-3 sm:mb-5 px-2 py-2 sm:px-4 sm:py-2 rounded-2xl bg-slate-900/85 border border-amber-500/20 backdrop-blur-md shadow-xl flex items-center justify-between gap-1.5 sm:gap-2 relative z-30">
+    <header className="w-full max-w-[1060px] mx-auto mb-4 sm:mb-6 px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl imperial-card border border-amber-500/35 backdrop-blur-xl flex items-center justify-between gap-1.5 sm:gap-2 relative z-30 before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-300/75 before:to-transparent">
       {/* Khối bên trái: Logo & Brand */}
       <div
         onClick={onNewChart}
-        className="flex items-center gap-1.5 sm:gap-2.5 cursor-pointer group min-w-0 flex-1"
+        className="flex items-center gap-2 sm:gap-3 cursor-pointer group min-w-0 flex-1"
         title="Lập lá số mới"
       >
-        <img
-          src="/icon.svg"
-          alt="Tử Vi & Phong Thủy Thầy Tôn"
-          className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full shadow-md shadow-amber-500/25 group-hover:scale-105 transition shrink-0"
-        />
+        <div className="relative shrink-0">
+          <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-600 opacity-60 blur-[2px] group-hover:opacity-100 transition duration-300" />
+          <img
+            src="/icon.svg"
+            alt="Tử Vi & Phong Thủy Thầy Tôn"
+            className="relative w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full ring-1 ring-amber-300/60 shadow-md shadow-amber-500/30 group-hover:scale-105 transition"
+          />
+        </div>
         <div className="hidden xs:flex sm:flex flex-col min-w-0">
-          <span className="text-[11px] sm:text-base md:text-lg font-bold font-serif text-amber-400 tracking-wide leading-tight truncate">
+          <span className="text-[11px] sm:text-base md:text-lg font-extrabold font-serif text-gold-gradient tracking-wide leading-tight truncate drop-shadow-sm">
             {t('brand.title', 'TỬ VI & PHONG THỦY THẦY TÔN')}
           </span>
-          <p className="text-[9.5px] sm:text-[10.5px] text-slate-400 font-sans hidden md:block truncate tracking-tight">
+          <p className="text-[9.5px] sm:text-[10.5px] text-slate-300/90 font-sans hidden md:block truncate tracking-tight">
             <span>{t('brand.subtitle', 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng')}</span>
-            <span className="text-slate-500 font-light"> • </span>
-            <span className="text-amber-300 font-medium">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
+            <span className="text-amber-500/70 font-light"> • </span>
+            <span className="text-amber-300 font-semibold">{t('brand.multilingual', 'Luận Giải Đa Ngôn Ngữ')}</span>
           </p>
         </div>
       </div>

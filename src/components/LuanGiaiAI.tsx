@@ -107,15 +107,19 @@ export default function LuanGiaiAI({
   return (
     <div className="w-full max-w-[1060px] mx-auto mt-10">
       <div className="text-center mb-6">
-        <h2 className="text-2xl sm:text-3xl font-bold uppercase tracking-wider text-red-600 flex items-center justify-center gap-2 font-serif">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-200 text-xs font-extrabold uppercase tracking-widest mb-2.5 shadow-sm">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span>Ấn Phẩm Luận Mệnh Tử Vi &amp; Nhân Tướng Học</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold uppercase tracking-wider text-gold-gradient flex items-center justify-center gap-2.5 font-serif drop-shadow-sm">
           {isExpert ? (
             <>
-              <Gem className="w-6 h-6 text-purple-400 inline" />
+              <Gem className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400 shrink-0" />
               <span>{t('reading.expertTitle', 'Bình Giải Chuyên Gia Từ Thầy Tôn (Bản Expert)')}</span>
             </>
           ) : isPro ? (
             <>
-              <Crown className="w-6 h-6 text-amber-500 inline" />
+              <Crown className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400 shrink-0" />
               <span>{t('reading.proTitle', 'Bình Giải Chuyên Sâu Từ Thầy Tôn (Bản Pro)')}</span>
             </>
           ) : (
@@ -125,14 +129,14 @@ export default function LuanGiaiAI({
             </>
           )}
         </h2>
-        <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+        <div className="flex items-center justify-center gap-2 mt-2.5 flex-wrap">
           <span
-            className={`text-xs sm:text-sm px-3 py-1 rounded-full font-semibold border ${
+            className={`text-xs sm:text-sm px-3.5 py-1 rounded-full font-bold border shadow-sm ${
               isExpert
-                ? 'bg-purple-500/20 text-purple-300 border-purple-400/50'
+                ? 'bg-purple-500/20 text-purple-200 border-purple-400/50'
                 : isPro
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                ? 'bg-amber-500/20 text-amber-200 border-amber-400/50'
+                : 'bg-emerald-500/20 text-emerald-200 border-emerald-400/50'
             }`}
           >
             {isExpert
@@ -152,19 +156,21 @@ export default function LuanGiaiAI({
       </div>
 
       {isLoading && (
-        <div className="bg-slate-900/80 border border-amber-500/30 rounded-2xl p-8 sm:p-10 flex flex-col items-center justify-center text-center shadow-xl backdrop-blur-sm">
-          <div className="relative w-16 h-16 mb-4">
+        <div className="imperial-card border border-amber-500/40 rounded-3xl p-8 sm:p-12 flex flex-col items-center justify-center text-center shadow-2xl backdrop-blur-xl">
+          <div className="relative w-20 h-20 mb-5 flex items-center justify-center">
             <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 border-t-amber-400 animate-spin" />
-            <Sparkles className="w-6 h-6 text-amber-400 absolute inset-0 m-auto animate-pulse" />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-serif font-black text-lg shadow-lg shadow-amber-500/40">
+              ☯
+            </div>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-amber-400 tracking-wider uppercase font-serif">
+          <h3 className="text-xl sm:text-2xl font-extrabold text-gold-gradient tracking-wider uppercase font-serif">
             {isUpgrading
               ? isExpert
                 ? t('reading.loadingUpgradingExpert', 'Thầy Đang Nâng Cấp Luận Giải Chuyên Gia Expert...')
                 : t('reading.loadingUpgrading', 'Thầy Đang Nâng Cấp Luận Giải Pro...')
               : t('reading.loadingNormal', 'Thầy Đang Quán Tưởng...')}
           </h3>
-          <p className="text-base text-slate-300 mt-2 max-w-lg leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-300 mt-2.5 max-w-lg leading-relaxed">
             {isExpert
               ? t(
                   'reading.loadingExpertDesc',
@@ -194,12 +200,12 @@ export default function LuanGiaiAI({
       )}
 
       {!safeReadingHtml && !isLoading && !error && (onUpgrade || onUpgradeToExpert) && (
-        <div className="bg-slate-900/90 border border-purple-500/40 rounded-2xl p-6 sm:p-8 text-center space-y-4 shadow-2xl backdrop-blur-md">
+        <div className="imperial-card border border-purple-500/45 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl backdrop-blur-xl">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-purple-500/20 to-amber-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300">
             <Gem className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-xl sm:text-2xl font-bold text-amber-300 font-serif">
+            <h3 className="text-xl sm:text-2xl font-bold text-gold-gradient font-serif">
               {t('reading.unlockCardTitle', 'Khai Mở Luận Giải Chuyên Sâu & Chuyên Gia Expert')}
             </h3>
             <p className="text-sm sm:text-base text-slate-300 mt-1.5 max-w-2xl mx-auto leading-relaxed">
@@ -215,7 +221,7 @@ export default function LuanGiaiAI({
                 type="button"
                 onClick={onUpgradeToExpert}
                 disabled={isUpgrading}
-                className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-purple-500/30 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+                className="btn-shimmer w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-purple-500/30 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Gem className="w-5 h-5" />
                 <span>
@@ -232,7 +238,7 @@ export default function LuanGiaiAI({
                 type="button"
                 onClick={onUpgrade}
                 disabled={isUpgrading}
-                className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+                className="btn-shimmer w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-bold rounded-xl text-sm sm:text-base shadow-lg shadow-amber-500/25 transition transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Crown className="w-5 h-5" />
                 <span>
@@ -247,23 +253,40 @@ export default function LuanGiaiAI({
       )}
 
       {safeReadingHtml && !isLoading && (
-        <div className="relative bg-white text-slate-800 rounded-2xl p-5 sm:p-10 shadow-2xl border border-slate-300 print:shadow-none print:p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4 print:hidden border-b border-slate-200 pb-3">
-            <div className="flex items-center gap-2">
+        <div className="relative royal-scroll-paper text-slate-800 rounded-3xl p-5 sm:p-10 print:shadow-none print:p-4">
+          {/* 4 Hoa Văn Góc Sớ Hoàng Gia */}
+          <svg className="pointer-events-none absolute top-3 left-3 w-6 h-6 text-amber-700/40 print:hidden" viewBox="0 0 24 24" fill="none">
+            <path d="M2 10V2H10M5 7V5H7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <svg className="pointer-events-none absolute top-3 right-3 w-6 h-6 text-amber-700/40 print:hidden" viewBox="0 0 24 24" fill="none">
+            <path d="M22 10V2H14M19 7V5H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <svg className="pointer-events-none absolute bottom-3 left-3 w-6 h-6 text-amber-700/40 print:hidden" viewBox="0 0 24 24" fill="none">
+            <path d="M2 14V22H10M5 17V19H7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <svg className="pointer-events-none absolute bottom-3 right-3 w-6 h-6 text-amber-700/40 print:hidden" viewBox="0 0 24 24" fill="none">
+            <path d="M22 14V22H14M19 17V19H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-5 print:hidden border-b border-amber-700/20 pb-3.5">
+            <div className="flex items-center gap-2 flex-wrap">
               <span
-                className={`text-xs sm:text-sm px-3 py-1 rounded-md font-bold ${
+                className={`text-xs sm:text-sm px-3 py-1 rounded-lg font-bold shadow-xs ${
                   isExpert
                     ? 'bg-purple-100 text-purple-900 border border-purple-300'
                     : isPro
                     ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                    : 'bg-slate-100 text-slate-700 border border-slate-300'
+                    : 'bg-amber-50/90 text-amber-950 border border-amber-300/80'
                 }`}
               >
                 {isExpert
                   ? t('form.expertTitle', '💎 Bản Chuyên Gia Expert')
                   : isPro
-                  ? t('form.proTitle', 'Bản Chuyên Sâu Pro')
+                  ? t('form.proTitle', '👑 Bản Chuyên Sâu Pro')
                   : t('form.freeTitle', '📜 Bản Miễn Phí')}
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-900/10 border border-red-800/25 text-red-900 text-[11px] font-serif font-bold tracking-wider uppercase">
+                印 Ấn Tín Thầy Tôn
               </span>
             </div>
 

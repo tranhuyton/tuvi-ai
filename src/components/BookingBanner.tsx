@@ -18,10 +18,10 @@ export default function BookingBanner() {
   const { t } = useLanguage();
 
   return (
-    <section className="mt-8 sm:mt-10 w-full max-w-[1060px] mx-auto relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900/95 to-indigo-950/30 p-6 sm:p-8 border border-amber-500/35 text-slate-100 print:hidden shadow-2xl">
+    <section className="mt-8 sm:mt-10 w-full max-w-[1060px] mx-auto relative overflow-hidden rounded-3xl imperial-card p-6 sm:p-8 border border-amber-500/40 text-slate-100 print:hidden before:pointer-events-none before:absolute before:inset-x-12 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-300/80 before:to-transparent">
       {/* Hào quang trang trí */}
-      <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/12 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500/12 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 space-y-6">
         {/* Phần Đầu: Tiêu đề & Mô tả trải rộng cân đối */}
@@ -31,7 +31,7 @@ export default function BookingBanner() {
             <span>{t('booking.badge', 'Tham Vấn Mệnh Lý & Phong Thủy 1-1')}</span>
           </div>
 
-          <h2 className="font-bold text-amber-300 text-xl sm:text-2xl font-serif leading-snug">
+          <h2 className="font-extrabold text-gold-gradient text-xl sm:text-2xl md:text-3xl font-serif leading-snug drop-shadow-sm">
             {t('booking.title', 'Đặt Lịch Xem Tử Vi & Tư Vấn Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn')}
           </h2>
 

@@ -60,7 +60,7 @@ export default function HomeFunnelContent() {
       className="max-w-[1060px] mx-auto px-1 sm:px-0 space-y-8 print:hidden"
     >
       {/* Main Homepage SEO & GEO Guide Card (Bài 1 - Mã H) */}
-      <div className="bg-slate-900/75 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl">
+      <div className="relative overflow-hidden imperial-card backdrop-blur-xl border border-amber-500/35 rounded-3xl p-6 sm:p-10 before:pointer-events-none before:absolute before:inset-x-12 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-300/80 before:to-transparent">
         <div className="flex flex-wrap items-center gap-2.5 mb-3">
           <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border text-amber-300 bg-amber-950/60 border-amber-500/40">
             <Crown className="w-3.5 h-3.5" />
@@ -72,7 +72,7 @@ export default function HomeFunnelContent() {
           </span>
         </div>
 
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight mb-3">
+        <h2 className="text-2xl sm:text-3xl font-extrabold font-serif text-gold-gradient leading-tight mb-3 drop-shadow-sm">
           {heading}
         </h2>
 
@@ -147,7 +147,7 @@ export default function HomeFunnelContent() {
           <div className="mt-6 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3.5">
             <a
               href="#lap-la-so"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all"
+              className="btn-shimmer inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all"
             >
               <Sparkles className="w-4 h-4 shrink-0" />
               <span>{primaryCtaLabel}</span>
@@ -167,13 +167,13 @@ export default function HomeFunnelContent() {
       </div>
 
       {/* 3-Branch 20-Page Funnel Directory */}
-      <div className="bg-slate-900/65 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+      <div className="relative overflow-hidden imperial-card backdrop-blur-xl border border-amber-500/35 rounded-3xl p-6 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-amber-400 block mb-1">
               {dirBadge}
             </span>
-            <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold font-serif text-gold-gradient flex items-center gap-2">
               <Compass className="w-5 h-5 text-amber-400 shrink-0" />
               {dirHeading}
             </h2>

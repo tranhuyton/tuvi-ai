@@ -92,7 +92,7 @@ export default function CoursePromoBanner() {
     <section
       id="khoa-hoc-tu-vi"
       aria-label="Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn"
-      className="w-full max-w-[1060px] mx-auto relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-[#0e152b] to-amber-950/35 p-5 sm:p-8 border border-amber-500/45 text-slate-100 print:hidden shadow-2xl shadow-amber-950/25"
+      className="w-full max-w-[1060px] mx-auto relative overflow-hidden rounded-3xl imperial-card p-5 sm:p-8 border border-amber-500/45 text-slate-100 print:hidden before:pointer-events-none before:absolute before:inset-x-12 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-300/80 before:to-transparent"
     >
       {/* Ảnh nền nghệ thuật Học Viện Tinh Đẩu & Podcast */}
       <img
@@ -123,8 +123,8 @@ export default function CoursePromoBanner() {
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-serif text-amber-300 leading-snug">
-              <Link href="/khoa-hoc" className="hover:text-amber-200 transition-colors">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold font-serif text-gold-gradient leading-snug drop-shadow-sm">
+              <Link href="/khoa-hoc" className="hover:opacity-90 transition-opacity">
                 {t('course.title', COURSE_INFO.title)}
               </Link>
             </h2>
@@ -265,7 +265,7 @@ export default function CoursePromoBanner() {
               <div className="space-y-2.5 pt-1">
                 <Link
                   href="/khoa-hoc?buy=1"
-                  className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5"
+                  className="btn-shimmer w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition transform hover:-translate-y-0.5"
                 >
                   <QrCode className="w-4 h-4 shrink-0" />
                   <span>{t('course.registerBtn', 'Đăng Ký & Mở Khóa Ngay (699.000đ)')}</span>
