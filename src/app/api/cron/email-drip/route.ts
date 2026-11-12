@@ -159,6 +159,7 @@ async function runDripJob(req: NextRequest) {
   const registerCandidateProfile = (p: any) => {
     if (!p?.id) return;
     seenProfileIds.add(p.id);
+    if (tonyEnglishIdSet.has(p.id)) return;
     if (!p.email || !p.email.includes('@')) return;
     if (p.email_unsubscribed === true) return;
     if (p.role === 'admin') return;
