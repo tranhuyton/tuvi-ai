@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     // Truy vấn song song siêu nhẹ bằng Service Role (loại bỏ hoàn toàn ảnh Base64 hàng chục MB gây nghẽn/timeout)
     const [
       profilesRes,
+      tonyProfilesRes,
       chartsRes,
       readingIdsRes,
       anhMatIdsRes,
@@ -40,6 +41,10 @@ export async function GET(req: NextRequest) {
         .from('tuvi_profiles')
         .select('id, email, full_name, phone, created_at')
         .order('created_at', { ascending: false })
+        .limit(5000),
+      adminSupabase
+        .from('profiles')
+        .select('id')
         .limit(5000),
       adminSupabase
         .from('tuvi_charts')
@@ -111,15 +116,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const formattedUsers = profiles.map((u) => ({
-      id: u.id,
-      email: u.email,
-      full_name: u.full_name,
-      phone: u.phone || '',
-      created_at: u.created_at,
-      charts_count: chartCountByUser.get(u.id) || 0,
-      messages_count: msgCountByUser.get(u.id) || 0,
-    }));
+    const tonyProfileIdSet = new Set((tonyProfilesRes?.data || []).map((p: any) => p.id));
+    const formattedUsers = profiles
+      .filter((u) => !tonyProfileIdSet.has(u.id) || (chartCountByUser.get(u.id) || 0) > 0)
+      .map((u) => ({
+        id: u.id,
+        email: u.email,
+        full_name: u.full_name,
+        phone: u.phone || '',
+        created_at: u.created_at,
+        charts_count: chartCountByUser.get(u.id) || 0,
+        messages_count: msgCountByUser.get(u.id) || 0,
+      }));
 
     const formattedCharts = rawCharts.map((c) => {
       const resolvedTier = c.tier || c.lasoTier || 'free';

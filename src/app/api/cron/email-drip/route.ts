@@ -122,11 +122,12 @@ async function runDripJob(req: NextRequest) {
   const sixMonthsStartIso = new Date(nowMs - 210 * 24 * 3600 * 1000).toISOString();
   const sixMonthsEndIso = new Date(nowMs - 180 * 24 * 3600 * 1000).toISOString();
 
-  // 1. Lấy danh sách user mới (từ 31/10/2026 đến cách đây >= 1 giờ), user mốc 6 tháng, đơn PAID và auth.users
+  // 1. Lấy danh sách user mới (từ 31/10/2026 đến cách đây >= 1 giờ), user mốc 6 tháng, đơn PAID, danh sách học viên TonyEnglish và auth.users
   const [
     { data: recentProfiles },
     { data: sixMonthProfiles },
     { data: paidOrders },
+    { data: tonyEnglishProfiles },
     authUsersRes,
   ] = await Promise.all([
     adminSupabase
@@ -145,9 +146,13 @@ async function runDripJob(req: NextRequest) {
       .from('tuvi_orders')
       .select('user_id, email, chart_id, payment_type, paid_at, created_at')
       .eq('status', 'PAID'),
+    adminSupabase
+      .from('profiles')
+      .select('id, email'),
     adminSupabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
   ]);
 
+  const tonyEnglishIdSet = new Set<string>((tonyEnglishProfiles || []).map((p: any) => p.id).filter(Boolean));
   const seenProfileIds = new Set<string>();
   const profileMap = new Map<string, any>();
 
@@ -165,15 +170,23 @@ async function runDripJob(req: NextRequest) {
     registerCandidateProfile(p);
   }
 
-  // 1b. Đồng bộ các tài khoản auth.users đăng ký mới nhưng bị thiếu bản ghi trong tuvi_profiles (ví dụ Google OAuth gián đoạn)
-  const recentMissingAuthUsers = (authUsersRes?.data?.users || []).filter(
-    (u) =>
-      u?.id &&
-      u?.email &&
-      u.created_at >= RECENT_ENROLLMENT_CUTOFF &&
-      u.created_at <= oneHourAgoIso &&
-      !seenProfileIds.has(u.id)
-  );
+  // 1b. Đồng bộ các tài khoản auth.users đăng ký bên Tử Vi (app === 'tuvi') nhưng bị thiếu bản ghi trong tuvi_profiles
+  // TUYỆT ĐỐI KHÔNG đồng bộ học viên của hệ thống TonyEnglish (dùng chung Supabase Auth) sang tuvi_profiles!
+  const recentMissingAuthUsers = (authUsersRes?.data?.users || []).filter((u) => {
+    if (!u?.id || !u?.email) return false;
+    if (u.created_at < RECENT_ENROLLMENT_CUTOFF || u.created_at > oneHourAgoIso) return false;
+    if (seenProfileIds.has(u.id) || tonyEnglishIdSet.has(u.id)) return false;
+    const meta = u.user_metadata || {};
+    if (
+      meta.app === 'tonyenglish' ||
+      meta.role === 'student' ||
+      meta.role === 'teacher' ||
+      Boolean(meta.account_type)
+    ) {
+      return false;
+    }
+    return meta.app === 'tuvi';
+  });
 
   if (recentMissingAuthUsers.length > 0) {
     const checkIds = recentMissingAuthUsers.map((u) => u.id);
