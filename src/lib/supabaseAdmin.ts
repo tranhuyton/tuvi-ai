@@ -8,6 +8,14 @@ const serviceRoleKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzExNjM1MSwiZXhwIjoyMDkyNjkyMzUxfQ.Ubmws-Yg0pJKaCaXy7aO8rbt6bw4O3PGgM6GzPR0PLk';
 
+/**
+ * ⚠️ CẢNH BÁO CHO AI AGENT:
+ * `adminSupabase` kết nối tới Supabase Project dùng chung giữa `tuvi-ai` và `tonyenglish-app`.
+ * - Hồ sơ khách hàng Tử Vi nằm ở `public.tuvi_profiles`.
+ * - Hồ sơ học viên TonyEnglish nằm ở `public.profiles`.
+ * - Khi gọi `adminSupabase.auth.admin.listUsers()`, BẮT BUỘC phải dùng `isTuViAuthUser()`
+ *   (từ `@/lib/supabase`) và loại trừ `public.profiles` để không bao giờ trộn lẫn học viên TonyEnglish!
+ */
 export const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
     persistSession: false,

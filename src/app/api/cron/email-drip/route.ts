@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminSupabase, signEmailToken } from '@/lib/supabaseAdmin';
+import { isTuViAuthUser } from '@/lib/supabase';
 import { createPersonalVoucher, DripStage } from '@/lib/voucherStore';
 import { sendDripFunnelEmail } from '@/lib/email';
 
@@ -176,17 +177,8 @@ async function runDripJob(req: NextRequest) {
   const recentMissingAuthUsers = (authUsersRes?.data?.users || []).filter((u) => {
     if (!u?.id || !u?.email) return false;
     if (u.created_at < RECENT_ENROLLMENT_CUTOFF || u.created_at > oneHourAgoIso) return false;
-    if (seenProfileIds.has(u.id) || tonyEnglishIdSet.has(u.id)) return false;
-    const meta = u.user_metadata || {};
-    if (
-      meta.app === 'tonyenglish' ||
-      meta.role === 'student' ||
-      meta.role === 'teacher' ||
-      Boolean(meta.account_type)
-    ) {
-      return false;
-    }
-    return meta.app === 'tuvi';
+    if (seenProfileIds.has(u.id)) return false;
+    return isTuViAuthUser(u, tonyEnglishIdSet);
   });
 
   if (recentMissingAuthUsers.length > 0) {
