@@ -113,7 +113,13 @@ export default function PaymentModal({
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeOrderKeyRef = useRef<string | null>(null);
+  const inFlightKeyRef = useRef<string | null>(null);
+  const trackedCheckoutCodesRef = useRef<Set<string>>(new Set());
   const orderCodeRef = useRef<string>('');
+  const userRef = useRef(user);
+  const profileRef = useRef(profile);
+  userRef.current = user;
+  profileRef.current = profile;
 
   const bankName = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
   const stk = 'AGBSPVUONG2026';
@@ -231,6 +237,18 @@ export default function PaymentModal({
   const [requireAuthPrompt, setRequireAuthPrompt] = useState<boolean>(false);
 
   const createOrFetchOrder = useCallback(async (isRefresh = false) => {
+    const appliedVoucher =
+      paymentType === 'reading_vip' || paymentType === 'reading_expert'
+        ? voucherCode || undefined
+        : undefined;
+    const prelimUser = (userRef.current?.id || fallbackUserId || '').trim();
+    const prelimKey = `${paymentType}_${finalPrice}_${appliedVoucher || 'none'}_${chartId || 'default'}_${prelimUser}`;
+
+    // Chặn tuyệt đối gọi kép song song trong cùng mili-giây (khi profile/auth state vừa hydrate giữa chừng)
+    if (!isRefresh && prelimUser && inFlightKeyRef.current === prelimKey) {
+      return;
+    }
+
     setIsCreatingOrder(true);
     setOrderError(null);
     setQrFallbackStage(0);
@@ -238,6 +256,11 @@ export default function PaymentModal({
     orderCodeRef.current = '';
     setOrderCode('');
     setOrderStatus('IDLE');
+
+    let lockedKey: string | null = prelimUser ? prelimKey : null;
+    if (lockedKey) {
+      inFlightKeyRef.current = lockedKey;
+    }
 
     try {
       // Xác thực trực tiếp phiên đăng nhập (chống race condition vừa đăng ký xong qua AuthModal mà React state chưa kịp cập nhật)
@@ -260,11 +283,13 @@ export default function PaymentModal({
         // ignore
       }
 
-      const resolvedUserId = (liveUser?.id || user?.id || fallbackUserId || '').trim();
+      const curUser = userRef.current;
+      const curProfile = profileRef.current;
+      const resolvedUserId = (liveUser?.id || curUser?.id || fallbackUserId || '').trim();
       const resolvedEmail = (
         liveUser?.email ||
-        user?.email ||
-        profile?.email ||
+        curUser?.email ||
+        curProfile?.email ||
         fallbackEmail ||
         ''
       ).trim();
@@ -281,6 +306,13 @@ export default function PaymentModal({
         return;
       }
 
+      const resolvedKey = `${paymentType}_${finalPrice}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId}`;
+      if (!isRefresh && lockedKey !== resolvedKey && inFlightKeyRef.current === resolvedKey) {
+        return;
+      }
+      lockedKey = resolvedKey;
+      inFlightKeyRef.current = resolvedKey;
+
       setRequireAuthPrompt(false);
       if (resolvedEmail && customerEmailRef.current !== resolvedEmail) {
         customerEmailRef.current = resolvedEmail;
@@ -295,9 +327,9 @@ export default function PaymentModal({
         );
       const resolvedHoTen = isGenericName
         ? (
-            profile?.full_name ||
+            curProfile?.full_name ||
             liveUser?.user_metadata?.full_name ||
-            user?.user_metadata?.full_name ||
+            curUser?.user_metadata?.full_name ||
             resolvedEmail.split('@')[0] ||
             cleanInputName ||
             'Khách thành viên'
@@ -306,11 +338,6 @@ export default function PaymentModal({
 
       const affiliateCode =
         (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
-
-      const appliedVoucher =
-        paymentType === 'reading_vip' || paymentType === 'reading_expert'
-          ? voucherCode || undefined
-          : undefined;
 
       const metaAttribution = getBrowserMetaAttribution();
       const res = await fetch('/api/payment/create-order', {
@@ -328,6 +355,7 @@ export default function PaymentModal({
           userId: resolvedUserId,
           affiliateCode: affiliateCode || undefined,
           voucherCode: appliedVoucher,
+          forceNew: Boolean(isRefresh),
           ...metaAttribution,
         }),
       });
@@ -355,10 +383,13 @@ export default function PaymentModal({
         const code = data.order.orderCode;
         const confirmedAmount = Number(data.order.amount) || finalPrice;
         setOrderAmount(confirmedAmount);
-        activeOrderKeyRef.current = `${paymentType}_${confirmedAmount}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId}`;
+        activeOrderKeyRef.current = `${paymentType}_${finalPrice}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId}`;
         orderCodeRef.current = code;
         setOrderCode(code);
-        trackInitiateCheckout(paymentType, confirmedAmount || 0, code, appliedVoucher);
+        if (!data.reused && !trackedCheckoutCodesRef.current.has(code)) {
+          trackedCheckoutCodesRef.current.add(code);
+          trackInitiateCheckout(paymentType, confirmedAmount || 0, code, appliedVoucher);
+        }
         setQrUrl(data.qrUrl || `https://img.vietqr.io/image/VPB-${stk}-compact2.png?amount=${confirmedAmount}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(chuTk)}`);
         setSepayQrUrl(data.sepayQrUrl || `https://qr.sepay.vn/img?bank=VPBank&acc=${stk}&template=compact&amount=${confirmedAmount}&des=${encodeURIComponent(code)}`);
 
@@ -387,14 +418,18 @@ export default function PaymentModal({
       console.error('[PaymentModal] Lỗi tạo đơn thanh toán:', err);
       setOrderError(err?.message || 'Không thể tạo mã giao dịch. Vui lòng bấm thử lại.');
     } finally {
+      if (lockedKey && inFlightKeyRef.current === lockedKey) {
+        inFlightKeyRef.current = null;
+      }
       setIsCreatingOrder(false);
     }
-  }, [user?.id, user?.email, user?.user_metadata?.full_name, profile?.email, profile?.full_name, fallbackUserId, fallbackEmail, voucherCode, onVoucherExpired, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
+  }, [user?.id, fallbackUserId, fallbackEmail, voucherCode, onVoucherExpired, paymentType, finalPrice, hoTen, chartId, stk, chuTk]);
 
   // Tạo đơn hàng khi modal mở ra (tái sử dụng đơn pending nếu cùng gói để không sinh mã rác và hiện QR tức thì)
   useEffect(() => {
     if (!isOpen) {
       setRequireAuthPrompt(false);
+      inFlightKeyRef.current = null;
       if (orderStatus !== 'PENDING') {
         orderCodeRef.current = '';
         setOrderCode('');
@@ -419,7 +454,10 @@ export default function PaymentModal({
         ? voucherCode || 'none'
         : 'none';
     const targetKey = `${paymentType}_${finalPrice}_${appliedVoucher}_${chartId || 'default'}_${effectiveKeyUser}`;
-    // Nếu modal đang mở và đã có đơn pending hợp lệ cho đúng user & gói & lá số này rồi thì không tạo lại để hiện mã ngay lập tức 0ms
+    // Nếu đang tạo đơn cho đúng key này hoặc đã có đơn pending hợp lệ cho đúng user & gói & lá số này rồi thì giữ nguyên
+    if (effectiveKeyUser && inFlightKeyRef.current === targetKey) {
+      return;
+    }
     if (
       effectiveKeyUser &&
       activeOrderKeyRef.current === targetKey &&

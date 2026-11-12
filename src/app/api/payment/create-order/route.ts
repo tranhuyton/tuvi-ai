@@ -254,6 +254,95 @@ export async function POST(req: Request) {
       sourceUrl: typeof body.sourceUrl === 'string' ? body.sourceUrl : undefined,
     });
 
+    // Chống sinh đúp đơn PENDING & đúp sự kiện CAPI InitiateCheckout khi trình duyệt gửi 2 request liên tiếp cho cùng user/gói/lá số
+    if (!body.forceNew && effectiveUserId) {
+      try {
+        const recentWindowIso = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        let dupQuery = adminSupabase
+          .from('tuvi_orders')
+          .select('*')
+          .eq('user_id', effectiveUserId)
+          .eq('payment_type', paymentType)
+          .eq('amount', finalAmount)
+          .eq('status', 'PENDING')
+          .gte('created_at', recentWindowIso)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (effectiveChartId) {
+          dupQuery = dupQuery.eq('chart_id', effectiveChartId);
+        } else {
+          dupQuery = dupQuery.is('chart_id', null);
+        }
+        if (appliedVoucherCode) {
+          dupQuery = dupQuery.eq('voucher_code', appliedVoucherCode.toUpperCase());
+        } else {
+          dupQuery = dupQuery.is('voucher_code', null);
+        }
+
+        const { data: existingRows } = await dupQuery;
+        if (existingRows && existingRows.length > 0) {
+          const row = existingRows[0];
+          const reusedOrder = {
+            id: row.id,
+            orderCode: row.order_code,
+            paymentType: row.payment_type,
+            amount: Number(row.amount),
+            hoTen: row.ho_ten || effectiveHoTen,
+            email: row.email || effectiveEmail,
+            status: 'PENDING' as const,
+            createdAt: row.created_at,
+            chartId: row.chart_id || undefined,
+            userId: row.user_id || undefined,
+            affiliateCode: row.affiliate_code || undefined,
+            commissionAmount: Number(row.commission_amount || 0),
+            voucherCode: row.voucher_code || undefined,
+            discountAmount: Number(row.discount_amount || 0),
+          };
+
+          let reusedQrDataUrl = '';
+          try {
+            reusedQrDataUrl = await generateVietQrDataUrl({
+              bankBinOrCode: BANK_CODE,
+              accountNumber: STK,
+              amount: reusedOrder.amount,
+              memo: reusedOrder.orderCode,
+              accountName: CHU_TK,
+            });
+          } catch {
+            // ignore
+          }
+
+          const reusedQrUrl = `https://img.vietqr.io/image/${BANK_CODE}-${STK}-compact2.png?amount=${reusedOrder.amount}&addInfo=${encodeURIComponent(
+            reusedOrder.orderCode
+          )}&accountName=${encodeURIComponent(CHU_TK)}`;
+          const reusedSepayQrUrl = `https://qr.sepay.vn/img?bank=VPBank&acc=${STK}&template=compact&amount=${reusedOrder.amount}&des=${encodeURIComponent(
+            reusedOrder.orderCode
+          )}`;
+
+          return NextResponse.json({
+            success: true,
+            reused: true,
+            order: reusedOrder,
+            originalAmount,
+            discountAmount,
+            appliedVoucherCode: appliedVoucherCode || null,
+            qrUrl: reusedQrUrl,
+            qrDataUrl: reusedQrDataUrl,
+            sepayQrUrl: reusedSepayQrUrl,
+            syntax: reusedOrder.orderCode,
+            bankInfo: {
+              bankName: BANK_NAME,
+              stk: STK,
+              chuTk: CHU_TK,
+            },
+          });
+        }
+      } catch (dupErr) {
+        console.warn('[API CREATE-ORDER] Bỏ qua kiểm tra trùng đơn:', dupErr);
+      }
+    }
+
     const order = await createOrder({
       paymentType,
       amount: finalAmount,
