@@ -17,7 +17,7 @@ interface TuViFormProps {
   initialData?: DuLieuDuongSo | null;
   onCancelEdit?: () => void;
   activeVoucher?: ClientVoucherInfo | null;
-  variant?: 'default' | 'van-han';
+  variant?: 'default' | 'van-han' | 'dien-trach-quan-loc';
   defaultTier?: ServiceTier;
 }
 
@@ -85,7 +85,8 @@ export default function TuViForm({
   const { user } = useAuth();
   const { t, tHour, tCanChi } = useLanguage();
   const currentYear = new Date().getFullYear();
-  const isVanHanLanding = variant === 'van-han';
+  const isDienTrachQuanLoc = variant === 'dien-trach-quan-loc';
+  const isVanHanLanding = variant === 'van-han' || isDienTrachQuanLoc;
   const [hoTen, setHoTen] = useState(initialData?.hoTen || '');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>(initialData?.gioiTinh || 'Nam');
   const [ngayDuong, setNgayDuong] = useState(initialData?.ngayDuong ?? 15);
@@ -314,7 +315,9 @@ export default function TuViForm({
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-400/15 to-amber-600/20 border border-amber-400/45 text-[11px] sm:text-xs font-extrabold text-amber-200 uppercase tracking-wider shadow-sm shadow-amber-500/10">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span>
-                  {isVanHanLanding
+                  {isDienTrachQuanLoc
+                    ? 'Thẩm Định Cung Điền Trạch & Quan Lộc 2026 – 2027 • Thầy Tôn'
+                    : isVanHanLanding
                     ? 'Bước 1: Nhập Ngày Giờ Sinh & Năm Muốn Giải Mã'
                     : t('form.heroBadge', 'Tử Vi Cổ Truyền 108 Sao & Nhân Tướng Học Thực Chứng')}
                 </span>
@@ -333,7 +336,11 @@ export default function TuViForm({
               ) : null}
             </div>
 
-            {isVanHanLanding ? (
+            {isDienTrachQuanLoc ? (
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wide text-gold-gradient font-serif leading-snug drop-shadow-sm">
+                Nhập Ngày Giờ Sinh Để Soi Cung Điền Trạch &amp; Quan Lộc Trên Lá Số
+              </h1>
+            ) : isVanHanLanding ? (
               <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-wide text-gold-gradient font-serif leading-snug drop-shadow-sm">
                 {t('form.title', 'Nhập Thông Tin Đương Số Để Giải Mã 3 Tầng Vận Hạn')}
               </h2>
@@ -344,12 +351,14 @@ export default function TuViForm({
             )}
 
             <p className="text-xs sm:text-sm text-slate-200/95 mt-2 leading-relaxed max-w-2xl">
-              {t(
-                'form.desc',
-                isVanHanLanding
-                  ? 'Hệ thống tự động an 108+ chính phụ tinh theo giờ sinh, xác định chính xác tọa độ Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế và mở khóa bài luận giải chuyên sâu.'
-                  : 'Lập lá số bàn cờ 108 tinh đẩu chuẩn xác theo giờ sinh • Tặng ngay bài bình giải Khởi Nguyên miễn phí • Kết hợp độc quyền Diện Tướng Khuôn Mặt & Thủ Tướng Chỉ Tay từ Thầy Tôn'
-              )}
+              {isDienTrachQuanLoc
+                ? 'An chuẩn 108+ tinh đẩu theo giờ sinh — Định vị ngay thế đứng Nhà đất (Điền Trạch), Sự nghiệp (Quan Lộc) & 3 Cung Vận Hạn 2026–2027 cùng Thầy Tôn (Cựu Chuyên Toán-Tin ĐH Tổng Hợp • Thạc sĩ ĐH Lancaster UK).'
+                : t(
+                    'form.desc',
+                    isVanHanLanding
+                      ? 'Hệ thống tự động an 108+ chính phụ tinh theo giờ sinh, xác định chính xác tọa độ Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế và mở khóa bài luận giải chuyên sâu.'
+                      : 'Lập lá số bàn cờ 108 tinh đẩu chuẩn xác theo giờ sinh • Tặng ngay bài bình giải Khởi Nguyên miễn phí • Kết hợp độc quyền Diện Tướng Khuôn Mặt & Thủ Tướng Chỉ Tay từ Thầy Tôn'
+                  )}
             </p>
           </div>
 
@@ -399,7 +408,9 @@ export default function TuViForm({
           <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-2.5 py-2 text-emerald-300">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span className="truncate">
-              {t('form.trustFree', isVanHanLanding ? 'Đủ 3 Cung Vận Hạn' : 'An Sao & Luận Giải 0đ')}
+              {isDienTrachQuanLoc
+                ? 'Soi Điền Trạch & Quan Lộc'
+                : t('form.trustFree', isVanHanLanding ? 'Đủ 3 Cung Vận Hạn' : 'An Sao & Luận Giải 0đ')}
             </span>
           </div>
           <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/25 rounded-xl px-2.5 py-2 text-purple-200">

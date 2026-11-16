@@ -63,6 +63,28 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
   });
   const [isRestoringSession, setIsRestoringSession] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [adAngle, setAdAngle] = useState<'default' | 'dien-trach-quan-loc'>('default');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const utmContent = (params.get('utm_content') || '').toLowerCase();
+      const utmCampaign = (params.get('utm_campaign') || '').toLowerCase();
+      if (
+        utmContent.includes('ad06') ||
+        utmContent.includes('dientrach') ||
+        utmCampaign.includes('dientrach')
+      ) {
+        setAdAngle('dien-trach-quan-loc');
+        sessionStorage.setItem('tuvi_ad_angle', 'dien-trach-quan-loc');
+      } else if (sessionStorage.getItem('tuvi_ad_angle') === 'dien-trach-quan-loc') {
+        setAdAngle('dien-trach-quan-loc');
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Trạng thái Mã ưu đãi đếm ngược (Drip Email Funnel) & chủ sở hữu lá số mở từ Email
   const [activeVoucher, setActiveVoucher] = useState<ClientVoucherInfo | null>(null);
@@ -2191,9 +2213,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
             </p>
           </div>
         ) : (!laSo || isEditing) ? (
-          <div className="my-auto py-4 sm:py-8 space-y-8 sm:space-y-12">
-            {isVanHanLanding && !isEditing && <VanHanLandingHero />}
-
+          <div className="my-auto py-3 sm:py-8 space-y-8 sm:space-y-12">
+            {/* Đưa Form nhập Ngày Giờ Sinh lên ngay màn hình đầu tiên trên di động để triệt tiêu thoát trang sớm */}
             <TuViForm
               onSubmit={handleFormSubmit}
               isLoading={isLoadingReading}
@@ -2201,7 +2222,13 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               initialData={isEditing ? (currentDuongSo || laSo?.duongSo) : null}
               onCancelEdit={isEditing && laSo ? () => setIsEditing(false) : undefined}
               activeVoucher={currentTier === 'free' ? activeVoucher : null}
-              variant={isVanHanLanding ? 'van-han' : 'default'}
+              variant={
+                isVanHanLanding
+                  ? adAngle === 'dien-trach-quan-loc'
+                    ? 'dien-trach-quan-loc'
+                    : 'van-han'
+                  : 'default'
+              }
               defaultTier="free"
               onRequireAuth={(action, notice) => {
                 pendingPostAuthActionRef.current = action;
@@ -2210,6 +2237,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                 setIsAuthModalOpen(true);
               }}
             />
+
+            {isVanHanLanding && !isEditing && <VanHanLandingHero />}
 
             {!isEditing && (
               <>

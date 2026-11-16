@@ -204,11 +204,11 @@ export default function VanHanLandingHero() {
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold font-serif text-white leading-snug">
+              <h2 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold font-serif text-white leading-snug">
                 {c.h1Part1}
                 <span className="text-amber-400">2026 – 2027</span>
                 {c.h1Part2}
-              </h1>
+              </h2>
 
               <p
                 className="text-sm sm:text-base text-slate-200 leading-relaxed"

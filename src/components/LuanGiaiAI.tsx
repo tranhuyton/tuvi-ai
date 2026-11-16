@@ -95,6 +95,25 @@ export default function LuanGiaiAI({
       return null;
     }
   }, [laSo]);
+  const keyPalaceSummary = React.useMemo(() => {
+    if (!laSo?.cungs) return null;
+    const formatStars = (cung?: (typeof laSo.cungs)[number]) => {
+      if (!cung) return null;
+      const stars =
+        cung.chinhTinh && cung.chinhTinh.length > 0
+          ? cung.chinhTinh
+              .map((s) => `${s.ten}${s.dacHam ? ` (${s.dacHam})` : ''}`)
+              .join(', ')
+          : 'Vô Chính Diệu (xét Tam Phương Tứ Chính)';
+      return `Tại ${cung.chi} — ${stars}`;
+    };
+    const dienTrach = laSo.cungs.find((c) => c.cungName.toLowerCase().includes('điền'));
+    const quanLoc = laSo.cungs.find((c) => c.cungName.toLowerCase().includes('quan'));
+    return {
+      dienTrachLabel: formatStars(dienTrach),
+      quanLocLabel: formatStars(quanLoc),
+    };
+  }, [laSo]);
   const ownerDisplayName = (duongSo?.hoTen || laSo?.duongSo?.hoTen || '').trim();
   const viewYearLabel = laSo?.namXem
     ? `${laSo.namXem}${laSo.namXemCanChi ? ` (${laSo.namXemCanChi})` : ''}`
@@ -387,9 +406,41 @@ export default function LuanGiaiAI({
                 </div>
                 <h4 className="font-extrabold text-amber-950 text-base sm:text-xl font-serif leading-snug">
                   {ownerDisplayName && viewYearLabel
-                    ? `Giải Mã Trọn Vẹn 3 Tầng Vận Hạn Năm ${viewYearLabel} Của ${ownerDisplayName}`
+                    ? `Mở Khóa Cung Điền Trạch, Quan Lộc & 3 Tầng Vận Hạn ${viewYearLabel} Của ${ownerDisplayName}`
                     : t('reading.upgradePromptTitle', 'Bạn muốn tìm hiểu sâu sắc hơn về lá số này?')}
                 </h4>
+
+                {keyPalaceSummary &&
+                  (keyPalaceSummary.dienTrachLabel || keyPalaceSummary.quanLocLabel) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      {keyPalaceSummary.dienTrachLabel && (
+                        <div className="rounded-xl bg-white/95 border border-emerald-300/90 px-3 py-2 text-xs shadow-xs">
+                          <div className="font-extrabold text-emerald-800 uppercase tracking-wide text-[11px] flex items-center justify-between gap-1">
+                            <span>🏠 Cung Điền Trạch (Nhà Đất &amp; Quy Hoạch)</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 font-bold">
+                              Bản 12 Cung
+                            </span>
+                          </div>
+                          <div className="font-semibold text-slate-900 mt-0.5">
+                            {keyPalaceSummary.dienTrachLabel}
+                          </div>
+                        </div>
+                      )}
+                      {keyPalaceSummary.quanLocLabel && (
+                        <div className="rounded-xl bg-white/95 border border-indigo-300/90 px-3 py-2 text-xs shadow-xs">
+                          <div className="font-extrabold text-indigo-800 uppercase tracking-wide text-[11px] flex items-center justify-between gap-1">
+                            <span>💼 Cung Quan Lộc (Sự Nghiệp &amp; Vị Thế)</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">
+                              Chuyên Sâu
+                            </span>
+                          </div>
+                          <div className="font-semibold text-slate-900 mt-0.5">
+                            {keyPalaceSummary.quanLocLabel}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                 {tamHanSummary &&
                   (tamHanSummary.tieuVanCoordLabel ||
