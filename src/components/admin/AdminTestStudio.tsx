@@ -34,9 +34,11 @@ import {
   MessageSquare,
   Bookmark,
   Cloud,
+  ZoomIn,
 } from 'lucide-react';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 import { OfflineChartItem, OfflineChartTag } from '@/lib/offlineChartStore';
+import BiometricImageLightbox from '@/components/BiometricImageLightbox';
 
 function isHeicFile(file: File): boolean {
   const name = file.name.toLowerCase();
@@ -139,6 +141,7 @@ export default function AdminTestStudio() {
   // Debug prompt
   const [showPromptDebug, setShowPromptDebug] = useState(false);
   const [rawPromptText, setRawPromptText] = useState<string>('');
+  const [studioZoomType, setStudioZoomType] = useState<'mat' | 'tay' | null>(null);
 
   // Tải danh sách lá số khách offline khi vào trang
   const fetchOfflineCharts = async () => {
@@ -1159,17 +1162,28 @@ export default function AdminTestStudio() {
                 <span className="text-xs text-amber-300">Đang nén ảnh iPhone...</span>
               </div>
             ) : formData.anhMat ? (
-              <div className="relative rounded-xl overflow-hidden border border-amber-500/50 h-28 bg-slate-900 flex items-center justify-center">
+              <div className="relative rounded-xl overflow-hidden border border-amber-500/50 h-28 bg-slate-900 flex items-center justify-center group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={formData.anhMat}
                   alt="Ảnh diện tướng"
-                  className="max-h-full max-w-full object-contain"
+                  onClick={() => setStudioZoomType('mat')}
+                  className="max-h-full max-w-full object-contain cursor-pointer"
+                  title="Bấm để phóng to soi rõ Diện Tướng"
                 />
                 <button
                   type="button"
+                  onClick={() => setStudioZoomType('mat')}
+                  className="absolute bottom-1.5 left-1.5 bg-slate-950/85 hover:bg-slate-900 text-amber-300 border border-amber-500/40 rounded-lg px-2 py-1 text-[10px] font-bold flex items-center gap-1 shadow-md transition cursor-pointer"
+                  title="Phóng to ảnh diện tướng"
+                >
+                  <ZoomIn className="w-3 h-3" />
+                  <span>Zoom</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setFormData({ ...formData, anhMat: undefined })}
-                  className="absolute top-1.5 right-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition"
+                  className="absolute top-1.5 right-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition cursor-pointer"
                   title="Xóa ảnh này"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -1205,17 +1219,28 @@ export default function AdminTestStudio() {
                 <span className="text-xs text-amber-300">Đang nén ảnh iPhone...</span>
               </div>
             ) : formData.anhTay ? (
-              <div className="relative rounded-xl overflow-hidden border border-amber-500/50 h-28 bg-slate-900 flex items-center justify-center">
+              <div className="relative rounded-xl overflow-hidden border border-amber-500/50 h-28 bg-slate-900 flex items-center justify-center group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={formData.anhTay}
                   alt="Ảnh chỉ tay"
-                  className="max-h-full max-w-full object-contain"
+                  onClick={() => setStudioZoomType('tay')}
+                  className="max-h-full max-w-full object-contain cursor-pointer"
+                  title="Bấm để phóng to soi rõ Thủ Tướng (Chỉ tay)"
                 />
                 <button
                   type="button"
+                  onClick={() => setStudioZoomType('tay')}
+                  className="absolute bottom-1.5 left-1.5 bg-slate-950/85 hover:bg-slate-900 text-amber-300 border border-amber-500/40 rounded-lg px-2 py-1 text-[10px] font-bold flex items-center gap-1 shadow-md transition cursor-pointer"
+                  title="Phóng to ảnh chỉ tay"
+                >
+                  <ZoomIn className="w-3 h-3" />
+                  <span>Zoom</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setFormData({ ...formData, anhTay: undefined })}
-                  className="absolute top-1.5 right-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition"
+                  className="absolute top-1.5 right-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-full p-1 shadow-md transition cursor-pointer"
                   title="Xóa ảnh này"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -1536,6 +1561,16 @@ export default function AdminTestStudio() {
           </div>
         </div>
       )}
+
+      {/* Lightbox Phóng To Soi Chi Tiết Diện Tướng & Thủ Tướng */}
+      <BiometricImageLightbox
+        isOpen={Boolean(studioZoomType)}
+        initialType={studioZoomType || 'mat'}
+        anhMat={formData.anhMat}
+        anhTay={formData.anhTay}
+        customerName={formData.hoTen}
+        onClose={() => setStudioZoomType(null)}
+      />
     </div>
   );
 }

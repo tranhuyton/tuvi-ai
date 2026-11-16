@@ -24,8 +24,10 @@ import {
   Copy,
   Check,
   FileDown,
+  ZoomIn,
 } from 'lucide-react';
 import LaSoBanCo from '@/components/LaSoBanCo';
+import BiometricImageLightbox from '@/components/BiometricImageLightbox';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 import { exportReadingToPdf } from '@/lib/pdfExport';
@@ -99,11 +101,13 @@ export default function AdminTransactionsTable({
   const [copiedReading, setCopiedReading] = useState(false);
   const [isExportingPdfAdmin, setIsExportingPdfAdmin] = useState(false);
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
+  const [zoomLightboxType, setZoomLightboxType] = useState<'mat' | 'tay' | null>(null);
 
   const handleOpenPreview = async (chart: AdminChartItem) => {
     setPreviewChart(chart);
     setPreviewReadingHtml(chart.reading_html || null);
     setCopiedReading(false);
+    setZoomLightboxType(null);
 
     setIsLoadingPreviewReading(!chart.reading_html);
     try {
@@ -977,25 +981,67 @@ export default function AdminTransactionsTable({
                     </div>
                     {(previewChart.duong_so_data?.anhMat?.startsWith('data:') ||
                       previewChart.duong_so_data?.anhTay?.startsWith('data:')) && (
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 flex-wrap">
                         {previewChart.duong_so_data?.anhMat?.startsWith('data:') && (
-                          <div className="flex flex-col items-center gap-1">
-                            <img
-                              src={previewChart.duong_so_data.anhMat}
-                              alt="Ảnh khuôn mặt"
-                              className="w-20 h-24 object-cover rounded-xl border border-emerald-500/40 shadow"
-                            />
-                            <span className="text-[10px] text-emerald-300 font-medium">📸 Ảnh Diện Tướng</span>
+                          <div className="flex flex-col items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setZoomLightboxType('mat')}
+                              className="relative group w-24 h-28 rounded-xl overflow-hidden border border-emerald-500/50 shadow-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                              title="Bấm để phóng to soi rõ Diện Tướng"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={previewChart.duong_so_data.anhMat}
+                                alt="Ảnh khuôn mặt"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                              <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="px-2 py-1 rounded-lg bg-slate-950/90 text-emerald-300 text-[10px] font-bold flex items-center gap-1 border border-emerald-500/40 shadow">
+                                  <ZoomIn className="w-3 h-3" />
+                                  Zoom
+                                </span>
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setZoomLightboxType('mat')}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-[11px] text-emerald-300 font-semibold flex items-center gap-1 transition cursor-pointer"
+                            >
+                              <ZoomIn className="w-3 h-3" />
+                              <span>📸 Zoom Diện Tướng</span>
+                            </button>
                           </div>
                         )}
                         {previewChart.duong_so_data?.anhTay?.startsWith('data:') && (
-                          <div className="flex flex-col items-center gap-1">
-                            <img
-                              src={previewChart.duong_so_data.anhTay}
-                              alt="Ảnh bàn tay"
-                              className="w-20 h-24 object-cover rounded-xl border border-sky-500/40 shadow"
-                            />
-                            <span className="text-[10px] text-sky-300 font-medium">✋ Ảnh Thủ Tướng</span>
+                          <div className="flex flex-col items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setZoomLightboxType('tay')}
+                              className="relative group w-24 h-28 rounded-xl overflow-hidden border border-sky-500/50 shadow-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400"
+                              title="Bấm để phóng to soi rõ Thủ Tướng (Chỉ tay)"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={previewChart.duong_so_data.anhTay}
+                                alt="Ảnh bàn tay"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                              <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="px-2 py-1 rounded-lg bg-slate-950/90 text-sky-300 text-[10px] font-bold flex items-center gap-1 border border-sky-500/40 shadow">
+                                  <ZoomIn className="w-3 h-3" />
+                                  Zoom
+                                </span>
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setZoomLightboxType('tay')}
+                              className="px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-[11px] text-sky-300 font-semibold flex items-center gap-1 transition cursor-pointer"
+                            >
+                              <ZoomIn className="w-3 h-3" />
+                              <span>✋ Zoom Thủ Tướng</span>
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1110,6 +1156,16 @@ export default function AdminTransactionsTable({
           </div>
         </div>
       )}
+
+      {/* Lightbox Phóng To Soi Chi Tiết Diện Tướng & Thủ Tướng */}
+      <BiometricImageLightbox
+        isOpen={Boolean(previewChart && zoomLightboxType)}
+        initialType={zoomLightboxType || 'mat'}
+        anhMat={previewChart?.duong_so_data?.anhMat?.startsWith('data:') ? previewChart.duong_so_data.anhMat : undefined}
+        anhTay={previewChart?.duong_so_data?.anhTay?.startsWith('data:') ? previewChart.duong_so_data.anhTay : undefined}
+        customerName={previewChart?.duong_so_data?.hoTen || previewChart?.title}
+        onClose={() => setZoomLightboxType(null)}
+      />
 
     </div>
   );
