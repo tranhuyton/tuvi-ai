@@ -7,6 +7,7 @@ import LaSoBanCo from '@/components/LaSoBanCo';
 import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
 import LanguageSelector from '@/components/LanguageSelector';
+import SmartNumericInput from '@/components/SmartNumericInput';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   Sparkles,
@@ -1077,25 +1078,34 @@ export default function AdminTestStudio() {
           <div>
             <label className="block text-xs text-slate-400 font-medium mb-1">Ngày / Tháng / Năm sinh (Dương lịch):</label>
             <div className="flex gap-1">
-              <input
-                type="number"
+              <SmartNumericInput
+                maxLength={2}
+                fallbackOnEmpty={15}
                 value={formData.ngayDuong}
-                onChange={(e) => setFormData({ ...formData, ngayDuong: Number(e.target.value) })}
-                className="w-14 px-2 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-center text-slate-100"
+                onChangeValue={(val) => {
+                  if (val !== undefined) setFormData((prev) => ({ ...prev, ngayDuong: val }));
+                }}
+                className="w-14 px-2 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-center text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
                 placeholder="Ngày"
               />
-              <input
-                type="number"
+              <SmartNumericInput
+                maxLength={2}
+                fallbackOnEmpty={6}
                 value={formData.thangDuong}
-                onChange={(e) => setFormData({ ...formData, thangDuong: Number(e.target.value) })}
-                className="w-14 px-2 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-center text-slate-100"
+                onChangeValue={(val) => {
+                  if (val !== undefined) setFormData((prev) => ({ ...prev, thangDuong: val }));
+                }}
+                className="w-14 px-2 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-center text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
                 placeholder="Tháng"
               />
-              <input
-                type="number"
+              <SmartNumericInput
+                maxLength={4}
+                fallbackOnEmpty={1990}
                 value={formData.namDuong}
-                onChange={(e) => setFormData({ ...formData, namDuong: Number(e.target.value) })}
-                className="w-full px-2 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-center text-slate-100"
+                onChangeValue={(val) => {
+                  if (val !== undefined) setFormData((prev) => ({ ...prev, namDuong: val }));
+                }}
+                className="w-full px-2 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-center text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
                 placeholder="Năm"
               />
             </div>
@@ -1121,14 +1131,15 @@ export default function AdminTestStudio() {
               <span>Năm xem hạn:</span>
               <span className="text-[10px] text-slate-400 font-normal">Mặc định {new Date().getFullYear()}</span>
             </label>
-            <input
-              type="number"
-              min={1900}
-              max={2100}
+            <SmartNumericInput
+              maxLength={4}
+              fallbackOnEmpty={new Date().getFullYear()}
               value={formData.namXem || new Date().getFullYear()}
-              onChange={(e) => setFormData({ ...formData, namXem: Number(e.target.value) })}
+              onChangeValue={(val) => {
+                if (val !== undefined) setFormData((prev) => ({ ...prev, namXem: val }));
+              }}
               placeholder={`VD: ${new Date().getFullYear()}`}
-              className="w-full px-3 py-2 bg-slate-950/70 border border-amber-500/50 rounded-lg text-xs sm:text-sm text-amber-200 font-bold focus:outline-none focus:border-amber-400 transition"
+              className="w-full px-3 py-2 bg-slate-950/70 border border-amber-500/50 rounded-lg text-xs sm:text-sm text-amber-200 font-bold text-center sm:text-left placeholder:text-amber-300/40 focus:outline-none focus:border-amber-400 transition"
             />
           </div>
         </div>
@@ -1232,23 +1243,23 @@ export default function AdminTestStudio() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           <div>
             <label className="block text-xs text-slate-400 font-medium mb-1">Chiều cao (cm):</label>
-            <input
-              type="number"
-              value={formData.chieuCao || ''}
-              onChange={(e) => setFormData({ ...formData, chieuCao: e.target.value ? Number(e.target.value) : undefined })}
+            <SmartNumericInput
+              maxLength={3}
+              value={formData.chieuCao}
+              onChangeValue={(val) => setFormData((prev) => ({ ...prev, chieuCao: val }))}
               placeholder="VD: 172"
-              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-100"
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
             />
           </div>
 
           <div>
             <label className="block text-xs text-slate-400 font-medium mb-1">Cân nặng (kg):</label>
-            <input
-              type="number"
-              value={formData.canNang || ''}
-              onChange={(e) => setFormData({ ...formData, canNang: e.target.value ? Number(e.target.value) : undefined })}
+            <SmartNumericInput
+              maxLength={3}
+              value={formData.canNang}
+              onChangeValue={(val) => setFormData((prev) => ({ ...prev, canNang: val }))}
               placeholder="VD: 68"
-              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-100"
+              className="w-full px-3 py-2 bg-slate-950/70 border border-slate-700 rounded-lg text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
             />
           </div>
 
@@ -1503,6 +1514,8 @@ export default function AdminTestStudio() {
             isLoading={isLoadingReading}
             error={readingError}
             tier={testTier}
+            duongSo={laSo.duongSo || formData}
+            laSo={laSo}
           />
 
           {/* Khung Hỏi Đáp Thầy Tôn (Admin mode: Unlimited questions) */}

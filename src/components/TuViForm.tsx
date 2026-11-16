@@ -8,6 +8,7 @@ import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldC
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
+import SmartNumericInput from '@/components/SmartNumericInput';
 
 interface TuViFormProps {
   onSubmit: (data: DuLieuDuongSo, tier: ServiceTier) => void;
@@ -506,45 +507,48 @@ export default function TuViForm({
             </label>
             <div className="grid grid-cols-3 gap-2.5">
               <div className="relative">
-                <input
-                  type="number"
+                <SmartNumericInput
                   required
-                  min={1}
-                  max={31}
+                  maxLength={2}
+                  fallbackOnEmpty={15}
                   value={ngayDuong}
-                  onChange={(e) => setNgayDuong(Number(e.target.value))}
+                  onChangeValue={(val) => {
+                    if (val !== undefined) setNgayDuong(val);
+                  }}
                   placeholder={t('form.day', 'Ngày')}
-                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
+                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
                 />
                 <span className="pointer-events-none absolute bottom-1.5 inset-x-0 text-[10px] text-slate-400 font-semibold text-center uppercase tracking-wider">
                   {t('form.day', 'Ngày')}
                 </span>
               </div>
               <div className="relative">
-                <input
-                  type="number"
+                <SmartNumericInput
                   required
-                  min={1}
-                  max={12}
+                  maxLength={2}
+                  fallbackOnEmpty={8}
                   value={thangDuong}
-                  onChange={(e) => setThangDuong(Number(e.target.value))}
+                  onChangeValue={(val) => {
+                    if (val !== undefined) setThangDuong(val);
+                  }}
                   placeholder={t('form.month', 'Tháng')}
-                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
+                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
                 />
                 <span className="pointer-events-none absolute bottom-1.5 inset-x-0 text-[10px] text-slate-400 font-semibold text-center uppercase tracking-wider">
                   {t('form.month', 'Tháng')}
                 </span>
               </div>
               <div className="relative">
-                <input
-                  type="number"
+                <SmartNumericInput
                   required
-                  min={1900}
-                  max={2100}
+                  maxLength={4}
+                  fallbackOnEmpty={1995}
                   value={namDuong}
-                  onChange={(e) => setNamDuong(Number(e.target.value))}
+                  onChangeValue={(val) => {
+                    if (val !== undefined) setNamDuong(val);
+                  }}
                   placeholder={t('form.year', 'Năm')}
-                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
+                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
                 />
                 <span className="pointer-events-none absolute bottom-1.5 inset-x-0 text-[10px] text-slate-400 font-semibold text-center uppercase tracking-wider">
                   {t('form.year', 'Năm')}
@@ -645,14 +649,15 @@ export default function TuViForm({
               </p>
             </div>
             <div className="sm:w-36 shrink-0">
-              <input
-                type="number"
-                min={1900}
-                max={2100}
+              <SmartNumericInput
+                maxLength={4}
+                fallbackOnEmpty={currentYear}
                 value={namXem}
-                onChange={(e) => setNamXem(Number(e.target.value))}
+                onChangeValue={(val) => {
+                  if (val !== undefined) setNamXem(val);
+                }}
                 placeholder={`VD: ${currentYear}`}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-amber-500/50 rounded-xl text-amber-300 font-extrabold text-center text-base sm:text-sm focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition"
+                className="w-full px-3.5 py-2.5 bg-slate-900 border border-amber-500/50 rounded-xl text-amber-300 font-extrabold text-center text-base sm:text-sm placeholder:text-amber-300/40 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition"
               />
             </div>
           </div>
@@ -694,28 +699,24 @@ export default function TuViForm({
                   <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
                     {t('form.height', 'Chiều cao (cm)')}
                   </label>
-                  <input
-                    type="number"
-                    min={50}
-                    max={250}
-                    value={chieuCao ?? ''}
-                    onChange={(e) => setChieuCao(e.target.value ? Number(e.target.value) : undefined)}
+                  <SmartNumericInput
+                    maxLength={3}
+                    value={chieuCao}
+                    onChangeValue={setChieuCao}
                     placeholder={t('form.heightPlaceholder', 'VD: 170')}
-                    className="w-full px-3 py-2 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
+                    className="w-full px-3 py-2 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
                   />
                 </div>
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
                     {t('form.weight', 'Cân nặng (kg)')}
                   </label>
-                  <input
-                    type="number"
-                    min={20}
-                    max={200}
-                    value={canNang ?? ''}
-                    onChange={(e) => setCanNang(e.target.value ? Number(e.target.value) : undefined)}
+                  <SmartNumericInput
+                    maxLength={3}
+                    value={canNang}
+                    onChangeValue={setCanNang}
                     placeholder={t('form.weightPlaceholder', 'VD: 65')}
-                    className="w-full px-3 py-2 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm focus:outline-none focus:border-amber-400 transition"
+                    className="w-full px-3 py-2 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm placeholder:text-slate-500 focus:outline-none focus:border-amber-400 transition"
                   />
                 </div>
               </div>

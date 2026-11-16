@@ -5,6 +5,7 @@ import { LaSoData } from '@/types/tuvi';
 import CungView from './CungView';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 import { computeTamHanAnalysis } from '@/lib/tuvi/anSao';
+import { sanitizeVietnameseFileName } from '@/lib/pdfExport';
 import { Download, RefreshCw, ZoomIn, ZoomOut, BookOpen, Pencil } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -171,7 +172,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
           },
         });
 
-        const fileName = `La_So_Tu_Vi_${duongSo.hoTen.replace(/\s+/g, '_')}.png`;
+        const fileName = `La_So_Tu_Vi_${sanitizeVietnameseFileName(duongSo.hoTen)}.png`;
 
         // Chuyển dataUrl sang Blob đồng bộ (không qua fetch) để giữ nguyên User Gesture trên iOS Safari
         const parts = dataUrl.split(',');

@@ -307,6 +307,17 @@ function convertImageToGrayscale(dataUrl: string): Promise<string> {
  * - Trang 1: Chứa toàn bộ HÌNH ẢNH LÁ SỐ TỬ VI TOÀN ĐỒ (12 cung + thiên bàn) sắc nét để đối chiếu.
  * - Trang 2+: Toàn bộ bài bình giải luận giải chuyên sâu to rõ, chữ đen tuyền, không bao giờ mất footer.
  */
+export function sanitizeVietnameseFileName(raw?: string | null, fallback = 'Duong_So'): string {
+  const cleaned = (raw || '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return cleaned || fallback;
+}
+
 export async function exportReadingToPdf({
   duongSo,
   laSo,
@@ -385,12 +396,7 @@ export async function exportReadingToPdf({
   const namXemCanChi = laSo?.namXemCanChi || '';
   const tuoiAmXem = laSo?.tuoiAmXem ? `${laSo.tuoiAmXem} tuổi (tuổi mụ)` : '';
 
-  const cleanNameForFile = hoTen
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^\w\s]/gi, '')
-    .trim()
-    .replace(/\s+/g, '_') || 'Duong_So';
+  const cleanNameForFile = sanitizeVietnameseFileName(hoTen, 'Duong_So');
 
   const fileName = `Tu_Vi_Thay_Ton_${cleanNameForFile}.pdf`;
 
