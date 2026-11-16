@@ -430,7 +430,7 @@ export default function LuanGiaiAI({
                   )}
 
                 <p className="text-sm text-slate-700 leading-relaxed pt-1">
-                  Mở khóa ngay để Thầy Tôn luận giải chi tiết sự tương tác của <strong>3 cung vận hạn trên</strong>, vận khí <strong>4 Mùa / 12 Tháng Âm lịch</strong>, mổ xẻ <strong>Tài Bạch – Quan Lộc – Phu Thê – Điền Trạch</strong>, đối chiếu Khuôn Mặt &amp; Chỉ Tay + <strong>🎁 Tặng kèm 02 câu hỏi riêng cùng Thầy Tôn</strong>!
+                  Mở khóa ngay để Thầy Tôn thẩm định chuyên sâu <strong>Cung Điền Trạch (nhà đất, quy hoạch, chuyển dịch nơi ở)</strong>, <strong>Cung Quan Lộc &amp; Tài Bạch</strong>, <strong>Phu Thê – Tử Tức</strong>, giải mã <strong>3 cung vận hạn trên &amp; 4 Mùa / 12 Tháng Âm lịch</strong>, đối chiếu Khuôn Mặt &amp; Chỉ Tay + <strong>🎁 Tặng kèm 02 câu hỏi riêng cùng Thầy Tôn</strong>!
                 </p>
               </div>
 

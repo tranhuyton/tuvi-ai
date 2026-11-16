@@ -485,26 +485,25 @@ ${cungDataStr}
     }
 
     promptText += `
-YÊU CẦU BẢN LUẬN GIẢI CƠ BẢN (ĐỘ DÀI KHOẢNG 800 - 1000 TỪ):
-Bài luận phải mạch lạc, chuẩn xác, đáng tin cậy, bao quát các phương diện chính yếu sau (Lưu ý: Nếu cung Mệnh, Tài, Quan hay Đại Vận là Vô Chính Diệu thì bắt buộc mượn Chính tinh từ Cung Xung Chiếu và kết hợp các sao từ Tam Phương Tứ Chính để luận giải):
+YÊU CẦU NGHIÊM NGẶT CHO BẢN LUẬN GIẢI CƠ BẢN (GIỚI HẠN ĐỘ DÀI CHẶT CHẼ: TỔNG TOÀN BÀI CHỈ TỪ 850 ĐẾN TỐI ĐA 1.000 TỪ — TUYỆT ĐỐI KHÔNG VIẾT DÀI QUÁ 1.050 TỪ!):
+- Viết cô đọng, súc tích, câu chữ đắt giá đi thẳng vào ý chính theo đúng định mức số từ của từng mục dưới đây.
+- LƯU Ý PHẠM VI BẢN CƠ BẢN: TUYỆT ĐỐI KHÔNG phân tích chi tiết sang các cung Điền Trạch, Phu Thê, Tử Tức, Phúc Đức, Tật Ách và KHÔNG phân tích chi tiết 4 mùa / 12 tháng Âm lịch (để dành cho Bản VIP Pro & Bản Chuyên Gia 12 Cung). Nếu cung Mệnh, Tài, Quan hay Đại Vận là Vô Chính Diệu thì mượn Chính tinh từ Cung Xung Chiếu kết hợp Tam Phương Tứ Chính để nhận định gọn gàng.
 
 <h3>I. TỔNG QUAN BẢN MỆNH &amp; CÁ TÍNH TIỀM NĂNG</h3>
-- Phân tích Bản Mệnh, Cục, Âm Dương (BẮT BUỘC luận đúng là "${thuanNghichLy}") và tính cách nổi trội của đương số dựa trên các Chính tinh thủ/chiếu Cung Mệnh (nếu Mệnh Vô Chính Diệu thì xét Tam Phương Tứ Chính).
-- Ưu điểm thiên bẩm và khuyết điểm cần tiết chế trong cách đối nhân xử thế.
+- (Giới hạn khoảng 190 - 220 từ, tối đa 2 đoạn văn ngắn): Phân tích Bản Mệnh, Cục, Âm Dương (BẮT BUỘC luận đúng là "${thuanNghichLy}"), điểm mạnh thiên bẩm và khuyết điểm cần tiết chế dựa trên Chính tinh thủ/chiếu Cung Mệnh.
 
 <h3>II. ĐIỂM SÁNG TAM HỢP MỆNH - TÀI - QUAN</h3>
-- Phân tích trục công danh sự nghiệp (Cung Quan Lộc) và xu hướng tài vận kiếm tiền (Cung Tài Bạch), kết hợp các sao từ Tam Phương Tứ Chính nếu gặp cung Vô Chính Diệu.
-- Đánh giá khả năng bứt phá công việc và hướng đi hợp bản mệnh.
+- (Giới hạn khoảng 210 - 240 từ, tối đa 2 đoạn văn ngắn): Phác thảo sườn chính về xu hướng công danh sự nghiệp (Cung Quan Lộc) và phong cách tạo dựng tài chính (Cung Tài Bạch) phù hợp với cốt cách đương số.
 
 <h3>III. ĐẠI VẬN HIỆN TẠI (${startAge ? `${startAge} - ${endAge} TUỔI` : 'GIAI ĐOẠN HIỆN TẠI'}) &amp; VẬN HẠN NĂM ${namXem}</h3>
-- ${daiVanInstruction}
-- Phân tích ngắn gọn, dễ hiểu vận hạn năm ${namXem} (${namXemCanChi}) qua 3 cung hạn (KHÔNG ghi số %, KHÔNG ghi Bước 1/2/3): nói qua ý nghĩa và các sao tại <b>Cung Tiểu Hạn (${tieuVanCoordLabel || 'bản cung Tiểu hạn'})</b> (tâm tư, mong muốn), <b>Cung Lưu Niên Đại Hạn (${lndhCoordLabel || 'cung LN. Đại hạn'})</b> (điểm rơi từ Đại vận 10 năm) và <b>Cung Lưu Thái Tuế (${luuThaiTueCoordLabel || 'bản cung Lưu Thái Tuế'})</b> (hoàn cảnh thực tế bên ngoài kèm Sao Lưu). Cuối cùng tóm tắt ngắn gọn tổng hợp ý nghĩa chung của cả năm xem đương số thuận lợi ở đâu và cần chú ý điều gì.
+- (Giới hạn khoảng 260 - 300 từ): ${daiVanInstruction}
+- Điểm qua ngắn gọn, súc tích 3 cung hạn năm ${namXem} (${namXemCanChi}) (KHÔNG ghi số %, KHÔNG ghi Bước 1/2/3, mỗi cung chỉ viết 2 câu cô đọng): <b>Cung Tiểu Hạn (${tieuVanCoordLabel || 'bản cung Tiểu hạn'})</b> (tâm tư bên trong), <b>Cung Lưu Niên Đại Hạn (${lndhCoordLabel || 'cung LN. Đại hạn'})</b> (điểm rơi từ Đại vận 10 năm) và <b>Cung Lưu Thái Tuế (${luuThaiTueCoordLabel || 'bản cung Lưu Thái Tuế'})</b> (bối cảnh thực tế bên ngoài), kèm 2 câu tóm tắt xu hướng chung cả năm.
 
-<h3>IV. LỜI KHUYÊN &amp; ĐỊNH HƯỚNG TỪ THẦY TÔN</h3>
-- Đúc kết lời khuyên thiết thực giúp đương số hành xử đắc thời.
-- Nhắn gửi đương số: Để xem phân tích chuyên sâu đa tầng (soi chiếu Tướng Pháp khuôn mặt/chỉ tay, chi tiết 4 mùa Xuân-Hạ-Thu-Đông và bí pháp cải vận) hoặc Bản Chuyên Gia Expert khảo sát trọn vẹn 12 cung, đương số có thể bấm nút Nâng cấp ngay bên dưới bất cứ lúc nào.
+<h3>IV. LỜI KHUYÊN &amp; ĐỊNH HƯỚNG MỞ KHÓA CHUYÊN SÂU</h3>
+- (Giới hạn khoảng 130 - 150 từ): Đúc kết lời khuyên hành xử đắc thời cho đương số.
+- Nhắn gửi khéo léo: Bản Cơ Bản mới phác thảo sườn tổng quan (~20% chiều sâu lá số). Để thẩm định cặn kẽ <b>Cung Điền Trạch (nhà đất, quy hoạch, chuyển dịch nơi an cư)</b>, <b>chiến lược Cung Quan Lộc chuyên sâu</b>, <b>Phu Thê – Tử Tức – Phúc Đức</b>, đối chiếu <b>Diện Tướng &amp; Chỉ Tay</b> cùng <b>bản đồ 4 mùa / 12 tháng Âm lịch</b> và đặt câu hỏi riêng trực tiếp với Thầy Tôn, quý khách hãy bấm mở khóa <b>Bản Chuyên Sâu VIP Pro</b> hoặc <b>Bản Chuyên Gia 12 Cung (Expert)</b> ngay bên dưới.
 
-Văn phong uy nghiêm, chuẩn mực, truyền cảm hứng, trình bày HTML đẹp mắt.`;
+Văn phong uy nghiêm, súc tích, kết bài trọn vẹn trong đúng khoảng 900 - 1.000 từ.`;
   }
 
   if (!isExpert) {
@@ -548,7 +547,7 @@ async function callSingleGeminiVision(
   const isPro = isExpert || modelName.includes('3.1') || modelName.includes('pro');
   // Cấp thinkingBudget hợp lý (1536 cho gemini-4-carbon, 1024 cho argon/pro) để suy luận chuẩn tinh đẩu mà vẫn phản hồi nhanh (~35-45s), tránh lỗi 504
   const targetBudget = isCarbon ? 1536 : isExpert ? 1024 : isPro ? 1024 : 0;
-  const maxTokens = isExpert ? 14000 : isPro ? 12000 : 5000;
+  const maxTokens = isExpert ? 14000 : isPro ? 12000 : 2400;
   const timeoutMs = isExpert ? 135000 : 120000;
 
   // 1. Trường hợp người dùng có nhập key riêng trong modal cài đặt
