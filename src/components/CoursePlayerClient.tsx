@@ -591,44 +591,46 @@ export default function CoursePlayerClient({
       >
         {/* Thanh Điều Hướng Trên Cùng (z-40 để menu dropdown không bị Hero banner đè lên) */}
         {!embeddedInAdmin && (
-          <nav className="relative z-40 flex flex-wrap items-center justify-between gap-3 bg-slate-900/85 border border-amber-500/25 rounded-2xl px-4 py-3 shadow-xl backdrop-blur-md">
-            <div className="flex items-center gap-2.5">
+          <nav className="relative z-40 flex flex-wrap items-center justify-between gap-2 sm:gap-3 bg-slate-900/90 border border-amber-500/30 rounded-2xl px-3 sm:px-4 py-2.5 shadow-xl backdrop-blur-md">
+            <div className="flex items-center gap-2 min-w-0">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-serif font-bold text-sm sm:text-base transition"
+                className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-serif font-bold text-xs sm:text-sm md:text-base transition truncate"
               >
-                <Compass className="w-5 h-5 shrink-0" />
-                <span>{ui.brandName}</span>
+                <Compass className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="truncate">{ui.brandName}</span>
               </Link>
-              <span className="text-slate-600 hidden sm:inline">/</span>
-              <span className="text-xs sm:text-sm font-semibold text-amber-200 hidden sm:inline">
+              <span className="text-slate-600 hidden lg:inline">/</span>
+              <span className="text-xs sm:text-sm font-semibold text-amber-200 hidden lg:inline whitespace-nowrap">
                 {ui.courseNavSub}
               </span>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
               <LanguageSelector />
-              <ThemeSelector />
-              <GuideMenuDropdown />
+              <ThemeSelector className="hidden sm:inline-block" />
+              <div className="hidden md:inline-block">
+                <GuideMenuDropdown />
+              </div>
               <Link
                 href="/#lap-la-so"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-semibold transition"
+                className="hidden sm:inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 text-xs font-semibold transition whitespace-nowrap"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
                 <span>{ui.freeChartBtn}</span>
               </Link>
               {!isUnlocked ? (
                 <button
                   type="button"
                   onClick={() => openCoursePayment()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-[11px] sm:text-xs shadow-md shadow-amber-500/20 transition cursor-pointer whitespace-nowrap"
                 >
-                  <QrCode className="w-3.5 h-3.5" />
+                  <QrCode className="w-3.5 h-3.5 shrink-0" />
                   <span>{ui.courseUnlockBtn}</span>
                 </button>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold text-xs">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="inline-flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-bold text-[11px] sm:text-xs whitespace-nowrap">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span>
                     {unlockedCode === 'VIP-ADMIN'
                       ? ui.courseAdminBadge
@@ -910,14 +912,14 @@ export default function CoursePlayerClient({
                 />
               </div>
 
-              {/* Bộ lọc Học phần */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+              {/* Bộ lọc Học phần (Tự động xuống dòng gọn, không lộ thanh cuộn ngang) */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 <button
                   type="button"
                   onClick={() => setSelectedModule(0)}
-                  className={`px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-lg font-semibold whitespace-nowrap transition cursor-pointer ${
                     selectedModule === 0
-                      ? 'bg-amber-500 text-slate-950'
+                      ? 'bg-amber-500 text-slate-950 shadow-sm'
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
@@ -928,13 +930,13 @@ export default function CoursePlayerClient({
                     key={m.id}
                     type="button"
                     onClick={() => setSelectedModule(m.id)}
-                    className={`px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-lg font-semibold whitespace-nowrap transition cursor-pointer ${
                       selectedModule === m.id
-                        ? 'bg-amber-500 text-slate-950'
+                        ? 'bg-amber-500 text-slate-950 shadow-sm'
                         : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                     }`}
                   >
-                    {ui.courseFilterModule} {m.id}
+                    {ui.courseFilterModule.replace('{id}', String(m.id))}
                   </button>
                 ))}
               </div>
@@ -1014,8 +1016,8 @@ export default function CoursePlayerClient({
               <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-bold">
-                    {ui.courseLessonPrefix} {activeLesson.number} / 24 • {ui.courseFilterModule}{' '}
-                    {activeLesson.moduleId}
+                    {ui.courseLessonPrefix} {activeLesson.number} / 24 •{' '}
+                    {ui.courseFilterModule.replace('{id}', String(activeLesson.moduleId))}
                   </span>
                   {activeLesson.isFreePreview && !isUnlocked && (
                     <span className="px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
@@ -1090,7 +1092,7 @@ export default function CoursePlayerClient({
                 moduleId={activeLesson.moduleId}
                 moduleTitle={
                   localizedShowcaseMods.find((m) => m.id === activeLesson.moduleId)?.title ||
-                  `${ui.courseFilterModule} ${activeLesson.moduleId}`
+                  ui.courseFilterModule.replace('{id}', String(activeLesson.moduleId))
                 }
                 title={activeLesson.title}
                 relatedStars={activeLesson.relatedStars}
@@ -1120,14 +1122,14 @@ export default function CoursePlayerClient({
                   {/* Xem trước Thẻ Flashcard tóm tắt của bài để kích thích chuyển đổi */}
                   <div className="text-left rounded-2xl bg-slate-900/90 border border-slate-800 p-4 max-w-xl mx-auto space-y-2">
                     <div className="text-xs font-bold text-amber-300 uppercase">
-                      {ui.courseLockedSummaryLabel} {activeLesson.number}:
+                      {ui.courseLockedSummaryLabel.replace('{num}', String(activeLesson.number))}
                     </div>
                     <p className="text-xs sm:text-sm text-slate-300">
                       • <strong>{ui.courseLockedElementsLabel}</strong> {activeLesson.flashcard.nguHanh} —{' '}
                       {activeLesson.flashcard.hoaKhi}
                     </p>
                     <p className="text-xs sm:text-sm text-slate-300">
-                      • <strong>{ui.courseLockedChaptersLabel} ({activeLesson.duration}):</strong>{' '}
+                      • <strong>{ui.courseLockedChaptersLabel.replace('{dur}', activeLesson.duration)}</strong>{' '}
                       {activeLesson.podcastChapters.map((c) => c.title).join(' • ')}
                     </p>
                   </div>
@@ -1428,7 +1430,7 @@ export default function CoursePlayerClient({
                       <label className="text-xs sm:text-sm font-bold text-amber-300 flex items-center gap-1.5">
                         <FileText className="w-4 h-4 text-amber-400" />
                         <span>
-                          {ui.courseNotesLabel} {activeLesson.number}:
+                          {ui.courseNotesLabel.replace('{num}', String(activeLesson.number))}
                         </span>
                       </label>
                       {noteSavedToast && (
@@ -1465,8 +1467,7 @@ export default function CoursePlayerClient({
                       className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-bold text-xs sm:text-sm shadow-md disabled:opacity-40 transition cursor-pointer"
                     >
                       <span>
-                        {ui.courseNextLesson} ({ui.courseLessonPrefix}{' '}
-                        {Math.min(24, activeLesson.number + 1)})
+                        {ui.courseNextLesson.replace('{num}', String(Math.min(24, activeLesson.number + 1)))}
                       </span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -1480,17 +1481,17 @@ export default function CoursePlayerClient({
 
       {/* THANH MINI-PLAYER GHIM NỔI DƯỚI ĐÁY MÀN HÌNH KHI ĐANG NGHE PODCAST */}
       {canAccessActiveLesson && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-amber-500/40 backdrop-blur-xl px-3.5 py-2.5 shadow-2xl">
-          <div className="max-w-[1220px] mx-auto flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-amber-500/40 backdrop-blur-xl px-3 sm:px-4 py-2 sm:py-2.5 shadow-2xl">
+          <div className="max-w-[1220px] mx-auto flex items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
               <button
                 type="button"
                 onClick={handleTogglePlay}
-                className="w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center font-bold shrink-0 cursor-pointer"
+                className="w-9 h-9 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center font-bold shrink-0 cursor-pointer shadow-md"
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
               </button>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="text-xs font-bold text-amber-300 truncate">
                   {ui.courseLessonPrefix} {activeLesson.number}: {activeLesson.title}
                 </div>
@@ -1502,11 +1503,11 @@ export default function CoursePlayerClient({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleChangeSpeed}
-                className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-amber-300 font-mono text-xs font-bold cursor-pointer"
+                className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-amber-300 font-mono text-[11px] sm:text-xs font-bold cursor-pointer"
               >
                 {playbackRate}x
               </button>
@@ -1514,9 +1515,10 @@ export default function CoursePlayerClient({
                 <button
                   type="button"
                   onClick={() => openCoursePayment()}
-                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold text-xs cursor-pointer"
+                  className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-bold text-[11px] sm:text-xs cursor-pointer whitespace-nowrap shadow-sm"
                 >
-                  {ui.courseMiniUnlockBtn}
+                  <span className="sm:hidden">699K</span>
+                  <span className="hidden sm:inline">{ui.courseMiniUnlockBtn}</span>
                 </button>
               )}
             </div>

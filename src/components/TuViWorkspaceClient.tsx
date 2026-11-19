@@ -17,6 +17,7 @@ import AboutThayTon from '@/components/AboutThayTon';
 import HomeFunnelContent from '@/components/HomeFunnelContent';
 import BookingBanner from '@/components/BookingBanner';
 import CoursePromoBanner from '@/components/CoursePromoBanner';
+import Testimonials from '@/components/Testimonials';
 import VanHanLandingHero from '@/components/VanHanLandingHero';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -2250,21 +2251,27 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                   </>
                 ) : (
                   <>
-                    {/* Khối Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast + Giáo trình tương tác 699K) */}
+                    {/* 1. Uy tín Chuyên gia Thầy Tôn ngay dưới Form để tăng niềm tin sớm */}
+                    <AboutThayTon />
+
+                    {/* 2. Khối Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast + Giáo trình tương tác 699K) */}
                     <CoursePromoBanner />
 
-                    {/* Khối Nội dung Trang chủ Chuẩn SEO & GEO (Bài 1 - Mã H) */}
-                    <HomeFunnelContent />
+                    {/* 3. Cảm nhận thực tế từ Chuyên gia, Doanh nhân & Học viên (Đa ngôn ngữ) */}
+                    <Testimonials />
 
-                    {/* Mục Giới thiệu về Thầy Tôn, Hệ sinh thái Dịch vụ & FAQ */}
-                    <AboutThayTon />
+                    {/* 4. Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */}
+                    <BookingBanner />
+
+                    {/* 5. Khối Nội dung Trang chủ Chuẩn SEO & GEO (Thu gọn mượt, giữ 100% DOM SEO) */}
+                    <HomeFunnelContent />
                   </>
                 )}
               </>
             )}
 
-            {!isEditing && (
-              /* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */
+            {!isEditing && isVanHanLanding && (
+              /* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn trên trang /van-han */
               <BookingBanner />
             )}
           </div>
@@ -2454,7 +2461,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       {/* Nút Liên Hệ Nhanh (Zalo & Gọi Điện Đặt Lịch Offline) */}
       <FloatingContact />
 
-      <footer className="max-w-[1060px] w-full mx-auto text-center text-xs text-slate-400 py-5 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
+      <footer className="max-w-[1060px] w-full mx-auto text-center text-xs text-slate-400 pt-5 pb-24 sm:pb-20 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-5 text-xs text-slate-400 font-medium flex-wrap">
           <a href="/khoa-hoc" className="text-amber-300 hover:text-amber-200 font-semibold transition">
             {t('nav.course', 'Khóa Học Tử Vi')}

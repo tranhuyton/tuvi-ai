@@ -4,7 +4,23 @@ import React, { useState, ChangeEvent } from 'react';
 import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR, CAN_ARR, CHI_ARR } from '@/lib/tuvi/constants';
 import { solar2Lunar, isValidSolarDate } from '@/lib/tuvi/lunar';
-import { Sparkles, Upload, User, Calendar, Clock, Image as ImageIcon, X, ShieldCheck, Crown, Gem, PhoneCall, BookOpen, GraduationCap } from 'lucide-react';
+import {
+  Sparkles,
+  Upload,
+  User,
+  Calendar,
+  Clock,
+  Image as ImageIcon,
+  X,
+  ShieldCheck,
+  Crown,
+  Gem,
+  PhoneCall,
+  BookOpen,
+  GraduationCap,
+  ChevronDown,
+  CheckCircle2,
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
@@ -108,6 +124,24 @@ export default function TuViForm({
   const [selectedTier, setSelectedTier] = useState<ServiceTier>(
     initialData?.tier || defaultTier || 'free'
   );
+  const [isOptionalOpen, setIsOptionalOpen] = useState<boolean>(
+    Boolean(
+      initialData?.anhMat ||
+        initialData?.anhTay ||
+        initialData?.thongTinThem ||
+        initialData?.chieuCao ||
+        initialData?.canNang ||
+        (initialData?.tier && initialData.tier !== 'free') ||
+        (defaultTier && defaultTier !== 'free')
+    )
+  );
+
+  const handleSelectTier = (tier: ServiceTier) => {
+    setSelectedTier(tier);
+    if (tier === 'pro' || tier === 'expert') {
+      setIsOptionalOpen(true);
+    }
+  };
 
   React.useEffect(() => {
     if (initialData) {
@@ -124,6 +158,16 @@ export default function TuViForm({
       setAnhMatBase64(initialData.anhMat);
       setAnhTayBase64(initialData.anhTay);
       if (initialData.tier) setSelectedTier(initialData.tier);
+      if (
+        initialData.anhMat ||
+        initialData.anhTay ||
+        initialData.thongTinThem ||
+        initialData.chieuCao ||
+        initialData.canNang ||
+        (initialData.tier && initialData.tier !== 'free')
+      ) {
+        setIsOptionalOpen(true);
+      }
     }
   }, [initialData, currentYear]);
 
@@ -288,7 +332,7 @@ export default function TuViForm({
   return (
     <div
       id="lap-la-so"
-      className="w-full max-w-[920px] mx-auto relative overflow-hidden imperial-card backdrop-blur-2xl border border-amber-500/40 rounded-3xl p-5 sm:p-8 md:p-9 text-slate-100 scroll-mt-6 before:pointer-events-none before:absolute before:inset-x-12 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-300/80 before:to-transparent"
+      className="w-full max-w-[960px] mx-auto relative overflow-hidden imperial-card backdrop-blur-2xl border border-amber-500/40 rounded-3xl p-4 sm:p-7 md:p-8 text-slate-100 scroll-mt-6 before:pointer-events-none before:absolute before:inset-x-12 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-300/80 before:to-transparent"
     >
       {/* Hào quang tinh vân trang trí */}
       <div className="pointer-events-none absolute -top-28 -right-28 w-80 h-80 rounded-full bg-amber-500/12 blur-3xl" />
@@ -400,27 +444,28 @@ export default function TuViForm({
           </div>
         </div>
 
-        {/* Thanh Chỉ Số Tín Nhiệm (4 Trust Badges) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 pt-3.5 border-t border-slate-800/80 text-[11px] sm:text-xs font-semibold">
-          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl px-2.5 py-2 text-amber-200">
+        {/* Thanh Chỉ Số Tín Nhiệm (4 Trust Badges - Không bị cắt chữ trên Mobile 390px) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 pt-3.5 border-t border-slate-800/80 text-[10.5px] sm:text-xs font-semibold">
+          <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl px-2 sm:px-2.5 py-2 text-amber-200 leading-tight">
             <span className="text-amber-400 text-xs shrink-0">★</span>
-            <span className="truncate">4.9/5 (15.420+ Lá Số)</span>
+            <span className="sm:hidden">4.9/5 • 15.420+ Lá</span>
+            <span className="hidden sm:inline truncate">4.9/5 (15.420+ Lá Số)</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-2.5 py-2 text-emerald-300">
+          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-2 sm:px-2.5 py-2 text-emerald-300 leading-tight">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="truncate">
+            <span className="leading-tight">
               {isDienTrachQuanLoc
                 ? 'Soi Điền Trạch & Quan Lộc'
-                : t('form.trustFree', isVanHanLanding ? 'Đủ 3 Cung Vận Hạn' : 'An Sao & Luận Giải 0đ')}
+                : t('form.trustFree', isVanHanLanding ? 'Đủ 3 Cung Vận Hạn' : 'An Sao & Luận 0đ')}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/25 rounded-xl px-2.5 py-2 text-purple-200">
+          <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/25 rounded-xl px-2 sm:px-2.5 py-2 text-purple-200 leading-tight">
             <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-            <span className="truncate">{t('form.trustFacePalm', 'Xem Mặt & Chỉ Tay')}</span>
+            <span>{t('form.trustFacePalm', 'Xem Mặt & Chỉ Tay')}</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/25 rounded-xl px-2.5 py-2 text-blue-300">
+          <div className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/25 rounded-xl px-2 sm:px-2.5 py-2 text-blue-300 leading-tight">
             <BookOpen className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-            <span className="truncate">{t('form.trustPdf', 'Lưu Sổ & Tải PDF')}</span>
+            <span>{t('form.trustPdf', 'Lưu Sổ & Tải PDF')}</span>
           </div>
         </div>
       </div>
@@ -663,19 +708,44 @@ export default function TuViForm({
           </div>
         </div>
 
-        {/* KHỐI THỰC CHỨNG & TƯỚNG PHÁP (DIỆN TƯỚNG & THỦ TƯỚNG AI) */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-amber-950/20 border border-amber-500/25 space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-1.5 text-amber-300 font-bold text-xs sm:text-sm uppercase tracking-wider">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>{t('form.physiqueTitle', 'Dữ liệu Thực Chứng & Tướng Pháp (Tùy chọn)')}</span>
+        {/* KHỐI THỰC CHỨNG & TƯỚNG PHÁP (DIỆN TƯỚNG & THỦ TƯỚNG AI - DẠNG ACCORDION GỌN NHẸ) */}
+        <div className="rounded-2xl bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-amber-950/20 border border-amber-500/25 overflow-hidden transition-all">
+          <button
+            type="button"
+            onClick={() => setIsOptionalOpen((prev) => !prev)}
+            className="w-full px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-2 text-left hover:bg-amber-500/5 transition cursor-pointer"
+            aria-expanded={isOptionalOpen}
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="text-amber-300 font-bold text-xs sm:text-sm uppercase tracking-wider">
+                {t('form.physiqueTitle', 'Dữ liệu Thực Chứng & Tướng Pháp (Tùy chọn)')}
+              </span>
+              {(anhMatBase64 || anhTayBase64 || thongTinThem.trim() || chieuCao || canNang) ? (
+                <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300">
+                  ✓ Đã nhập bổ sung
+                </span>
+              ) : (
+                <span className="hidden sm:inline-block text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/35 text-amber-200">
+                  AI Diện Tướng &amp; Chỉ Tay
+                </span>
+              )}
             </div>
-            <span className="text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/35 text-amber-200">
-              AI Diện Tướng &amp; Chỉ Tay
-            </span>
-          </div>
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-300/90 shrink-0">
+              <span className="hidden xs:inline sm:inline text-[11px]">
+                {isOptionalOpen ? 'Thu gọn' : 'Bổ sung ảnh & hoàn cảnh'}
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-amber-400 transition-transform duration-200 ${
+                  isOptionalOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </div>
+          </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {isOptionalOpen && (
+            <div className="px-4 pb-4 sm:px-5 sm:pb-5 pt-2 border-t border-amber-500/15">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             {/* Cột trái: Hoàn cảnh + Chiều cao & Cân nặng */}
             <div className="md:col-span-6 space-y-3">
               <div>
@@ -835,9 +905,11 @@ export default function TuViForm({
               </div>
             </div>
           </div>
+            </div>
+          )}
         </div>
 
-        {/* LỰA CHỌN GÓI BÌNH GIẢI (3 THẺ HOÀNG GIA CÂN ĐỐI TRÊN PC) */}
+        {/* LỰA CHỌN GÓI BÌNH GIẢI (3 THẺ HOÀNG GIA CÂN ĐỐI ĐỒNG ĐỀU) */}
         <div className="pt-4 border-t border-amber-500/20">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
             <label className="text-sm sm:text-base uppercase tracking-wider text-gold-gradient font-extrabold flex items-center gap-1.5">
@@ -850,10 +922,10 @@ export default function TuViForm({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             {/* 1. Gói Cơ Bản (Miễn Phí) */}
             <div
-              onClick={() => setSelectedTier('free')}
+              onClick={() => handleSelectTier('free')}
               className={`relative p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between ${
                 selectedTier === 'free'
                   ? 'bg-gradient-to-b from-emerald-950/55 via-slate-900 to-slate-950 border-emerald-400 ring-2 ring-emerald-400/90 shadow-xl shadow-emerald-500/15 -translate-y-0.5'
@@ -863,14 +935,22 @@ export default function TuViForm({
               <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
                 {t('form.freeBadge', '🎁 Trải Nghiệm Miễn Phí')}
               </div>
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-2.5 pt-1">
-                  <span className="font-bold text-base text-slate-100 font-serif leading-snug">
-                    {t('form.freeTitle', '📜 Bản Khởi Nguyên (Miễn Phí)')}
-                  </span>
-                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
-                    {t('form.freePrice', '0 VNĐ')}
-                  </span>
+              <div className="space-y-3 pt-1">
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-[15px] text-slate-100 font-serif leading-snug">
+                      {t('form.freeTitle', '📜 Bản Khởi Nguyên (Miễn Phí)')}
+                    </span>
+                    {selectedTier === 'free' && (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    )}
+                  </div>
+                  <div className="mt-1.5 flex items-baseline gap-2">
+                    <span className="text-lg font-extrabold font-mono text-emerald-300">
+                      {t('form.freePrice', '0 VNĐ')}
+                    </span>
+                    <span className="text-[11px] text-emerald-400/80 font-medium">• ~1.000 từ</span>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   {t(
@@ -879,14 +959,17 @@ export default function TuViForm({
                   )}
                 </p>
               </div>
-              <div className="mt-3.5 pt-2.5 border-t border-slate-800/80 text-xs text-emerald-300 font-semibold flex items-center justify-between">
-                <span>{t('form.freeQnA', '✓ An sao & Bình giải 0đ • Hỏi thêm: 49k/2 câu')}</span>
+              <div className="mt-4 pt-3 border-t border-slate-800/80 text-[11.5px] text-emerald-300 font-semibold space-y-1">
+                <div>{t('form.freeQnA', '✓ An sao & Bình giải 0đ • Hỏi thêm: 49k/2 câu')}</div>
+                <div className="text-[11px] text-slate-400 font-normal">
+                  ✓ Lưu trọn đời trong Sổ Tay &amp; xuất PDF
+                </div>
               </div>
             </div>
 
             {/* 2. Gói Chuyên Sâu (Bản Pro) */}
             <div
-              onClick={() => setSelectedTier('pro')}
+              onClick={() => handleSelectTier('pro')}
               className={`relative p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between ${
                 selectedTier === 'pro'
                   ? 'bg-gradient-to-b from-amber-950/60 via-slate-900 to-slate-950 border-amber-400 ring-2 ring-amber-400 shadow-xl shadow-amber-500/25 -translate-y-0.5'
@@ -896,22 +979,30 @@ export default function TuViForm({
               <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-red-600 via-orange-600 to-amber-500 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
                 {t('form.proBadge', '🔥 Khuyên Dùng • Phổ Biến Nhất')}
               </div>
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-2.5 pt-1">
-                  <span className="font-bold text-base text-amber-300 flex items-center gap-1.5 font-serif leading-snug">
-                    <Crown className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>{t('form.proTitle', 'Bản Chuyên Sâu VIP Pro')}</span>
-                  </span>
-                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
-                    {activeVoucher ? (
-                      <>
-                        <s className="opacity-65 mr-1 font-normal">119.000</s>
-                        <span>{activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ</span>
-                      </>
-                    ) : (
-                      t('form.proPrice', '119.000 VNĐ')
+              <div className="space-y-3 pt-1">
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-[15px] text-amber-300 flex items-center gap-1.5 font-serif leading-snug">
+                      <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>{t('form.proTitle', 'Bản Chuyên Sâu VIP Pro')}</span>
+                    </span>
+                    {selectedTier === 'pro' && (
+                      <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
                     )}
-                  </span>
+                  </div>
+                  <div className="mt-1.5 flex items-baseline gap-2 flex-wrap">
+                    <span className="text-lg font-extrabold font-mono text-amber-300">
+                      {activeVoucher ? (
+                        <>
+                          <s className="text-xs opacity-60 mr-1.5 font-normal">119.000đ</s>
+                          <span>{activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ</span>
+                        </>
+                      ) : (
+                        t('form.proPrice', '119.000 VNĐ')
+                      )}
+                    </span>
+                    <span className="text-[11px] text-amber-400/80 font-medium">• ~2.500 từ</span>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-200 leading-relaxed">
                   {isVanHanLanding
@@ -922,14 +1013,17 @@ export default function TuViForm({
                       )}
                 </p>
               </div>
-              <div className="mt-3.5 pt-2.5 border-t border-slate-800/80 text-xs text-amber-300 font-semibold flex items-center justify-between">
-                <span>{t('form.proQnA', '🎁 Tặng kèm 02 câu hỏi VIP (Mua thêm: 99k/2 câu)')}</span>
+              <div className="mt-4 pt-3 border-t border-slate-800/80 text-[11.5px] text-amber-300 font-semibold space-y-1">
+                <div>{t('form.proQnA', '🎁 Tặng kèm 02 câu hỏi VIP (Mua thêm: 99k/2 câu)')}</div>
+                <div className="text-[11px] text-slate-400 font-normal">
+                  ✓ Kết hợp soi Ảnh Diện Tướng &amp; Chỉ Tay
+                </div>
               </div>
             </div>
 
             {/* 3. Gói Chuyên Gia (Bản Expert) */}
             <div
-              onClick={() => setSelectedTier('expert')}
+              onClick={() => handleSelectTier('expert')}
               className={`relative p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between ${
                 selectedTier === 'expert'
                   ? 'bg-gradient-to-br from-purple-950/75 via-indigo-950/60 to-slate-950 border-purple-400 ring-2 ring-purple-400 shadow-xl shadow-purple-500/30 -translate-y-0.5'
@@ -937,24 +1031,32 @@ export default function TuViForm({
               }`}
             >
               <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full shadow tracking-wider">
-                {t('form.expertBadge', '💎 Đỉnh Cao Mệnh Lý • Luận Trọn Bộ 12 Cung')}
+                {t('form.expertBadge', '💎 Đỉnh Cao Mệnh Lý • 12 Cung')}
               </div>
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-2.5 pt-1">
-                  <span className="font-bold text-base text-purple-200 flex items-center gap-1.5 font-serif leading-snug">
-                    <Gem className="w-4 h-4 text-purple-400 shrink-0" />
-                    <span>{t('form.expertTitle', 'Bản Chuyên Gia Đại Tông Sư (Expert)')}</span>
-                  </span>
-                  <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-200 border border-purple-400/45 shrink-0">
-                    {activeVoucher && initialData?.tier !== 'pro' ? (
-                      <>
-                        <s className="opacity-65 mr-1 font-normal">269.000</s>
-                        <span>{activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ</span>
-                      </>
-                    ) : (
-                      t('form.expertPrice', '269.000 VNĐ')
+              <div className="space-y-3 pt-1">
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-[15px] text-purple-200 flex items-center gap-1.5 font-serif leading-snug">
+                      <Gem className="w-4 h-4 text-purple-400 shrink-0" />
+                      <span>{t('form.expertTitle', 'Bản Chuyên Gia (Expert)')}</span>
+                    </span>
+                    {selectedTier === 'expert' && (
+                      <CheckCircle2 className="w-4 h-4 text-purple-300 shrink-0" />
                     )}
-                  </span>
+                  </div>
+                  <div className="mt-1.5 flex items-baseline gap-2 flex-wrap">
+                    <span className="text-lg font-extrabold font-mono text-purple-200">
+                      {activeVoucher && initialData?.tier !== 'pro' ? (
+                        <>
+                          <s className="text-xs opacity-60 mr-1.5 font-normal">269.000đ</s>
+                          <span>{activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ</span>
+                        </>
+                      ) : (
+                        t('form.expertPrice', '269.000 VNĐ')
+                      )}
+                    </span>
+                    <span className="text-[11px] text-purple-300/80 font-medium">• 4.500–5.000 từ</span>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-200 leading-relaxed">
                   {t(
@@ -963,7 +1065,7 @@ export default function TuViForm({
                   )}
                 </p>
               </div>
-              <div className="mt-3.5 pt-2.5 border-t border-purple-900/50 text-xs text-purple-200 font-semibold space-y-1">
+              <div className="mt-4 pt-3 border-t border-purple-900/50 text-[11.5px] text-purple-200 font-semibold space-y-1">
                 <div>{t('form.expertQnA', '🎁 Tặng kèm 02 câu hỏi Chuyên Gia miễn phí (Thêm: 129k/2 câu)')}</div>
                 <div className="text-[11px] text-amber-300 font-medium">
                   {t('form.expertUpgradeHint', '*Khách đang dùng Bản Pro nâng cấp chỉ 150.000đ')}

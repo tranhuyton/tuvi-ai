@@ -69,19 +69,19 @@ export default function AboutThayTon() {
         </div>
 
         {/* Nút điều hướng sang Trang Hồ Sơ Chuyên Gia (/thay-ton) & Trang Phong Thủy (/phong-thuy) */}
-        <div className="relative z-10 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 pt-4 border-t border-slate-800/80">
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-3 pt-4 border-t border-slate-800/80">
           <Link
             href="/thay-ton"
-            className="btn-shimmer inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition"
+            className="btn-shimmer inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition text-center"
           >
             <ShieldCheck className="w-4 h-4 shrink-0" />
-            <span>{t('about.btnProfile', 'Xem Hồ Sơ & Phương Pháp Luận Giải Của Thầy Tôn')}</span>
+            <span>{t('about.btnProfile', 'Hồ Sơ & Phương Pháp Thầy Tôn')}</span>
             <ArrowRight className="w-4 h-4 shrink-0" />
           </Link>
 
           <Link
             href="/phong-thuy"
-            className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-300 font-semibold text-xs sm:text-sm border border-amber-500/30 transition"
+            className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-300 font-semibold text-xs sm:text-sm border border-amber-500/30 transition text-center"
           >
             <Compass className="w-4 h-4 shrink-0" />
             <span>{t('about.btnFengShui', 'Tư Vấn Phong Thủy Theo Lá Số')}</span>
@@ -89,7 +89,7 @@ export default function AboutThayTon() {
 
           <Link
             href="/khoa-hoc"
-            className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 hover:text-amber-100 font-semibold text-xs sm:text-sm border border-purple-400/40 transition"
+            className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-purple-950/60 hover:bg-purple-900/70 text-amber-200 hover:text-amber-100 font-semibold text-xs sm:text-sm border border-purple-400/40 transition text-center"
           >
             <GraduationCap className="w-4 h-4 text-amber-400 shrink-0" />
             <span>{t('about.btnCourse', 'Khóa Học Tử Vi Online (699.000đ)')}</span>

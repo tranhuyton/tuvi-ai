@@ -98,9 +98,9 @@ export default function BookingBanner() {
         </div>
 
         {/* Thanh Địa Chỉ & Nút Hành Động Dưới Cùng */}
-        <div className="pt-4 border-t border-slate-800/80 flex flex-col lg:flex-row items-center justify-between gap-4">
-          <div className="flex items-center justify-center lg:justify-start gap-2 text-xs sm:text-sm text-amber-300/95 text-center lg:text-left">
-            <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+        <div className="pt-4 border-t border-slate-800/80 space-y-4">
+          <div className="flex items-start sm:items-center justify-center lg:justify-start gap-2 text-xs sm:text-sm text-amber-300/95 text-center sm:text-left">
+            <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
             <span>
               {t('booking.addressLabel', 'Khu vực tham vấn trực tiếp:')}{' '}
               <strong className="text-slate-100">
@@ -109,19 +109,19 @@ export default function BookingBanner() {
             </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto shrink-0">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <Link
               href="/dat-lich-xem-tu-vi"
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-amber-300 border border-slate-700 text-xs sm:text-sm font-semibold transition"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-amber-300 border border-slate-700 text-xs sm:text-sm font-semibold transition whitespace-nowrap"
             >
               <span>{t('booking.processBtn', 'Quy Trình Xem 1-1')}</span>
-              <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+              <ArrowRight className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             </Link>
 
             <a
               href="tel:0935058688"
               onClick={() => trackContact('phone', 'booking_banner')}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 cursor-pointer"
+              className="btn-shimmer inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
             >
               <PhoneCall className="w-4 h-4 fill-slate-950 shrink-0" />
               <span>{t('booking.callBtn', 'Gọi Đặt Lịch: 0935.058.688')}</span>
@@ -132,7 +132,7 @@ export default function BookingBanner() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackContact('zalo', 'booking_banner')}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0068FF] hover:bg-[#0054cc] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition transform hover:-translate-y-0.5 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-[#0068FF] hover:bg-[#0054cc] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
             >
               <span className="w-4 h-4 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[9px] font-black shrink-0">
                 Z

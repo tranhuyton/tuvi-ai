@@ -19,6 +19,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   vi: {
     // Header & Brand
     'brand.title': 'TỬ VI & PHONG THỦY THẦY TÔN',
+    'brand.shortTitle': 'Tử Vi Thầy Tôn',
     'brand.subtitle': 'An Sao & Bình Giải Miễn Phí • Phong Thủy Thực Chứng',
     'brand.multilingual': 'Luận Giải Đa Ngôn Ngữ',
     'nav.createChart': 'Lập Lá Số',
@@ -379,6 +380,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   en: {
     // Header & Brand
     'brand.title': 'MASTER TON ASTROLOGY & FENG SHUI',
+    'brand.shortTitle': 'Master Ton',
     'brand.subtitle': 'Free Zi Wei Chart & Reading • Empirical Feng Shui • Face & Palm Reading',
     'brand.multilingual': 'Multilingual Readings',
     'nav.createChart': 'Generate Chart',
@@ -791,6 +793,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   zh: {
     // Header & Brand
     'brand.title': '顿师紫微斗数与风水',
+    'brand.shortTitle': '顿师紫微',
     'brand.subtitle': '免费紫微排盘详批 • 实证阳宅商铺风水 • 八部神煞与相法秘传',
     'brand.multilingual': '多语言命理精批',
     'nav.createChart': '排盘算命',
@@ -1203,6 +1206,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   ko: {
     // Header & Brand
     'brand.title': '톤 대사 자미두수 & 풍수지리',
+    'brand.shortTitle': '톤 대사 자미두수',
     'brand.subtitle': '무료 자미두수 감명 • 실증 양택·상업 풍수 • 팔부신살 및 관상·수상',
     'brand.multilingual': '다국어 운명 감정',
     'nav.createChart': '명반 명조 작성',
@@ -1615,6 +1619,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   ja: {
     // Header & Brand
     'brand.title': 'トン先生の紫微斗数＆風水鑑定',
+    'brand.shortTitle': 'トン先生紫微斗数',
     'brand.subtitle': '無料紫微斗数命盤＆鑑定 • 実証風水 • 八部神殺と面相・手相秘伝',
     'brand.multilingual': '多言語本格紫微斗数鑑定',
     'nav.createChart': '命盤作成',

@@ -164,16 +164,16 @@ export default function CoursePromoBanner() {
                 </div>
               </div>
 
-              <div className="sm:col-span-7 p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="sm:col-span-7 p-3.5 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {COURSE_MODULES.map((mod) => (
                   <div
                     key={mod.id}
-                    className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/90 group-hover:border-slate-700 transition"
+                    className="p-2.5 sm:p-3 rounded-xl bg-slate-900/85 border border-slate-800/90 group-hover:border-amber-500/35 transition flex flex-col justify-center"
                   >
                     <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                      {t(`course.mod${mod.id}Lessons`, `${mod.id}`)}
+                      {t(`course.mod${mod.id}Lessons`, `Học phần ${mod.id}`)}
                     </div>
-                    <div className="text-xs font-semibold text-slate-100 line-clamp-2 mt-0.5 leading-snug">
+                    <div className="text-xs font-semibold text-slate-100 mt-1 leading-snug">
                       {t(`course.mod${mod.id}Title`, mod.title)}
                     </div>
                   </div>
@@ -181,22 +181,6 @@ export default function CoursePromoBanner() {
               </div>
             </div>
           </Link>
-
-          {/* 3 Điểm Khác Biệt Nhanh */}
-          <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-amber-200 font-medium">
-              <Headphones className="w-3.5 h-3.5 text-amber-400" />
-              <span>{t('course.feat1', '8+ giờ Podcast chuẩn phòng thu')}</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-emerald-200 font-medium">
-              <Compass className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t('course.feat3', 'Tự động tìm sao trên Lá Số của bạn')}</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 text-purple-200 font-medium">
-              <BookOpen className="w-3.5 h-3.5 text-purple-400" />
-              <span>{t('course.feat2', 'Flashcard 14 Chính Tinh & Ghi chú riêng')}</span>
-            </span>
-          </div>
         </div>
 
         {/* CỘT PHẢI (4 CỘT): THẺ HỌC PHÍ & NÚT MUA / HỌC THỬ */}

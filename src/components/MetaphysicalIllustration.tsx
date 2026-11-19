@@ -976,11 +976,11 @@ export function CourseVisualShowcase({
                 </span>
               </div>
 
-              <div className="relative z-10 mt-6 space-y-1">
+              <div className="relative z-10 mt-4 space-y-1">
                 <h3 className="text-sm font-bold text-white group-hover:text-amber-200 transition leading-snug">
                   {m.title}
                 </h3>
-                <p className="text-[11px] text-slate-300 leading-relaxed line-clamp-2">
+                <p className="text-[11px] text-slate-300 leading-relaxed">
                   {m.desc}
                 </p>
               </div>

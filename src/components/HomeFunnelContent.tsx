@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -13,6 +13,7 @@ import {
   Crown,
   CheckCircle2,
   MapPin,
+  ChevronDown,
 } from 'lucide-react';
 import { FUNNEL_PAGES, getFunnelPageByCode } from '@/lib/funnelPages';
 import { useLanguage } from '@/context/LanguageContext';
@@ -20,6 +21,8 @@ import { HOME_FUNNEL_I18N, translateFunnelPageTitle } from '@/lib/i18n/homeFunne
 
 export default function HomeFunnelContent() {
   const { language } = useLanguage();
+  const [isGuideExpanded, setIsGuideExpanded] = useState(false);
+  const [isDirectoryExpanded, setIsDirectoryExpanded] = useState(false);
   const homePage = getFunnelPageByCode('H');
   if (!homePage) return null;
 
@@ -106,48 +109,86 @@ export default function HomeFunnelContent() {
           />
         )}
 
-        {/* Main Body (Steps, Package Comparison Table, Upgrade Difference Table, AI Q&A, Method, Phong Thuy, Payment) */}
-        <div
-          className="prose prose-invert max-w-none text-sm sm:text-base leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: bodyHtml }}
-        />
+        {/* Main Body (Giữ 100% nội dung trong DOM cho Google SEO/GEO, thu gọn mượt để khách không phải cuộn quá dài) */}
+        <div className="relative">
+          <div
+            className={`transition-all duration-300 ${
+              isGuideExpanded ? '' : 'max-h-[420px] overflow-hidden'
+            }`}
+          >
+            <div
+              className="prose prose-invert max-w-none text-sm sm:text-base leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: bodyHtml }}
+            />
 
-        {/* Câu hỏi thường gặp (5 FAQs of Bài 1) */}
-        <div className="mt-10 pt-8 border-t border-slate-800">
-          <h2 className="text-xl sm:text-2xl font-bold text-amber-300 mb-5 flex items-center gap-2">
-            <HelpCircle className="w-6 h-6 text-amber-400 shrink-0" />
-            {faqHeading}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {faqs.map((faq, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl bg-slate-950/70 border border-slate-800/90 p-5 hover:border-amber-500/30 transition-colors"
-              >
-                <h3 className="text-sm sm:text-base font-bold text-amber-200 mb-2 flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-1" />
-                  <span>{faq.question}</span>
-                </h3>
-                <p
-                  className="text-xs sm:text-sm text-slate-300 leading-relaxed pl-6"
-                  dangerouslySetInnerHTML={{ __html: faq.answerHtml }}
-                />
+            {/* Câu hỏi thường gặp (5 FAQs of Bài 1 — Tự động trải ngang câu lẻ cuối để không bị trống cột) */}
+            <div className="mt-10 pt-8 border-t border-slate-800">
+              <h2 className="text-xl sm:text-2xl font-bold text-amber-300 mb-5 flex items-center gap-2">
+                <HelpCircle className="w-6 h-6 text-amber-400 shrink-0" />
+                {faqHeading}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {faqs.map((faq, idx) => (
+                  <div
+                    key={idx}
+                    className={`rounded-2xl bg-slate-950/70 border border-slate-800/90 p-5 hover:border-amber-500/30 transition-colors ${
+                      faqs.length % 2 === 1 && idx === faqs.length - 1 ? 'md:col-span-2' : ''
+                    }`}
+                  >
+                    <h3 className="text-sm sm:text-base font-bold text-amber-200 mb-2 flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-1" />
+                      <span>{faq.question}</span>
+                    </h3>
+                    <p
+                      className="text-xs sm:text-sm text-slate-300 leading-relaxed pl-6"
+                      dangerouslySetInnerHTML={{ __html: faq.answerHtml }}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Chủ đề tử vi và phong thủy liên quan & Bước tiếp theo */}
+            <div className="mt-8 pt-6 border-t border-slate-800/80">
+              <div
+                className="text-sm sm:text-base"
+                dangerouslySetInnerHTML={{ __html: closingHtml }}
+              />
+            </div>
           </div>
+
+          {!isGuideExpanded && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0b101e] via-[#0b101e]/90 to-transparent" />
+          )}
         </div>
 
-        {/* Chủ đề tử vi và phong thủy liên quan & Bước tiếp theo */}
-        <div className="mt-8 pt-6 border-t border-slate-800/80">
-          <div
-            className="text-sm sm:text-base"
-            dangerouslySetInnerHTML={{ __html: closingHtml }}
-          />
+        <div className="mt-5 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3.5 pt-4 border-t border-slate-800/80">
+          <button
+            type="button"
+            onClick={() => setIsGuideExpanded((prev) => !prev)}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 font-bold text-xs sm:text-sm border border-amber-400/45 transition cursor-pointer"
+          >
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span>
+              {isGuideExpanded
+                ? isVi
+                  ? 'Thu gọn Cẩm Nang & Bảng So Sánh'
+                  : 'Collapse Guide & Comparison'
+                : isVi
+                ? 'Đọc Toàn Bộ Cẩm Nang, Bảng Giá & FAQ'
+                : 'Read Full Guide, Pricing Table & FAQ'}
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${
+                isGuideExpanded ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
 
-          <div className="mt-6 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             <a
               href="#lap-la-so"
-              className="btn-shimmer inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold text-sm sm:text-base shadow-lg shadow-amber-500/20 transition-all"
+              className="btn-shimmer inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all"
             >
               <Sparkles className="w-4 h-4 shrink-0" />
               <span>{primaryCtaLabel}</span>
@@ -157,7 +198,7 @@ export default function HomeFunnelContent() {
               href={homePage.secondaryCta.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-300 font-semibold text-sm sm:text-base border border-amber-500/30 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-amber-300 font-semibold text-xs sm:text-sm border border-amber-500/30 transition-all"
             >
               <PhoneCall className="w-4 h-4 shrink-0" />
               <span>{secondaryCtaLabel}</span>
@@ -166,7 +207,7 @@ export default function HomeFunnelContent() {
         </div>
       </div>
 
-      {/* 3-Branch 20-Page Funnel Directory */}
+      {/* 3-Branch 38-Page Funnel Directory (Cân bằng chiều cao 3 cột & giữ đủ link trong DOM) */}
       <div className="relative overflow-hidden imperial-card backdrop-blur-xl border border-amber-500/35 rounded-3xl p-6 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div>
@@ -187,66 +228,99 @@ export default function HomeFunnelContent() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Nhánh 1 */}
-          <div className="bg-slate-950/70 border border-amber-500/25 rounded-2xl p-5">
-            <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
-              <span>{dirBranch1}</span>
+        <div className="relative">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-3 gap-5 transition-all duration-300 ${
+              isDirectoryExpanded ? '' : 'md:max-h-[340px] max-h-[460px] overflow-hidden'
+            }`}
+          >
+            {/* Nhánh 1 */}
+            <div className="bg-slate-950/70 border border-amber-500/25 rounded-2xl p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
+                <span>{dirBranch1}</span>
+              </div>
+              <ul className="space-y-2.5 text-xs sm:text-sm">
+                {group1Pages.map((p) => (
+                  <li key={p.code}>
+                    <Link
+                      href={p.url}
+                      className="text-slate-300 hover:text-amber-300 transition-colors flex items-start gap-1.5"
+                    >
+                      <span className="text-amber-400 font-bold">›</span>
+                      <span>{translateFunnelPageTitle(p.url, p.h1, language)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              {group1Pages.map((p) => (
-                <li key={p.code}>
-                  <Link
-                    href={p.url}
-                    className="text-slate-300 hover:text-amber-300 transition-colors flex items-start gap-1.5"
-                  >
-                    <span className="text-amber-400 font-bold">›</span>
-                    <span>{translateFunnelPageTitle(p.url, p.h1, language)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+
+            {/* Nhánh 2 */}
+            <div className="bg-slate-950/70 border border-emerald-500/25 rounded-2xl p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
+                <span>{dirBranch2}</span>
+              </div>
+              <ul className="space-y-2.5 text-xs sm:text-sm">
+                {group2Pages.map((p) => (
+                  <li key={p.code}>
+                    <Link
+                      href={p.url}
+                      className="text-slate-300 hover:text-emerald-300 transition-colors flex items-start gap-1.5"
+                    >
+                      <span className="text-emerald-400 font-bold">›</span>
+                      <span>{translateFunnelPageTitle(p.url, p.h1, language)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Nhánh 3 */}
+            <div className="bg-slate-950/70 border border-indigo-500/25 rounded-2xl p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
+                <span>{dirBranch3}</span>
+              </div>
+              <ul className="space-y-2.5 text-xs sm:text-sm">
+                {group3Pages.map((p) => (
+                  <li key={p.code}>
+                    <Link
+                      href={p.url}
+                      className="text-slate-300 hover:text-indigo-300 transition-colors flex items-start gap-1.5"
+                    >
+                      <span className="text-indigo-400 font-bold">›</span>
+                      <span>{translateFunnelPageTitle(p.url, p.h1, language)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          {/* Nhánh 2 */}
-          <div className="bg-slate-950/70 border border-emerald-500/25 rounded-2xl p-5">
-            <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
-              <span>{dirBranch2}</span>
-            </div>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              {group2Pages.map((p) => (
-                <li key={p.code}>
-                  <Link
-                    href={p.url}
-                    className="text-slate-300 hover:text-emerald-300 transition-colors flex items-start gap-1.5"
-                  >
-                    <span className="text-emerald-400 font-bold">›</span>
-                    <span>{translateFunnelPageTitle(p.url, p.h1, language)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {!isDirectoryExpanded && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0b101e] via-[#0b101e]/90 to-transparent" />
+          )}
+        </div>
 
-          {/* Nhánh 3 */}
-          <div className="bg-slate-950/70 border border-indigo-500/25 rounded-2xl p-5">
-            <div className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-3 pb-2 border-b border-slate-800 flex items-center justify-between">
-              <span>{dirBranch3}</span>
-            </div>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              {group3Pages.map((p) => (
-                <li key={p.code}>
-                  <Link
-                    href={p.url}
-                    className="text-slate-300 hover:text-indigo-300 transition-colors flex items-start gap-1.5"
-                  >
-                    <span className="text-indigo-400 font-bold">›</span>
-                    <span>{translateFunnelPageTitle(p.url, p.h1, language)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setIsDirectoryExpanded((prev) => !prev)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-500/35 text-xs font-bold transition cursor-pointer"
+          >
+            <span>
+              {isDirectoryExpanded
+                ? isVi
+                  ? 'Thu gọn danh sách chuyên đề'
+                  : 'Collapse topic directory'
+                : isVi
+                ? `Mở xem đầy đủ toàn bộ ${FUNNEL_PAGES.length} chuyên đề`
+                : `Show all ${FUNNEL_PAGES.length} topics`}
+            </span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                isDirectoryExpanded ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
         </div>
       </div>
     </section>
