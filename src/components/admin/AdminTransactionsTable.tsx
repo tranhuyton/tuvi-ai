@@ -112,6 +112,7 @@ export default function AdminTransactionsTable({
   const [isLoadingPreviewChats, setIsLoadingPreviewChats] = useState(false);
   const [copiedReading, setCopiedReading] = useState(false);
   const [copiedChatId, setCopiedChatId] = useState<string | null>(null);
+  const [isViewingQaInModal, setIsViewingQaInModal] = useState(false);
   const [isExportingPdfAdmin, setIsExportingPdfAdmin] = useState(false);
   const [isRegeneratingReading, setIsRegeneratingReading] = useState(false);
   const [regenerateMsg, setRegenerateMsg] = useState<string | null>(null);
@@ -142,6 +143,7 @@ export default function AdminTransactionsTable({
     setPreviewChatMessages([]);
     setCopiedReading(false);
     setCopiedChatId(null);
+    setIsViewingQaInModal(focusSection === 'qa');
     setZoomLightboxType(null);
     setRegenerateMsg(null);
 
@@ -1231,17 +1233,31 @@ export default function AdminTransactionsTable({
               </div>
               <div className="flex items-center gap-2">
                 {previewChatMessages.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const el = document.getElementById('admin-modal-qa');
-                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/35 border border-blue-400/40 text-blue-200 text-xs font-bold transition cursor-pointer"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5" />
-                    <span>Xem {previewChatMessages.length} câu hỏi đáp ↓</span>
-                  </button>
+                  isViewingQaInModal ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('admin-modal-reading');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-xs font-bold transition cursor-pointer"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Xem luận giải lá số ↑</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('admin-modal-qa');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/35 border border-blue-400/40 text-blue-200 text-xs font-bold transition cursor-pointer"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Xem {previewChatMessages.length} câu hỏi đáp ↓</span>
+                    </button>
+                  )
                 )}
                 <button
                   type="button"
@@ -1249,6 +1265,7 @@ export default function AdminTransactionsTable({
                     setPreviewChart(null);
                     setPreviewReadingHtml(null);
                     setPreviewChatMessages([]);
+                    setIsViewingQaInModal(false);
                   }}
                   className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
                 >
@@ -1257,7 +1274,20 @@ export default function AdminTransactionsTable({
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 overflow-y-auto space-y-8">
+            <div
+              className="p-4 sm:p-6 overflow-y-auto space-y-8"
+              onScroll={(e) => {
+                const container = e.currentTarget;
+                const qaEl = document.getElementById('admin-modal-qa');
+                if (!qaEl) return;
+                const cRect = container.getBoundingClientRect();
+                const qRect = qaEl.getBoundingClientRect();
+                const inQa = qRect.top - cRect.top <= cRect.height * 0.45;
+                if (inQa !== isViewingQaInModal) {
+                  setIsViewingQaInModal(inQa);
+                }
+              }}
+            >
               {/* Hồ sơ Dữ liệu cá nhân & Ảnh tướng pháp của khách hàng (kèm nút tải ảnh trực tiếp nếu khách gửi qua Zalo) */}
               <div className="p-4 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1423,118 +1453,8 @@ export default function AdminTransactionsTable({
                 <p className="text-slate-400 italic">Không có dữ liệu bàn cờ lá số.</p>
               )}
 
-              {/* Khối Lịch Sử Hỏi Đáp Đàm Đạo Của Khách Hàng */}
-              {(isLoadingPreviewChats || previewChatMessages.length > 0 || (previewChart.message_count || 0) > 0) && (
-                <div id="admin-modal-qa" className="border-t border-slate-800/80 pt-6 space-y-4">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 text-blue-300 flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-base sm:text-lg text-blue-300 font-serif">
-                          Lịch Sử Hỏi Đáp Đàm Đạo Cùng Thầy Tôn ({previewChatMessages.length} câu)
-                        </h4>
-                        <p className="text-xs text-slate-400">
-                          Toàn bộ câu hỏi khách hàng đã gửi và câu trả lời AI Thầy Tôn đã hồi đáp cho lá số này
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isLoadingPreviewChats ? (
-                    <div className="p-6 text-center text-slate-400 flex items-center justify-center gap-2 bg-slate-950/70 rounded-2xl border border-slate-800 text-xs">
-                      <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-                      <span>Đang tải lịch sử hỏi đáp của khách...</span>
-                    </div>
-                  ) : previewChatMessages.length > 0 ? (
-                    <div className="space-y-4">
-                      {previewChatMessages.map((msg, idx) => {
-                        const msgTime = msg.created_at
-                          ? new Date(msg.created_at).toLocaleString('vi-VN', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                            })
-                          : '';
-                        const typeLabel =
-                          msg.message_type === 'expert'
-                            ? '💎 Chuyên Gia Expert'
-                            : msg.message_type === 'vip'
-                            ? '👑 VIP Pro'
-                            : '📜 Cơ Bản';
-                        return (
-                          <div
-                            key={msg.id || idx}
-                            className="rounded-2xl bg-slate-950/85 border border-blue-500/30 overflow-hidden shadow-md"
-                          >
-                            <div className="px-4 py-2.5 bg-blue-950/40 border-b border-blue-500/20 flex items-center justify-between gap-2 flex-wrap">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-extrabold text-blue-300">
-                                  Câu hỏi #{idx + 1}
-                                </span>
-                                <span className="text-[10.5px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-amber-300 font-semibold">
-                                  {typeLabel}
-                                </span>
-                                {msgTime && (
-                                  <span className="text-[11px] text-slate-400">{msgTime}</span>
-                                )}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyChatQa(msg)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition cursor-pointer"
-                              >
-                                {copiedChatId === msg.id ? (
-                                  <>
-                                    <Check className="w-3 h-3 text-emerald-400" />
-                                    <span className="text-emerald-400">Đã sao chép</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3 h-3 text-slate-400" />
-                                    <span>Sao chép</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-
-                            <div className="p-4 space-y-3">
-                              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25">
-                                <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300 mb-1">
-                                  👤 Khách hàng hỏi:
-                                </div>
-                                <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed font-medium">
-                                  {msg.question}
-                                </p>
-                              </div>
-
-                              <div className="p-4 rounded-xl bg-white text-slate-800 border border-slate-300">
-                                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700 mb-2">
-                                  🔮 Thầy Tôn trả lời:
-                                </div>
-                                <div
-                                  className="prose max-w-none text-sm sm:text-base leading-relaxed space-y-2.5 font-sans text-justify"
-                                  dangerouslySetInnerHTML={{ __html: cleanReadingHtml(msg.answer || '') }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="p-5 bg-slate-950/60 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs italic">
-                      Chưa có câu hỏi nào được lưu cho lá số này.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Khối Lời Bình Giải AI Đã Gửi Khách Hàng */}
-              <div className="border-t border-slate-800/80 pt-6">
+              {/* Khối Lời Bình Giải AI Đã Gửi Khách Hàng (Hiển thị trước phần Hỏi Đáp) */}
+              <div id="admin-modal-reading" className="border-t border-slate-800/80 pt-6">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
@@ -1638,6 +1558,127 @@ export default function AdminTransactionsTable({
                   </div>
                 )}
               </div>
+
+              {/* Khối Lịch Sử Hỏi Đáp Đàm Đạo Của Khách Hàng (Nằm dưới Bản Luận Giải) */}
+              {(isLoadingPreviewChats || previewChatMessages.length > 0 || (previewChart.message_count || 0) > 0) && (
+                <div id="admin-modal-qa" className="border-t border-slate-800/80 pt-6 space-y-4">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 text-blue-300 flex items-center justify-center">
+                        <MessageSquare className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-base sm:text-lg text-blue-300 font-serif">
+                          Lịch Sử Hỏi Đáp Đàm Đạo Cùng Thầy Tôn ({previewChatMessages.length} câu)
+                        </h4>
+                        <p className="text-xs text-slate-400">
+                          Toàn bộ câu hỏi khách hàng đã gửi và câu trả lời AI Thầy Tôn đã hồi đáp cho lá số này
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const el = document.getElementById('admin-modal-reading');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-amber-200 text-xs font-bold transition cursor-pointer"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Lên phần luận giải ↑</span>
+                    </button>
+                  </div>
+
+                  {isLoadingPreviewChats ? (
+                    <div className="p-6 text-center text-slate-400 flex items-center justify-center gap-2 bg-slate-950/70 rounded-2xl border border-slate-800 text-xs">
+                      <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                      <span>Đang tải lịch sử hỏi đáp của khách...</span>
+                    </div>
+                  ) : previewChatMessages.length > 0 ? (
+                    <div className="space-y-4">
+                      {previewChatMessages.map((msg, idx) => {
+                        const msgTime = msg.created_at
+                          ? new Date(msg.created_at).toLocaleString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })
+                          : '';
+                        const typeLabel =
+                          msg.message_type === 'expert'
+                            ? '💎 Chuyên Gia Expert'
+                            : msg.message_type === 'vip'
+                            ? '👑 VIP Pro'
+                            : '📜 Cơ Bản';
+                        return (
+                          <div
+                            key={msg.id || idx}
+                            className="rounded-2xl bg-slate-950/85 border border-blue-500/30 overflow-hidden shadow-md"
+                          >
+                            <div className="px-4 py-2.5 bg-blue-950/40 border-b border-blue-500/20 flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-extrabold text-blue-300">
+                                  Câu hỏi #{idx + 1}
+                                </span>
+                                <span className="text-[10.5px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-amber-300 font-semibold">
+                                  {typeLabel}
+                                </span>
+                                {msgTime && (
+                                  <span className="text-[11px] text-slate-400">{msgTime}</span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyChatQa(msg)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition cursor-pointer"
+                              >
+                                {copiedChatId === msg.id ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-400" />
+                                    <span className="text-emerald-400">Đã sao chép</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3 text-slate-400" />
+                                    <span>Sao chép</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+
+                            <div className="p-4 space-y-3">
+                              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300 mb-1">
+                                  👤 Khách hàng hỏi:
+                                </div>
+                                <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed font-medium">
+                                  {msg.question}
+                                </p>
+                              </div>
+
+                              <div className="p-4 rounded-xl bg-white text-slate-800 border border-slate-300">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700 mb-2">
+                                  🔮 Thầy Tôn trả lời:
+                                </div>
+                                <div
+                                  className="prose max-w-none text-sm sm:text-base leading-relaxed space-y-2.5 font-sans text-justify"
+                                  dangerouslySetInnerHTML={{ __html: cleanReadingHtml(msg.answer || '') }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-5 bg-slate-950/60 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs italic">
+                      Chưa có câu hỏi nào được lưu cho lá số này.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
