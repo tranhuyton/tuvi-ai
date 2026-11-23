@@ -101,6 +101,8 @@ export default function AdminTransactionsTable({
   const [isLoadingPreviewReading, setIsLoadingPreviewReading] = useState(false);
   const [copiedReading, setCopiedReading] = useState(false);
   const [isExportingPdfAdmin, setIsExportingPdfAdmin] = useState(false);
+  const [isRegeneratingReading, setIsRegeneratingReading] = useState(false);
+  const [regenerateMsg, setRegenerateMsg] = useState<string | null>(null);
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
   const [zoomLightboxType, setZoomLightboxType] = useState<'mat' | 'tay' | null>(null);
 
@@ -109,6 +111,7 @@ export default function AdminTransactionsTable({
     setPreviewReadingHtml(chart.reading_html || null);
     setCopiedReading(false);
     setZoomLightboxType(null);
+    setRegenerateMsg(null);
 
     setIsLoadingPreviewReading(!chart.reading_html);
     try {
@@ -144,6 +147,81 @@ export default function AdminTransactionsTable({
   };
 
   const [adminPdfProgressText, setAdminPdfProgressText] = useState('');
+
+  const handleRegenerateAdminReading = async () => {
+    if (!previewChart || isRegeneratingReading) return;
+    const resolvedTier = (previewChart.duong_so_data?.tier || previewChart.laso_data?.tier || 'free') as
+      | 'free'
+      | 'pro'
+      | 'expert';
+    const tierLabel =
+      resolvedTier === 'expert'
+        ? 'Bản Chuyên Gia Expert (269k)'
+        : resolvedTier === 'pro'
+        ? 'Bản Chuyên Sâu Pro (119k)'
+        : 'Bản Cơ Bản (Free)';
+
+    if (
+      !window.confirm(
+        `Luận giải lại toàn bộ lá số "${previewChart.duong_so_data?.hoTen || previewChart.title}" theo đúng gói ${tierLabel} và cập nhật trực tiếp vào tài khoản khách hàng?`
+      )
+    ) {
+      return;
+    }
+
+    setIsRegeneratingReading(true);
+    setRegenerateMsg(`Đang gọi AI luận giải lại ${tierLabel} (khoảng 30-90 giây)...`);
+    try {
+      const resolvedLaSo = previewChart.duong_so_data
+        ? {
+            ...lapLaSoTuVi(
+              { ...previewChart.duong_so_data, anhMat: undefined, anhTay: undefined },
+              previewChart.duong_so_data.namXem || 2026
+            ),
+            tier: resolvedTier,
+            quota: previewChart.laso_data?.quota,
+          }
+        : { ...previewChart.laso_data, tier: resolvedTier };
+
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
+      const res = await fetch('/api/tuvi/reading', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          laSo: resolvedLaSo,
+          tier: resolvedTier,
+          thongTinThem: previewChart.duong_so_data?.thongTinThem,
+          chieuCao: previewChart.duong_so_data?.chieuCao,
+          canNang: previewChart.duong_so_data?.canNang,
+          anhMat: previewChart.duong_so_data?.anhMat,
+          anhTay: previewChart.duong_so_data?.anhTay,
+          lang: 'vi',
+          chartId: previewChart.id,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.reading) {
+        throw new Error(json.error || `Lỗi HTTP ${res.status}`);
+      }
+      setPreviewReadingHtml(json.reading);
+      setPreviewChart((prev) =>
+        prev
+          ? {
+              ...prev,
+              reading_html: json.reading,
+              laso_data: { ...prev.laso_data, tier: resolvedTier, needsReadingUpgrade: false },
+            }
+          : prev
+      );
+      setRegenerateMsg(`✅ Đã luận giải lại và lưu thành công ${tierLabel} (${json.modelUsed || 'AI'}).`);
+      onRefresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Lỗi không xác định';
+      setRegenerateMsg(`❌ Không thể luận giải lại: ${msg}`);
+    } finally {
+      setIsRegeneratingReading(false);
+    }
+  };
 
   const handleExportAdminPdf = async () => {
     if (!previewReadingHtml || !previewChart || isExportingPdfAdmin) return;
@@ -1100,44 +1178,71 @@ export default function AdminTransactionsTable({
                     </div>
                   </div>
 
-                  {previewReadingHtml && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleExportAdminPdf}
-                        disabled={isExportingPdfAdmin}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
-                        title="Tải trực tiếp file PDF luận giải về máy tính"
-                      >
-                        {isExportingPdfAdmin ? (
-                          <RefreshCw className="w-3.5 h-3.5 text-amber-300 animate-spin" />
-                        ) : (
-                          <FileDown className="w-3.5 h-3.5 text-amber-300" />
-                        )}
-                        <span>{isExportingPdfAdmin ? (adminPdfProgressText || 'Đang tạo PDF...') : 'Xuất File PDF'}</span>
-                      </button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleRegenerateAdminReading}
+                      disabled={isRegeneratingReading}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
+                      title="Gọi AI luận giải lại theo đúng gói hiện tại và lưu thẳng vào tài khoản khách"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRegeneratingReading ? 'animate-spin' : ''}`} />
+                      <span>{isRegeneratingReading ? 'Đang luận giải...' : 'Luận giải lại đúng gói'}</span>
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={handleCopyReading}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 shadow-sm transition cursor-pointer"
-                        title="Sao chép toàn bộ bài bình giải này để gửi Zalo hoặc email"
-                      >
-                        {copiedReading ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                            <span className="text-emerald-400 font-bold">Đã sao chép</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5 text-slate-400" />
-                            <span>Sao chép lời bình</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
+                    {previewReadingHtml && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleExportAdminPdf}
+                          disabled={isExportingPdfAdmin}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-red-800 to-red-700 hover:from-red-700 hover:to-red-600 text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer disabled:opacity-50"
+                          title="Tải trực tiếp file PDF luận giải về máy tính"
+                        >
+                          {isExportingPdfAdmin ? (
+                            <RefreshCw className="w-3.5 h-3.5 text-amber-300 animate-spin" />
+                          ) : (
+                            <FileDown className="w-3.5 h-3.5 text-amber-300" />
+                          )}
+                          <span>{isExportingPdfAdmin ? (adminPdfProgressText || 'Đang tạo PDF...') : 'Xuất File PDF'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleCopyReading}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 shadow-sm transition cursor-pointer"
+                          title="Sao chép toàn bộ bài bình giải này để gửi Zalo hoặc email"
+                        >
+                          {copiedReading ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-emerald-400 font-bold">Đã sao chép</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Sao chép lời bình</span>
+                            </>
+                          )}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
+
+                {previewChart.laso_data?.needsReadingUpgrade && !isRegeneratingReading && (
+                  <div className="mb-4 p-3 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between gap-3 flex-wrap">
+                    <span>
+                      ⚠️ Khách đã nâng cấp gói nhưng chưa mở lại trang để hệ thống tự luận giải bản mới — bài bên dưới đang là bản cũ. Anh có thể bấm <strong>Luận giải lại đúng gói</strong> để cập nhật ngay!
+                    </span>
+                  </div>
+                )}
+
+                {regenerateMsg && (
+                  <div className="mb-4 p-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs">
+                    {regenerateMsg}
+                  </div>
+                )}
 
                 {isLoadingPreviewReading ? (
                   <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center gap-3 bg-slate-950/70 rounded-2xl border border-slate-800">
