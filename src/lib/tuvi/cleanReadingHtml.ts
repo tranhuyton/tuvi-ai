@@ -98,23 +98,19 @@ export function sanitizeHtmlAllowlist(input?: string | null): string {
       'head',
     ],
     transformTags: {
-      a: (tagName, attribs) => {
-        const safeHref = sanitizeSafeUrl(attribs.href, '');
-        const safeClass = filterSafeClassList(attribs.class);
-        const nextAttribs: Record<string, string> = {};
-        if (safeHref) {
-          nextAttribs.href = safeHref;
-          if (/^https?:\/\//i.test(safeHref)) {
-            nextAttribs.target = '_blank';
-            nextAttribs.rel = 'noopener noreferrer';
-          }
-        }
-        if (safeClass) nextAttribs.class = safeClass;
-        return { tagName, attribs: nextAttribs };
-      },
       '*': (tagName, attribs) => {
         const safeClass = filterSafeClassList(attribs.class);
         const nextAttribs: Record<string, string> = {};
+        if (tagName === 'a') {
+          const safeHref = sanitizeSafeUrl(attribs.href, '');
+          if (safeHref) {
+            nextAttribs.href = safeHref;
+            if (/^https?:\/\//i.test(safeHref)) {
+              nextAttribs.target = '_blank';
+              nextAttribs.rel = 'noopener noreferrer';
+            }
+          }
+        }
         if (safeClass) nextAttribs.class = safeClass;
         return { tagName, attribs: nextAttribs };
       },
@@ -131,6 +127,30 @@ export function sanitizeVietnameseFileName(raw?: string | null, fallback = 'Duon
     .replace(/[^a-zA-Z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
   return cleaned || fallback;
+}
+
+const THAY_TON_ZALO_RE =
+  /(?:(?:Zalo(?:\s+Thầy\s+Tôn)?|Hotline(?:\s*\/\s*Zalo)?)\s*[:\-]?\s*)?0935[\s.\-]?058[\s.\-]?688/gi;
+
+/**
+ * Tự động biến số Zalo / cụm "Zalo Thầy Tôn: 0935.058.688" thành link bấm mở thẳng Zalo
+ * - Chỉ xử lý phần văn bản thuần bên ngoài thẻ <a> có sẵn (an toàn tuyệt đối, không lồng <a>, idempotent)
+ */
+function linkifyThayTonZalo(sanitizedHtml: string): string {
+  if (!sanitizedHtml || !/0935[\s.\-]?058[\s.\-]?688/.test(sanitizedHtml)) {
+    return sanitizedHtml;
+  }
+  const tokens = sanitizedHtml.split(/(<a\b[^>]*>[\s\S]*?<\/a>|<[^>]+>)/gi);
+  return tokens
+    .map((part) => {
+      if (!part || part.startsWith('<')) return part;
+      return part.replace(
+        THAY_TON_ZALO_RE,
+        (matched) =>
+          `<a href="https://zalo.me/0935058688" target="_blank" rel="noopener noreferrer" class="text-[#0068FF] hover:opacity-85 underline decoration-[#0068FF]/60 underline-offset-2 font-bold">${matched}</a>`
+      );
+    })
+    .join('');
 }
 
 export function cleanReadingHtml(rawHtml?: string | null): string {
@@ -165,6 +185,9 @@ export function cleanReadingHtml(rawHtml?: string | null): string {
 
   // Lọc allowlist bằng HTML parser thực (sanitize-html) chống XSS triệt để
   text = sanitizeHtmlAllowlist(text);
+
+  // Biến số Zalo Thầy Tôn thành liên kết bấm mở trực tiếp app Zalo (chạy sau sanitize để không lo XSS)
+  text = linkifyThayTonZalo(text);
 
   return text.trim();
 }
