@@ -385,11 +385,11 @@ export default function AdminTransactionsTable({
           </span>
         </div>
         <div className="p-2.5 bg-slate-950 rounded-xl border border-slate-800 font-mono text-slate-200 flex items-center justify-between gap-2 overflow-x-auto">
-          <span>Webhook URL: <strong>https://tuvithayton.vn/api/payment/webhook</strong></span>
+          <span>Webhook URL: <strong>https://www.tuvithayton.vn/api/payment/webhook</strong></span>
           <span className="text-[11px] text-emerald-400 shrink-0">Method: POST (JSON)</span>
         </div>
         <p className="text-[11px] text-slate-400">
-          Cú pháp nội dung chuyển khoản tự động có dạng <code className="text-amber-300">TVxxxxx</code> (Ví dụ: <strong>TV83921</strong>). Ngay khi khách quét QR chuyển khoản, hệ thống sẽ tự động bắt khớp mã đơn, mở khóa giao diện của khách ngay lập tức và gửi email biên lai kích hoạt!
+          Cú pháp nội dung chuyển khoản tự động có dạng <code className="text-amber-300">TVxxxxxx</code> (Ví dụ: <strong>TV682382</strong>). Lưu ý luôn dùng đường dẫn có <code className="text-amber-300">www.</code> để tránh redirect mất header <code className="text-amber-300">Authorization</code>. Ngay khi khách quét QR chuyển khoản, hệ thống sẽ tự động bắt khớp mã đơn, mở khóa giao diện của khách ngay lập tức và gửi email biên lai kích hoạt!
         </p>
       </div>
 

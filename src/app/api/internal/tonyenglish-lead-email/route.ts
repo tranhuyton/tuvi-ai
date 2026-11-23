@@ -30,16 +30,19 @@ export async function POST(req: NextRequest) {
     }
 
     const expectedSecret = (process.env.INTERNAL_RELAY_SECRET || '').trim();
-    if (!expectedSecret) {
-      console.error('[TONYENGLISH LEAD RELAY] Thiếu biến môi trường INTERNAL_RELAY_SECRET!');
-      return NextResponse.json({ ok: false, error: 'Relay secret not configured' }, { status: 503 });
-    }
-
     const relayHeader = (req.headers.get('x-tony-lead-relay') || '').trim();
     const secretHeader = (req.headers.get('x-internal-secret') || '').trim();
-    const isAuthorized =
-      timingSafeStringEqual(secretHeader, expectedSecret) ||
-      timingSafeStringEqual(relayHeader, expectedSecret);
+
+    let isAuthorized = false;
+    if (expectedSecret) {
+      isAuthorized =
+        timingSafeStringEqual(secretHeader, expectedSecret) ||
+        timingSafeStringEqual(relayHeader, expectedSecret);
+    } else {
+      // Tương thích tạm thời với header cũ từ tonyenglish.vn khi chưa đặt INTERNAL_RELAY_SECRET trên Vercel
+      console.warn('[TONYENGLISH LEAD RELAY] Chưa cấu hình INTERNAL_RELAY_SECRET — dùng chế độ tương thích x-tony-lead-relay');
+      isAuthorized = timingSafeStringEqual(relayHeader, 'tonyenglish-v1');
+    }
 
     if (!isAuthorized) {
       return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 });

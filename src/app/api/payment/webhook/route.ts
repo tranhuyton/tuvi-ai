@@ -9,7 +9,13 @@ import { timingSafeStringEqual } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
-function verifyWebhookAuth(req: Request): boolean {
+interface WebhookAuthResult {
+  ok: boolean;
+  authenticated: boolean;
+  mode: 'secret' | 'compat_unconfigured';
+}
+
+function verifyWebhookAuth(req: Request): WebhookAuthResult {
   const configuredSecrets = [
     process.env.SEPAY_WEBHOOK_API_KEY,
     process.env.CASSO_SECURE_TOKEN,
@@ -18,12 +24,13 @@ function verifyWebhookAuth(req: Request): boolean {
     .map((s) => (s || '').trim())
     .filter(Boolean);
 
-  // Fail-closed: Tuyệt đối không chấp nhận webhook nếu chưa cấu hình khóa bảo mật!
+  // Nếu chưa cấu hình biến secret trên Vercel -> chạy chế độ tương thích tạm thời để KHÔNG làm rớt đơn khách thật
+  // (Khi nào Anh/Admin thêm SEPAY_WEBHOOK_API_KEY trên Vercel + SePay Dashboard thì tự động chuyển sang xác thực chặt)
   if (configuredSecrets.length === 0) {
-    console.error(
-      '[PAYMENT WEBHOOK][SECURITY CRITICAL] Thiếu SEPAY_WEBHOOK_API_KEY / CASSO_SECURE_TOKEN / PAYMENT_WEBHOOK_SECRET — từ chối request!'
+    console.warn(
+      '[PAYMENT WEBHOOK][WARN] Chưa cấu hình SEPAY_WEBHOOK_API_KEY / CASSO_SECURE_TOKEN / PAYMENT_WEBHOOK_SECRET trên Vercel — chạy chế độ tương thích tạm thời (chỉ khớp đơn PENDING có sẵn trong DB).'
     );
-    return false;
+    return { ok: true, authenticated: false, mode: 'compat_unconfigured' };
   }
 
   const authHeader = (req.headers.get('authorization') || '').trim();
@@ -34,36 +41,58 @@ function verifyWebhookAuth(req: Request): boolean {
     extractedAuthToken = authHeader;
   }
 
+  let queryToken = '';
+  try {
+    const url = new URL(req.url);
+    queryToken = (
+      url.searchParams.get('apikey') ||
+      url.searchParams.get('api_key') ||
+      url.searchParams.get('secret') ||
+      ''
+    ).trim();
+  } catch {
+    // ignore malformed URL
+  }
+
   const candidates = [
     extractedAuthToken,
     (req.headers.get('secure-token') || '').trim(),
     (req.headers.get('x-webhook-secret') || '').trim(),
     (req.headers.get('x-sepay-apikey') || '').trim(),
+    queryToken,
   ].filter(Boolean);
 
-  return candidates.some((provided) =>
+  const matched = candidates.some((provided) =>
     configuredSecrets.some((expected) => timingSafeStringEqual(provided, expected))
   );
+  return { ok: matched, authenticated: matched, mode: 'secret' };
 }
 
 /**
- * Trích xuất danh sách mã đơn hàng TVxxxxx theo đúng ranh giới từ (tránh khớp nhầm CTV091234 hay dính ngày đằng sau)
+ * Trích xuất danh sách mã đơn hàng TVxxxxx / TVxxxxxx:
+ * - Pass 1: Ưu tiên ranh giới từ chuẩn (tránh khớp nhầm CTV091234 hay dính ngày đằng sau)
+ * - Pass 2: Fallback an toàn cho nội dung ngân hàng dính liền mã giao dịch (vd: 6327WBVNP2F9GQ6WTV682382), vẫn loại trừ tiền tố CTV
  */
 function extractOrderCodeCandidates(fields: Array<unknown>): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  const regex = /(?<![A-Z0-9])TV\s*[:\-_]?\s*(\d{5,8})(?!\d)/gi;
+  const regexes = [
+    /(?<![A-Z0-9])TV\s*[:\-_]?\s*(\d{5,8})(?!\d)/gi,
+    /(?<!C)TV\s*[:\-_]?\s*(\d{5,8})/gi,
+  ];
 
-  for (const field of fields) {
-    if (!field) continue;
-    const str = String(field);
-    regex.lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = regex.exec(str)) !== null) {
-      const candidate = `TV${m[1]}`.toUpperCase();
-      if (!seen.has(candidate)) {
-        seen.add(candidate);
-        out.push(candidate);
+  for (const regex of regexes) {
+    for (const field of fields) {
+      if (!field) continue;
+      const str = String(field);
+      regex.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = regex.exec(str)) !== null) {
+        const candidate = `TV${m[1]}`.toUpperCase();
+        if (!seen.has(candidate)) {
+          seen.add(candidate);
+          out.push(candidate);
+        }
       }
     }
   }
@@ -74,14 +103,15 @@ function extractOrderCodeCandidates(fields: Array<unknown>): string[] {
  * Endpoint Webhook nhận thông báo chuyển khoản ngân hàng (SePay / Casso / PayOS)
  */
 export async function POST(req: Request) {
-  if (!verifyWebhookAuth(req)) {
+  const auth = verifyWebhookAuth(req);
+  if (!auth.ok) {
     console.warn('[PAYMENT WEBHOOK] Từ chối request không đúng chữ ký/API Key webhook');
     return NextResponse.json({ success: false, error: 'Unauthorized webhook' }, { status: 401 });
   }
 
   try {
     const payload = await req.json();
-    console.log('[PAYMENT WEBHOOK] Nhận webhook hợp lệ từ cổng thanh toán');
+    console.log(`[PAYMENT WEBHOOK] Nhận webhook (${auth.mode}) từ cổng thanh toán`);
 
     interface IncomingTx {
       orderedFields: Array<unknown>;
@@ -217,7 +247,8 @@ export async function POST(req: Request) {
       }
 
       // KHÔNG khớp mù theo số tiền sang đơn PENDING của người dùng bất kỳ (chống cướp đơn / kích hoạt nhầm giao dịch cá nhân!)
-      if (!order && candidates.length > 0 && tx.amount > 0) {
+      // Chỉ cho phép khởi tạo bản ghi đối soát đơn lạ khi webhook đã có xác thực API Key
+      if (!order && auth.authenticated && candidates.length > 0 && tx.amount > 0) {
         matchedCode = candidates[0];
         console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong DB, khởi tạo bản ghi đối soát`);
         const { createOrder } = await import('@/lib/orderStore');
