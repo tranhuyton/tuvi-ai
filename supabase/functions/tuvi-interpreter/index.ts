@@ -116,7 +116,7 @@ serve(async (req) => {
     const isCarbon = targetModel.includes('carbon');
     const isExpertModel = isCarbon || targetModel.includes('argon') || targetModel.includes('4');
     const isProPreview = isExpertModel || targetModel.includes('3.1') || targetModel.includes('pro');
-    const defaultBudget = isCarbon ? 1536 : isExpertModel ? 1024 : isProPreview ? 1024 : 0;
+    const defaultBudget = isCarbon ? 1024 : isExpertModel ? 1024 : isProPreview ? 768 : 0;
 
     const finalGenConfig = generationConfig
       ? {
@@ -148,7 +148,7 @@ serve(async (req) => {
           contents: requestContents,
           generationConfig: finalGenConfig,
         }),
-        signal: AbortSignal.timeout(55000),
+        signal: AbortSignal.timeout(110000),
       }
     );
 

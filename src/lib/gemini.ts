@@ -618,18 +618,17 @@ async function callSingleGeminiVision(
   const isCarbon = modelName.includes('carbon');
   const isExpert = isCarbon || modelName.includes('argon') || modelName.includes('4');
   const isPro = isExpert || modelName.includes('3.1') || modelName.includes('pro');
-  const targetBudget = isCarbon ? 1536 : isExpert ? 1024 : isPro ? 1024 : 0;
+  const targetBudget = isCarbon ? 1024 : isExpert ? 1024 : isPro ? 768 : 0;
   // Nâng Free từ 2400 -> 3600 token để bài ~1.000 từ HTML tiếng Việt không bị cắt cụt giữa thẻ
   const maxTokens = isExpert ? 14000 : isPro ? 12000 : 3600;
-  const perAttemptCapMs = isExpert ? 56000 : isPro ? 54000 : 42000;
+  // Cho gemini-4-carbon 85s để hoàn tất trọn vẹn ngay lượt đầu (tránh bị ngắt non ở 55s rồi tốn thêm thời gian fallback)
+  const perAttemptCapMs = isCarbon ? 85000 : isExpert ? 75000 : isPro ? 55000 : 40000;
   const internalEdgeSecret = (process.env.EDGE_INTERNAL_SECRET || '').trim();
   const edgeBearerToken = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim() || SUPABASE_ANON_KEY;
 
   // 1. Trường hợp Admin có nhập key riêng để test trong Studio
   if (customApiKey && customApiKey.trim()) {
-    const candidateModels = isCarbon
-      ? [modelName, 'gemini-4-argon', 'gemini-3.1-pro-preview']
-      : isExpert
+    const candidateModels = isExpert && modelName !== 'gemini-3.1-pro-preview'
       ? [modelName, 'gemini-3.1-pro-preview']
       : [modelName];
     for (const candidateModel of candidateModels) {
@@ -640,9 +639,9 @@ async function callSingleGeminiVision(
           candidateModel
         )}:generateContent`;
         const candBudget = candidateModel.includes('carbon')
-          ? 1536
-          : candidateModel.includes('argon') || candidateModel.includes('3.1') || candidateModel.includes('pro')
           ? 1024
+          : candidateModel.includes('argon') || candidateModel.includes('3.1') || candidateModel.includes('pro')
+          ? 768
           : 0;
         const res = await fetch(directUrl, {
           method: 'POST',
@@ -708,23 +707,8 @@ async function callSingleGeminiVision(
     },
   ];
 
-  if (isCarbon) {
-    edgeEndpoints.push({
-      url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
-      label: 'Supabase tuvi-interpreter (gemini-4-argon fallback)',
-      modelId: 'gemini-4-argon',
-      body: {
-        parts,
-        model: 'gemini-4-argon',
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: maxTokens,
-          thinkingConfig: { thinkingBudget: 1024 },
-        },
-      },
-    });
-  }
-
+  // Nếu gemini-4-carbon quá tải/chậm, chuyển thẳng sang gemini-3.1-pro-preview (~23s cho 3 luồng song song),
+  // bỏ qua gemini-4-argon vì argon phản hồi chậm hơn gấp 2.5 lần dễ kéo tổng thời gian lên >110s!
   if (isExpert && modelName !== 'gemini-3.1-pro-preview') {
     edgeEndpoints.push({
       url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
