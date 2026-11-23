@@ -16,12 +16,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Mã ID lá số không hợp lệ' }, { status: 400 });
     }
 
-    const { data, error } = await adminSupabase
-      .from('tuvi_charts')
-      .select('id, title, reading_html, duong_so_data, laso_data, created_at, updated_at')
-      .eq('id', chartId)
-      .single();
+    const [chartRes, chatRes] = await Promise.all([
+      adminSupabase
+        .from('tuvi_charts')
+        .select('id, title, reading_html, duong_so_data, laso_data, created_at, updated_at')
+        .eq('id', chartId)
+        .single(),
+      adminSupabase
+        .from('tuvi_chat_messages')
+        .select('id, question, answer, message_type, created_at')
+        .eq('chart_id', chartId)
+        .order('created_at', { ascending: true }),
+    ]);
 
+    const { data, error } = chartRes;
     if (error || !data) {
       return NextResponse.json({ error: error?.message || 'Không tìm thấy lá số' }, { status: 404 });
     }
@@ -32,6 +40,7 @@ export async function GET(req: NextRequest) {
       reading_html: data.reading_html || null,
       duong_so_data: data.duong_so_data,
       laso_data: data.laso_data,
+      chat_messages: chatRes.error ? [] : (chatRes.data || []),
     });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Lỗi máy chủ' }, { status: 500 });

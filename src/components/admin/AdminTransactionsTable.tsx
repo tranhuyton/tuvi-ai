@@ -34,6 +34,14 @@ import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import { GIO_ARR } from '@/lib/tuvi/constants';
 import { processBiometricImageFile } from '@/lib/imageUpload';
 
+export interface AdminChatMessageItem {
+  id: string;
+  question: string;
+  answer: string;
+  message_type?: string | null;
+  created_at?: string | null;
+}
+
 export interface AdminChartItem {
   id: string;
   user_id: string;
@@ -99,8 +107,11 @@ export default function AdminTransactionsTable({
   const [filterOrderStatus, setFilterOrderStatus] = useState<'all' | 'PAID' | 'PENDING' | 'CANCELLED'>('PAID');
   const [previewChart, setPreviewChart] = useState<AdminChartItem | null>(null);
   const [previewReadingHtml, setPreviewReadingHtml] = useState<string | null>(null);
+  const [previewChatMessages, setPreviewChatMessages] = useState<AdminChatMessageItem[]>([]);
   const [isLoadingPreviewReading, setIsLoadingPreviewReading] = useState(false);
+  const [isLoadingPreviewChats, setIsLoadingPreviewChats] = useState(false);
   const [copiedReading, setCopiedReading] = useState(false);
+  const [copiedChatId, setCopiedChatId] = useState<string | null>(null);
   const [isExportingPdfAdmin, setIsExportingPdfAdmin] = useState(false);
   const [isRegeneratingReading, setIsRegeneratingReading] = useState(false);
   const [regenerateMsg, setRegenerateMsg] = useState<string | null>(null);
@@ -125,14 +136,17 @@ export default function AdminTransactionsTable({
   const [isSubmittingOfflineForm, setIsSubmittingOfflineForm] = useState(false);
   const [zoomLightboxType, setZoomLightboxType] = useState<'mat' | 'tay' | null>(null);
 
-  const handleOpenPreview = async (chart: AdminChartItem) => {
+  const handleOpenPreview = async (chart: AdminChartItem, focusSection?: 'qa') => {
     setPreviewChart(chart);
     setPreviewReadingHtml(chart.reading_html || null);
+    setPreviewChatMessages([]);
     setCopiedReading(false);
+    setCopiedChatId(null);
     setZoomLightboxType(null);
     setRegenerateMsg(null);
 
     setIsLoadingPreviewReading(!chart.reading_html);
+    setIsLoadingPreviewChats(true);
     try {
       const headers = await getAdminAuthHeaders();
       const res = await fetch(`/api/admin/chart-reading?id=${chart.id}`, { headers });
@@ -141,6 +155,9 @@ export default function AdminTransactionsTable({
         if (data.reading_html) {
           setPreviewReadingHtml(data.reading_html);
         }
+        if (Array.isArray(data.chat_messages)) {
+          setPreviewChatMessages(data.chat_messages as AdminChatMessageItem[]);
+        }
         if (data.duong_so_data) {
           setPreviewChart((prev) =>
             prev && prev.id === chart.id
@@ -148,12 +165,29 @@ export default function AdminTransactionsTable({
               : prev
           );
         }
+        if (focusSection === 'qa') {
+          setTimeout(() => {
+            const el = document.getElementById('admin-modal-qa');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 120);
+        }
       }
     } catch (err) {
-      console.warn('Lỗi tải lời bình giải:', err);
+      console.warn('Lỗi tải lời bình giải & lịch sử hỏi đáp:', err);
     } finally {
       setIsLoadingPreviewReading(false);
+      setIsLoadingPreviewChats(false);
     }
+  };
+
+  const handleCopyChatQa = (msg: AdminChatMessageItem) => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = cleanReadingHtml(msg.answer || '');
+    const answerText = (tempDiv.innerText || tempDiv.textContent || '').trim();
+    const combined = `Câu hỏi của khách:\n${msg.question}\n\nTrả lời của Thầy Tôn:\n${answerText}`;
+    navigator.clipboard.writeText(combined);
+    setCopiedChatId(msg.id);
+    setTimeout(() => setCopiedChatId(null), 2000);
   };
 
   const handleCopyReading = () => {
@@ -1126,10 +1160,22 @@ export default function AdminTransactionsTable({
                         </td>
 
                         <td className="py-3 px-4 text-center">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 text-xs font-semibold">
-                            <MessageSquare className="w-3 h-3" />
-                            <span>{c.message_count} câu</span>
-                          </span>
+                          {c.message_count > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenPreview(c, 'qa')}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/20 hover:bg-blue-500/35 border border-blue-400/40 text-blue-200 text-xs font-semibold transition cursor-pointer"
+                              title="Bấm để xem ngay toàn bộ câu hỏi và câu trả lời của khách"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              <span>{c.message_count} câu</span>
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800/80 text-slate-400 text-xs font-medium">
+                              <MessageSquare className="w-3 h-3" />
+                              <span>0 câu</span>
+                            </span>
+                          )}
                         </td>
 
                         <td className="py-3 px-4 text-xs text-slate-400">
@@ -1183,16 +1229,32 @@ export default function AdminTransactionsTable({
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setPreviewChart(null);
-                  setPreviewReadingHtml(null);
-                }}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {previewChatMessages.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById('admin-modal-qa');
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/20 hover:bg-blue-500/35 border border-blue-400/40 text-blue-200 text-xs font-bold transition cursor-pointer"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Xem {previewChatMessages.length} câu hỏi đáp ↓</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewChart(null);
+                    setPreviewReadingHtml(null);
+                    setPreviewChatMessages([]);
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto space-y-8">
@@ -1224,8 +1286,23 @@ export default function AdminTransactionsTable({
                         onChange={(e) => handleAdminUploadBiometricPhoto(e, 'anhTay')}
                       />
                     </label>
+                    <button
+                      type="button"
+                      onClick={handleRegenerateAdminReading}
+                      disabled={isRegeneratingReading}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400/60 text-[11px] font-bold text-amber-200 cursor-pointer transition disabled:opacity-50"
+                      title="Lưu ảnh vừa tải và chạy AI luận giải lại ngay theo đúng gói của khách"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isRegeneratingReading ? 'animate-spin' : ''}`} />
+                      <span>{isRegeneratingReading ? 'Đang luận giải...' : '✨ Lưu ảnh & Luận giải lại ngay'}</span>
+                    </button>
                   </div>
                 </div>
+                {regenerateMsg && (
+                  <div className="p-2.5 rounded-xl bg-slate-900 border border-amber-500/40 text-amber-200 text-xs">
+                    {regenerateMsg}
+                  </div>
+                )}
                 {(previewChart.duong_so_data?.anhMat ||
                   previewChart.duong_so_data?.anhTay ||
                   previewChart.duong_so_data?.thongTinThem ||
@@ -1344,6 +1421,116 @@ export default function AdminTransactionsTable({
                 />
               ) : (
                 <p className="text-slate-400 italic">Không có dữ liệu bàn cờ lá số.</p>
+              )}
+
+              {/* Khối Lịch Sử Hỏi Đáp Đàm Đạo Của Khách Hàng */}
+              {(isLoadingPreviewChats || previewChatMessages.length > 0 || (previewChart.message_count || 0) > 0) && (
+                <div id="admin-modal-qa" className="border-t border-slate-800/80 pt-6 space-y-4">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/40 text-blue-300 flex items-center justify-center">
+                        <MessageSquare className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-base sm:text-lg text-blue-300 font-serif">
+                          Lịch Sử Hỏi Đáp Đàm Đạo Cùng Thầy Tôn ({previewChatMessages.length} câu)
+                        </h4>
+                        <p className="text-xs text-slate-400">
+                          Toàn bộ câu hỏi khách hàng đã gửi và câu trả lời AI Thầy Tôn đã hồi đáp cho lá số này
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isLoadingPreviewChats ? (
+                    <div className="p-6 text-center text-slate-400 flex items-center justify-center gap-2 bg-slate-950/70 rounded-2xl border border-slate-800 text-xs">
+                      <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+                      <span>Đang tải lịch sử hỏi đáp của khách...</span>
+                    </div>
+                  ) : previewChatMessages.length > 0 ? (
+                    <div className="space-y-4">
+                      {previewChatMessages.map((msg, idx) => {
+                        const msgTime = msg.created_at
+                          ? new Date(msg.created_at).toLocaleString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })
+                          : '';
+                        const typeLabel =
+                          msg.message_type === 'expert'
+                            ? '💎 Chuyên Gia Expert'
+                            : msg.message_type === 'vip'
+                            ? '👑 VIP Pro'
+                            : '📜 Cơ Bản';
+                        return (
+                          <div
+                            key={msg.id || idx}
+                            className="rounded-2xl bg-slate-950/85 border border-blue-500/30 overflow-hidden shadow-md"
+                          >
+                            <div className="px-4 py-2.5 bg-blue-950/40 border-b border-blue-500/20 flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-extrabold text-blue-300">
+                                  Câu hỏi #{idx + 1}
+                                </span>
+                                <span className="text-[10.5px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-amber-300 font-semibold">
+                                  {typeLabel}
+                                </span>
+                                {msgTime && (
+                                  <span className="text-[11px] text-slate-400">{msgTime}</span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyChatQa(msg)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-semibold transition cursor-pointer"
+                              >
+                                {copiedChatId === msg.id ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-400" />
+                                    <span className="text-emerald-400">Đã sao chép</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3 text-slate-400" />
+                                    <span>Sao chép</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+
+                            <div className="p-4 space-y-3">
+                              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300 mb-1">
+                                  👤 Khách hàng hỏi:
+                                </div>
+                                <p className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed font-medium">
+                                  {msg.question}
+                                </p>
+                              </div>
+
+                              <div className="p-4 rounded-xl bg-white text-slate-800 border border-slate-300">
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700 mb-2">
+                                  🔮 Thầy Tôn trả lời:
+                                </div>
+                                <div
+                                  className="prose max-w-none text-sm sm:text-base leading-relaxed space-y-2.5 font-sans text-justify"
+                                  dangerouslySetInnerHTML={{ __html: cleanReadingHtml(msg.answer || '') }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-5 bg-slate-950/60 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs italic">
+                      Chưa có câu hỏi nào được lưu cho lá số này.
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Khối Lời Bình Giải AI Đã Gửi Khách Hàng */}
