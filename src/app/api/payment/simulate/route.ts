@@ -240,9 +240,17 @@ export async function POST(req: Request) {
       }
     }
 
-    // Gửi email xác nhận cho khách nếu có
+    // Gửi email xác nhận cho khách nếu có (kèm đề xuất nâng cấp phù hợp theo lịch sử mua)
     let emailResult = null;
     if (order.email) {
+      let hasExpertReading = false;
+      if (order.paymentType === 'course_tuvi') {
+        const { checkUserHasExpertReading } = await import('@/lib/courseAccessServer');
+        hasExpertReading = await checkUserHasExpertReading({
+          userId: order.userId,
+          email: order.email,
+        });
+      }
       emailResult = await sendPaymentSuccessEmail({
         customerName: order.hoTen,
         customerEmail: order.email,
@@ -250,6 +258,7 @@ export async function POST(req: Request) {
         amount: order.amount,
         paymentType: order.paymentType,
         paidAt: new Date().toISOString(),
+        hasExpertReading,
       });
     }
 

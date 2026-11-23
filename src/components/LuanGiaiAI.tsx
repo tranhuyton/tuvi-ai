@@ -8,6 +8,7 @@ import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 import { isInAppBrowser, getInAppBrowserName } from '@/lib/inAppBrowser';
 import { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
 import { computeTamHanAnalysis } from '@/lib/tuvi/anSao';
+import { trackContact } from '@/lib/metaPixel';
 
 interface LuanGiaiAIProps {
   readingHtml?: string;
@@ -792,6 +793,56 @@ export default function LuanGiaiAI({
                 <Gem className="w-4 h-4" />
                 <span>{t('reading.upgradeProToExpertBtn', 'Nâng Cấp Bản Expert (150.000đ)')}</span>
               </button>
+            </div>
+          )}
+
+          {tier === 'expert' && (
+            <div className="mt-8 bg-gradient-to-br from-amber-50 via-yellow-50/80 to-purple-50/70 p-5 sm:p-6 rounded-2xl border-2 border-amber-400/90 shadow-md space-y-4 print:hidden">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-600/15 border border-amber-500/45 text-amber-950 text-xs font-extrabold uppercase tracking-wider">
+                    <Crown className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Đặc Quyền Khách Hàng Bản Chuyên Gia (269K)</span>
+                  </div>
+                  <h4 className="font-extrabold text-amber-950 text-base sm:text-xl font-serif leading-snug">
+                    Nâng Cấp Xem Trực Tiếp Offline 1-1 Cùng Thầy Tôn — Chỉ Cần Đóng Thêm 1.730.000đ
+                  </h4>
+                  <p className="text-sm text-slate-700 leading-relaxed max-w-2xl">
+                    Vì quý khách đã mở khóa <strong>Bản Chuyên Gia Expert (269.000đ)</strong>, Thầy Tôn áp dụng ưu đãi <strong>khấu trừ trực tiếp phí gói này</strong> khi quý khách đặt lịch <strong>xem trực tiếp 1-1</strong> (gặp mặt trực tiếp tại phòng tư vấn <strong>Royal City, Thanh Xuân, Hà Nội</strong> hoặc <strong>Online Video Call</strong> cho khách ở tỉnh xa / nước ngoài) để thẩm định chuẩn giờ sinh, soi trực tiếp Diện Tướng – Chỉ Tay và hoạch định chiến lược làm ăn, nhà đất, gia đạo trọn vẹn.
+                  </p>
+                </div>
+                <div className="sm:text-right shrink-0 bg-white/90 border border-amber-300 rounded-xl px-4 py-3 shadow-xs">
+                  <div className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">
+                    Phí gốc xem 1-1
+                  </div>
+                  <div className="text-sm text-slate-400 line-through font-semibold">2.000.000đ</div>
+                  <div className="text-[11px] font-bold text-emerald-700 mt-0.5">Trừ gói 269k, chỉ đóng thêm:</div>
+                  <div className="text-2xl font-extrabold text-amber-700">1.730.000đ</div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 pt-1">
+                <a
+                  href="https://zalo.me/0935058688"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackContact('zalo', 'expert_offline_upsell')}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#0068FF] hover:bg-[#0054cc] text-white font-extrabold rounded-xl text-sm shadow-md transition transform hover:-translate-y-0.5 cursor-pointer"
+                >
+                  <span className="w-5 h-5 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[10px] font-black shrink-0">
+                    Z
+                  </span>
+                  <span>Nhắn Zalo Thầy Tôn Đặt Lịch Ngay (0935.058.688)</span>
+                </a>
+                <a
+                  href="tel:0935058688"
+                  onClick={() => trackContact('phone', 'expert_offline_upsell')}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm shadow-sm transition cursor-pointer"
+                >
+                  <PhoneCall className="w-4 h-4 shrink-0" />
+                  <span>Gọi Hotline: 0935.058.688</span>
+                </a>
+              </div>
             </div>
           )}
         </div>

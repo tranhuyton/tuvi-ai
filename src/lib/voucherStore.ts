@@ -6,7 +6,9 @@ export type DripStage =
   | 'voucher_20_24h'
   | 'voucher_30_72h'
   | 'voucher_30_6m'
-  | 'course_cross_sell_36h';
+  | 'course_cross_sell_36h'
+  | 'course_expert_upsell_24h'
+  | 'expert_offline_upsell_48h';
 
 export interface ActiveVoucherInfo {
   code: string;

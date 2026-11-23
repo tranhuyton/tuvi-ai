@@ -13,9 +13,11 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { trackContact } from '@/lib/metaPixel';
+import type { ServiceTier } from '@/types/tuvi';
 
-export default function BookingBanner() {
+export default function BookingBanner({ tier }: { tier?: ServiceTier } = {}) {
   const { t } = useLanguage();
+  const isExpertCustomer = tier === 'expert';
 
   return (
     <section className="mt-8 sm:mt-10 w-full max-w-[1060px] mx-auto relative overflow-hidden rounded-3xl imperial-card p-6 sm:p-8 border border-amber-500/40 text-slate-100 print:hidden before:pointer-events-none before:absolute before:inset-x-12 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-300/80 before:to-transparent">
@@ -41,6 +43,12 @@ export default function BookingBanner() {
               'Dành cho đương số, gia chủ hoặc chủ doanh nghiệp cần trao đổi trực tiếp hai chiều cùng Thầy Tôn để thẩm định giờ sinh qua Diện tướng & Chỉ tay, luận sâu lá số cho quyết định lớn và tư vấn Phong thủy nhà ở, văn phòng, xem ngày giờ tốt.'
             )}
           </p>
+
+          {isExpertCustomer && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-purple-500/20 border border-amber-400/50 text-amber-100 text-xs sm:text-sm leading-relaxed text-left">
+              💎 <strong className="text-amber-300">Đặc quyền khách đã mở Bản Expert (269.000đ):</strong> Quý khách được khấu trừ trực tiếp phí bản Expert khi đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn (Offline tại Hà Nội hoặc Video Call) — <strong className="text-emerald-300">chỉ cần đóng thêm 1.730.000đ</strong> (giá gốc 2.000.000đ). Nhắn Zalo <strong>0935.058.688</strong> bên dưới để xếp lịch riêng!
+            </div>
+          )}
         </div>
 
         {/* 3 Khung Hình Thức Tham Vấn Cân Đối */}

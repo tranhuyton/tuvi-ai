@@ -19,6 +19,7 @@ export interface PaymentEmailDetails {
   amount: number;
   paymentType: 'reading_vip' | 'chat_free' | 'chat_vip' | string;
   paidAt?: string;
+  hasExpertReading?: boolean;
 }
 
 export interface WithdrawalEmailDetails {
@@ -179,7 +180,7 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
   simulated?: boolean;
   error?: string;
 }> {
-  const { customerName, customerEmail, orderCode, amount, paymentType, paidAt } = details;
+  const { customerName, customerEmail, orderCode, amount, paymentType, paidAt, hasExpertReading } = details;
 
   if (!customerEmail || !customerEmail.includes('@')) {
     console.warn('[EMAIL] Không có email hợp lệ của khách hàng:', customerEmail);
@@ -222,6 +223,66 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
     : new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
   const safeCustomerName = escapeHtml(customerName);
   const safeOrderCode = escapeHtml(orderCode);
+
+  const isExpertOrder = paymentType === 'reading_expert' || paymentType === 'upgrade_expert';
+  const isCourseOrder = paymentType === 'course_tuvi';
+  const mainCtaUrl = isCourseOrder
+    ? 'https://www.tuvithayton.vn/khoa-hoc'
+    : 'https://www.tuvithayton.vn';
+  const mainCtaLabel = isCourseOrder
+    ? '🎧 Vào Học Khóa Tử Vi Thực Chiến Ngay ➜'
+    : 'Trải Nghiệm Dịch Vụ Ngay ➜';
+
+  const offlineUpsellBoxHtml = `
+      <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(124, 45, 18, 0.28) 100%); border: 1.5px solid rgba(251, 191, 36, 0.55); border-radius: 14px; padding: 20px; margin: 22px 0;">
+        <div style="display: inline-block; background: rgba(245, 158, 11, 0.22); border: 1px solid rgba(251, 191, 36, 0.5); color: #fde68a; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 10px;">
+          👑 Đặc Quyền Khách Hàng Bản Expert (269K)
+        </div>
+        <div style="color: #fbbf24; font-weight: 800; font-size: 16px; line-height: 1.4; margin-bottom: 8px;">
+          Nâng Cấp Xem Trực Tiếp Offline 1-1 Cùng Thầy Tôn — Chỉ Cần Đóng Thêm 1.730.000đ
+        </div>
+        <p style="font-size: 13.5px; color: #e2e8f0; line-height: 1.7; margin: 0 0 12px 0;">
+          Vì quý khách đã sở hữu <strong>Bản Chuyên Gia Expert (269.000đ)</strong>, Thầy Tôn áp dụng ưu đãi <strong>khấu trừ trực tiếp phí gói này</strong> khi quý khách đặt lịch <strong>xem trực tiếp 1-1 cùng Thầy</strong> (gặp mặt Offline tại phòng tư vấn <strong>Royal City, Thanh Xuân, Hà Nội</strong> hoặc <strong>Online Video Call</strong> cho khách ở tỉnh xa / nước ngoài):
+        </p>
+        <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px; color: #e2e8f0; line-height: 1.65;">
+          • Phí xem trực tiếp 1-1 niêm yết: <span style="text-decoration: line-through; color: #94a3b8;">2.000.000đ</span><br/>
+          • Ưu đãi trừ thẳng gói Expert 269k → <strong style="color: #34d399; font-size: 15px;">Chỉ cần đóng thêm 1.730.000đ</strong><br/>
+          • Thẩm định chuẩn giờ sinh, soi trực tiếp Diện Tướng – Chỉ Tay, giải đáp sâu mọi quyết định làm ăn, điền sản, gia đạo &amp; phong thủy.
+        </div>
+        <div style="text-align: center;">
+          <a href="https://zalo.me/0935058688" target="_blank" style="display: inline-block; padding: 13px 24px; background: #0068FF; color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; border-radius: 10px;">
+            💬 Nhắn Zalo Thầy Tôn Đặt Lịch: 0935.058.688 ➜
+          </a>
+        </div>
+      </div>
+  `;
+
+  const courseToExpertUpsellBoxHtml = `
+      <div style="background: linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%); border: 1.5px solid rgba(192, 132, 252, 0.55); border-radius: 14px; padding: 20px; margin: 22px 0;">
+        <div style="display: inline-block; background: rgba(168, 85, 247, 0.25); border: 1px solid rgba(192, 132, 252, 0.5); color: #e9d5ff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 10px;">
+          💎 Đề Xuất Dành Riêng Cho Học Viên Khóa 699K
+        </div>
+        <div style="color: #fbbf24; font-weight: 800; font-size: 16px; line-height: 1.4; margin-bottom: 8px;">
+          Mở Thêm Bản Luận Giải Chuyên Gia 12 Cung (269.000đ) Để Thực Chiến Trên Lá Số Của Bạn
+        </div>
+        <p style="font-size: 13.5px; color: #e2e8f0; line-height: 1.7; margin: 0 0 14px 0;">
+          Cách học Tử Vi nhanh nhớ và thấm sâu nhất là đối chiếu từng bài Podcast ngay trên <strong>chính bài luận giải trọn bộ 12 Cung (~4.500–5.000 từ) + Lưu Nguyệt 12 tháng + Diện Tướng &amp; Chỉ Tay</strong> của bản thân do Thầy Tôn chấm riêng (kèm <strong>02 câu hỏi Chuyên Gia</strong>). Đặc biệt, sau khi mở gói 269k, nếu sau này muốn xem trực tiếp Offline 1-1 cùng Thầy Tôn quý khách còn được trừ thẳng phí 269k (chỉ đóng thêm 1.730.000đ).
+        </p>
+        <div style="text-align: center;">
+          <a href="https://www.tuvithayton.vn/?pkg=expert" target="_blank" style="display: inline-block; padding: 13px 24px; background: linear-gradient(135deg, #9333ea 0%, #d97706 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; border-radius: 10px;">
+            💎 Mở Bản Luận Giải Chuyên Gia 12 Cung (269.000đ) ➜
+          </a>
+        </div>
+      </div>
+  `;
+
+  const postPurchaseUpsellHtml = isExpertOrder
+    ? offlineUpsellBoxHtml
+    : isCourseOrder
+    ? hasExpertReading
+      ? offlineUpsellBoxHtml
+      : courseToExpertUpsellBoxHtml
+    : '';
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -296,9 +357,11 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
         </tr>
       </table>
 
-      <a href="https://www.tuvithayton.vn" class="cta-btn">
-        Trải Nghiệm Dịch Vụ Ngay ➜
+      <a href="${mainCtaUrl}" class="cta-btn">
+        ${mainCtaLabel}
       </a>
+
+      ${postPurchaseUpsellHtml}
 
       <div class="support-box">
         Nếu quý khách cần hỗ trợ thêm, đặt lịch xem diện kiến trực tiếp hoặc đàm đạo chuyên sâu cùng Thầy Tôn:<br/>
@@ -562,7 +625,9 @@ export interface DripFunnelEmailDetails {
     | 'voucher_20_24h'
     | 'voucher_30_72h'
     | 'voucher_30_6m'
-    | 'course_cross_sell_36h';
+    | 'course_cross_sell_36h'
+    | 'course_expert_upsell_24h'
+    | 'expert_offline_upsell_48h';
   recipientEmail: string;
   customerName: string;
   chartId?: string | null;
@@ -841,6 +906,85 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
         </a>
         <a href="${ctaBaseUrl}" style="display: inline-block; margin-top: 6px; color: #cbd5e1; font-size: 13px; text-decoration: underline;">
           Hoặc mở lại lá số đã lưu của ${displayName} trong Sổ Tay Số Mệnh
+        </a>
+      </div>
+    `;
+  } else if (stage === 'course_expert_upsell_24h') {
+    const expertOrderUrl = ctaExpertUrl || 'https://www.tuvithayton.vn/?pkg=expert';
+    subject = `💎 Gợi ý thực chiến cho học viên ${rawDisplayName}: Đối chiếu 24 bài giảng ngay trên Bản Chuyên Gia 12 Cung (269K)`;
+    badgeText = '✦ THỰC CHIẾN TỬ VI • DÀNH RIÊNG HỌC VIÊN 699K ✦';
+    headerTitle = 'HỌC NHANH GẤP 3 LẦN KHI SOI TRỰC TIẾP TRÊN LÁ SỐ 12 CUNG CỦA BẠN';
+    introHtml = `
+      <p style="font-size: 15px; color: #e2e8f0; line-height: 1.7; margin-bottom: 14px;">
+        Chào học viên <strong>${displayName}</strong>, cảm ơn anh/chị đã đăng ký sở hữu trọn đời <strong>Khóa Học Tử Vi Đẩu Số Thực Chiến (699.000đ)</strong> cùng Thầy Tôn.
+      </p>
+      <p style="font-size: 14px; color: #cbd5e1; line-height: 1.7; margin-bottom: 18px;">
+        Kinh nghiệm của hàng trăm học viên cho thấy: cách nhớ sao, hiểu Tứ Hóa và ghép Tam Hạn nhanh nhất là <strong>mở song song Bản Luận Giải Chuyên Gia 12 Cung (269.000đ) của chính mình</strong> để vừa nghe 24 bài Podcast vừa kiểm chứng từng cung vị thực tế trên lá số ${
+      hasChart ? `<strong>${canChiLabel}</strong> ${menhDetail ? `(${menhDetail})` : ''}` : 'bản thân'
+    }.
+      </p>
+    `;
+
+    highlightBoxHtml = `
+      <div style="background: linear-gradient(135deg, rgba(147, 51, 234, 0.22) 0%, rgba(217, 119, 6, 0.2) 100%); border: 1.5px solid rgba(192, 132, 252, 0.5); border-radius: 14px; padding: 20px; margin-bottom: 22px;">
+        <div style="color: #fbbf24; font-weight: 800; font-size: 15.5px; margin-bottom: 10px;">
+          💎 Bản Chuyên Gia Expert 12 Cung (269.000đ) Có Gì Đặc Biệt?
+        </div>
+        <ul style="margin: 0; padding-left: 18px; color: #e2e8f0; font-size: 13.5px; line-height: 1.8;">
+          <li><strong>Luận Giải Sâu Trọn Bộ 12 Cung + Cung Thân (~4.500 - 5.000 từ):</strong> Dùng làm giáo án mẫu thực chiến sắc nét nhất cho chính lá số của ${displayName}.</li>
+          <li><strong>Bản Đồ 4 Mùa &amp; 12 Tháng Lưu Nguyệt Năm ${namXem}:</strong> Soi rõ từng tháng cát hung, kèm đối chiếu ảnh Diện Tướng &amp; Chỉ Tay.</li>
+          <li><strong>Tặng Kèm 02 Câu Hỏi Chuyên Gia:</strong> Hỏi trực tiếp Thầy Tôn ngay dưới lá số.</li>
+          <li><strong>Đặc Quyền Khấu Trừ Khi Xem Offline:</strong> Sau khi mở bản 269k, nếu muốn đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn sẽ được <strong>trừ thẳng phí 269k</strong> (chỉ còn đóng thêm <strong>1.730.000đ</strong>).</li>
+        </ul>
+      </div>
+    `;
+
+    pricingBlockHtml = `
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${expertOrderUrl}" style="display: block; max-width: 440px; margin: 0 auto 12px auto; padding: 15px 22px; background: linear-gradient(135deg, #9333ea 0%, #d97706 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 15px; border-radius: 12px; box-shadow: 0 4px 16px rgba(147, 51, 234, 0.35);">
+          💎 Mở Bản Luận Giải Chuyên Gia 12 Cung (269.000đ) ➜
+        </a>
+        <a href="${ctaCourseUrl || 'https://www.tuvithayton.vn/khoa-hoc'}" style="display: inline-block; margin-top: 6px; color: #cbd5e1; font-size: 13px; text-decoration: underline;">
+          Quay lại tiếp tục nghe 24 bài giảng Podcast tại Học Viện Tử Vi
+        </a>
+      </div>
+    `;
+  } else if (stage === 'expert_offline_upsell_48h') {
+    subject = `👑 Đặc quyền dành riêng cho ${rawDisplayName}: Xem trực tiếp 1-1 cùng Thầy Tôn (Chỉ đóng thêm 1.730.000đ)`;
+    badgeText = '✦ ĐẶC QUYỀN KHÁCH HÀNG BẢN EXPERT (269K) ✦';
+    headerTitle = 'KHẤU TRỪ GÓI 269K — ĐÀM ĐẠO TRỰC TIẾP 1-1 CÙNG THẦY TÔN';
+    introHtml = `
+      <p style="font-size: 15px; color: #e2e8f0; line-height: 1.7; margin-bottom: 14px;">
+        Kính chào <strong>${displayName}</strong>, cảm ơn quý khách đã tin tưởng mở khóa <strong>Bản Luận Giải Chuyên Gia Expert (269.000đ)</strong> ${
+      hasChart ? `cho lá số <strong>${canChiLabel}</strong> ${menhDetail ? `(${menhDetail})` : ''}` : ''
+    } tại Tử Vi Thầy Tôn.
+      </p>
+      <p style="font-size: 14px; color: #cbd5e1; line-height: 1.7; margin-bottom: 18px;">
+        Nếu quý khách đang đứng trước những quyết định lớn về <strong>công việc, mở rộng làm ăn, mua bán điền sản, phong thủy nhà ở, hôn nhân gia đạo</strong> hoặc cần Thầy Tôn trực tiếp kiểm chứng giờ sinh &amp; soi Diện Tướng – Chỉ Tay hai chiều, quý khách đang có <strong>đặc quyền khấu trừ trực tiếp phí gói Expert 269k</strong> khi đặt lịch xem riêng 1-1 cùng Thầy:
+      </p>
+    `;
+
+    highlightBoxHtml = `
+      <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(124, 45, 18, 0.3) 100%); border: 1.5px solid rgba(251, 191, 36, 0.55); border-radius: 14px; padding: 20px; margin-bottom: 22px;">
+        <div style="color: #fbbf24; font-weight: 800; font-size: 15.5px; margin-bottom: 10px;">
+          🏛️ Buổi Xem Trực Tiếp 1-1 Cùng Thầy Tôn (Offline Hà Nội / Online Video Call)
+        </div>
+        <ul style="margin: 0; padding-left: 18px; color: #e2e8f0; font-size: 13.5px; line-height: 1.8;">
+          <li><strong>Phí tham vấn niêm yết:</strong> <span style="text-decoration: line-through; color: #94a3b8;">2.000.000đ</span></li>
+          <li><strong>Đặc quyền trừ thẳng phí gói Expert 269k:</strong> <strong style="color: #34d399; font-size: 15px;">Quý khách chỉ cần đóng thêm 1.730.000đ</strong>.</li>
+          <li><strong>Hình thức linh hoạt:</strong> Gặp mặt trực tiếp tại phòng tư vấn <strong>Khu đô thị Royal City, Thanh Xuân, Hà Nội</strong> hoặc gọi <strong>Online Video Call 1-1</strong> (thuận tiện cho khách ở tỉnh xa &amp; kiều bào nước ngoài).</li>
+          <li><strong>Đặt lịch nhanh gọn:</strong> Nhắn trực tiếp qua <strong>Zalo Thầy Tôn 0935.058.688</strong> kèm họ tên/mã đơn Expert để Thầy ưu tiên xếp khung giờ riêng.</li>
+        </ul>
+      </div>
+    `;
+
+    pricingBlockHtml = `
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="https://zalo.me/0935058688" target="_blank" style="display: block; max-width: 440px; margin: 0 auto 12px auto; padding: 15px 22px; background: #0068FF; color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 15px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 104, 255, 0.35);">
+          💬 Nhắn Zalo Thầy Tôn Đặt Lịch Ngay: 0935.058.688 ➜
+        </a>
+        <a href="tel:0935058688" style="display: inline-block; margin-top: 6px; color: #fbbf24; font-size: 13px; text-decoration: underline;">
+          Hoặc gọi trực tiếp Hotline Thầy Tôn: 0935.058.688
         </a>
       </div>
     `;

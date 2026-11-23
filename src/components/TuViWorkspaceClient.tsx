@@ -101,6 +101,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
   }, []);
 
   // Trạng thái Mã ưu đãi đếm ngược (Drip Email Funnel) & chủ sở hữu lá số mở từ Email
+  const [urlDefaultTier, setUrlDefaultTier] = useState<ServiceTier>('free');
   const [activeVoucher, setActiveVoucher] = useState<ClientVoucherInfo | null>(null);
   const activeVoucherRef = useRef<ClientVoucherInfo | null>(null);
   const [emailLinkOwner, setEmailLinkOwner] = useState<{
@@ -237,6 +238,9 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     const urlChartId = isValidUuidClient(rawUrlChartId) ? rawUrlChartId : '';
     const urlEtoken = (params.get('etoken') || '').trim();
     const urlPkg = (params.get('pkg') || '').trim().toLowerCase(); // 'pro' | 'expert'
+    if (urlPkg === 'expert' || urlPkg === 'pro') {
+      setUrlDefaultTier(urlPkg);
+    }
     const savedVoucher = (localStorage.getItem('tuvi_active_voucher') || '').trim().toUpperCase();
 
     const codeToValidate = urlVoucher || savedVoucher;
@@ -2291,7 +2295,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                     : 'van-han'
                   : 'default'
               }
-              defaultTier="free"
+              defaultTier={urlDefaultTier}
               onRequireAuth={(action, notice) => {
                 pendingPostAuthActionRef.current = action;
                 setAuthModalTab('signup');
@@ -2551,7 +2555,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
             <AboutThayTon />
 
             {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
-            <BookingBanner />
+            <BookingBanner tier={currentTier} />
           </div>
         )}
       </div>

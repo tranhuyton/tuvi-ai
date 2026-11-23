@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       unlocked: access.unlocked,
       isAdmin: access.isAdmin,
       isTester: access.isTester,
+      hasExpertReading: Boolean(access.hasExpertReading),
       orderCode: access.orderCode,
       email: access.email,
       hoTen: access.hoTen,

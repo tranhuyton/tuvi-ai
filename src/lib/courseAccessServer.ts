@@ -10,11 +10,78 @@ export interface CourseAccessResolution {
   unlocked: boolean;
   isAdmin: boolean;
   isTester: boolean;
+  hasExpertReading?: boolean;
   orderCode?: string;
   email?: string;
   hoTen?: string;
   paidAt?: string;
   message?: string;
+}
+
+/**
+ * Kiểm tra xem khách hàng đã từng mua hoặc sở hữu lá số Bản Chuyên Gia Expert (269.000đ) chưa
+ * (phục vụ cá nhân hóa đề xuất: Chưa xem 269k -> mời gói 269k; Đã xem 269k -> mời gói xem trực tiếp Offline đóng thêm 1.730k)
+ */
+export async function checkUserHasExpertReading(params: {
+  userId?: string | null;
+  email?: string | null;
+}): Promise<boolean> {
+  const userId = (params.userId || '').trim();
+  const cleanEmail = (params.email || '').trim().toLowerCase();
+  if (!userId && !cleanEmail) return false;
+
+  try {
+    const queries: Array<PromiseLike<{ data: unknown[] | null }>> = [];
+
+    if (userId) {
+      queries.push(
+        adminSupabase
+          .from('tuvi_orders')
+          .select('id')
+          .eq('status', 'PAID')
+          .eq('user_id', userId)
+          .in('payment_type', ['reading_expert', 'upgrade_expert'])
+          .limit(1),
+        adminSupabase
+          .from('tuvi_charts')
+          .select('id, duong_so_data, laso_data')
+          .eq('user_id', userId)
+          .limit(30)
+      );
+    }
+
+    if (cleanEmail) {
+      queries.push(
+        adminSupabase
+          .from('tuvi_orders')
+          .select('id')
+          .eq('status', 'PAID')
+          .eq('email', cleanEmail)
+          .in('payment_type', ['reading_expert', 'upgrade_expert'])
+          .limit(1)
+      );
+    }
+
+    const results = await Promise.all(queries);
+    for (const res of results) {
+      const rows = (res?.data || []) as Array<Record<string, unknown>>;
+      for (const row of rows) {
+        if ('duong_so_data' in row || 'laso_data' in row) {
+          const ds = row.duong_so_data as { tier?: string } | null;
+          const ls = row.laso_data as { tier?: string } | null;
+          if (ds?.tier === 'expert' || ls?.tier === 'expert') {
+            return true;
+          }
+        } else if (row?.id) {
+          return true;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[COURSE ACCESS] Lỗi kiểm tra lịch sử Bản Expert 269k:', err);
+  }
+
+  return false;
 }
 
 /**
@@ -53,10 +120,15 @@ export async function resolveCourseAccess(
       .maybeSingle();
 
     if (tester && tester.is_active !== false) {
+      const hasExpertReading = await checkUserHasExpertReading({
+        userId: authUser.id,
+        email: authEmail,
+      });
       return {
         unlocked: true,
         isAdmin: false,
         isTester: true,
+        hasExpertReading,
         orderCode: 'VIP-TESTER',
         email: authUser.email,
       };
@@ -113,10 +185,15 @@ export async function resolveCourseAccess(
         };
       }
 
+      const hasExpertReading = await checkUserHasExpertReading({
+        userId: authUser?.id || order.userId,
+        email: order.email || authUser?.email,
+      });
       return {
         unlocked: true,
         isAdmin: false,
         isTester: false,
+        hasExpertReading,
         orderCode: order.orderCode,
         email: order.email || authUser.email,
         hoTen: order.hoTen,
@@ -152,10 +229,20 @@ export async function resolveCourseAccess(
     );
 
     if (matched) {
+      const hasExpertFromCandidates = candidates.some(
+        (o) => o.payment_type === 'reading_expert' || o.payment_type === 'upgrade_expert'
+      );
+      const hasExpertReading =
+        hasExpertFromCandidates ||
+        (await checkUserHasExpertReading({
+          userId: authUser.id,
+          email: String(matched.email || authUser.email || ''),
+        }));
       return {
         unlocked: true,
         isAdmin: false,
         isTester: false,
+        hasExpertReading,
         orderCode: String(matched.order_code || ''),
         email: String(matched.email || authUser.email || ''),
         hoTen: typeof matched.ho_ten === 'string' ? matched.ho_ten : undefined,

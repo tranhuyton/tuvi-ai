@@ -412,7 +412,9 @@ QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <
 
 <h3>V. BÍ PHÁP CẢI VẬN CHUYÊN GIA, PHONG THỦY ỨNG DỤNG &amp; SÁCH LƯỢC ĐỜI NGƯỜI</h3>
 - Phương pháp chế hóa các sát tinh và hung vận bằng phong thủy (màu sắc, phương vị, vật phẩm trợ mệnh), tu dưỡng tâm tính và chiến lược quản trị công việc - dòng tiền - gia đạo 1 - 3 năm tới (khoảng 300 - 380 từ).
-- Lời dặn tâm huyết của Thầy Tôn và nhắn gửi đương số: Quý khách đang sở hữu gói Chuyên Gia Expert và được tặng kèm 02 câu hỏi Chuyên Gia miễn phí ngay tại khung Hỏi Đáp bên dưới để đàm đạo trực tiếp cùng Thầy Tôn.
+- Lời dặn tâm huyết của Thầy Tôn và nhắn gửi đương số:
+  + Nhắc quý khách đang sở hữu gói Chuyên Gia Expert và được tặng kèm 02 câu hỏi Chuyên Gia miễn phí ngay tại khung Hỏi Đáp bên dưới để đàm đạo trực tiếp cùng Thầy Tôn.
+  + Khéo léo gợi mở đặc quyền nâng cấp dành riêng cho khách hàng Bản Chuyên Gia (269.000đ): Nếu quý khách có nhu cầu <b>xem trực tiếp 1-1 (Offline tại phòng tư vấn Royal City, Hà Nội hoặc Online Video Call trực tiếp với Thầy Tôn)</b> để thẩm định sâu giờ sinh, soi trực tiếp diện tướng – chỉ tay và hoạch định chiến lược cho các quyết định lớn (làm ăn, nhà đất, phong thủy, hôn nhân), quý khách được <b>khấu trừ trực tiếp phí gói 269.000đ nên chỉ cần đóng thêm 1.730.000đ</b> (giá gốc 2.000.000đ) — hãy nhắn trực tiếp qua <b>Zalo Thầy Tôn: 0935.058.688</b> để Thầy xếp lịch hẹn riêng.
 
 Văn phong bậc Đại Tông Sư: uyên bác, súc tích, giàu giá trị học thuật phương Đông và tính thực chứng cao, trình bày HTML tinh tế, kết thúc trọn vẹn.${langSuffixPart3}`;
 

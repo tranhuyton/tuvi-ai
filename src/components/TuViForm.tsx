@@ -175,8 +175,11 @@ export default function TuViForm({
       ) {
         setIsOptionalOpen(true);
       }
+    } else if (defaultTier && defaultTier !== 'free') {
+      setSelectedTier(defaultTier);
+      setIsOptionalOpen(true);
     }
-  }, [initialData, currentYear]);
+  }, [initialData, currentYear, defaultTier]);
 
   const handleImageUpload = async (
     e: ChangeEvent<HTMLInputElement>,

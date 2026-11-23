@@ -397,8 +397,14 @@ async function runDripJob(req: NextRequest) {
   const paidChartIds = new Set<string>();
   const paidCourseUserIds = new Set<string>();
   const paidCourseEmails = new Set<string>();
+  const paidExpertUserIds = new Set<string>();
+  const paidExpertEmails = new Set<string>();
   const latestPaidMsByUser = new Map<string, number>();
   const latestPaidMsByEmail = new Map<string, number>();
+  const latestCoursePaidMsByUser = new Map<string, number>();
+  const latestCoursePaidMsByEmail = new Map<string, number>();
+  const latestExpertPaidMsByUser = new Map<string, number>();
+  const latestExpertPaidMsByEmail = new Map<string, number>();
 
   for (const o of paidOrders || []) {
     const cleanOrdEmail = o.email ? o.email.trim().toLowerCase() : '';
@@ -421,8 +427,37 @@ async function runDripJob(req: NextRequest) {
     if (o.chart_id) paidChartIds.add(o.chart_id);
 
     if (o.payment_type === 'course_tuvi') {
-      if (o.user_id) paidCourseUserIds.add(o.user_id);
-      if (cleanOrdEmail) paidCourseEmails.add(cleanOrdEmail);
+      if (o.user_id) {
+        paidCourseUserIds.add(o.user_id);
+        if (!isNaN(paidMs)) {
+          const prev = latestCoursePaidMsByUser.get(o.user_id) || 0;
+          if (paidMs > prev) latestCoursePaidMsByUser.set(o.user_id, paidMs);
+        }
+      }
+      if (cleanOrdEmail) {
+        paidCourseEmails.add(cleanOrdEmail);
+        if (!isNaN(paidMs)) {
+          const prev = latestCoursePaidMsByEmail.get(cleanOrdEmail) || 0;
+          if (paidMs > prev) latestCoursePaidMsByEmail.set(cleanOrdEmail, paidMs);
+        }
+      }
+    }
+
+    if (o.payment_type === 'reading_expert' || o.payment_type === 'upgrade_expert') {
+      if (o.user_id) {
+        paidExpertUserIds.add(o.user_id);
+        if (!isNaN(paidMs)) {
+          const prev = latestExpertPaidMsByUser.get(o.user_id) || 0;
+          if (paidMs > prev) latestExpertPaidMsByUser.set(o.user_id, paidMs);
+        }
+      }
+      if (cleanOrdEmail) {
+        paidExpertEmails.add(cleanOrdEmail);
+        if (!isNaN(paidMs)) {
+          const prev = latestExpertPaidMsByEmail.get(cleanOrdEmail) || 0;
+          if (paidMs > prev) latestExpertPaidMsByEmail.set(cleanOrdEmail, paidMs);
+        }
+      }
     }
   }
 
@@ -442,6 +477,7 @@ async function runDripJob(req: NextRequest) {
   }
 
   const usersWithUpgradedChart = new Set<string>();
+  const usersWithExpertChart = new Set<string>();
   const upgradedNamesByUser = new Map<string, Set<string>>();
   const latestUpgradedChartByUser = new Map<string, any>();
   const latestFreeChartByUser = new Map<string, any>();
@@ -451,6 +487,9 @@ async function runDripJob(req: NextRequest) {
   for (const c of candidateCharts || []) {
     const tier = c.duong_so_data?.tier || c.laso_data?.tier || 'free';
     const normName = (c.duong_so_data?.hoTen || '').trim().toLowerCase();
+    if (tier === 'expert') {
+      usersWithExpertChart.add(c.user_id);
+    }
     if (tier === 'pro' || tier === 'expert' || paidChartIds.has(c.id)) {
       usersWithUpgradedChart.add(c.user_id);
       if (!latestUpgradedChartByUser.has(c.user_id)) {
@@ -541,8 +580,12 @@ async function runDripJob(req: NextRequest) {
       usersWithUpgradedChart.has(profile.id);
     const hasBoughtCourse =
       paidCourseUserIds.has(profile.id) || paidCourseEmails.has(cleanEmail);
+    const hasBoughtExpert =
+      paidExpertUserIds.has(profile.id) ||
+      paidExpertEmails.has(cleanEmail) ||
+      usersWithExpertChart.has(profile.id);
 
-    // Nhánh A: Khách ĐÃ MUA Luận Giải / Câu Hỏi
+    // Nhánh A: Khách ĐÃ MUA Luận Giải / Câu Hỏi / Khóa Học
     if (hasBoughtBefore) {
       let paidUserStage: DripStage | null = null;
       let targetChart: any | null = null;
@@ -571,13 +614,60 @@ async function runDripJob(req: NextRequest) {
         }
       }
 
-      // A2. Nếu chưa mua Khóa Học 699K và đã qua tối thiểu 36 giờ kể từ lúc thanh toán bài luận -> Gửi thư ngỏ Khóa Học Tử Vi Thực Chiến (1 lần duy nhất)
       const paidAnchorMs =
         latestPaidMsByUser.get(profile.id) ||
         latestPaidMsByEmail.get(cleanEmail) ||
         createdMs;
       const hoursSincePaid = (nowMs - paidAnchorMs) / 3600000;
 
+      const coursePaidAnchorMs =
+        latestCoursePaidMsByUser.get(profile.id) ||
+        latestCoursePaidMsByEmail.get(cleanEmail) ||
+        paidAnchorMs;
+      const hoursSinceCoursePaid = (nowMs - coursePaidAnchorMs) / 3600000;
+
+      const expertPaidAnchorMs =
+        latestExpertPaidMsByUser.get(profile.id) ||
+        latestExpertPaidMsByEmail.get(cleanEmail) ||
+        paidAnchorMs;
+      const hoursSinceExpertPaid = (nowMs - expertPaidAnchorMs) / 3600000;
+
+      // A2. Học viên đã mua Khóa 699K nhưng CHƯA xem Bản Chuyên Gia 269K -> sau 24h gửi thư mời mở Bản Chuyên Gia 269K
+      if (
+        !paidUserStage &&
+        hasBoughtCourse &&
+        !hasBoughtExpert &&
+        isWakingHours &&
+        !logInfo.stages.has('course_expert_upsell_24h') &&
+        hoursSinceLastEmail >= 24 &&
+        hoursSinceCoursePaid >= 24 &&
+        hoursSinceCoursePaid < 180 * 24
+      ) {
+        paidUserStage = 'course_expert_upsell_24h';
+        targetChart =
+          latestFreeChartByUser.get(profile.id) ||
+          latestUpgradedChartByUser.get(profile.id) ||
+          null;
+      }
+
+      // A3. Khách đã mua Bản Chuyên Gia 269K (kể cả đã mua kèm khóa học) -> sau 48h gửi đặc quyền Xem Trực Tiếp Offline 1-1 (chỉ đóng thêm 1.730.000đ)
+      if (
+        !paidUserStage &&
+        hasBoughtExpert &&
+        isWakingHours &&
+        !logInfo.stages.has('expert_offline_upsell_48h') &&
+        hoursSinceLastEmail >= 24 &&
+        hoursSinceExpertPaid >= 48 &&
+        hoursSinceExpertPaid < 180 * 24
+      ) {
+        paidUserStage = 'expert_offline_upsell_48h';
+        targetChart =
+          latestUpgradedChartByUser.get(profile.id) ||
+          latestFreeChartByUser.get(profile.id) ||
+          null;
+      }
+
+      // A4. Nếu chưa mua Khóa Học 699K và đã qua tối thiểu 36 giờ kể từ lúc thanh toán bài luận -> Gửi thư ngỏ Khóa Học Tử Vi Thực Chiến (1 lần duy nhất)
       if (
         !paidUserStage &&
         !hasBoughtCourse &&
@@ -595,13 +685,17 @@ async function runDripJob(req: NextRequest) {
       }
 
       if (paidUserStage) {
+        const isPostPurchaseCrossSell =
+          paidUserStage === 'course_cross_sell_36h' ||
+          paidUserStage === 'course_expert_upsell_24h' ||
+          paidUserStage === 'expert_offline_upsell_48h';
         queue.push({
           profile,
           stage: paidUserStage,
           ageHours: Number(ageHours.toFixed(2)),
           chart: targetChart,
           extraFamilyChartNames: extraFreeChartNamesByUser.get(profile.id),
-          sortPriority: paidUserStage === 'course_cross_sell_36h' ? 2 : 1,
+          sortPriority: isPostPurchaseCrossSell ? 2 : 1,
           paidAnchorMs,
         });
       }
@@ -658,10 +752,15 @@ async function runDripJob(req: NextRequest) {
     }
   }
 
-  // Ưu tiên tuyệt đối cho Lead mới (sortPriority = 1), sau đó mới tới Cross-sell Khóa Học (ưu tiên khách mua gần nhất trước)
+  // Ưu tiên tuyệt đối cho Lead mới (sortPriority = 1), sau đó mới tới Cross-sell/Upsell sau mua (ưu tiên khách mua gần nhất trước)
+  const isCrossSellStage = (s: DripStage) =>
+    s === 'course_cross_sell_36h' ||
+    s === 'course_expert_upsell_24h' ||
+    s === 'expert_offline_upsell_48h';
+
   queue.sort((a, b) => {
     if (a.sortPriority !== b.sortPriority) return a.sortPriority - b.sortPriority;
-    if (a.stage === 'course_cross_sell_36h' && b.stage === 'course_cross_sell_36h') {
+    if (isCrossSellStage(a.stage) && isCrossSellStage(b.stage)) {
       return b.paidAnchorMs - a.paidAnchorMs;
     }
     return 0;
@@ -671,7 +770,7 @@ async function runDripJob(req: NextRequest) {
   let crossSellInBatch = 0;
   for (const task of queue) {
     if (batch.length >= MAX_EMAILS_PER_RUN) break;
-    if (task.stage === 'course_cross_sell_36h') {
+    if (isCrossSellStage(task.stage)) {
       if (crossSellInBatch >= MAX_CROSS_SELL_PER_RUN) continue;
       crossSellInBatch++;
     }
@@ -766,7 +865,13 @@ async function runDripJob(req: NextRequest) {
     }
 
     // Nếu là mốc cần voucher mà không sinh được mã thì hoàn tác khóa để lần sau thử lại
-    if (stage !== 'reminder_1h' && stage !== 'course_cross_sell_36h' && !voucherCode) {
+    if (
+      stage !== 'reminder_1h' &&
+      stage !== 'course_cross_sell_36h' &&
+      stage !== 'course_expert_upsell_24h' &&
+      stage !== 'expert_offline_upsell_48h' &&
+      !voucherCode
+    ) {
       await adminSupabase.from('tuvi_email_logs').delete().eq('id', lockRow.id);
       results.push({ email: profile.email, stage, success: false, error: 'Voucher creation failed' });
       continue;

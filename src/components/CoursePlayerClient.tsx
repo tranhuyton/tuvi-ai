@@ -26,6 +26,8 @@ import {
   UserCheck,
   Maximize2,
   Minimize2,
+  Gem,
+  Crown,
 } from 'lucide-react';
 import {
   COURSE_MODULES,
@@ -52,7 +54,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { getAdminAuthHeaders, getBearerAuthHeaders } from '@/lib/adminClientAuth';
 import { getUserCharts } from '@/lib/tuviService';
-import { trackViewCourse, trackPlayCourseLesson } from '@/lib/metaPixel';
+import { trackViewCourse, trackPlayCourseLesson, trackContact } from '@/lib/metaPixel';
 import type { LaSoData } from '@/types/tuvi';
 
 interface StarMatchOnChart {
@@ -96,8 +98,9 @@ export default function CoursePlayerClient({
     [language, loadedLessonsMap]
   );
 
-  // Trạng thái mở khóa khóa học
+  // Trạng thái mở khóa khóa học & lịch sử xem gói Chuyên Gia 269k (để cá nhân hóa ưu đãi tiếp theo)
   const [isUnlocked, setIsUnlocked] = useState<boolean>(forceUnlock);
+  const [hasExpertReading, setHasExpertReading] = useState<boolean>(false);
   const [unlockedCode, setUnlockedCode] = useState<string>(forceUnlock ? 'VIP-ADMIN' : '');
   const [isCheckingAccess, setIsCheckingAccess] = useState<boolean>(!forceUnlock);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
@@ -325,6 +328,9 @@ export default function CoursePlayerClient({
 
         if (res.ok) {
           const data = await res.json();
+          if (typeof data.hasExpertReading === 'boolean') {
+            setHasExpertReading(data.hasExpertReading);
+          }
           if (data.unlocked) {
             setIsUnlocked(true);
             setUnlockedCode(data.orderCode || 'ĐÃ KÍCH HOẠT');
@@ -349,15 +355,23 @@ export default function CoursePlayerClient({
 
   // Nếu trên thiết bị mới chưa có lá số trong localStorage nhưng học viên đã đăng nhập, tự nạp lá số gần nhất từ Sổ Tay
   useEffect(() => {
-    if (userLaSo || !user?.id) return;
+    if (userLaSo?.tier === 'expert') {
+      setHasExpertReading(true);
+    }
+    if (!user?.id) return;
     let cancelled = false;
     getUserCharts()
       .then(({ charts }) => {
         if (cancelled || !charts?.length) return;
-        const latest = charts.find((c) => c.laso_data?.cungs?.length);
-        if (latest?.laso_data) {
-          setUserLaSo(latest.laso_data);
-          setUserHoTen(latest.duong_so_data?.hoTen || latest.title || 'Bạn');
+        if (charts.some((c) => c.duong_so_data?.tier === 'expert' || c.laso_data?.tier === 'expert')) {
+          setHasExpertReading(true);
+        }
+        if (!userLaSo) {
+          const latest = charts.find((c) => c.laso_data?.cungs?.length);
+          if (latest?.laso_data) {
+            setUserLaSo(latest.laso_data);
+            setUserHoTen(latest.duong_so_data?.hoTen || latest.title || 'Bạn');
+          }
         }
       })
       .catch(() => {});
@@ -857,6 +871,51 @@ export default function CoursePlayerClient({
                   <p className="text-xs text-slate-300">
                     {ui.courseProgressLabel} <strong>{completedLessons.length}/24</strong>
                   </p>
+
+                  {!embeddedInAdmin && (
+                    <div className="pt-3 border-t border-slate-800/90 text-left">
+                      {hasExpertReading ? (
+                        <div className="rounded-xl bg-gradient-to-br from-amber-500/15 via-yellow-500/10 to-purple-500/15 border border-amber-400/45 p-3 space-y-2">
+                          <div className="inline-flex items-center gap-1 text-[10.5px] font-extrabold uppercase tracking-wider text-amber-300">
+                            <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span>Đặc quyền đã mở Bản Expert 269K</span>
+                          </div>
+                          <p className="text-[11.5px] text-slate-200 leading-relaxed">
+                            Nâng cấp <strong>Xem Trực Tiếp Offline 1-1</strong> cùng Thầy Tôn (trừ phí 269k, <strong className="text-emerald-300">chỉ đóng thêm 1.730.000đ</strong>).
+                          </p>
+                          <a
+                            href="https://zalo.me/0935058688"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => trackContact('zalo', 'course_expert_offline_upsell')}
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#0068FF] hover:bg-[#0054cc] text-white font-bold text-xs shadow transition"
+                          >
+                            <span className="w-4 h-4 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[9px] font-black shrink-0">
+                              Z
+                            </span>
+                            <span>Nhắn Zalo Đặt Lịch: 0935.058.688</span>
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-gradient-to-br from-purple-500/15 via-fuchsia-500/10 to-amber-500/15 border border-purple-400/45 p-3 space-y-2">
+                          <div className="inline-flex items-center gap-1 text-[10.5px] font-extrabold uppercase tracking-wider text-purple-200">
+                            <Gem className="w-3.5 h-3.5 text-purple-300 shrink-0" />
+                            <span>Thực chiến trên chính lá số bạn</span>
+                          </div>
+                          <p className="text-[11.5px] text-slate-200 leading-relaxed">
+                            Mở thêm <strong>Bản Luận Giải Chuyên Gia 12 Cung (269.000đ)</strong> để vừa học Podcast vừa đối chiếu trực tiếp lên lá số bản thân.
+                          </p>
+                          <Link
+                            href="/?pkg=expert"
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold text-xs shadow transition"
+                          >
+                            <Gem className="w-3.5 h-3.5 shrink-0" />
+                            <span>Mở Bản Expert 12 Cung (269K) ➜</span>
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
@@ -1567,6 +1626,74 @@ export default function CoursePlayerClient({
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
+
+                  {/* Khối Gợi Ý Nâng Cấp Thông Minh Cho Học Viên Đã Mua Khóa 699K */}
+                  {isUnlocked && !embeddedInAdmin && (
+                    hasExpertReading ? (
+                      <div className="mt-4 rounded-2xl bg-gradient-to-br from-amber-950/50 via-slate-950/90 to-purple-950/40 border border-amber-400/50 p-5 space-y-3 shadow-lg">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1.5">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-extrabold uppercase tracking-wider">
+                              <Crown className="w-3.5 h-3.5" />
+                              <span>Đặc Quyền Học Viên Đã Xem Bản Expert (269K)</span>
+                            </div>
+                            <h4 className="text-base sm:text-lg font-extrabold text-amber-200 font-serif">
+                              Nâng Cấp Xem Trực Tiếp Offline 1-1 Cùng Thầy Tôn — Chỉ Đóng Thêm 1.730.000đ
+                            </h4>
+                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+                              Quý học viên đã sở hữu cả Khóa Học Tử Vi Thực Chiến lẫn <strong>Bản Chuyên Gia Expert (269.000đ)</strong> nên được khấu trừ trực tiếp phí gói 269k (giá gốc xem 1-1 là <span className="line-through text-slate-400">2.000.000đ</span> → chỉ cần đóng thêm <strong className="text-emerald-300">1.730.000đ</strong>). Gặp trực tiếp tại <strong>Royal City, Hà Nội</strong> hoặc <strong>Online Video Call 1-1</strong> cùng Thầy Tôn!
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-2 shrink-0">
+                            <a
+                              href="https://zalo.me/0935058688"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => trackContact('zalo', 'course_bottom_offline_upsell')}
+                              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0068FF] hover:bg-[#0054cc] text-white font-extrabold text-xs sm:text-sm shadow-md transition whitespace-nowrap"
+                            >
+                              <span className="w-4 h-4 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[9px] font-black shrink-0">
+                                Z
+                              </span>
+                              <span>Nhắn Zalo Đặt Lịch: 0935.058.688</span>
+                            </a>
+                            <a
+                              href="tel:0935058688"
+                              onClick={() => trackContact('phone', 'course_bottom_offline_upsell')}
+                              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-semibold text-xs transition whitespace-nowrap"
+                            >
+                              <PhoneCall className="w-3.5 h-3.5 shrink-0" />
+                              <span>Gọi Thầy Tôn: 0935.058.688</span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-4 rounded-2xl bg-gradient-to-br from-purple-950/55 via-slate-950/90 to-amber-950/40 border border-purple-400/50 p-5 space-y-3 shadow-lg">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="space-y-1.5">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 text-[11px] font-extrabold uppercase tracking-wider">
+                              <Gem className="w-3.5 h-3.5" />
+                              <span>Đề Xuất Dành Riêng Cho Học Viên Khóa 699K</span>
+                            </div>
+                            <h4 className="text-base sm:text-lg font-extrabold text-amber-200 font-serif">
+                              Mở Khóa Bản Luận Giải Chuyên Gia 12 Cung (269.000đ) Để Thực Chiến Trên Lá Số Của Bạn
+                            </h4>
+                            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+                              Cách học Tử Vi nhanh nhớ và ngấm sâu nhất là đối chiếu từng bài Podcast ngay trên <strong>chính bài luận giải trọn bộ 12 Cung (~4.500–5.000 từ) + Lưu Nguyệt 12 tháng + Diện Tướng &amp; Chỉ Tay</strong> của bản thân do Thầy Tôn chấm riêng (tặng kèm 02 câu hỏi Chuyên Gia).
+                            </p>
+                          </div>
+                          <Link
+                            href="/?pkg=expert"
+                            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-extrabold text-xs sm:text-sm shadow-lg transition shrink-0 whitespace-nowrap"
+                          >
+                            <Gem className="w-4 h-4 shrink-0" />
+                            <span>Xem Bản Expert 12 Cung (269K) ➜</span>
+                          </Link>
+                        </div>
+                      </div>
+                    )
+                  )}
                 </>
               )}
             </div>
