@@ -1220,6 +1220,12 @@ export default function TuViForm({
               </div>
               <div className="mt-4 pt-3 border-t border-purple-900/50 text-[11.5px] text-purple-200 font-semibold space-y-1">
                 <div>{t('form.expertQnA', '🎁 Tặng kèm 02 câu hỏi Chuyên Gia miễn phí (Thêm: 129k/2 câu)')}</div>
+                <div className="text-[11px] text-emerald-300 font-semibold">
+                  {t(
+                    'form.expertOfflineCreditHint',
+                    '💎 Khấu trừ trọn 269k nếu đặt xem trực tiếp 1-1 cùng Thầy (chỉ đóng thêm 1.730k)'
+                  )}
+                </div>
                 <div className="text-[11px] text-amber-300 font-medium">
                   {t('form.expertUpgradeHint', '*Khách đang dùng Bản Pro nâng cấp chỉ 150.000đ')}
                 </div>

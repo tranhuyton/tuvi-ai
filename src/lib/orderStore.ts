@@ -9,6 +9,8 @@ export interface OrderItem {
     | 'reading_vip'
     | 'reading_expert'
     | 'upgrade_expert'
+    | 'upgrade_offline_1on1'
+    | 'offline_1on1'
     | 'chat_free'
     | 'chat_vip'
     | 'chat_expert'

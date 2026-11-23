@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/thay-ton.png',
-        width: 800,
-        height: 800,
+        url: '/og-banner.jpg',
+        width: 1200,
+        height: 630,
         alt: 'Giải Mã Vận Hạn 2026 – 2027 Chuẩn 3 Tầng Cùng Thầy Tôn',
       },
     ],
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     title: 'Giải Mã Vận Hạn 2026 – 2027 Chuẩn 3 Tầng | Tử Vi Thầy Tôn',
     description:
       'Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế | Luận giải logic, thực chứng, không mê tín cùng Thầy Tôn.',
-    images: ['/thay-ton.png'],
+    images: ['/og-banner.jpg'],
   },
 };
 
@@ -62,11 +62,19 @@ export default function VanHanLandingPage() {
       },
       {
         '@type': 'Offer',
-        name: 'Bản Chuyên Gia Đại Tông Sư Expert (12 Cung)',
+        name: 'Bản Chuyên Gia Đại Tông Sư Expert (12 Cung + Khấu trừ 269k khi xem 1-1)',
         price: '269000',
         priceCurrency: 'VND',
         availability: 'https://schema.org/InStock',
         url: 'https://www.tuvithayton.vn/van-han',
+      },
+      {
+        '@type': 'Offer',
+        name: 'Nâng Cấp Xem Trực Tiếp 1-1 Cùng Thầy Tôn (Trừ Gói Expert 269K)',
+        price: '1730000',
+        priceCurrency: 'VND',
+        availability: 'https://schema.org/InStock',
+        url: 'https://www.tuvithayton.vn/dat-lich-xem-tu-vi',
       },
     ],
   };

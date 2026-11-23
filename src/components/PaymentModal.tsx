@@ -49,6 +49,8 @@ export type PaymentPurpose =
   | 'reading_vip'
   | 'reading_expert'
   | 'upgrade_expert'
+  | 'upgrade_offline_1on1'
+  | 'offline_1on1'
   | 'chat_free'
   | 'chat_vip'
   | 'chat_expert'
@@ -156,7 +158,26 @@ export default function PaymentModal({
   let subtitle = customDescription;
   let benefits: string[] = [];
 
-  if (paymentType === 'course_tuvi') {
+  if (paymentType === 'upgrade_offline_1on1') {
+    finalPrice = finalPrice ?? 1730000;
+    title = title || 'Đặt Lịch Xem Trực Tiếp 1-1 Cùng Thầy Tôn (Ưu Đãi Trừ Gói 269K)';
+    subtitle = subtitle || 'Gặp mặt tại Royal City, Hà Nội hoặc Online Video Call 1-1 • Chỉ đóng thêm 1.730.000đ';
+    benefits = [
+      'Đặc quyền khấu trừ trọn gói Bản Chuyên Gia Expert 269.000đ từ mức niêm yết 2.000.000đ → chỉ đóng thêm 1.730.000đ.',
+      'Đàm đạo trực tiếp 1-1 cùng Thầy Tôn tại Royal City (Thanh Xuân, Hà Nội) hoặc qua Video Call (tỉnh xa / nước ngoài).',
+      'Thẩm định chuẩn giờ sinh qua Diện Tướng & Chỉ Tay thực tế, hoạch định chiến lược Làm ăn, Điền sản, Gia đạo & Phong thủy.',
+      'Ngay khi quét mã thành công, hệ thống tự động gửi biên lai email & thông báo cho Thầy Tôn ưu tiên xếp khung giờ hẹn riêng.',
+    ];
+  } else if (paymentType === 'offline_1on1') {
+    finalPrice = finalPrice ?? 2000000;
+    title = title || 'Đặt Lịch Xem Tử Vi & Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn';
+    subtitle = subtitle || 'Gặp mặt tại Royal City, Hà Nội hoặc Online Video Call 1-1';
+    benefits = [
+      'Đàm đạo trực tiếp 1-1 cùng Thầy Tôn tại Royal City (Thanh Xuân, Hà Nội) hoặc qua Video Call (tỉnh xa / nước ngoài).',
+      'Thẩm định chuẩn giờ sinh qua Diện Tướng & Chỉ Tay thực tế, luận giải sâu theo đúng quyết định lớn của bạn.',
+      'Hỗ trợ định hướng Phong thủy nhà ở, văn phòng và chọn thời điểm hành động tối ưu.',
+    ];
+  } else if (paymentType === 'course_tuvi') {
     finalPrice = finalPrice ?? 699000;
     title = title || 'Mở Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn';
     subtitle = subtitle || 'Trọn bộ 24 bài Podcast + Chuyên khảo 14 Chính Tinh, Phụ Tinh, Cách Cục & Vận Hạn';
@@ -176,6 +197,7 @@ export default function PaymentModal({
       'Phân tích đầy đủ, tách biệt từng cung một trong trọn bộ 12 Cung & Cung Thân.',
       'Soi chiếu Diện Tướng, Thủ Tướng, Đại Vận 10 năm & 12 tháng Lưu Nguyệt.',
       'Tặng kèm 02 câu hỏi Chuyên Gia miễn phí trực tiếp cùng Thầy Tôn.',
+      '💎 Đặc quyền: Được khấu trừ trọn 269.000đ nếu sau này đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn (chỉ đóng thêm 1.730.000đ).',
     ];
   } else if (paymentType === 'upgrade_expert') {
     finalPrice = finalPrice ?? 150000;
@@ -186,6 +208,7 @@ export default function PaymentModal({
       'Biên soạn mới toàn bộ bài luận giải cấp độ Chuyên Gia Expert (~3.600 - 5.000 từ).',
       'Khảo sát kỹ lưỡng từng cung vị trong đủ 12 Cung (Mệnh, Phụ, Phúc, Điền, Quan, Nô, Di, Tật, Tài, Tử, Thê, Huynh).',
       'Tặng thêm 02 câu hỏi Chuyên Gia miễn phí trực tiếp cùng Thầy Tôn.',
+      '💎 Đặc quyền: Được khấu trừ trọn gói Expert 269.000đ nếu đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn (chỉ đóng thêm 1.730.000đ).',
     ];
   } else if (paymentType === 'chat_expert') {
     finalPrice = finalPrice ?? 129000;
@@ -535,6 +558,14 @@ export default function PaymentModal({
         const latestEmail = customerEmailRef.current || customerEmail;
         if (latestEmail) localStorage.setItem('tuvi_customer_email', latestEmail);
         if (paidCode) localStorage.setItem('tuvi_last_paid_code', paidCode);
+      }
+
+      // Với đơn đặt lịch 1-1 (upgrade_offline_1on1 / offline_1on1): giữ màn hình xác nhận để khách bấm nút Zalo chốt giờ hẹn!
+      const isOfflineBooking =
+        finalTrackedType === 'upgrade_offline_1on1' || finalTrackedType === 'offline_1on1';
+      if (isOfflineBooking) {
+        if (paidCode) setOrderCode(paidCode);
+        return;
       }
 
       // Tự động mở khóa và đóng modal sau 1.8 giây hiển thị chúc mừng
@@ -896,23 +927,68 @@ export default function PaymentModal({
         >
           {/* Màn hình Chúc Mừng nếu ĐÃ THANH TOÁN (Auto-Unlocked) */}
           {orderStatus === 'PAID' ? (
-            <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-4 animate-scale-up">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 animate-bounce">
-                <CheckCircle2 className="w-10 h-10" />
+            paymentType === 'upgrade_offline_1on1' || paymentType === 'offline_1on1' ? (
+              <div className="py-6 px-4 flex flex-col items-center justify-center text-center space-y-4 animate-scale-up">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <div className="space-y-1.5">
+                  <h4 className="text-lg sm:text-xl font-bold font-serif text-emerald-400">
+                    Đặt Lịch Xem Trực Tiếp 1-1 Thành Công!
+                  </h4>
+                  <p className="text-sm text-slate-200 max-w-md leading-relaxed">
+                    Hệ thống đã xác nhận thanh toán <strong className="text-amber-300">{effectiveAmount.toLocaleString('vi-VN')}đ</strong> (Mã đơn <span className="text-amber-400 font-mono font-bold">{orderCode}</span>) và gửi email xác nhận cùng thông báo xếp lịch trực tiếp tới Thầy Tôn.
+                  </p>
+                </div>
+                <div className="w-full max-w-md bg-slate-950/80 border border-amber-500/35 rounded-xl p-3.5 text-left text-xs text-slate-300 space-y-1.5">
+                  <div className="font-bold text-amber-300">Bước cuối — Chốt khung giờ hẹn riêng:</div>
+                  <p>Quý khách nhấn nút Zalo bên dưới và gửi kèm mã <strong className="text-amber-300 font-mono">{orderCode}</strong> để Thầy Tôn ưu tiên sắp xếp lịch gặp tại Royal City (Hà Nội) hoặc Online Video Call.</p>
+                </div>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 w-full max-w-md pt-1">
+                  <a
+                    href="https://zalo.me/0935058688"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-[#0068FF] hover:bg-[#0054cc] text-white font-extrabold rounded-xl text-sm shadow-md transition"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[10px] font-black shrink-0">Z</span>
+                    <span>Nhắn Zalo Thầy Tôn Chốt Giờ</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOrderCode('');
+                      setQrUrl('');
+                      setQrDataUrl('');
+                      setSepayQrUrl('');
+                      onConfirm();
+                      onClose();
+                    }}
+                    className="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                </div>
               </div>
-              <div>
-                <h4 className="text-lg sm:text-xl font-bold font-serif text-emerald-400">
-                  {t('payment.successTitle', 'Thanh Toán Thành Công!')}
-                </h4>
-                <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-md">
-                  Giao dịch <span className="text-amber-400 font-mono font-bold">{orderCode}</span> đã được xác nhận tự động. Đang kích hoạt quyền lợi và gửi email thông báo...
-                </p>
+            ) : (
+              <div className="py-8 px-4 flex flex-col items-center justify-center text-center space-y-4 animate-scale-up">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 animate-bounce">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <div>
+                  <h4 className="text-lg sm:text-xl font-bold font-serif text-emerald-400">
+                    {t('payment.successTitle', 'Thanh Toán Thành Công!')}
+                  </h4>
+                  <p className="text-sm sm:text-base text-slate-300 mt-1 max-w-md">
+                    Giao dịch <span className="text-amber-400 font-mono font-bold">{orderCode}</span> đã được xác nhận tự động. Đang kích hoạt quyền lợi và gửi email thông báo...
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-amber-300 bg-amber-950/50 px-3.5 py-2 rounded-full border border-amber-500/30">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{t('reading.loadingNormal', 'Đang chuyển hướng tới nội dung của bạn...')}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-amber-300 bg-amber-950/50 px-3.5 py-2 rounded-full border border-amber-500/30">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>{t('reading.loadingNormal', 'Đang chuyển hướng tới nội dung của bạn...')}</span>
-              </div>
-            </div>
+            )
           ) : (
             <>
               {/* Dải thông tin tóm tắt số tiền & bảo mật */}

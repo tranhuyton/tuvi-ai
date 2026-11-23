@@ -104,11 +104,13 @@ export default function CoursePlayerClient({
   const [unlockedCode, setUnlockedCode] = useState<string>(forceUnlock ? 'VIP-ADMIN' : '');
   const [isCheckingAccess, setIsCheckingAccess] = useState<boolean>(!forceUnlock);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+  const [paymentModalType, setPaymentModalType] = useState<'course_tuvi' | 'upgrade_offline_1on1'>('course_tuvi');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const pendingOpenPaymentRef = useRef<boolean>(false);
 
-  // Bắt buộc tạo tài khoản / đăng nhập trước khi mở bảng QR thanh toán Khóa học 699.000đ
-  const openCoursePayment = async () => {
+  // Bắt buộc tạo tài khoản / đăng nhập trước khi mở bảng QR thanh toán Khóa học 699.000đ hoặc Đặt lịch 1-1 1.730.000đ
+  const openCoursePayment = async (mode: 'course_tuvi' | 'upgrade_offline_1on1' = 'course_tuvi') => {
+    setPaymentModalType(mode);
     if (user?.id) {
       setIsPaymentModalOpen(true);
       return;
@@ -1635,35 +1637,79 @@ export default function CoursePlayerClient({
                           <div className="space-y-1.5">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[11px] font-extrabold uppercase tracking-wider">
                               <Crown className="w-3.5 h-3.5" />
-                              <span>Đặc Quyền Học Viên Đã Xem Bản Expert (269K)</span>
+                              <span>
+                                {language === 'vi'
+                                  ? 'Đặc Quyền Học Viên Đã Xem Bản Expert (269K)'
+                                  : 'Exclusive Privilege for Expert (269K) Members'}
+                              </span>
                             </div>
                             <h4 className="text-base sm:text-lg font-extrabold text-amber-200 font-serif">
-                              Nâng Cấp Xem Trực Tiếp Offline 1-1 Cùng Thầy Tôn — Chỉ Đóng Thêm 1.730.000đ
+                              {language === 'vi'
+                                ? 'Nâng Cấp Xem Trực Tiếp Offline 1-1 Cùng Thầy Tôn — Chỉ Đóng Thêm 1.730.000đ'
+                                : 'Upgrade to a Private 1-on-1 Session with Master Ton — Pay Only +1,730,000 VND'}
                             </h4>
                             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-                              Quý học viên đã sở hữu cả Khóa Học Tử Vi Thực Chiến lẫn <strong>Bản Chuyên Gia Expert (269.000đ)</strong> nên được khấu trừ trực tiếp phí gói 269k (giá gốc xem 1-1 là <span className="line-through text-slate-400">2.000.000đ</span> → chỉ cần đóng thêm <strong className="text-emerald-300">1.730.000đ</strong>). Gặp trực tiếp tại <strong>Royal City, Hà Nội</strong> hoặc <strong>Online Video Call 1-1</strong> cùng Thầy Tôn!
+                              {language === 'vi' ? (
+                                <>
+                                  Quý học viên đã sở hữu cả Khóa Học Tử Vi Thực Chiến lẫn <strong>Bản Chuyên Gia Expert (269.000đ)</strong> nên được khấu trừ trực tiếp phí gói 269k (giá gốc xem 1-1 là <span className="line-through text-slate-400">2.000.000đ</span> → chỉ cần đóng thêm <strong className="text-emerald-300">1.730.000đ</strong>). Gặp trực tiếp tại <strong>Royal City, Hà Nội</strong> hoặc <strong>Online Video Call 1-1</strong> cùng Thầy Tôn!
+                                </>
+                              ) : (
+                                <>
+                                  As a member holding both the Practical Course and <strong>Expert Reading (269,000 VND)</strong>, your full 269k fee is credited toward a private 1-on-1 consultation (<span className="line-through text-slate-400">2,000,000 VND</span> → pay only <strong className="text-emerald-300">+1,730,000 VND</strong>). Meet at <strong>Royal City, Hanoi</strong> or via <strong>Global Online Video Call</strong>!
+                                </>
+                              )}
                             </p>
                           </div>
                           <div className="flex flex-col gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => openCoursePayment('upgrade_offline_1on1')}
+                              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-md transition whitespace-nowrap cursor-pointer"
+                            >
+                              <QrCode className="w-4 h-4 shrink-0" />
+                              <span>
+                                {language === 'vi'
+                                  ? 'Quét VietQR Giữ Lịch (1.730.000đ)'
+                                  : 'Book via VietQR (1,730,000 VND)'}
+                              </span>
+                            </button>
                             <a
                               href="https://zalo.me/0935058688"
                               target="_blank"
                               rel="noopener noreferrer"
-                              onClick={() => trackContact('zalo', 'course_bottom_offline_upsell')}
-                              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#0068FF] hover:bg-[#0054cc] text-white font-extrabold text-xs sm:text-sm shadow-md transition whitespace-nowrap"
+                              onClick={() =>
+                                trackContact('zalo', 'course_bottom_offline_upsell', {
+                                  value: 1730000,
+                                  email: user?.email || profile?.email || undefined,
+                                  fullName: userHoTen || profile?.full_name || undefined,
+                                  userId: user?.id,
+                                })
+                              }
+                              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0068FF] hover:bg-[#0054cc] text-white font-bold text-xs shadow-md transition whitespace-nowrap"
                             >
                               <span className="w-4 h-4 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[9px] font-black shrink-0">
                                 Z
                               </span>
-                              <span>Nhắn Zalo Đặt Lịch: 0935.058.688</span>
+                              <span>
+                                {language === 'vi'
+                                  ? 'Nhắn Zalo Tư Vấn: 0935.058.688'
+                                  : 'Zalo Consultation: 0935.058.688'}
+                              </span>
                             </a>
                             <a
                               href="tel:0935058688"
-                              onClick={() => trackContact('phone', 'course_bottom_offline_upsell')}
+                              onClick={() =>
+                                trackContact('phone', 'course_bottom_offline_upsell', {
+                                  value: 1730000,
+                                  email: user?.email || profile?.email || undefined,
+                                  fullName: userHoTen || profile?.full_name || undefined,
+                                  userId: user?.id,
+                                })
+                              }
                               className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 font-semibold text-xs transition whitespace-nowrap"
                             >
                               <PhoneCall className="w-3.5 h-3.5 shrink-0" />
-                              <span>Gọi Thầy Tôn: 0935.058.688</span>
+                              <span>0935.058.688</span>
                             </a>
                           </div>
                         </div>
@@ -1674,13 +1720,27 @@ export default function CoursePlayerClient({
                           <div className="space-y-1.5">
                             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 text-[11px] font-extrabold uppercase tracking-wider">
                               <Gem className="w-3.5 h-3.5" />
-                              <span>Đề Xuất Dành Riêng Cho Học Viên Khóa 699K</span>
+                              <span>
+                                {language === 'vi'
+                                  ? 'Đề Xuất Dành Riêng Cho Học Viên Khóa 699K'
+                                  : 'Recommended for 699K Course Students'}
+                              </span>
                             </div>
                             <h4 className="text-base sm:text-lg font-extrabold text-amber-200 font-serif">
-                              Mở Khóa Bản Luận Giải Chuyên Gia 12 Cung (269.000đ) Để Thực Chiến Trên Lá Số Của Bạn
+                              {language === 'vi'
+                                ? 'Mở Khóa Bản Luận Giải Chuyên Gia 12 Cung (269.000đ) Để Thực Chiến Trên Lá Số Của Bạn'
+                                : 'Unlock Your 12-Palace Expert Reading (269,000 VND) to Practice on Your Own Chart'}
                             </h4>
                             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-                              Cách học Tử Vi nhanh nhớ và ngấm sâu nhất là đối chiếu từng bài Podcast ngay trên <strong>chính bài luận giải trọn bộ 12 Cung (~4.500–5.000 từ) + Lưu Nguyệt 12 tháng + Diện Tướng &amp; Chỉ Tay</strong> của bản thân do Thầy Tôn chấm riêng (tặng kèm 02 câu hỏi Chuyên Gia).
+                              {language === 'vi' ? (
+                                <>
+                                  Cách học Tử Vi nhanh nhớ và ngấm sâu nhất là đối chiếu từng bài Podcast ngay trên <strong>chính bài luận giải trọn bộ 12 Cung (~4.500–5.000 từ) + Lưu Nguyệt 12 tháng + Diện Tướng &amp; Chỉ Tay</strong> của bản thân do Thầy Tôn chấm riêng (tặng kèm 02 câu hỏi Chuyên Gia &amp; được khấu trừ trọn 269k khi xem trực tiếp 1-1).
+                                </>
+                              ) : (
+                                <>
+                                  The fastest way to master Zi Wei Dou Shu is studying each lesson alongside your own <strong>12-Palace Expert Reading (~4,500–5,000 words) + 12-Month Lunar Roadmap + Face &amp; Palm analysis</strong> (includes 02 Expert questions &amp; full 269k credit toward a 1-on-1 session).
+                                </>
+                              )}
                             </p>
                           </div>
                           <Link
@@ -1688,7 +1748,11 @@ export default function CoursePlayerClient({
                             className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-extrabold text-xs sm:text-sm shadow-lg transition shrink-0 whitespace-nowrap"
                           >
                             <Gem className="w-4 h-4 shrink-0" />
-                            <span>Xem Bản Expert 12 Cung (269K) ➜</span>
+                            <span>
+                              {language === 'vi'
+                                ? 'Xem Bản Expert 12 Cung (269K) ➜'
+                                : 'Get 12-Palace Expert (269K) ➜'}
+                            </span>
                           </Link>
                         </div>
                       </div>
@@ -1773,11 +1837,14 @@ export default function CoursePlayerClient({
         }}
       />
 
-      {/* MODAL QUÉT MÃ VIETQR MỞ KHÓA TỰ ĐỘNG 699.000Đ */}
+      {/* MODAL QUÉT MÃ VIETQR MỞ KHÓA TỰ ĐỘNG (699.000Đ KHÓA HỌC HOẶC 1.730.000Đ ĐẶT LỊCH 1-1) */}
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         onConfirm={() => {
+          if (paymentModalType === 'upgrade_offline_1on1') {
+            return;
+          }
           setIsUnlocked(true);
           const paidCode =
             typeof window !== 'undefined'
@@ -1795,8 +1862,8 @@ export default function CoursePlayerClient({
           user?.email?.split('@')[0] ||
           'Học viên Tử Vi'
         }
-        paymentType="course_tuvi"
-        price={699000}
+        paymentType={paymentModalType}
+        price={paymentModalType === 'upgrade_offline_1on1' ? 1730000 : 699000}
       />
     </div>
   );

@@ -231,17 +231,20 @@ export function decodeOrderCapiMeta(raw?: string | null): OrderCapiMeta | null {
 }
 
 export interface SendMetaCapiEventInput {
-  eventName: 'InitiateCheckout' | 'Purchase' | 'Lead' | 'CompleteRegistration';
+  eventName: 'InitiateCheckout' | 'Purchase' | 'Lead' | 'CompleteRegistration' | 'Contact';
   eventId: string;
   value?: number;
   currency?: string;
   paymentType?: string;
   orderCode?: string;
+  contentName?: string;
+  contentCategory?: string;
   email?: string | null;
   phone?: string | null;
   fullName?: string | null;
   userId?: string | null;
   meta?: OrderCapiMeta | null;
+  actionSource?: 'website' | 'other';
   timeoutMs?: number;
 }
 
@@ -287,6 +290,8 @@ export async function sendMetaCapiEvent(input: SendMetaCapiEventInput): Promise<
     const defaultSourceUrl =
       input.paymentType === 'course_tuvi'
         ? 'https://www.tuvithayton.vn/khoa-hoc'
+        : input.paymentType === 'upgrade_offline_1on1' || input.paymentType === 'offline_1on1'
+        ? 'https://www.tuvithayton.vn/dat-lich-xem-tu-vi'
         : 'https://www.tuvithayton.vn/';
 
     const customData: Record<string, unknown> = {
@@ -296,11 +301,16 @@ export async function sendMetaCapiEvent(input: SendMetaCapiEventInput): Promise<
       customData.value = input.value;
     }
     if (input.paymentType) {
-      customData.content_name = input.paymentType;
+      customData.content_name = input.contentName || input.paymentType;
       customData.content_type = 'product';
       customData.content_ids = [input.paymentType];
+    } else if (input.contentName) {
+      customData.content_name = input.contentName;
     } else if (input.orderCode) {
       customData.content_ids = ['tuvi_service'];
+    }
+    if (input.contentCategory) {
+      customData.content_category = input.contentCategory;
     }
     if (input.orderCode) {
       customData.order_id = input.orderCode;
@@ -314,7 +324,7 @@ export async function sendMetaCapiEvent(input: SendMetaCapiEventInput): Promise<
           event_time: Math.floor(Date.now() / 1000),
           event_id: input.eventId,
           event_source_url: input.meta?.url || defaultSourceUrl,
-          action_source: 'website',
+          action_source: input.actionSource || 'website',
           user_data: userData,
           custom_data: customData,
         },

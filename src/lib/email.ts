@@ -191,7 +191,15 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
   let serviceDesc =
     'Bản luận giải đại pháp chuyên sâu đa tầng của Thầy Tôn (14 chính tinh, Diện tướng, Thủ tướng, Đại vận 10 năm và 4 mùa) đã được kích hoạt thành công trên lá số của quý khách.';
 
-  if (paymentType === 'course_tuvi') {
+  if (paymentType === 'upgrade_offline_1on1') {
+    serviceTitle = 'Đặt Lịch Xem Tử Vi & Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn (Đặc Quyền Khấu Trừ Gói Expert 269K)';
+    serviceDesc =
+      'Quý khách đã hoàn tất khoản phí nâng cấp 1.730.000đ (đã khấu trừ trọn gói Bản Chuyên Gia Expert 269.000đ từ mức niêm yết 2.000.000đ) để đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn (Offline tại Royal City, Thanh Xuân, Hà Nội hoặc Online Video Call cho khách ở tỉnh xa / nước ngoài). Quý khách vui lòng nhấn nút Zalo bên dưới và gửi kèm Mã giao dịch để Thầy Tôn ưu tiên chốt khung giờ hẹn riêng phù hợp nhất.';
+  } else if (paymentType === 'offline_1on1') {
+    serviceTitle = 'Đặt Lịch Xem Tử Vi & Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn';
+    serviceDesc =
+      'Quý khách đã hoàn tất phí đặt lịch tham vấn trực tiếp 1-1 cùng Thầy Tôn (Offline tại Royal City, Thanh Xuân, Hà Nội hoặc Online Video Call). Quý khách vui lòng nhấn nút Zalo bên dưới và gửi kèm Mã giao dịch để Thầy Tôn ưu tiên chốt khung giờ hẹn riêng phù hợp nhất.';
+  } else if (paymentType === 'course_tuvi') {
     serviceTitle = 'Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn (Trọn Bộ Podcast & Giáo Trình)';
     serviceDesc =
       'Quý khách đã mở khóa thành công trọn bộ 24 bài giảng Podcast & Giáo trình Tử Vi Đẩu Số tương tác trên Web của Thầy Tôn (14 Chính tinh, Lục Cát, Lục Sát, Tứ Hóa, 4 Cách Cục lớn & Luận giải vận hạn). Quý khách có thể truy cập trực tiếp tại https://www.tuvithayton.vn/khoa-hoc bằng tài khoản hoặc nhập Mã giao dịch này để học mọi lúc mọi nơi.';
@@ -226,10 +234,15 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
 
   const isExpertOrder = paymentType === 'reading_expert' || paymentType === 'upgrade_expert';
   const isCourseOrder = paymentType === 'course_tuvi';
-  const mainCtaUrl = isCourseOrder
+  const isOfflineOrder = paymentType === 'upgrade_offline_1on1' || paymentType === 'offline_1on1';
+  const mainCtaUrl = isOfflineOrder
+    ? 'https://zalo.me/0935058688'
+    : isCourseOrder
     ? 'https://www.tuvithayton.vn/khoa-hoc'
     : 'https://www.tuvithayton.vn';
-  const mainCtaLabel = isCourseOrder
+  const mainCtaLabel = isOfflineOrder
+    ? '💬 Nhắn Zalo Thầy Tôn Chốt Khung Giờ Hẹn (0935.058.688) ➜'
+    : isCourseOrder
     ? '🎧 Vào Học Khóa Tử Vi Thực Chiến Ngay ➜'
     : 'Trải Nghiệm Dịch Vụ Ngay ➜';
 
@@ -380,8 +393,81 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
 
   return sendEmail({
     to: customerEmail,
-    subject: `[Tử Vi Thầy Tôn] Kích hoạt thành công dịch vụ - Mã ${orderCode}`,
+    subject: isOfflineOrder
+      ? `[Tử Vi Thầy Tôn] Xác nhận đặt lịch Xem Trực Tiếp 1-1 - Mã ${orderCode}`
+      : `[Tử Vi Thầy Tôn] Kích hoạt thành công dịch vụ - Mã ${orderCode}`,
     html: htmlContent,
+  });
+}
+
+/**
+ * Thông báo ngay cho Thầy Tôn khi có khách vừa quét VietQR đặt lịch Xem Trực Tiếp 1-1 (1.730.000đ / 2.000.000đ)
+ */
+export async function sendOfflineBookingAdminAlert(details: {
+  customerName: string;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  orderCode: string;
+  amount: number;
+  paymentType: string;
+  chartId?: string | null;
+  paidAt?: string;
+}): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const adminTo =
+    process.env.ADMIN_ALERT_EMAIL ||
+    process.env.REPLY_TO_EMAIL ||
+    process.env.GMAIL_USER ||
+    'tranhuyton@gmail.com';
+  const isUpgradeFromExpert = details.paymentType === 'upgrade_offline_1on1';
+  const formattedAmount = details.amount.toLocaleString('vi-VN') + ' đ';
+  const timeStr = details.paidAt
+    ? new Date(details.paidAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+    : new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+
+  const safeName = escapeHtml(details.customerName || 'Khách hàng');
+  const safeEmail = escapeHtml(details.customerEmail || 'Chưa cập nhật');
+  const safePhone = escapeHtml(details.customerPhone || 'Chưa cập nhật');
+  const safeOrderCode = escapeHtml(details.orderCode);
+  const safeChartId = details.chartId ? escapeHtml(details.chartId) : 'Chưa gắn lá số';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:#0b0f19; color:#e2e8f0; padding:20px;">
+  <div style="max-width:580px; margin:0 auto; background:#111827; border:1.5px solid #f59e0b; border-radius:14px; padding:24px;">
+    <div style="color:#fbbf24; font-weight:800; font-size:18px; margin-bottom:12px;">
+      💎 KHÁCH VỪA ĐẶT LỊCH XEM TRỰC TIẾP 1-1 (${formattedAmount})
+    </div>
+    <p style="font-size:14px; color:#cbd5e1; line-height:1.6;">
+      Hệ thống vừa nhận thanh toán tự động qua VietQR cho gói <strong>${
+        isUpgradeFromExpert
+          ? 'Nâng cấp Xem 1-1 (Khấu trừ gói Expert 269k → đóng thêm 1.730.000đ)'
+          : 'Xem Trực Tiếp 1-1 (Giá niêm yết 2.000.000đ)'
+      }</strong>:
+    </p>
+    <table style="width:100%; border-collapse:collapse; margin:16px 0; background:#0f172a; border-radius:8px;">
+      <tr><td style="padding:10px 14px; color:#94a3b8; border-bottom:1px solid #1e293b;">Mã đơn:</td><td style="padding:10px 14px; color:#fbbf24; font-weight:700; font-family:monospace; border-bottom:1px solid #1e293b;">${safeOrderCode}</td></tr>
+      <tr><td style="padding:10px 14px; color:#94a3b8; border-bottom:1px solid #1e293b;">Khách hàng:</td><td style="padding:10px 14px; color:#f8fafc; font-weight:700; border-bottom:1px solid #1e293b;">${safeName}</td></tr>
+      <tr><td style="padding:10px 14px; color:#94a3b8; border-bottom:1px solid #1e293b;">Số điện thoại:</td><td style="padding:10px 14px; color:#34d399; font-weight:700; border-bottom:1px solid #1e293b;">${safePhone}</td></tr>
+      <tr><td style="padding:10px 14px; color:#94a3b8; border-bottom:1px solid #1e293b;">Email:</td><td style="padding:10px 14px; color:#f8fafc; border-bottom:1px solid #1e293b;">${safeEmail}</td></tr>
+      <tr><td style="padding:10px 14px; color:#94a3b8; border-bottom:1px solid #1e293b;">Số tiền thực nhận:</td><td style="padding:10px 14px; color:#34d399; font-weight:800; border-bottom:1px solid #1e293b;">${formattedAmount}</td></tr>
+      <tr><td style="padding:10px 14px; color:#94a3b8; border-bottom:1px solid #1e293b;">Chart ID:</td><td style="padding:10px 14px; color:#cbd5e1; font-family:monospace; font-size:12px; border-bottom:1px solid #1e293b;">${safeChartId}</td></tr>
+      <tr><td style="padding:10px 14px; color:#94a3b8;">Thời gian:</td><td style="padding:10px 14px; color:#cbd5e1;">${timeStr}</td></tr>
+    </table>
+    <div style="text-align:center; margin-top:18px;">
+      <a href="https://www.tuvithayton.vn/admin" style="display:inline-block; padding:12px 22px; background:#f59e0b; color:#0b0f19; font-weight:800; text-decoration:none; border-radius:10px;">
+        Mở Trang Admin Kiểm Tra Hồ Sơ ➜
+      </a>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  return sendEmail({
+    to: adminTo,
+    subject: `[ĐẶT LỊCH 1-1] ${details.customerName} đã thanh toán ${formattedAmount} (${details.orderCode})`,
+    html,
   });
 }
 

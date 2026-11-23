@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/thay-ton.png',
-        width: 800,
-        height: 800,
+        url: '/og-banner.jpg',
+        width: 1200,
+        height: 630,
         alt: 'Cẩm Nang Tử Vi Đẩu Số & Phong Thủy — Thầy Tôn',
       },
     ],
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     title: 'Cẩm Nang Tử Vi Đẩu Số & Phong Thủy Theo Lá Số | Thầy Tôn',
     description:
       'Khám phá hệ thống chuyên đề Tử Vi Đẩu Số & Phong Thủy theo lá số do Thầy Tôn biên soạn và thẩm định.',
-    images: ['/thay-ton.png'],
+    images: ['/og-banner.jpg'],
   },
 };
 

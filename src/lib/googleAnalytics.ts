@@ -42,6 +42,22 @@ export function mapPaymentTypeToGa4Item(paymentType: string, price?: number): Ga
         price,
         quantity: 1,
       };
+    case 'upgrade_offline_1on1':
+      return {
+        item_id: 'upgrade_offline_1on1',
+        item_name: 'Nâng Cấp Xem Trực Tiếp 1-1 Cùng Thầy Tôn (Trừ Gói 269k)',
+        item_category: 'Tư Vấn Trực Tiếp 1-1',
+        price: price ?? 1730000,
+        quantity: 1,
+      };
+    case 'offline_1on1':
+      return {
+        item_id: 'offline_1on1',
+        item_name: 'Đặt Lịch Xem Trực Tiếp 1-1 Cùng Thầy Tôn',
+        item_category: 'Tư Vấn Trực Tiếp 1-1',
+        price: price ?? 2000000,
+        quantity: 1,
+      };
     case 'course_tuvi':
       return {
         item_id: 'course_tuvi',

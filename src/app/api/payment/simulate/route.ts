@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrderByCode, markOrderPaidAtomic } from '@/lib/orderStore';
-import { sendPaymentSuccessEmail } from '@/lib/email';
+import { sendPaymentSuccessEmail, sendOfflineBookingAdminAlert } from '@/lib/email';
 import { adminSupabase as supabase } from '@/lib/supabaseAdmin';
 import { verifyAdminRequest } from '@/lib/adminAuth';
 import { markVoucherUsedAndCancelAllForUser } from '@/lib/voucherStore';
@@ -114,8 +114,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // Nâng cấp chart & cập nhật quota câu hỏi
-    try {
+    // Nâng cấp chart & cập nhật quota câu hỏi (bỏ qua nếu là đơn đặt lịch Xem 1-1)
+    const isOfflineBookingOrder =
+      order.paymentType === 'upgrade_offline_1on1' || order.paymentType === 'offline_1on1';
+    if (!isOfflineBookingOrder) {
+      try {
       let targetChartId = order.chartId;
 
       if (!targetChartId && order.userId && order.hoTen) {
@@ -195,13 +198,14 @@ export async function POST(req: Request) {
     } catch (e) {
       console.warn('[SIMULATE] Không thể cập nhật chart:', e);
     }
+    }
 
     // Khi Admin duyệt tay chuyển khoản thật (!isGift && amount > 0) -> đồng bộ bắn Meta CAPI & GA4 MP Purchase
     let capiSent = false;
     let ga4Sent = false;
+    let resolvedPhone: string | null = null;
     if (!isGift && order.amount > 0) {
       try {
-        let resolvedPhone: string | null = null;
         if (order.userId) {
           const { data: prof } = await supabase
             .from('tuvi_profiles')
@@ -260,6 +264,19 @@ export async function POST(req: Request) {
         paidAt: new Date().toISOString(),
         hasExpertReading,
       });
+    }
+
+    if (isOfflineBookingOrder && !isGift) {
+      sendOfflineBookingAdminAlert({
+        customerName: order.hoTen,
+        customerEmail: order.email,
+        customerPhone: resolvedPhone,
+        orderCode: order.orderCode,
+        amount: order.amount,
+        paymentType: order.paymentType,
+        chartId: order.chartId,
+        paidAt: new Date().toISOString(),
+      }).catch(() => {});
     }
 
     return NextResponse.json({

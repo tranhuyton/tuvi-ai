@@ -231,7 +231,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(activeUser);
       await fetchProfile(activeUser);
-      trackCompleteRegistration('email', Boolean(trimmedPhone));
+      trackCompleteRegistration('email', Boolean(trimmedPhone), {
+        email: trimmedEmail,
+        phone: trimmedPhone || undefined,
+        fullName: trimmedName,
+        userId: activeUser.id,
+      });
 
       return {
         message: 'Đăng ký tài khoản thành công!',

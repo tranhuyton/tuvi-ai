@@ -21,6 +21,8 @@ const CHU_TK = PAYMENT_BANK_CONFIG.accountName;
 const BANK_NAME = PAYMENT_BANK_CONFIG.bankName;
 
 const STANDARD_PRICES: Record<string, number> = {
+  offline_1on1: 2000000,
+  upgrade_offline_1on1: 1730000,
   course_tuvi: 699000,
   reading_expert: 269000,
   upgrade_expert: 150000,
@@ -331,6 +333,28 @@ export async function POST(req: Request) {
       }
     }
 
+    // 5b. CHỐT CHẶN GIAN LẬN GIÁ `upgrade_offline_1on1` (1.730.000đ):
+    // Bắt buộc tài khoản PHẢI đã sở hữu Bản Chuyên Gia Expert (269k) mới được khấu trừ 269k từ giá gốc 2.000.000đ!
+    if (paymentType === 'upgrade_offline_1on1') {
+      const { checkUserHasExpertReading } = await import('@/lib/courseAccessServer');
+      const hasExpert =
+        resolvedChartTier === 'expert' ||
+        (await checkUserHasExpertReading({
+          userId: effectiveUserId,
+          email: effectiveEmail,
+        }));
+      if (!hasExpert) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Mức ưu đãi đóng thêm 1.730.000đ chỉ áp dụng cho khách hàng đã sở hữu Bản Chuyên Gia Expert (269.000đ). Quý khách vui lòng mở Bản Expert trước hoặc đặt lịch 1-1 giá niêm yết 2.000.000đ.',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Tải thêm thông tin profile (tên & SĐT cho CAPI EMQ + kiểm tra self-referral CTV)
     let profileName = String(verifiedAuthUser.user_metadata?.full_name || '').trim();
     let profilePhone =
@@ -357,13 +381,16 @@ export async function POST(req: Request) {
 
     // 6. CHÍNH SÁCH HOA HỒNG CTV:
     // - Đơn có mã giảm giá (voucher / discountAmount > 0) => KHÔNG TRẢ HOA HỒNG CTV!
+    // - Đơn tư vấn trực tiếp 1-1 cá nhân của Thầy Tôn (upgrade_offline_1on1 / offline_1on1) => KHÔNG tự động chia hoa hồng CTV
     // - Chỉ chấp nhận CTV đang ACTIVE
     // - Chặn tuyệt đối Self-Referral (email hoặc SĐT trùng CTV)
     // - Áp trần hoa hồng tối đa <= 50% số tiền thực thu (chống âm biên lợi nhuận / lỗ hổng fixed > 49k)
     let validAffiliateCode: string | undefined;
     let expectedCommission = 0;
+    const isOfflineConsultation =
+      paymentType === 'upgrade_offline_1on1' || paymentType === 'offline_1on1';
 
-    if (!appliedVoucherCode && discountAmount === 0 && affiliateCode) {
+    if (!isOfflineConsultation && !appliedVoucherCode && discountAmount === 0 && affiliateCode) {
       const candidateAffCode = String(affiliateCode).trim().toLowerCase();
       if (candidateAffCode) {
         try {

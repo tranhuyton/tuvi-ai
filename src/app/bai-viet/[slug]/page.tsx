@@ -47,9 +47,9 @@ export async function generateMetadata({
       authors: ['Thầy Tôn (Trần Huy Tôn)'],
       images: [
         {
-          url: '/thay-ton.png',
-          width: 800,
-          height: 800,
+          url: '/og-banner.jpg',
+          width: 1200,
+          height: 630,
           alt: article.title,
         },
       ],
@@ -58,7 +58,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: article.metaTitle,
       description: article.metaDescription,
-      images: ['/thay-ton.png'],
+      images: ['/og-banner.jpg'],
     },
   };
 }

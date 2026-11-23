@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/thay-ton.png',
-        width: 800,
-        height: 800,
+        url: '/og-banner.jpg',
+        width: 1200,
+        height: 630,
         alt: 'Cổng Cộng Tác Viên Tử Vi & Phong Thủy Thầy Tôn',
       },
     ],

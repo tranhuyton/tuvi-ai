@@ -10,13 +10,20 @@ import {
   Compass,
   Building2,
   ArrowRight,
+  QrCode,
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 import { trackContact } from '@/lib/metaPixel';
 import type { ServiceTier } from '@/types/tuvi';
 
-export default function BookingBanner({ tier }: { tier?: ServiceTier } = {}) {
-  const { t } = useLanguage();
+export default function BookingBanner({
+  tier,
+  onBookOffline1on1,
+}: {
+  tier?: ServiceTier;
+  onBookOffline1on1?: () => void;
+} = {}) {
+  const { t, language } = useLanguage();
   const isExpertCustomer = tier === 'expert';
 
   return (
@@ -45,8 +52,30 @@ export default function BookingBanner({ tier }: { tier?: ServiceTier } = {}) {
           </p>
 
           {isExpertCustomer && (
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-purple-500/20 border border-amber-400/50 text-amber-100 text-xs sm:text-sm leading-relaxed text-left">
-              💎 <strong className="text-amber-300">Đặc quyền khách đã mở Bản Expert (269.000đ):</strong> Quý khách được khấu trừ trực tiếp phí bản Expert khi đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn (Offline tại Hà Nội hoặc Video Call) — <strong className="text-emerald-300">chỉ cần đóng thêm 1.730.000đ</strong> (giá gốc 2.000.000đ). Nhắn Zalo <strong>0935.058.688</strong> bên dưới để xếp lịch riêng!
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-purple-500/20 border border-amber-400/50 text-amber-100 text-xs sm:text-sm leading-relaxed text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                {language === 'vi' ? (
+                  <>
+                    💎 <strong className="text-amber-300">Đặc quyền khách đã mở Bản Expert (269.000đ):</strong> Quý khách được khấu trừ trực tiếp phí bản Expert khi đặt lịch xem trực tiếp 1-1 cùng Thầy Tôn (Offline tại Hà Nội hoặc Video Call) — <strong className="text-emerald-300">chỉ cần đóng thêm 1.730.000đ</strong> (giá gốc 2.000.000đ).
+                  </>
+                ) : (
+                  <>
+                    💎 <strong className="text-amber-300">Expert Reading (269K) Privilege:</strong> Deduct your full 269,000 VND fee toward a private 1-on-1 session with Master Ton (Royal City Hanoi or Global Video Call) — <strong className="text-emerald-300">pay only +1,730,000 VND</strong> (regularly 2,000,000 VND).
+                  </>
+                )}
+              </div>
+              {onBookOffline1on1 && (
+                <button
+                  type="button"
+                  onClick={onBookOffline1on1}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-xs shadow-md transition cursor-pointer shrink-0 whitespace-nowrap"
+                >
+                  <QrCode className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {language === 'vi' ? 'Đặt Lịch VietQR (1.730k)' : 'Book via VietQR (1,730k)'}
+                  </span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -128,7 +157,11 @@ export default function BookingBanner({ tier }: { tier?: ServiceTier } = {}) {
 
             <a
               href="tel:0935058688"
-              onClick={() => trackContact('phone', 'booking_banner')}
+              onClick={() =>
+                trackContact('phone', isExpertCustomer ? 'booking_banner_expert' : 'booking_banner', {
+                  value: isExpertCustomer ? 1730000 : 2000000,
+                })
+              }
               className="btn-shimmer inline-flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
             >
               <PhoneCall className="w-4 h-4 fill-slate-950 shrink-0" />
@@ -139,7 +172,11 @@ export default function BookingBanner({ tier }: { tier?: ServiceTier } = {}) {
               href="https://zalo.me/0935058688"
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackContact('zalo', 'booking_banner')}
+              onClick={() =>
+                trackContact('zalo', isExpertCustomer ? 'booking_banner_expert' : 'booking_banner', {
+                  value: isExpertCustomer ? 1730000 : 2000000,
+                })
+              }
               className="inline-flex items-center justify-center gap-2 px-4 py-3 bg-[#0068FF] hover:bg-[#0054cc] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
             >
               <span className="w-4 h-4 rounded-full bg-white text-[#0068FF] flex items-center justify-center text-[9px] font-black shrink-0">

@@ -176,19 +176,32 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
   const getChartStorageKey = (duongSo?: DuLieuDuongSo | null, chartId?: string | null) =>
     chartId || (duongSo ? `${duongSo.hoTen}_${duongSo.namDuong}` : 'default');
 
-  // Ghi nhận ViewContent (Meta + GA4) cho Landing Page Giải Mã Vận Hạn 2026 - 2027 (/van-han)
+  // Ghi nhận ViewContent (Meta + GA4) cho Trang chủ (/) và Landing Page Giải Mã Vận Hạn (/van-han) phục vụ tệp Retargeting
   useEffect(() => {
-    if (!isVanHanLanding || typeof window === 'undefined') return;
-    trackMetaEvent('ViewContent', {
-      content_name: 'Landing Page Giai Ma Tam Han 2026-2027',
-      content_category: 'Van Han VIP Pro & Expert',
-      value: 119000,
-      currency: 'VND',
-    });
-    trackGa4ViewVanHan();
+    if (typeof window === 'undefined') return;
+    if (isVanHanLanding) {
+      trackMetaEvent('ViewContent', {
+        content_name: 'Landing Page Giai Ma Tam Han 2026-2027',
+        content_category: 'van_han',
+        content_ids: ['reading_expert', 'reading_vip'],
+        content_type: 'product',
+        value: 269000,
+        currency: 'VND',
+      });
+      trackGa4ViewVanHan();
+    } else {
+      trackMetaEvent('ViewContent', {
+        content_name: 'Trang Chu Lap La So Tu Vi Thay Ton',
+        content_category: 'laso_free',
+        content_ids: ['reading_expert', 'reading_vip'],
+        content_type: 'product',
+        value: 269000,
+        currency: 'VND',
+      });
+    }
   }, [isVanHanLanding]);
 
-  // Bắt mã giới thiệu Affiliate (Ví dụ: tuvithayton.vn/?ref=diep93 hoặc ?aff=diep93)
+  // Bắt mã giới thiệu Affiliate (dự phòng đồng bộ sessionKey với RouteTracker để không bắn đúp click)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -196,15 +209,20 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       const refCode = params.get('ref') || params.get('aff');
       if (refCode && refCode.trim()) {
         const cleanRef = refCode.trim().toLowerCase();
-        localStorage.setItem('tuvi_affiliate_ref', cleanRef);
-        localStorage.setItem('tuvi_affiliate_time', Date.now().toString());
+        if (/^[a-z0-9_-]{2,20}$/.test(cleanRef)) {
+          localStorage.setItem('tuvi_affiliate_ref', cleanRef);
+          localStorage.setItem('tuvi_affiliate_time', Date.now().toString());
 
-        // Ghi nhận lượt click
-        fetch('/api/affiliate/track-click', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ref: cleanRef }),
-        }).catch(() => {});
+          const sessionKey = `tuvi_ref_tracked_${cleanRef}`;
+          if (!sessionStorage.getItem(sessionKey)) {
+            sessionStorage.setItem(sessionKey, '1');
+            fetch('/api/affiliate/track-click', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ref: cleanRef }),
+            }).catch(() => {});
+          }
+        }
       }
     } catch {
       // ignore
@@ -1280,6 +1298,32 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     proceedToPayment();
   };
 
+  // Mở modal VietQR đặt lịch Xem Trực Tiếp 1-1 ưu đãi trừ gói Expert 269k (đóng thêm 1.730.000đ)
+  const openBookOffline1on1Modal = () => {
+    const proceed = () => {
+      setPaymentModalConfig({
+        isOpen: true,
+        type: 'upgrade_offline_1on1',
+        price: 1730000,
+        onConfirm: () => {
+          // Đơn 1-1 giữ nguyên lá số Expert hiện có; khách nhận biên lai email & chốt giờ qua Zalo
+        },
+      });
+    };
+
+    if (!user && !isAuthenticatedRef.current) {
+      pendingPostAuthActionRef.current = proceed;
+      setAuthModalTab('signin');
+      setAuthModalNotice(
+        'Quý khách vui lòng đăng nhập tài khoản đã mua Bản Expert (269k) để mở mã VietQR đặt lịch Xem Trực Tiếp 1-1 với mức khấu trừ 1.730.000đ.'
+      );
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    proceed();
+  };
+
   // Mở modal thanh toán thỉnh giáo Thầy Tôn (hỏi đáp - bắt buộc đăng nhập để lưu lịch sử hỏi đáp)
   const handleUnlockQuestions = (mode?: 'basic' | 'vip' | 'expert') => {
     const activeTier = tierRef.current || currentTier;
@@ -2304,7 +2348,11 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               }}
             />
 
-            {isVanHanLanding && !isEditing && <VanHanLandingHero />}
+            {isVanHanLanding && !isEditing && (
+              <VanHanLandingHero
+                headingTag={adAngle === 'dien-trach-quan-loc' ? 'h2' : 'h1'}
+              />
+            )}
 
             {!isEditing && (
               <>
@@ -2510,6 +2558,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                 tier={currentTier}
                 onUpgrade={openUpgradeModal}
                 onUpgradeToExpert={() => openUpgradeExpertModal()}
+                onBookOffline1on1={openBookOffline1on1Modal}
+                customerEmail={user?.email || profile?.email || undefined}
                 onRetry={async () => {
                   const activeLaSo = laSoRef.current || laSo;
                   const activeDuongSo = duongSoRef.current || currentDuongSo;
@@ -2555,7 +2605,10 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
             <AboutThayTon />
 
             {/* Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn (Nằm dưới phần Hỏi Đáp) */}
-            <BookingBanner tier={currentTier} />
+            <BookingBanner
+              tier={currentTier}
+              onBookOffline1on1={currentTier === 'expert' ? openBookOffline1on1Modal : undefined}
+            />
           </div>
         )}
       </div>

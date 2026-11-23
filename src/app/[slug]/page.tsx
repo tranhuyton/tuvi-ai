@@ -44,13 +44,13 @@ export async function generateMetadata({
       locale: 'vi_VN',
       type: 'article',
       publishedTime: '2026-10-24T00:00:00.000Z',
-      modifiedTime: '2026-10-24T00:00:00.000Z',
+      modifiedTime: '2026-11-23T00:00:00.000Z',
       authors: ['Thầy Tôn'],
       images: [
         {
-          url: '/thay-ton.png',
-          width: 800,
-          height: 800,
+          url: '/og-banner.jpg',
+          width: 1200,
+          height: 630,
           alt: page.h1,
         },
       ],
@@ -59,7 +59,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: page.metaTitle,
       description: page.metaDescription,
-      images: ['/thay-ton.png'],
+      images: ['/og-banner.jpg'],
     },
   };
 }
@@ -150,12 +150,12 @@ function buildPageJsonLd(page: FunnelPageData) {
       headline: page.h1,
       description: page.metaDescription,
       datePublished: '2026-10-24',
-      dateModified: '2026-10-24',
+      dateModified: '2026-11-23',
       mainEntityOfPage: canonicalUrl,
       author: authorEntity,
       reviewedBy: authorEntity,
       publisher: publisherEntity,
-      image: 'https://www.tuvithayton.vn/thay-ton.png',
+      image: 'https://www.tuvithayton.vn/og-banner.jpg',
     },
   ];
 
@@ -179,7 +179,7 @@ function buildPageJsonLd(page: FunnelPageData) {
       '@type': 'Product',
       name: page.h1,
       description: page.metaDescription,
-      image: 'https://www.tuvithayton.vn/thay-ton.png',
+      image: 'https://www.tuvithayton.vn/og-banner.jpg',
       brand: {
         '@type': 'Brand',
         name: 'Tử Vi & Phong Thủy Thầy Tôn',
@@ -210,7 +210,29 @@ function buildPageJsonLd(page: FunnelPageData) {
           addressCountry: 'VN',
         },
       },
-      areaServed: ['Hà Nội', 'Việt Nam'],
+      areaServed: ['Hà Nội', 'Việt Nam', 'Toàn cầu (Video Call)'],
+      ...(page.code === 'DV1'
+        ? {
+            offers: [
+              {
+                '@type': 'Offer',
+                name: 'Xem Tử Vi & Phong Thủy Trực Tiếp 1-1 Cùng Thầy Tôn (Giá Niêm Yết)',
+                price: '2000000',
+                priceCurrency: 'VND',
+                availability: 'https://schema.org/InStock',
+                url: canonicalUrl,
+              },
+              {
+                '@type': 'Offer',
+                name: 'Nâng Cấp Xem Trực Tiếp 1-1 Cho Khách Đã Mở Bản Expert (Khấu Trừ 269k)',
+                price: '1730000',
+                priceCurrency: 'VND',
+                availability: 'https://schema.org/InStock',
+                url: canonicalUrl,
+              },
+            ],
+          }
+        : {}),
     });
   } else if (page.code === 'TR') {
     graph.push({

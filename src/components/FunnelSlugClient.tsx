@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { trackMetaEvent } from '@/lib/metaPixel';
 import {
   Sparkles,
   Compass,
@@ -38,6 +39,18 @@ export default function FunnelSlugClient({ page: rawPage }: { page: FunnelPageDa
   const ui = EXTERNAL_PAGE_UI[language];
   const page = getLocalizedFunnelPage(rawPage, language);
   const about = ABOUT_DATA[language] || ABOUT_DATA.vi;
+
+  useEffect(() => {
+    const isBookingPage = rawPage.slug === 'dat-lich-xem-tu-vi';
+    trackMetaEvent('ViewContent', {
+      content_name: rawPage.h1,
+      content_category: isBookingPage ? 'dat_lich_1on1' : rawPage.slug,
+      content_ids: isBookingPage ? ['offline_1on1', 'upgrade_offline_1on1'] : ['reading_expert'],
+      content_type: 'product',
+      value: isBookingPage ? 2000000 : 269000,
+      currency: 'VND',
+    });
+  }, [rawPage.slug, rawPage.h1]);
 
   const group1Pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === 1 && p.code !== rawPage.code);
   const group2Pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === 2 && p.code !== rawPage.code);

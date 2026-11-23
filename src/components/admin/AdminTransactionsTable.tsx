@@ -105,6 +105,24 @@ export default function AdminTransactionsTable({
   const [isRegeneratingReading, setIsRegeneratingReading] = useState(false);
   const [regenerateMsg, setRegenerateMsg] = useState<string | null>(null);
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
+  const [recordingOfflineCode, setRecordingOfflineCode] = useState<string | null>(null);
+  const [showOfflineModal, setShowOfflineModal] = useState(false);
+  const [offlineForm, setOfflineForm] = useState<{
+    hoTen: string;
+    email: string;
+    phone: string;
+    paymentType: 'upgrade_offline_1on1' | 'offline_1on1';
+    amount: string;
+    sendCustomerEmail: boolean;
+  }>({
+    hoTen: '',
+    email: '',
+    phone: '',
+    paymentType: 'offline_1on1',
+    amount: '2000000',
+    sendCustomerEmail: true,
+  });
+  const [isSubmittingOfflineForm, setIsSubmittingOfflineForm] = useState(false);
   const [zoomLightboxType, setZoomLightboxType] = useState<'mat' | 'tay' | null>(null);
 
   const handleOpenPreview = async (chart: AdminChartItem) => {
@@ -370,6 +388,87 @@ export default function AdminTransactionsTable({
     }
   };
 
+  // Ghi nhận khách đã mua Expert (269k) chốt thêm xem Offline 1-1 (+1.730.000đ) qua Zalo & bắn ngược Meta Offline CAPI Purchase
+  const handleRecordOfflineUpgradeFromOrder = async (ord: AdminOrderItem) => {
+    const ok = window.confirm(
+      `Ghi nhận khách "${ord.hoTen}" (${ord.email || ord.orderCode}) đã chốt Xem Trực Tiếp 1-1 (+1.730.000đ) sau gói Expert?\n\n• Tạo đơn PAID 1.730.000đ vào doanh thu Admin.\n• Tự kế thừa fbp / fbc / email / SĐT từ đơn ${ord.orderCode} để bắn sự kiện Purchase 1.730.000đ về Meta Ads CAPI & GA4.\n• Gửi email xác nhận lịch hẹn cho khách.`
+    );
+    if (!ok) return;
+
+    setRecordingOfflineCode(ord.orderCode);
+    try {
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
+      const res = await fetch('/api/admin/record-offline-purchase', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          sourceOrderCode: ord.orderCode,
+          paymentType: 'upgrade_offline_1on1',
+          amount: 1730000,
+          sendCustomerEmail: true,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const attr = data.matchedAttribution || {};
+        alert(
+          `✅ Đã ghi nhận chốt 1-1 (+1.730.000đ) — Mã mới: ${data.order?.orderCode}\n\n• Meta CAPI Purchase: ${data.capiSent ? 'ĐÃ BẮN THÀNH CÔNG' : 'Chưa gửi được'}\n• Dữ liệu khớp Ads: fbc=${attr.hasFbc ? 'Có' : 'Không'}, fbp=${attr.hasFbp ? 'Có' : 'Không'}, email=${attr.hasEmail ? 'Có' : 'Không'}, phone=${attr.hasPhone ? 'Có' : 'Không'}\n• GA4 Server Purchase: ${data.ga4Sent ? 'Đã gửi' : 'Chưa cấu hình'}\n• Email khách: ${data.emailSent ? 'Đã gửi' : 'Chưa gửi'}`
+        );
+        onRefresh();
+      } else {
+        alert(`⚠️ ${data.error || 'Không thể ghi nhận đơn 1-1'}`);
+      }
+    } catch (err: any) {
+      alert(`Lỗi: ${err?.message || err}`);
+    } finally {
+      setRecordingOfflineCode(null);
+    }
+  };
+
+  const handleSubmitManualOfflineOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!offlineForm.hoTen.trim() || isSubmittingOfflineForm) return;
+    setIsSubmittingOfflineForm(true);
+    try {
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
+      const res = await fetch('/api/admin/record-offline-purchase', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          hoTen: offlineForm.hoTen.trim(),
+          email: offlineForm.email.trim() || undefined,
+          phone: offlineForm.phone.trim() || undefined,
+          paymentType: offlineForm.paymentType,
+          amount: Number(offlineForm.amount) || (offlineForm.paymentType === 'offline_1on1' ? 2000000 : 1730000),
+          sendCustomerEmail: offlineForm.sendCustomerEmail,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const attr = data.matchedAttribution || {};
+        alert(
+          `✅ Đã tạo đơn Offline 1-1 (${Number(data.order?.amount || 0).toLocaleString('vi-VN')}đ) — Mã: ${data.order?.orderCode}\n• Meta CAPI Purchase: ${data.capiSent ? 'ĐÃ BẮN' : 'Chưa gửi'}\n• Khớp Ads: fbc=${attr.hasFbc ? 'Có' : 'Không'}, fbp=${attr.hasFbp ? 'Có' : 'Không'}, email=${attr.hasEmail ? 'Có' : 'Không'}, phone=${attr.hasPhone ? 'Có' : 'Không'}`
+        );
+        setShowOfflineModal(false);
+        setOfflineForm({
+          hoTen: '',
+          email: '',
+          phone: '',
+          paymentType: 'offline_1on1',
+          amount: '2000000',
+          sendCustomerEmail: true,
+        });
+        onRefresh();
+      } else {
+        alert(`⚠️ ${data.error || 'Không thể ghi nhận đơn'}`);
+      }
+    } catch (err: any) {
+      alert(`Lỗi: ${err?.message || err}`);
+    } finally {
+      setIsSubmittingOfflineForm(false);
+    }
+  };
+
   // Xử lý đổi trạng thái đơn hàng (Hủy đơn / Khôi phục) từ Admin
   const handleUpdateOrderStatus = async (orderCode: string, newStatus: 'PENDING' | 'CANCELLED') => {
     const isCancel = newStatus === 'CANCELLED';
@@ -540,15 +639,27 @@ export default function AdminTransactionsTable({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={isLoading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-amber-400' : ''}`} />
-          <span>Làm mới</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowOfflineModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-purple-500/20 hover:from-amber-500/30 hover:to-purple-500/30 text-amber-200 rounded-xl text-xs font-bold border border-amber-400/45 transition cursor-pointer"
+            title="Ghi nhận khách chốt Xem Trực Tiếp 1-1 qua Zalo & bắn ngược doanh thu về Meta Ads CAPI"
+          >
+            <Gem className="w-3.5 h-3.5 text-amber-400" />
+            <span>+ Ghi Nhận 1-1 (CAPI)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-amber-400' : ''}`} />
+            <span>Làm mới</span>
+          </button>
+        </div>
       </div>
 
       {/* Khung tìm kiếm & Bộ lọc */}
@@ -731,7 +842,9 @@ export default function AdminTransactionsTable({
                         : '—';
 
                       let serviceLabel = 'Luận Giải VIP (119k)';
-                      if (ord.paymentType === 'course_tuvi') serviceLabel = '🎓 Khóa Học Tử Vi (699k)';
+                      if (ord.paymentType === 'upgrade_offline_1on1') serviceLabel = '👑 Xem 1-1 (Trừ 269k → 1.730k)';
+                      else if (ord.paymentType === 'offline_1on1') serviceLabel = '👑 Xem Trực Tiếp 1-1 (2.000k)';
+                      else if (ord.paymentType === 'course_tuvi') serviceLabel = '🎓 Khóa Học Tử Vi (699k)';
                       else if (ord.paymentType === 'reading_expert') serviceLabel = '💎 Luận Giải Expert (269k)';
                       else if (ord.paymentType === 'upgrade_expert') serviceLabel = '💎 Nâng Cấp Pro -> Expert (150k)';
                       else if (ord.paymentType === 'chat_expert') serviceLabel = '💎 Hỏi Thầy Expert (129k)';
@@ -819,6 +932,20 @@ export default function AdminTransactionsTable({
                                       <CheckCircle2 className="w-3.5 h-3.5" />
                                       <span>{ord.amount === 0 ? 'Đã tặng' : 'Tự động xong'}</span>
                                     </span>
+                                  )}
+                                  {(ord.paymentType === 'reading_expert' || ord.paymentType === 'upgrade_expert') && ord.amount > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRecordOfflineUpgradeFromOrder(ord)}
+                                      disabled={recordingOfflineCode === ord.orderCode}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/35 text-amber-200 border border-amber-400/45 rounded-lg text-[11px] font-bold transition disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                                      title="Khách này đã chuyển thêm 1.730.000đ qua Zalo để xem Offline 1-1? Bấm để ghi doanh thu & bắn Offline Purchase về Meta CAPI!"
+                                    >
+                                      <Gem className="w-3 h-3 text-amber-300 shrink-0" />
+                                      <span>
+                                        {recordingOfflineCode === ord.orderCode ? 'Đang bắn...' : '+1.730k 1-1'}
+                                      </span>
+                                    </button>
                                   )}
                                   <button
                                     type="button"
@@ -1325,6 +1452,124 @@ export default function AdminTransactionsTable({
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Ghi Nhận Đơn Xem 1-1 Offline / Zalo Thủ Công & Bắn Meta CAPI */}
+      {showOfflineModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-slate-900 border border-amber-500/45 rounded-2xl shadow-2xl overflow-hidden text-slate-100">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-950/60 to-slate-900">
+              <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
+                <Gem className="w-4 h-4 text-amber-400" />
+                <span>Ghi Nhận Chốt Xem 1-1 Offline &amp; Bắn Meta CAPI</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowOfflineModal(false)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmitManualOfflineOrder} className="p-4 space-y-3 text-xs">
+              <p className="text-slate-400 leading-relaxed">
+                Dùng khi khách chuyển khoản tay qua Zalo để xem 1-1. Hệ thống sẽ tạo đơn <strong className="text-emerald-400">PAID</strong>, tự đối chiếu lại <code className="text-amber-300">fbp/fbc</code> cũ theo email và bắn <strong className="text-amber-300">Offline Purchase</strong> về Meta Ads CAPI.
+              </p>
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Gói dịch vụ 1-1 *</label>
+                <select
+                  value={offlineForm.paymentType}
+                  onChange={(e) => {
+                    const nextType = e.target.value as 'upgrade_offline_1on1' | 'offline_1on1';
+                    setOfflineForm((prev) => ({
+                      ...prev,
+                      paymentType: nextType,
+                      amount: nextType === 'upgrade_offline_1on1' ? '1730000' : '2000000',
+                    }));
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100"
+                >
+                  <option value="upgrade_offline_1on1">Nâng cấp từ Expert 269k → Đóng thêm 1.730.000đ</option>
+                  <option value="offline_1on1">Xem Trực Tiếp 1-1 giá niêm yết (2.000.000đ)</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Họ tên khách *</label>
+                  <input
+                    type="text"
+                    required
+                    value={offlineForm.hoTen}
+                    onChange={(e) => setOfflineForm((prev) => ({ ...prev, hoTen: e.target.value }))}
+                    placeholder="VD: Nguyễn Văn A"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Số tiền thực thu (VNĐ) *</label>
+                  <input
+                    type="number"
+                    required
+                    min={100000}
+                    step={1000}
+                    value={offlineForm.amount}
+                    onChange={(e) => setOfflineForm((prev) => ({ ...prev, amount: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-emerald-300 font-mono font-bold"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Email khách (khớp CAPI)</label>
+                  <input
+                    type="email"
+                    value={offlineForm.email}
+                    onChange={(e) => setOfflineForm((prev) => ({ ...prev, email: e.target.value }))}
+                    placeholder="khach@gmail.com"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">SĐT / Zalo (khớp CAPI)</label>
+                  <input
+                    type="text"
+                    value={offlineForm.phone}
+                    onChange={(e) => setOfflineForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    placeholder="09xxxxxxxx"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100"
+                  />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={offlineForm.sendCustomerEmail}
+                  onChange={(e) =>
+                    setOfflineForm((prev) => ({ ...prev, sendCustomerEmail: e.target.checked }))
+                  }
+                  className="rounded border-slate-600"
+                />
+                <span>Gửi email xác nhận lịch hẹn 1-1 cho khách (nếu có email)</span>
+              </label>
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowOfflineModal(false)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingOfflineForm}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmittingOfflineForm ? 'Đang ghi nhận...' : 'Xác Nhận & Bắn CAPI'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

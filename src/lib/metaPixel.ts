@@ -41,24 +41,103 @@ export function trackMetaCustomEvent(eventName: string, params?: Record<string, 
   }
 }
 
-export function trackCompleteRegistration(method: string = 'email', hasPhone: boolean = false) {
-  trackMetaEvent('CompleteRegistration', {
-    content_name: 'Tao Tai Khoan Tu Vi Thay Ton',
-    status: 'completed',
-    registration_method: method,
-    has_phone: hasPhone,
-  });
+function makeClientEventId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function sendClientCapiBeacon(payload: {
+  eventName: 'CompleteRegistration' | 'Lead' | 'Contact';
+  eventId: string;
+  value?: number;
+  currency?: string;
+  contentName?: string;
+  contentCategory?: string;
+  email?: string;
+  phone?: string;
+  fullName?: string;
+  userId?: string;
+}) {
+  if (typeof window === 'undefined') return;
+  try {
+    const attr = getBrowserMetaAttribution();
+    const body = JSON.stringify({
+      ...payload,
+      fbp: attr.fbp,
+      fbc: attr.fbc,
+      fbclid: attr.fbclid,
+      sourceUrl: attr.sourceUrl,
+    });
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      const blob = new Blob([body], { type: 'application/json' });
+      navigator.sendBeacon('/api/meta/capi-event', blob);
+      return;
+    }
+    fetch('/api/meta/capi-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // ignore beacon errors
+  }
+}
+
+export function trackCompleteRegistration(
+  method: string = 'email',
+  hasPhone: boolean = false,
+  userInfo?: { email?: string; phone?: string; fullName?: string; userId?: string }
+) {
+  const regEventId = makeClientEventId('reg');
+  const leadEventId = makeClientEventId('lead');
+
+  trackMetaEvent(
+    'CompleteRegistration',
+    {
+      content_name: 'Tao Tai Khoan Tu Vi Thay Ton',
+      status: 'completed',
+      registration_method: method,
+      has_phone: hasPhone,
+    },
+    regEventId
+  );
   // Khi thu được thông tin liên hệ (Email / SĐT) lúc đăng ký tài khoản thì mới tính là 1 Lead chuẩn CRM
-  trackMetaEvent('Lead', {
-    content_name: 'Thu Thap Contact Tai Khoan',
-    registration_method: method,
-    has_phone: hasPhone,
-  });
+  trackMetaEvent(
+    'Lead',
+    {
+      content_name: 'Thu Thap Contact Tai Khoan',
+      registration_method: method,
+      has_phone: hasPhone,
+    },
+    leadEventId
+  );
   trackMetaCustomEvent('TaoTaiKhoan', {
     registration_method: method,
     has_phone: hasPhone,
   });
   trackGa4SignUp(method, hasPhone);
+
+  // Song song gửi Server-Side CAPI (khử trùng lặp qua eventID) để chống rơi event trên iOS/Facebook Browser
+  sendClientCapiBeacon({
+    eventName: 'CompleteRegistration',
+    eventId: regEventId,
+    contentName: 'Tao Tai Khoan Tu Vi Thay Ton',
+    contentCategory: method,
+    email: userInfo?.email,
+    phone: userInfo?.phone,
+    fullName: userInfo?.fullName,
+    userId: userInfo?.userId,
+  });
+  sendClientCapiBeacon({
+    eventName: 'Lead',
+    eventId: leadEventId,
+    contentName: 'Thu Thap Contact Tai Khoan',
+    contentCategory: method,
+    email: userInfo?.email,
+    phone: userInfo?.phone,
+    fullName: userInfo?.fullName,
+    userId: userInfo?.userId,
+  });
 }
 
 export function trackLeadChart(hoTen: string, tier: string, namDuong?: number, gioiTinh?: string) {
@@ -180,13 +259,40 @@ export function trackPurchase(paymentType: string, price: number, orderCode?: st
   );
 }
 
-export function trackContact(channel: 'phone' | 'zalo', location?: string) {
-  trackMetaEvent('Contact', {
-    content_name: channel === 'zalo' ? 'Nhan Tin Zalo 0935058688' : 'Goi Dien Dat Lich 0935058688',
-    content_category: location || 'website',
-    contact_channel: channel,
-  });
+export function trackContact(
+  channel: 'phone' | 'zalo',
+  location?: string,
+  options?: { value?: number; email?: string; phone?: string; fullName?: string; userId?: string }
+) {
+  const contactEventId = makeClientEventId('cnt');
+  const contentName =
+    channel === 'zalo' ? 'Nhan Tin Zalo 0935058688' : 'Goi Dien Dat Lich 0935058688';
+  const value = typeof options?.value === 'number' && options.value > 0 ? options.value : undefined;
+
+  trackMetaEvent(
+    'Contact',
+    {
+      content_name: contentName,
+      content_category: location || 'website',
+      contact_channel: channel,
+      ...(value ? { value, currency: 'VND' } : {}),
+    },
+    contactEventId
+  );
   trackGa4Contact(channel, location);
+
+  sendClientCapiBeacon({
+    eventName: 'Contact',
+    eventId: contactEventId,
+    value,
+    currency: value ? 'VND' : undefined,
+    contentName,
+    contentCategory: location || 'website',
+    email: options?.email,
+    phone: options?.phone,
+    fullName: options?.fullName,
+    userId: options?.userId,
+  });
 }
 
 export function trackViewCourse() {

@@ -16,15 +16,15 @@ export default function RouteTracker() {
   const { user } = useAuth();
   const isFirstMount = useRef(true);
 
-  // Capture ?ref= globally across all pages
+  // Capture ?ref= or ?aff= globally across all pages
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       const params = new URLSearchParams(window.location.search);
-      const rawRef = params.get('ref');
+      const rawRef = params.get('ref') || params.get('aff');
       if (rawRef) {
-        const cleanRef = rawRef.trim().toUpperCase();
-        if (/^[A-Z0-9_-]{2,20}$/.test(cleanRef)) {
+        const cleanRef = rawRef.trim().toLowerCase();
+        if (/^[a-z0-9_-]{2,20}$/.test(cleanRef)) {
           localStorage.setItem('tuvi_affiliate_ref', cleanRef);
           localStorage.setItem('tuvi_affiliate_time', String(Date.now()));
           const sessionKey = `tuvi_ref_tracked_${cleanRef}`;
@@ -33,7 +33,7 @@ export default function RouteTracker() {
             fetch('/api/affiliate/track-click', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code: cleanRef }),
+              body: JSON.stringify({ ref: cleanRef }),
             }).catch(() => {});
           }
         }

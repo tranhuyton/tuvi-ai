@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getOrderByCode, markOrderPaidAtomic } from '@/lib/orderStore';
-import { sendPaymentSuccessEmail } from '@/lib/email';
+import { sendPaymentSuccessEmail, sendOfflineBookingAdminAlert } from '@/lib/email';
 import { adminSupabase as supabase } from '@/lib/supabaseAdmin';
 import { markVoucherUsedAndCancelAllForUser } from '@/lib/voucherStore';
 import { decodeOrderCapiMeta, sendMetaCapiEvent } from '@/lib/metaCapi';
@@ -253,7 +253,11 @@ export async function POST(req: Request) {
         console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong DB, khởi tạo bản ghi đối soát`);
         const { createOrder } = await import('@/lib/orderStore');
         const pType =
-          tx.amount >= 699000
+          tx.amount >= 1950000
+            ? 'offline_1on1'
+            : tx.amount >= 1700000
+            ? 'upgrade_offline_1on1'
+            : tx.amount >= 699000
             ? 'course_tuvi'
             : tx.amount >= 269000
             ? 'reading_expert'
@@ -370,92 +374,95 @@ export async function POST(req: Request) {
         }
       }
 
-      // Nâng cấp lá số & quota câu hỏi
-      try {
-        let targetChartId = order.chartId;
-        if (!targetChartId && order.userId && order.hoTen) {
-          const { data: userCharts } = await supabase
-            .from('tuvi_charts')
-            .select('id, duong_so_data, laso_data')
-            .eq('user_id', order.userId);
-          const matched = (userCharts || []).find(
-            (c) =>
-              String(c.duong_so_data?.hoTen || '').trim().toLowerCase() ===
-              order.hoTen.trim().toLowerCase()
-          );
-          if (matched) {
-            targetChartId = matched.id;
-            order.chartId = matched.id;
-            await supabase.from('tuvi_orders').update({ chart_id: matched.id }).eq('order_code', order.orderCode);
-          }
-        }
-
-        if (targetChartId) {
-          const { data: chartData } = await supabase
-            .from('tuvi_charts')
-            .select('duong_so_data, laso_data')
-            .eq('id', targetChartId)
-            .maybeSingle();
-
-          if (chartData) {
-            const prevQuota = chartData.laso_data?.quota || {
-              basicAllowed: 0,
-              proAllowed: 0,
-              expertAllowed: 0,
-            };
-            const nextQuota = {
-              basicAllowed: Number(prevQuota.basicAllowed || 0),
-              proAllowed: Number(prevQuota.proAllowed || 0),
-              expertAllowed: Number(prevQuota.expertAllowed || 0),
-            };
-
-            let targetTier = chartData.duong_so_data?.tier || chartData.laso_data?.tier || 'free';
-            let needsReadingUpgrade = Boolean(chartData.laso_data?.needsReadingUpgrade);
-
-            if (order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert') {
-              if (targetTier !== 'expert') {
-                needsReadingUpgrade = true;
-              }
-              targetTier = 'expert';
-              nextQuota.expertAllowed += 2;
-            } else if (order.paymentType === 'reading_vip') {
-              if (targetTier === 'free') {
-                targetTier = 'pro';
-                needsReadingUpgrade = true;
-              }
-              nextQuota.proAllowed += 2;
-            } else if (order.paymentType === 'chat_expert') {
-              nextQuota.expertAllowed += 2;
-            } else if (order.paymentType === 'chat_vip') {
-              nextQuota.proAllowed += 2;
-            } else if (order.paymentType === 'chat_free') {
-              nextQuota.basicAllowed += 2;
-            }
-
-            const updatedDuongSo = { ...chartData.duong_so_data, tier: targetTier };
-            const updatedLaSo = {
-              ...chartData.laso_data,
-              tier: targetTier,
-              quota: nextQuota,
-              needsReadingUpgrade,
-            };
-            await supabase
+      // Nâng cấp lá số & quota câu hỏi (bỏ qua với đơn đặt lịch xem trực tiếp 1-1 vì lá số Expert đã có sẵn)
+      const isOfflineBookingOrder =
+        order.paymentType === 'upgrade_offline_1on1' || order.paymentType === 'offline_1on1';
+      if (!isOfflineBookingOrder) {
+        try {
+          let targetChartId = order.chartId;
+          if (!targetChartId && order.userId && order.hoTen) {
+            const { data: userCharts } = await supabase
               .from('tuvi_charts')
-              .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
-              .eq('id', targetChartId);
+              .select('id, duong_so_data, laso_data')
+              .eq('user_id', order.userId);
+            const matched = (userCharts || []).find(
+              (c) =>
+                String(c.duong_so_data?.hoTen || '').trim().toLowerCase() ===
+                order.hoTen.trim().toLowerCase()
+            );
+            if (matched) {
+              targetChartId = matched.id;
+              order.chartId = matched.id;
+              await supabase.from('tuvi_orders').update({ chart_id: matched.id }).eq('order_code', order.orderCode);
+            }
           }
+
+          if (targetChartId) {
+            const { data: chartData } = await supabase
+              .from('tuvi_charts')
+              .select('duong_so_data, laso_data')
+              .eq('id', targetChartId)
+              .maybeSingle();
+
+            if (chartData) {
+              const prevQuota = chartData.laso_data?.quota || {
+                basicAllowed: 0,
+                proAllowed: 0,
+                expertAllowed: 0,
+              };
+              const nextQuota = {
+                basicAllowed: Number(prevQuota.basicAllowed || 0),
+                proAllowed: Number(prevQuota.proAllowed || 0),
+                expertAllowed: Number(prevQuota.expertAllowed || 0),
+              };
+
+              let targetTier = chartData.duong_so_data?.tier || chartData.laso_data?.tier || 'free';
+              let needsReadingUpgrade = Boolean(chartData.laso_data?.needsReadingUpgrade);
+
+              if (order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert') {
+                if (targetTier !== 'expert') {
+                  needsReadingUpgrade = true;
+                }
+                targetTier = 'expert';
+                nextQuota.expertAllowed += 2;
+              } else if (order.paymentType === 'reading_vip') {
+                if (targetTier === 'free') {
+                  targetTier = 'pro';
+                  needsReadingUpgrade = true;
+                }
+                nextQuota.proAllowed += 2;
+              } else if (order.paymentType === 'chat_expert') {
+                nextQuota.expertAllowed += 2;
+              } else if (order.paymentType === 'chat_vip') {
+                nextQuota.proAllowed += 2;
+              } else if (order.paymentType === 'chat_free') {
+                nextQuota.basicAllowed += 2;
+              }
+
+              const updatedDuongSo = { ...chartData.duong_so_data, tier: targetTier };
+              const updatedLaSo = {
+                ...chartData.laso_data,
+                tier: targetTier,
+                quota: nextQuota,
+                needsReadingUpgrade,
+              };
+              await supabase
+                .from('tuvi_charts')
+                .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
+                .eq('id', targetChartId);
+            }
+          }
+        } catch (e) {
+          console.warn('[PAYMENT WEBHOOK] Không thể cập nhật chart:', e);
         }
-      } catch (e) {
-        console.warn('[PAYMENT WEBHOOK] Không thể cập nhật chart:', e);
       }
 
       // Bắn sự kiện Purchase qua Meta CAPI & GA4 Measurement Protocol (Server-Side)
       let capiSent = false;
       let ga4Sent = false;
+      let resolvedEmail: string | null = order.email || null;
+      let resolvedPhone: string | null = null;
       try {
-        let resolvedEmail = order.email || null;
-        let resolvedPhone: string | null = null;
-
         if (order.userId) {
           const [userRes, profRes] = await Promise.all([
             supabase.auth.admin.getUserById(order.userId).catch(() => ({ data: { user: null } })),
@@ -528,6 +535,22 @@ export async function POST(req: Request) {
           paymentType: order.paymentType,
           paidAt: new Date().toISOString(),
           hasExpertReading,
+        });
+      }
+
+      // Nếu là đơn đặt lịch Xem Trực Tiếp 1-1 (1.730k / 2.000k) -> Gửi ngay email báo Thầy Tôn xếp lịch
+      if (isOfflineBookingOrder) {
+        sendOfflineBookingAdminAlert({
+          customerName: order.hoTen,
+          customerEmail: resolvedEmail || order.email,
+          customerPhone: resolvedPhone,
+          orderCode: order.orderCode,
+          amount: order.amount,
+          paymentType: order.paymentType,
+          chartId: order.chartId,
+          paidAt: new Date().toISOString(),
+        }).catch((alertErr) => {
+          console.warn('[PAYMENT WEBHOOK] Lỗi gửi cảnh báo lịch 1-1 cho Admin:', alertErr);
         });
       }
 

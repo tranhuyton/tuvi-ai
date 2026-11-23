@@ -22,9 +22,9 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/thay-ton.png',
-        width: 800,
-        height: 800,
+        url: '/og-banner.jpg',
+        width: 1200,
+        height: 630,
         alt: 'Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn',
       },
     ],
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     title: 'Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast & Giáo Trình) | Thầy Tôn',
     description:
       '24 bài giảng Podcast & giáo trình tương tác về 14 Chính Tinh, Phụ Tinh, Tứ Hóa, 4 Cách Cục lớn và quy trình 5 bước chấm hạn năm.',
-    images: ['/thay-ton.png'],
+    images: ['/og-banner.jpg'],
   },
 };
 

@@ -45,7 +45,8 @@ const HERO_I18N = {
     proDesc: 'Luận chi tiết 3 cung Vận Hạn & 4 mùa (~2.500 từ) + Soi Mặt & Chỉ tay + 🎁 Tặng 02 câu hỏi VIP.',
     expTitle: 'Bản Đại Tông Sư Expert (12 Cung)',
     expPrice: '269.000đ',
-    expDesc: 'Tuyệt phẩm ~5.000 từ mổ xẻ đủ 12 Cung + Bản đồ chi tiết từng tháng (Tháng 1–12 Âm lịch) + 🎁 Tặng 02 câu hỏi Chuyên Gia.',
+    expDesc:
+      'Tuyệt phẩm ~5.000 từ mổ xẻ đủ 12 Cung + Lưu Nguyệt 12 tháng + 🎁 Tặng 02 câu hỏi Chuyên Gia + 💎 Khấu trừ trọn 269k nếu xem trực tiếp 1-1 (chỉ đóng thêm 1.730k).',
   },
   en: {
     badge1: '3-Layer Annual Transit Decoding (2026 – 2027)',
@@ -76,7 +77,8 @@ const HERO_I18N = {
     proDesc: 'Detailed 3-Palace Annual Transit & 4-Season forecast (~2,500 words) + Face & Palm analysis + 🎁 02 VIP AI questions.',
     expTitle: 'Grandmaster Expert Reading (12 Palaces)',
     expPrice: '269,000 VND',
-    expDesc: 'Comprehensive ~5,000-word breakdown of all 12 Palaces + Month-by-month roadmap (Lunar Months 1–12) + 🎁 02 Expert AI questions.',
+    expDesc:
+      'Comprehensive ~5,000-word breakdown of all 12 Palaces + 12-month lunar roadmap + 🎁 02 Expert questions + 💎 Full 269k credit toward a 1-on-1 consultation (pay only +1,730k VND).',
   },
   zh: {
     badge1: '2026 – 2027 三重流年运限精批',
@@ -173,9 +175,14 @@ const HERO_I18N = {
   },
 };
 
-export default function VanHanLandingHero() {
+export default function VanHanLandingHero({
+  headingTag = 'h1',
+}: {
+  headingTag?: 'h1' | 'h2';
+} = {}) {
   const { language } = useLanguage();
   const c = HERO_I18N[language] || HERO_I18N.vi;
+  const HeadingTag = headingTag;
 
   const scrollToForm = () => {
     const el = document.getElementById('lap-la-so');
@@ -205,11 +212,11 @@ export default function VanHanLandingHero() {
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold font-serif text-white leading-snug">
+              <HeadingTag className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold font-serif text-white leading-snug">
                 {c.h1Part1}
                 <span className="text-amber-400">2026 – 2027</span>
                 {c.h1Part2}
-              </h1>
+              </HeadingTag>
 
               <p
                 className="text-sm sm:text-base text-slate-200 leading-relaxed"

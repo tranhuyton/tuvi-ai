@@ -68,10 +68,10 @@ export const metadata: Metadata = {
       'Trải nghiệm miễn phí hệ thống An sao Tử Vi 108 tinh đẩu chuẩn cổ truyền & Bình giải Mệnh lý thực chứng từ Thầy Tôn (Trần Huy Tôn). Tư vấn Phong Thủy Dương Trạch nhà ở, biệt thự, chung cư, văn phòng, xem ngày giờ tốt kết hợp Diện Tướng & Chỉ Tay.',
     images: [
       {
-        url: 'https://www.tuvithayton.vn/thay-ton.png',
-        width: 800,
-        height: 800,
-        alt: 'Thầy Tôn (Trần Huy Tôn) — Tử Vi & Phong Thủy Thực Chứng',
+        url: 'https://www.tuvithayton.vn/og-banner.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Thầy Tôn (Trần Huy Tôn) — Tử Vi Đẩu Số 108 Sao & Phong Thủy Thực Chứng',
       },
     ],
   },
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
     title: 'Tử Vi & Phong Thủy Thầy Tôn — An Sao & Bình Giải Tử Vi Miễn Phí',
     description:
       'An sao 108 tinh đẩu & Bình giải Tử Vi miễn phí kết hợp Phong Thủy Thực Chứng, Diện Tướng & Chỉ Tay từ Thầy Tôn (Trần Huy Tôn).',
-    images: ['https://www.tuvithayton.vn/thay-ton.png'],
+    images: ['https://www.tuvithayton.vn/og-banner.jpg'],
   },
   robots: {
     index: true,
@@ -116,8 +116,9 @@ const seoGeoJsonLd = {
       '@id': 'https://www.tuvithayton.vn/#thayton',
       name: 'Trần Huy Tôn',
       alternateName: ['Thầy Tôn', 'Master Ton', 'Tony Tran'],
-      jobTitle:
-        'Chuyên Gia Tử Vi Đẩu Số & Phong Thủy Thực Chứng | Giảng Viên IELTS, Giao Tiếp & Các Môn Học Thuật Quốc Tế IGCSE (Toán, Khoa Học, Kinh Tế, Kinh Doanh, Địa Lý)',
+      jobTitle: 'Chuyên Gia Tử Vi Đẩu Số & Phong Thủy Thực Chứng',
+      description:
+        'Chuyên gia Tử Vi Đẩu Số, Tướng Pháp & Phong Thủy Thực Chứng với hơn 18 năm nghiên cứu; Cựu học sinh Chuyên Toán-Tin ĐH Tổng Hợp Hà Nội, Thạc sĩ Tài chính Kế toán ĐH Lancaster (Top 5 UK) và nhà sáng lập TonyEnglish.vn.',
       alumniOf: [
         {
           '@type': 'CollegeOrUniversity',
