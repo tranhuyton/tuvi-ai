@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import RouteTracker from '@/components/RouteTracker';
 
 const beVietnam = Be_Vietnam_Pro({
-  weight: ['400', '600', '700', '800'],
+  weight: ['400', '500', '600', '700', '800'],
   subsets: ['latin', 'vietnamese'],
   variable: '--font-be-vietnam',
   display: 'swap',

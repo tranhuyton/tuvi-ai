@@ -213,14 +213,21 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
       const htmlToImage = await import('html-to-image');
       if (boardInnerRef.current) {
         const node = boardInnerRef.current;
+        if (typeof document !== 'undefined' && document.fonts?.ready) {
+          try {
+            await document.fonts.ready;
+          } catch {}
+        }
         const fullHeight = node.scrollHeight || node.offsetHeight || boardHeight;
 
-        // Chụp toàn bộ 100% lá số với độ phân giải cao sắc nét (2x)
+        // Chụp toàn bộ 100% lá số với độ phân giải cao sắc nét (2x), ẩn các nút thao tác (VD: [Đổi năm])
         const dataUrl = await htmlToImage.toPng(node, {
           quality: 0.98,
           pixelRatio: 2,
           width: 760,
           height: fullHeight,
+          backgroundColor: '#ffffff',
+          filter: (el) => !(el instanceof HTMLElement && el.dataset?.exportIgnore === 'true'),
           style: {
             transform: 'none',
             width: '760px',
@@ -402,7 +409,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
 
             {/* Thiên Bàn (Trung tâm 2x2) */}
             <div
-              className="bg-white flex relative z-0 select-none font-sans text-black overflow-hidden"
+              className="bg-white relative z-0 select-none font-sans text-black overflow-hidden"
               style={{
                 gridColumn: '2 / 4',
                 gridRow: '2 / 4',
@@ -446,12 +453,14 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                 />
               </svg>
 
-              {/* Cột thông tin đương số (Nằm đè lên trên đường kẻ: relative z-10) */}
-              <div className="relative z-10 w-full text-[11px] sm:text-[12px] leading-snug text-black">
+              {/* Cột thông tin đương số (Nằm đè lên trên đường kẻ: relative z-10)
+                  LƯU Ý: Dùng kích thước cột cố định (shrink-0 whitespace-nowrap) và flex-1 whitespace-nowrap cho mọi giá trị
+                  để khi html-to-image sao chép getComputedStyle vào SVG foreignObject không bị bóp width gây xuống dòng đè chữ! */}
+              <div className="relative z-10 w-full text-[12px] leading-[1.45] text-black">
                 {/* Họ tên */}
-                <div className="flex items-baseline mb-1.5 sm:mb-2">
-                  <span className="w-16 sm:w-18 text-black">{t('chart.fullName', 'Họ tên:')}</span>
-                  <span className="text-[#003399] font-bold text-sm sm:text-[15px] tracking-wide">
+                <div className="flex items-baseline mb-2">
+                  <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.fullName', 'Họ tên:')}</span>
+                  <span className="flex-1 min-w-0 text-[#003399] font-bold text-[15px] tracking-wide">
                     {duongSo.hoTen}
                   </span>
                 </div>
@@ -459,60 +468,61 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                 {/* Bảng Năm - Tháng - Ngày - Giờ */}
                 <div className="space-y-0.5">
                   <div className="flex items-baseline text-[10px] text-gray-500 font-semibold border-b border-gray-200/80 pb-0.5 mb-0.5">
-                    <span className="w-16 sm:w-18"></span>
-                    <span className="w-12 sm:w-14">{t('chart.solarShort', 'Dương')}</span>
-                    <span className="w-10 sm:w-12">{t('chart.lunarShort', 'Âm')}</span>
-                    <span>{t('chart.canChiHeader', 'Can Chi')}</span>
+                    <span className="w-[74px] shrink-0"></span>
+                    <span className="w-[54px] shrink-0 whitespace-nowrap">{t('chart.solarShort', 'Dương')}</span>
+                    <span className="w-[46px] shrink-0 whitespace-nowrap">{t('chart.lunarShort', 'Âm')}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap">{t('chart.canChiHeader', 'Can Chi')}</span>
                   </div>
 
                   {/* Năm */}
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.year', 'Năm:')}</span>
-                    <span className="w-12 sm:w-14 font-medium">{duongSo.namDuong}</span>
-                    <span className="w-10 sm:w-12 text-black">{amLich.namAm}</span>
-                    <span className="text-[#003399] font-bold">{tCanChi(namCanChi)}</span>
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.year', 'Năm:')}</span>
+                    <span className="w-[54px] shrink-0 whitespace-nowrap font-medium">{duongSo.namDuong}</span>
+                    <span className="w-[46px] shrink-0 whitespace-nowrap text-black">{amLich.namAm}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tCanChi(namCanChi)}</span>
                   </div>
 
                   {/* Tháng */}
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.month', 'Tháng:')}</span>
-                    <span className="w-12 sm:w-14 font-medium">{duongSo.thangDuong}</span>
-                    <span className="w-10 sm:w-12 text-black">
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.month', 'Tháng:')}</span>
+                    <span className="w-[54px] shrink-0 whitespace-nowrap font-medium">{duongSo.thangDuong}</span>
+                    <span className="w-[46px] shrink-0 whitespace-nowrap text-black">
                       {amLich.thangAmGoc}
                       {amLich.isLeap ? ` ${t('chart.leapShort', '(N)')}` : ''}
                     </span>
-                    <span className="text-[#003399] font-bold">{tCanChi(thangCanChi)}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tCanChi(thangCanChi)}</span>
                   </div>
 
                   {/* Ngày */}
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.day', 'Ngày:')}</span>
-                    <span className="w-12 sm:w-14 font-medium">{duongSo.ngayDuong}</span>
-                    <span className="w-10 sm:w-12 text-black">{amLich.ngayAm}</span>
-                    <span className="text-[#003399] font-bold">{tCanChi(ngayCanChi)}</span>
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.day', 'Ngày:')}</span>
+                    <span className="w-[54px] shrink-0 whitespace-nowrap font-medium">{duongSo.ngayDuong}</span>
+                    <span className="w-[46px] shrink-0 whitespace-nowrap text-black">{amLich.ngayAm}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tCanChi(ngayCanChi)}</span>
                   </div>
 
                   {/* Giờ */}
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.hour', 'Giờ:')}</span>
-                    <span className="w-22 sm:w-26 font-medium truncate pr-1">{gioText}</span>
-                    <span className="text-[#003399] font-bold">{tCanChi(gioCanChi)}</span>
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.hour', 'Giờ:')}</span>
+                    <span className="w-[100px] shrink-0 whitespace-nowrap font-medium truncate pr-1">{gioText}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tCanChi(gioCanChi)}</span>
                   </div>
                 </div>
 
                 {/* Năm xem & Tuổi */}
                 <div className="mt-2 space-y-0.5">
-                  <div className="flex items-baseline justify-between">
-                    <div className="flex items-baseline">
-                      <span className="w-16 sm:w-18 text-black">{t('chart.viewYear', 'Năm xem:')}</span>
-                      <span className="w-20 sm:w-22 font-medium">{namXem}</span>
-                      <span className="text-[#003399] font-bold">{tCanChi(namXemCanChi)}</span>
+                  <div className="flex items-baseline justify-between gap-1">
+                    <div className="flex items-baseline flex-1 min-w-0">
+                      <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.viewYear', 'Năm xem:')}</span>
+                      <span className="w-[100px] shrink-0 whitespace-nowrap font-medium">{namXem}</span>
+                      <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tCanChi(namXemCanChi)}</span>
                     </div>
                     {onEdit && (
                       <button
                         type="button"
+                        data-export-ignore="true"
                         onClick={onEdit}
-                        className="print:hidden text-[10px] text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer ml-1"
+                        className="print:hidden shrink-0 whitespace-nowrap text-[10px] text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer ml-1"
                         title={t('chart.editChartBtn', 'Đổi năm xem để an lại lá số và bình giải nguyệt vận')}
                       >
                         {t('chart.changeYearBtn', '[Đổi năm]')}
@@ -520,9 +530,9 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                     )}
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18"></span>
-                    <span className="w-20 sm:w-22"></span>
-                    <span className="text-[#003399] font-bold">
+                    <span className="w-[74px] shrink-0"></span>
+                    <span className="w-[100px] shrink-0"></span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">
                       {tuoiAmXem} {t('chart.ageUnit', 'tuổi')}
                     </span>
                   </div>
@@ -531,50 +541,47 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
                 {/* Âm Dương */}
                 <div className="mt-2 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.yinYang', 'Âm Dương:')}</span>
-                    <span className="text-[#003399] font-bold">{tAmDuong(amDuongTxt)}</span>
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.yinYang', 'Âm Dương:')}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tAmDuong(amDuongTxt)}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18"></span>
-                    <span className="text-[#003399] font-bold">{tThuanNghich(thuanNghichLy)}</span>
+                    <span className="w-[74px] shrink-0"></span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tThuanNghich(thuanNghichLy)}</span>
                   </div>
                 </div>
 
                 {/* Mệnh & Cục */}
                 <div className="mt-1.5 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.menh', 'Mệnh:')}</span>
-                    <span className="text-[#003399] font-bold">{tNapAm(napAmMenh || banMenh)}</span>
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.menh', 'Mệnh:')}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tNapAm(napAmMenh || banMenh)}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.cuc', 'Cục:')}</span>
-                    <span className="text-[#003399] font-bold">{tTenCuc(tenCuc)}</span>
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.cuc', 'Cục:')}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tTenCuc(tenCuc)}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18"></span>
-                    <span className="text-[#003399] font-bold">{tSinhKhac(sinhKhac)}</span>
+                    <span className="w-[74px] shrink-0"></span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tSinhKhac(sinhKhac)}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18"></span>
-                    <span className="text-[#003399] font-bold">{tThanCu(thanCuName)}</span>
+                    <span className="w-[74px] shrink-0"></span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tThanCu(thanCuName)}</span>
                   </div>
                 </div>
 
                 {/* Mệnh chủ & Thân chủ */}
                 <div className="mt-2 space-y-0.5">
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.menhChu', 'Mệnh chủ:')}</span>
-                    <span className="text-[#003399] font-bold">{tStar(menhChu)}</span>
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.menhChu', 'Mệnh chủ:')}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tStar(menhChu)}</span>
                   </div>
                   <div className="flex items-baseline">
-                    <span className="w-16 sm:w-18 text-black">{t('chart.thanChu', 'Thân chủ:')}</span>
-                    <span className="text-[#003399] font-bold">{tStar(thanChu)}</span>
+                    <span className="w-[74px] shrink-0 whitespace-nowrap text-black">{t('chart.thanChu', 'Thân chủ:')}</span>
+                    <span className="flex-1 min-w-0 whitespace-nowrap text-[#003399] font-bold">{tStar(thanChu)}</span>
                   </div>
                 </div>
               </div>
-
-              {/* Không gian bên phải mở rộng */}
-              <div className="flex-1" />
             </div>
 
             {/* Huy hiệu TUẦN và TRIỆT đặt chuẩn xác trên các đường ranh giới của Grid */}

@@ -432,12 +432,16 @@ export async function exportReadingToPdf({
           await htmlToImage.toPng(boardNode, { pixelRatio: 1 });
         } catch {}
 
+        const exportFilter = (el: HTMLElement) =>
+          !(el instanceof HTMLElement && el.dataset?.exportIgnore === 'true');
+
         let rawChartPng = await htmlToImage.toPng(boardNode, {
           quality: 0.98,
           pixelRatio: 2.0,
           width: 760,
           height: fullHeight,
           backgroundColor: '#ffffff',
+          filter: exportFilter,
           style: {
             transform: 'none',
             transformOrigin: 'top left',
@@ -458,6 +462,7 @@ export async function exportReadingToPdf({
             width: 760,
             height: fullHeight,
             backgroundColor: '#ffffff',
+            filter: exportFilter,
             style: {
               transform: 'none',
               transformOrigin: 'top left',
