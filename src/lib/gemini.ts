@@ -165,8 +165,19 @@ export function buildReadingBatches(options: {
   anhMat?: string;
   anhTay?: string;
   lang?: SupportedLanguage;
+  isOverseas?: boolean;
 }): GeminiPart[][] {
-  const { laSo, tier = 'free', thongTinThem, chieuCao, canNang, anhMat, anhTay, lang = 'vi' } = options;
+  const {
+    laSo,
+    tier = 'free',
+    thongTinThem,
+    chieuCao,
+    canNang,
+    anhMat,
+    anhTay,
+    lang = 'vi',
+    isOverseas = false,
+  } = options;
   const effectiveTier: 'free' | 'pro' | 'expert' =
     tier === 'expert' || laSo.tier === 'expert'
       ? 'expert'
@@ -271,6 +282,16 @@ NGUYÊN TẮC DIỄN ĐẠT VẬN HẠN NĂM ĐƠN GIẢN, DỄ HIỂU CHO KHÁC
     tuongPhapInstruction = `- Khảo sát khí chất tiên thiên qua nạp âm Bản Mệnh (${banMenh}) và các sao thủ/chiếu Mệnh. (LƯU Ý NGHIÊM NGẶT: Đương số KHÔNG gửi kèm ảnh khuôn mặt hay ảnh bàn tay, nên TUYỆT ĐỐI KHÔNG tự suy đoán hay mô tả các đường chỉ tay Sinh đạo, Trí đạo, Tâm đạo hay nét mặt cụ thể!).`;
   }
 
+  const overseasPromptDirective = isOverseas
+    ? `\n[MẬT CHỈ NGẦM DÀNH RIÊNG CHO THẦY TÔN — TUYỆT ĐỐI KHÔNG TIẾT LỘ NGUỒN DỮ LIỆU KỸ THUẬT]:
+- Đương số hiện có duyên sinh sống / làm việc tại nước ngoài (hải ngoại).
+- QUY TẮC TUYỆT ĐỐI: CẤM tuyệt đối đề cập tới IP, vị trí địa lý, múi giờ, trình duyệt hay gọi đích danh tên một quốc gia cụ thể nào (như Mỹ, Úc, Nhật...). Mọi lời luận PHẢI hoàn toàn tự nhiên như bậc Đại Sư nhìn thẳng vào tinh đẩu trên lá số!
+- TRỌNG TÂM LUẬN GIẢI BẮT BUỘC LỒNG GHÉP TỰ NHIÊN:
+  + Khéo léo căn cứ vào Cung Thiên Di, sao Thiên Mã (nếu có trong tam phương tứ chính hoặc trên lá số), thế Mệnh - Tài - Quan và Cung Điền Trạch để nhận định rõ đương số có **số xuất ngoại / duyên ly hương lập nghiệp / cơ duyên sinh cơ định cư ở phương xa (nước ngoài)**.
+  + Phân tích sâu hơn về **đường làm ăn, kiếm tiền và gầy dựng sự nghiệp phương xa**: càng rời xa quê hương bản quán, ra ngoài giao tiếp hay phát triển nơi đất khách thì càng dễ phát huy năng lực tự lập, gặp cơ hội đổi đời hoặc xây dựng điền sản, cơ ngơi vững chắc ở phương xa.
+  + Lồng ghép lời khuyên tâm huyết về việc giữ sự cân bằng khi sống xa quê (giữ kết nối cội nguồn – phúc đức tổ tiên, cẩn trọng pháp lý / giấy tờ / hợp đồng và giữ hòa khí cộng đồng nơi xứ người để tài lộc tụ bền lâu).\n`
+    : '';
+
   let promptText = '';
 
   if (isExpert) {
@@ -302,6 +323,9 @@ ${cungDataStr}
     }
     if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
       expertBaseHeader += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
+    }
+    if (overseasPromptDirective) {
+      expertBaseHeader += overseasPromptDirective;
     }
 
     const getExpertPartLangNote = (partIdx: 1 | 2 | 3): string => {
@@ -422,6 +446,9 @@ ${cungDataStr}
     if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
       promptText += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
     }
+    if (overseasPromptDirective) {
+      promptText += overseasPromptDirective;
+    }
 
     promptText += `${tamHanMethodologyRule}
 
@@ -496,6 +523,9 @@ ${cungDataStr}
     }
     if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
       promptText += `Hình thể: Cao ${chieuCao} cm, Nặng ${canNang} kg.\n`;
+    }
+    if (overseasPromptDirective) {
+      promptText += overseasPromptDirective;
     }
 
     promptText += `

@@ -40,6 +40,7 @@ import { getBearerAuthHeaders } from '@/lib/adminClientAuth';
 const AuthModal = dynamic(() => import('@/components/AuthModal'), { ssr: false });
 const SavedChartsModal = dynamic(() => import('@/components/SavedChartsModal'), { ssr: false });
 const PaymentModal = dynamic(() => import('@/components/PaymentModal'), { ssr: false });
+const BiometricSupplementPanel = dynamic(() => import('@/components/BiometricSupplementPanel'), { ssr: false });
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isValidUuidClient(val?: string | null): val is string {
@@ -2393,6 +2394,60 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               }}
               onOpenSavedCharts={handleOpenSavedCharts}
             />
+
+            {/* Khung bổ sung Ảnh Diện Tướng & Chỉ Tay miễn phí cho khách đã mở gói Pro / Expert */}
+            {(currentTier === 'pro' || currentTier === 'expert') && currentDuongSo && (
+              <BiometricSupplementPanel
+                duongSo={currentDuongSo}
+                tier={currentTier}
+                isLoadingReading={isLoadingReading}
+                onSaveAndRegenerate={async (updates) => {
+                  const activeLaSo = laSoRef.current || laSo;
+                  const activeDuongSo = duongSoRef.current || currentDuongSo;
+                  const activeChartId = chartIdRef.current || currentChartId;
+                  if (!activeLaSo || !activeDuongSo) return;
+
+                  const mergedDuongSo: DuLieuDuongSo = {
+                    ...activeDuongSo,
+                    tier: currentTier,
+                    anhMat: updates.anhMat,
+                    anhTay: updates.anhTay,
+                    thongTinThem: updates.thongTinThem,
+                    chieuCao: updates.chieuCao,
+                    canNang: updates.canNang,
+                  };
+
+                  duongSoRef.current = mergedDuongSo;
+                  setCurrentDuongSo(mergedDuongSo);
+
+                  if (activeChartId && user) {
+                    try {
+                      await saveOrUpdateChart({
+                        id: activeChartId,
+                        title: `${mergedDuongSo.hoTen} (${mergedDuongSo.gioiTinh} - ${mergedDuongSo.namDuong})`,
+                        duongSoData: mergedDuongSo,
+                        lasoData: activeLaSo,
+                        readingHtml: readingHtml,
+                      });
+                    } catch (e) {
+                      console.warn('Lỗi lưu ảnh bổ sung từ client (server sẽ đồng bộ tiếp):', e);
+                    }
+                  }
+
+                  setReadingError(undefined);
+                  setIsLoadingReading(true);
+                  try {
+                    const resText = await generateReading(activeLaSo, mergedDuongSo, currentTier, activeChartId);
+                    if (resText) {
+                      setReadingHtml(resText);
+                      if (activeChartId) updateChartReading(activeChartId, resText);
+                    }
+                  } finally {
+                    setIsLoadingReading(false);
+                  }
+                }}
+              />
+            )}
 
             {/* Bài Bình Giải Chuyên Sâu (Hoặc hộp mời đăng ký miễn phí nhận bình giải cho khách vừa lập lá số vãng lai) */}
             {!user && !readingHtml && !isLoadingReading && !readingError && laSo && currentDuongSo ? (

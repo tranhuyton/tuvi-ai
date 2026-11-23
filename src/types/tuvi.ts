@@ -19,6 +19,7 @@ export interface DuLieuDuongSo extends NgayThangNamSinh {
   anhTay?: string; // base64
   tier?: ServiceTier;
   namXem?: number;
+  countryCode?: string; // Mã quốc gia ISO-2 nội bộ (vd: 'VN', 'US', 'AU'...) phục vụ luận giải duyên phương xa
 }
 
 export interface AmLichResult {

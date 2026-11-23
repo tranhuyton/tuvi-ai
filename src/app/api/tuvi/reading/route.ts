@@ -300,15 +300,78 @@ export async function POST(req: NextRequest) {
         ? validateImageDataUrl(anhTay) || validateImageDataUrl(existingChart?.duong_so_data?.anhTay)
         : undefined;
 
+    const safeThongTinThem =
+      typeof thongTinThem === 'string'
+        ? thongTinThem.trim().slice(0, 1500) || undefined
+        : typeof existingChart?.duong_so_data?.thongTinThem === 'string'
+        ? existingChart.duong_so_data.thongTinThem.trim().slice(0, 1500) || undefined
+        : undefined;
+    const safeChieuCao =
+      typeof chieuCao === 'number' && Number.isFinite(chieuCao) && chieuCao > 0
+        ? chieuCao
+        : typeof existingChart?.duong_so_data?.chieuCao === 'number'
+        ? existingChart.duong_so_data.chieuCao
+        : undefined;
+    const safeCanNang =
+      typeof canNang === 'number' && Number.isFinite(canNang) && canNang > 0
+        ? canNang
+        : typeof existingChart?.duong_so_data?.canNang === 'number'
+        ? existingChart.duong_so_data.canNang
+        : undefined;
+
+    // Nhận diện ngầm khu vực nước ngoài (GeoIP từ Vercel/Cloudflare -> lưu trên chart -> fallback capi_meta của đơn hàng)
+    const normalizeCountry = (raw?: unknown): string | undefined => {
+      if (typeof raw !== 'string') return undefined;
+      const code = raw.trim().toUpperCase();
+      if (!/^[A-Z]{2}$/.test(code) || code === 'XX' || code === 'T1') return undefined;
+      return code;
+    };
+
+    const reqGeoCountry = !isAdmin
+      ? normalizeCountry(req.headers.get('x-vercel-ip-country') || req.headers.get('cf-ipcountry'))
+      : undefined;
+    const savedChartCountry = normalizeCountry(existingChart?.duong_so_data?.countryCode);
+    let resolvedCountryCode = reqGeoCountry || savedChartCountry;
+
+    if (!resolvedCountryCode && (safeChartId || existingChart?.user_id)) {
+      try {
+        let ordQuery = adminSupabase
+          .from('tuvi_orders')
+          .select('capi_meta')
+          .not('capi_meta', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(3);
+        if (safeChartId) {
+          ordQuery = ordQuery.eq('chart_id', safeChartId);
+        } else if (existingChart?.user_id) {
+          ordQuery = ordQuery.eq('user_id', existingChart.user_id);
+        }
+        const { data: ordRows } = await ordQuery;
+        for (const row of ordRows || []) {
+          const meta = row?.capi_meta as { country?: string } | null;
+          const c = normalizeCountry(meta?.country);
+          if (c) {
+            resolvedCountryCode = c;
+            break;
+          }
+        }
+      } catch {
+        // ignore GeoIP fallback errors
+      }
+    }
+
+    const isOverseas = Boolean(resolvedCountryCode && resolvedCountryCode !== 'VN');
+
     const batches = buildReadingBatches({
       laSo: effectiveLaSo,
       tier: allowedTier,
-      thongTinThem: typeof thongTinThem === 'string' ? thongTinThem.slice(0, 1500) : undefined,
-      chieuCao,
-      canNang,
+      thongTinThem: safeThongTinThem,
+      chieuCao: safeChieuCao,
+      canNang: safeCanNang,
       anhMat: safeAnhMat,
       anhTay: safeAnhTay,
       lang: targetLang,
+      isOverseas,
     });
 
     const result = await callGeminiVisionBatches(
@@ -351,7 +414,16 @@ export async function POST(req: NextRequest) {
             : existingTier;
 
         const updatedDuongSo = existingChart.duong_so_data
-          ? { ...existingChart.duong_so_data, tier: persistedTier }
+          ? {
+              ...existingChart.duong_so_data,
+              tier: persistedTier,
+              ...(safeAnhMat ? { anhMat: safeAnhMat } : {}),
+              ...(safeAnhTay ? { anhTay: safeAnhTay } : {}),
+              ...(safeThongTinThem !== undefined ? { thongTinThem: safeThongTinThem } : {}),
+              ...(safeChieuCao !== undefined ? { chieuCao: safeChieuCao } : {}),
+              ...(safeCanNang !== undefined ? { canNang: safeCanNang } : {}),
+              ...(resolvedCountryCode ? { countryCode: resolvedCountryCode } : {}),
+            }
           : undefined;
         const updatedLaSo = existingChart.laso_data
           ? {

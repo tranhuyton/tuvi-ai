@@ -32,6 +32,7 @@ import LaSoBanCo from '@/components/LaSoBanCo';
 import BiometricImageLightbox from '@/components/BiometricImageLightbox';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import { GIO_ARR } from '@/lib/tuvi/constants';
+import { processBiometricImageFile } from '@/lib/imageUpload';
 
 export interface AdminChartItem {
   id: string;
@@ -147,6 +148,39 @@ export default function AdminTransactionsTable({
   };
 
   const [adminPdfProgressText, setAdminPdfProgressText] = useState('');
+  const [isUploadingAdminPhoto, setIsUploadingAdminPhoto] = useState<'mat' | 'tay' | null>(null);
+
+  const handleAdminUploadBiometricPhoto = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: 'anhMat' | 'anhTay'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !previewChart) return;
+    setIsUploadingAdminPhoto(field === 'anhMat' ? 'mat' : 'tay');
+    setRegenerateMsg(null);
+    try {
+      const compressed = await processBiometricImageFile(file);
+      setPreviewChart((prev) =>
+        prev
+          ? {
+              ...prev,
+              duong_so_data: {
+                ...prev.duong_so_data,
+                [field]: compressed,
+              },
+            }
+          : prev
+      );
+      setRegenerateMsg(
+        `📸 Đã tải ${field === 'anhMat' ? 'ảnh Khuôn Mặt' : 'ảnh Chỉ Tay'} vào lá số. Bấm nút "Luận giải lại đúng gói" bên dưới để lưu lên DB và luận giải kèm ảnh ngay!`
+      );
+    } catch (err) {
+      setRegenerateMsg(`❌ Không đọc được ảnh: ${err instanceof Error ? err.message : 'Lỗi không xác định'}`);
+    } finally {
+      setIsUploadingAdminPhoto(null);
+      e.target.value = '';
+    }
+  };
 
   const handleRegenerateAdminReading = async () => {
     if (!previewChart || isRegeneratingReading) return;
@@ -1035,16 +1069,40 @@ export default function AdminTransactionsTable({
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto space-y-8">
-              {/* Hồ sơ Dữ liệu cá nhân & Ảnh tướng pháp của khách hàng */}
-              {(previewChart.duong_so_data?.anhMat ||
-                previewChart.duong_so_data?.anhTay ||
-                previewChart.duong_so_data?.thongTinThem ||
-                (previewChart.duong_so_data?.chieuCao && previewChart.duong_so_data?.canNang)) && (
-                <div className="p-4 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3">
+              {/* Hồ sơ Dữ liệu cá nhân & Ảnh tướng pháp của khách hàng (kèm nút tải ảnh trực tiếp nếu khách gửi qua Zalo) */}
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-amber-500/30 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-2">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     <span>Hồ Sơ Dữ Liệu Cá Nhân &amp; Ảnh Tướng Pháp Đương Số</span>
                   </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-[11px] font-semibold text-emerald-300 cursor-pointer transition">
+                      <span>{isUploadingAdminPhoto === 'mat' ? 'Đang xử lý...' : '📸 Thêm/Đổi ảnh Mặt'}</span>
+                      <input
+                        type="file"
+                        accept="image/*,.heic,.heif,image/heic,image/heif"
+                        className="hidden"
+                        disabled={Boolean(isUploadingAdminPhoto)}
+                        onChange={(e) => handleAdminUploadBiometricPhoto(e, 'anhMat')}
+                      />
+                    </label>
+                    <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-[11px] font-semibold text-sky-300 cursor-pointer transition">
+                      <span>{isUploadingAdminPhoto === 'tay' ? 'Đang xử lý...' : '✋ Thêm/Đổi ảnh Chỉ Tay'}</span>
+                      <input
+                        type="file"
+                        accept="image/*,.heic,.heif,image/heic,image/heif"
+                        className="hidden"
+                        disabled={Boolean(isUploadingAdminPhoto)}
+                        onChange={(e) => handleAdminUploadBiometricPhoto(e, 'anhTay')}
+                      />
+                    </label>
+                  </div>
+                </div>
+                {(previewChart.duong_so_data?.anhMat ||
+                  previewChart.duong_so_data?.anhTay ||
+                  previewChart.duong_so_data?.thongTinThem ||
+                  (previewChart.duong_so_data?.chieuCao && previewChart.duong_so_data?.canNang)) ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                     <div className="space-y-1.5">
                       {previewChart.duong_so_data?.chieuCao && previewChart.duong_so_data?.canNang && (
@@ -1130,8 +1188,12 @@ export default function AdminTransactionsTable({
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs text-slate-400 italic">
+                    Khách chưa tải ảnh Diện Tướng / Chỉ Tay. Nếu khách gửi qua Zalo, anh có thể bấm 2 nút phía trên để tải thẳng vào lá số rồi bấm &ldquo;Luận giải lại đúng gói&rdquo;.
+                  </p>
+                )}
+              </div>
 
               {/* Bàn Cờ Lá Số */}
               {previewChart.laso_data || previewChart.duong_so_data ? (
