@@ -140,7 +140,7 @@ DROP TRIGGER IF EXISTS trg_prevent_tuvi_profile_escalation ON public.tuvi_profil
 CREATE TRIGGER trg_prevent_tuvi_profile_escalation
   BEFORE INSERT OR UPDATE ON public.tuvi_profiles
   FOR EACH ROW
-  EXECUTE FUNCTION public.prevent_tuvi_profile_escalation();
+  EXECUTE FUNCTION public.prevent_tuvi_profile_privilege_escalation();
 
 CREATE OR REPLACE FUNCTION public.prevent_tuvi_chart_tier_escalation()
 RETURNS TRIGGER
