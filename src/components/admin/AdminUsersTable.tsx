@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { User, Search, Calendar, BookOpen, MessageSquare, Mail, Phone, RefreshCw, X, MessageCircle, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
@@ -39,6 +40,18 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
   const [selectedUserForMessages, setSelectedUserForMessages] = useState<AdminUser | null>(null);
   const [resetStatus, setResetStatus] = useState<{ loading: boolean; msg?: string; error?: string }>({ loading: false });
 
+  useEffect(() => {
+    if (!selectedUserForMessages) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedUserForMessages(null);
+        setResetStatus({ loading: false });
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedUserForMessages]);
+
   const filteredUsers = users.filter((u) => {
     const term = searchTerm.toLowerCase().trim();
     if (!term) return true;
@@ -51,6 +64,7 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
   });
 
   return (
+    <>
     <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-md space-y-4">
       {/* Header & Search */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
@@ -187,10 +201,21 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
           </table>
         </div>
       )}
+    </div>
 
-      {/* Modal Xem Chi Tiết Câu Hỏi Của Khách Hàng */}
-      {selectedUserForMessages && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    {/* Modal Xem Chi Tiết Câu Hỏi Của Khách Hàng (Render qua Portal ra document.body để không bị backdrop-blur bẻ tọa độ fixed!) */}
+    {selectedUserForMessages &&
+      typeof document !== 'undefined' &&
+      createPortal(
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedUserForMessages(null);
+              setResetStatus({ loading: false });
+            }
+          }}
+        >
           <div className="bg-slate-900 border border-amber-500/40 rounded-2xl w-full max-w-3xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
             {/* Header */}
             <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
@@ -345,8 +370,9 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
