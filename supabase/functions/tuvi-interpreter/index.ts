@@ -27,18 +27,39 @@ serve(async (req) => {
   }
 
   try {
-    // Fail-closed: BẮT BUỘC phải có EDGE_INTERNAL_SECRET trong Supabase Secrets và khớp tuyệt đối
+    // Fail-closed: Chấp nhận gọi nội bộ từ server Vercel qua:
+    //  (1) x-edge-internal-secret khớp EDGE_INTERNAL_SECRET (nếu đã cấu hình), HOẶC
+    //  (2) Authorization: Bearer khớp SUPABASE_SERVICE_ROLE_KEY (có sẵn mặc định trên cả Vercel & Supabase)
+    // Mọi request từ trình duyệt / người lạ (kể cả có ANON_KEY) đều bị chặn 401!
     const expectedInternalSecret = (Deno.env.get('EDGE_INTERNAL_SECRET') || '').trim();
-    if (!expectedInternalSecret) {
-      console.error('[tuvi-interpreter] CRITICAL: EDGE_INTERNAL_SECRET chưa được cấu hình!');
-      return new Response(JSON.stringify({ error: 'Edge internal secret is not configured' }), {
+    const expectedServiceRoleKey = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '').trim();
+
+    if (!expectedInternalSecret && !expectedServiceRoleKey) {
+      console.error('[tuvi-interpreter] CRITICAL: Thiếu cả EDGE_INTERNAL_SECRET lẫn SUPABASE_SERVICE_ROLE_KEY!');
+      return new Response(JSON.stringify({ error: 'Edge internal authentication is not configured' }), {
         status: 503,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const providedSecret = (req.headers.get('x-edge-internal-secret') || '').trim();
-    if (!providedSecret || !timingSafeEqualStr(providedSecret, expectedInternalSecret)) {
+    const authHeader = (req.headers.get('authorization') || '').trim();
+    const bearerToken = authHeader.toLowerCase().startsWith('bearer ')
+      ? authHeader.slice(7).trim()
+      : '';
+
+    const secretValid = Boolean(
+      expectedInternalSecret &&
+        providedSecret &&
+        timingSafeEqualStr(providedSecret, expectedInternalSecret)
+    );
+    const serviceRoleValid = Boolean(
+      expectedServiceRoleKey &&
+        bearerToken &&
+        timingSafeEqualStr(bearerToken, expectedServiceRoleKey)
+    );
+
+    if (!secretValid && !serviceRoleValid) {
       return new Response(JSON.stringify({ error: 'Unauthorized Edge Function call' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

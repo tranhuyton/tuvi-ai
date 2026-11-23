@@ -591,6 +591,7 @@ async function callSingleGeminiVision(
   const maxTokens = isExpert ? 14000 : isPro ? 12000 : 3600;
   const perAttemptCapMs = isExpert ? 56000 : isPro ? 54000 : 42000;
   const internalEdgeSecret = (process.env.EDGE_INTERNAL_SECRET || '').trim();
+  const edgeBearerToken = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim() || SUPABASE_ANON_KEY;
 
   // 1. Trường hợp Admin có nhập key riêng để test trong Studio
   if (customApiKey && customApiKey.trim()) {
@@ -741,7 +742,7 @@ async function callSingleGeminiVision(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${edgeBearerToken}`,
           ...(internalEdgeSecret ? { 'x-edge-internal-secret': internalEdgeSecret } : {}),
         },
         body: JSON.stringify(body),
@@ -898,12 +899,13 @@ export async function testGeminiApiKey(
 
   // Mặc định: Kiểm tra kết nối tới Supabase Edge Function
   const internalEdgeSecret = (process.env.EDGE_INTERNAL_SECRET || '').trim();
+  const edgeBearerToken = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim() || SUPABASE_ANON_KEY;
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/tuvi-interpreter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${edgeBearerToken}`,
         ...(internalEdgeSecret ? { 'x-edge-internal-secret': internalEdgeSecret } : {}),
       },
       body: JSON.stringify({
