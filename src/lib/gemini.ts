@@ -20,6 +20,11 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTYzNTEsImV4cCI6MjA5MjY5MjM1MX0.ZEgXs3LfI9diL9aji56N9HIxPOl0e1sMeRxbMfSM2qw';
 
 import { cleanReadingHtml } from './tuvi/cleanReadingHtml';
+import {
+  buildCungDataPrompt,
+  getCurrentVietnamTimeInfo,
+  computeTamHanAnalysis,
+} from './tuvi/anSao';
 
 function formatTuViHtml(rawText: string): string {
   return cleanReadingHtml(rawText);
@@ -151,7 +156,7 @@ ${isExpert ? '- 【EXPERT EDITION LENGTH & DEPTH DIRECTIVE】: This is the flags
   return '';
 }
 
-export function buildReadingParts(options: {
+export function buildReadingBatches(options: {
   laSo: import('@/types/tuvi').LaSoData;
   tier?: 'free' | 'pro' | 'expert';
   thongTinThem?: string;
@@ -160,7 +165,7 @@ export function buildReadingParts(options: {
   anhMat?: string;
   anhTay?: string;
   lang?: SupportedLanguage;
-}): GeminiPart[] {
+}): GeminiPart[][] {
   const { laSo, tier = 'free', thongTinThem, chieuCao, canNang, anhMat, anhTay, lang = 'vi' } = options;
   const effectiveTier: 'free' | 'pro' | 'expert' =
     tier === 'expert' || laSo.tier === 'expert'
@@ -185,11 +190,7 @@ export function buildReadingParts(options: {
     namXem,
     tuoiAmXem,
   } = laSo;
-  const {
-    buildCungDataPrompt,
-    getCurrentVietnamTimeInfo,
-    computeTamHanAnalysis,
-  } = require('./tuvi/anSao');
+  let expertSubPrompts: string[] | null = null;
   const cungDataStr = buildCungDataPrompt(laSo);
   const { ngayDuong: curDayD, thangDuong: curMonthD, namDuong: curYearD, ngayAm: curDayA, thangAm: curMonthA, namAm: curYearA, isLeap: curIsLeap, namAmCanChi: curNamCanChi } = getCurrentVietnamTimeInfo();
   const curDateSummary = `Ngày ${curDayD}/${curMonthD}/${curYearD} Dương lịch (tức Ngày ${curDayA} Tháng ${curMonthA}${curIsLeap ? ' Nhuận' : ''} Âm lịch năm ${curNamCanChi} ${curYearA})`;
@@ -303,8 +304,21 @@ ${cungDataStr}
       expertBaseHeader += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
     }
 
-    const langMod = getLangPromptModifier(lang, effectiveTier);
-    const langSuffix = langMod ? `\n${langMod}` : '';
+    const getExpertPartLangNote = (partIdx: 1 | 2 | 3): string => {
+      if (lang === 'vi') return '';
+      const baseLang = getLangPromptModifier(lang, 'expert');
+      const scopeRule =
+        partIdx === 1
+          ? '\n[STRICT PART 1 SCOPE]: Output ONLY Chapter I and Palaces 1 through 6 of Chapter II (~1,300-1,500 words). STOP immediately after Palace 6. Do NOT write Palaces 7-12 or Chapters III/IV/V or any closing greeting!'
+          : partIdx === 2
+          ? '\n[STRICT PART 2 SCOPE]: Continue directly from Palace 7! Output ONLY Palaces 7 through 12, Body Palace, and Chapter III (~1,300-1,500 words). Do NOT write any greeting, do NOT repeat Chapters I/II headings, and STOP immediately after Chapter III!'
+          : '\n[STRICT PART 3 SCOPE]: Continue directly with Chapter IV and Chapter V (~1,150-1,350 words). Do NOT write any opening greeting and do NOT repeat Chapters I, II, or III!';
+      return `\n${baseLang}${scopeRule}`;
+    };
+
+    const langSuffixPart1 = getExpertPartLangNote(1);
+    const langSuffixPart2 = getExpertPartLangNote(2);
+    const langSuffixPart3 = getExpertPartLangNote(3);
 
     const part1Prompt = `${expertBaseHeader}
 NHIỆM VỤ PHẦN 1 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 1.500 TỪ, KHÔNG VIẾT DÀI QUÁ 1.600 TỪ):
@@ -329,7 +343,7 @@ Phân tích từng cung từ Cung 1 đến Cung 6 bằng thẻ <h4> riêng biệ
 <h4>5. Cung Quan Lộc (Đường Công Danh, Sự Nghiệp, Quyền Bính &amp; Định Hướng Ngành Nghề)</h4>
 <h4>6. Cung Nô Bộc / Giao Hữu (Bạn Bè, Cộng Sự, Đối Tác, Nhân Viên &amp; Nhân Duyên Xã Hội)</h4>
 
-QUY TẮC BẮT BUỘC CHO PHẦN 1: Tổng độ dài Phần 1 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi kết thúc Mục 6 (Cung Nô Bộc), TUYỆT ĐỐI KHÔNG viết Mục 7 trở đi và KHÔNG viết lời chào kết bài.${langSuffix}`;
+QUY TẮC BẮT BUỘC CHO PHẦN 1: Tổng độ dài Phần 1 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi kết thúc Mục 6 (Cung Nô Bộc), TUYỆT ĐỐI KHÔNG viết Mục 7 trở đi và KHÔNG viết lời chào kết bài.${langSuffixPart1}`;
 
     const part2Prompt = `${expertBaseHeader}
 NHIỆM VỤ PHẦN 2 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 1.500 TỪ, KHÔNG VIẾT DÀI QUÁ 1.600 TỪ):
@@ -349,7 +363,7 @@ Hãy phân tích súc tích, sắc bén từng cung từ Cung 7 đến Cung 12, 
 - ${daiVanInstruction} (Nếu cung Đại Vận là Vô Chính Diệu thì bắt buộc xét các sao từ Tam Phương Tứ Chính chiếu về cung Đại Vận).
 - ${startAge ? `Chia rõ 2 chặng: Chặng 5 năm đầu (${startAge} - ${startAge + 4} tuổi) và Chặng 5 năm cuối (${startAge + 5} - ${endAge} tuổi) ở tuổi ${tuoiAmXem}, đồng thời chỉ rõ nền tảng Đại vận này đang hậu thuẫn hay kìm hãm năm hiện tại.` : `Phân tích giai đoạn Đồng Hạn hiện tại và nền tảng bước vào Đại vận đầu tiên.`}
 
-QUY TẮC KẾT THÚC PHẦN 2: Tổng độ dài Phần 2 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi viết xong Chương III, TUYỆT ĐỐI KHÔNG viết Chương IV và KHÔNG viết lời chào kết bài.${langSuffix}`;
+QUY TẮC KẾT THÚC PHẦN 2: Tổng độ dài Phần 2 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi viết xong Chương III, TUYỆT ĐỐI KHÔNG viết Chương IV và KHÔNG viết lời chào kết bài.${langSuffixPart2}`;
 
     const part3Prompt = `${expertBaseHeader}${tamHanMethodologyRule}
 NHIỆM VỤ PHẦN 3 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.150 - 1.350 TỪ, KHÔNG VIẾT DÀI QUÁ 1.450 TỪ):
@@ -376,9 +390,9 @@ QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <
 - Phương pháp chế hóa các sát tinh và hung vận bằng phong thủy (màu sắc, phương vị, vật phẩm trợ mệnh), tu dưỡng tâm tính và chiến lược quản trị công việc - dòng tiền - gia đạo 1 - 3 năm tới (khoảng 300 - 380 từ).
 - Lời dặn tâm huyết của Thầy Tôn và nhắn gửi đương số: Quý khách đang sở hữu gói Chuyên Gia Expert và được tặng kèm 02 câu hỏi Chuyên Gia miễn phí ngay tại khung Hỏi Đáp bên dưới để đàm đạo trực tiếp cùng Thầy Tôn.
 
-Văn phong bậc Đại Tông Sư: uyên bác, súc tích, giàu giá trị học thuật phương Đông và tính thực chứng cao, trình bày HTML tinh tế, kết thúc trọn vẹn.${langSuffix}`;
+Văn phong bậc Đại Tông Sư: uyên bác, súc tích, giàu giá trị học thuật phương Đông và tính thực chứng cao, trình bày HTML tinh tế, kết thúc trọn vẹn.${langSuffixPart3}`;
 
-    promptText = `${part1Prompt}\n<!-- EXPERT_SPLIT_PART -->\n${part2Prompt}\n<!-- EXPERT_SPLIT_PART -->\n${part3Prompt}`;
+    expertSubPrompts = [part1Prompt, part2Prompt, part3Prompt];
   } else if (isPro) {
     // ==========================================
     // PRO TIER PROMPT: GEMINI 3.1 PRO PREVIEW (1800 - 2500 TỪ)
@@ -513,44 +527,72 @@ Văn phong uy nghiêm, súc tích, kết bài trọn vẹn trong đúng khoảng
     }
   }
 
-  const parts: GeminiPart[] = [{ text: promptText }];
+  const imageParts: GeminiPart[] = [];
+  // Chỉ đính kèm ảnh sinh trắc học cho gói trả phí Pro & Expert (chống spam Gemini Vision miễn phí)
+  if (effectiveTier !== 'free') {
+    if (anhMat && /^data:image\/(jpeg|jpg|png|webp);base64,/i.test(anhMat)) {
+      const [header, base64Data] = anhMat.split(';base64,');
+      const mimeType = header.replace(/^data:/i, '') || 'image/jpeg';
+      imageParts.push({
+        inlineData: { mimeType, data: base64Data },
+      });
+    }
 
-  if (anhMat && anhMat.includes(';base64,')) {
-    const [header, base64Data] = anhMat.split(';base64,');
-    const mimeType = header.replace('data:', '') || 'image/jpeg';
-    parts.push({
-      inlineData: { mimeType, data: base64Data },
-    });
+    if (anhTay && /^data:image\/(jpeg|jpg|png|webp);base64,/i.test(anhTay)) {
+      const [header, base64Data] = anhTay.split(';base64,');
+      const mimeType = header.replace(/^data:/i, '') || 'image/jpeg';
+      imageParts.push({
+        inlineData: { mimeType, data: base64Data },
+      });
+    }
   }
 
-  if (anhTay && anhTay.includes(';base64,')) {
-    const [header, base64Data] = anhTay.split(';base64,');
-    const mimeType = header.replace('data:', '') || 'image/jpeg';
-    parts.push({
-      inlineData: { mimeType, data: base64Data },
-    });
+  if (expertSubPrompts && expertSubPrompts.length > 0) {
+    return expertSubPrompts.map((sub, idx) =>
+      idx === 0 ? [{ text: sub }, ...imageParts] : [{ text: sub }]
+    );
   }
 
-  return parts;
+  return [[{ text: promptText }, ...imageParts]];
+}
+
+/**
+ * Tương thích ngược: trả về danh sách parts cho 1 lượt gọi đơn lẻ
+ */
+export function buildReadingParts(options: {
+  laSo: import('@/types/tuvi').LaSoData;
+  tier?: 'free' | 'pro' | 'expert';
+  thongTinThem?: string;
+  chieuCao?: number;
+  canNang?: number;
+  anhMat?: string;
+  anhTay?: string;
+  lang?: SupportedLanguage;
+}): GeminiPart[] {
+  const batches = buildReadingBatches(options);
+  return batches[0] || [];
 }
 
 /**
  * Gọi đơn lẻ 1 request tới Gemini Vision / Supabase Edge Function
+ * Áp dụng deadline tổng thể (<= 145s) để tuyệt đối không vượt trần maxDuration=180s của Vercel
  */
 async function callSingleGeminiVision(
   parts: GeminiPart[],
   customApiKey?: string,
-  modelName = 'gemini-3.1-pro-preview'
-): Promise<{ text?: string; error?: string }> {
+  modelName = 'gemini-3.1-pro-preview',
+  overallDeadlineMs = Date.now() + 145_000
+): Promise<{ text?: string; error?: string; modelUsed?: string; finishReason?: string }> {
   const isCarbon = modelName.includes('carbon');
   const isExpert = isCarbon || modelName.includes('argon') || modelName.includes('4');
   const isPro = isExpert || modelName.includes('3.1') || modelName.includes('pro');
-  // Cấp thinkingBudget hợp lý (1536 cho gemini-4-carbon, 1024 cho argon/pro) để suy luận chuẩn tinh đẩu mà vẫn phản hồi nhanh (~35-45s), tránh lỗi 504
   const targetBudget = isCarbon ? 1536 : isExpert ? 1024 : isPro ? 1024 : 0;
-  const maxTokens = isExpert ? 14000 : isPro ? 12000 : 2400;
-  const timeoutMs = isExpert ? 135000 : 120000;
+  // Nâng Free từ 2400 -> 3600 token để bài ~1.000 từ HTML tiếng Việt không bị cắt cụt giữa thẻ
+  const maxTokens = isExpert ? 14000 : isPro ? 12000 : 3600;
+  const perAttemptCapMs = isExpert ? 56000 : isPro ? 54000 : 42000;
+  const internalEdgeSecret = (process.env.EDGE_INTERNAL_SECRET || '').trim();
 
-  // 1. Trường hợp người dùng có nhập key riêng trong modal cài đặt
+  // 1. Trường hợp Admin có nhập key riêng để test trong Studio
   if (customApiKey && customApiKey.trim()) {
     const candidateModels = isCarbon
       ? [modelName, 'gemini-4-argon', 'gemini-3.1-pro-preview']
@@ -558,28 +600,34 @@ async function callSingleGeminiVision(
       ? [modelName, 'gemini-3.1-pro-preview']
       : [modelName];
     for (const candidateModel of candidateModels) {
+      const remainingMs = overallDeadlineMs - Date.now();
+      if (remainingMs < 5000) break;
       try {
         const directUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
           candidateModel
-        )}:generateContent?key=${encodeURIComponent(customApiKey.trim())}`;
+        )}:generateContent`;
+        const candBudget = candidateModel.includes('carbon')
+          ? 1536
+          : candidateModel.includes('argon') || candidateModel.includes('3.1') || candidateModel.includes('pro')
+          ? 1024
+          : 0;
         const res = await fetch(directUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': customApiKey.trim(),
+          },
           body: JSON.stringify({
             contents: [{ role: 'user', parts }],
             generationConfig: {
               temperature: 0.7,
               maxOutputTokens: maxTokens,
               thinkingConfig: {
-                thinkingBudget: candidateModel.includes('carbon')
-                  ? 1536
-                  : candidateModel.includes('argon')
-                  ? 1024
-                  : 1024,
+                thinkingBudget: candBudget,
               },
             },
           }),
-          signal: AbortSignal.timeout(timeoutMs),
+          signal: AbortSignal.timeout(Math.min(perAttemptCapMs, remainingMs)),
         });
 
         if (!res.ok) {
@@ -592,6 +640,7 @@ async function callSingleGeminiVision(
         }
 
         const data = await res.json();
+        const finishReason = data.candidates?.[0]?.finishReason || 'STOP';
         const resParts = data.candidates?.[0]?.content?.parts || [];
         const rawText =
           resParts
@@ -599,19 +648,21 @@ async function callSingleGeminiVision(
             .map((p: { text?: string }) => p.text)
             .join('') || resParts[0]?.text;
         if (rawText) {
-          return { text: formatTuViHtml(rawText) };
+          return { text: formatTuViHtml(rawText), modelUsed: candidateModel, finishReason };
         }
-      } catch (e: any) {
-        console.warn('Custom API Key failed, fallback sang Supabase Edge Function:', e.message);
+      } catch (e: unknown) {
+        const errMsg = e instanceof Error ? e.message : String(e);
+        console.warn('Custom API Key failed, fallback sang Supabase Edge Function:', errMsg);
       }
     }
   }
 
   // 2. Mặc định: Gọi qua Supabase Edge Function (Key được bảo mật trong Supabase Secrets)
-  const edgeEndpoints: Array<{ url: string; label: string; body: Record<string, unknown> }> = [
+  const edgeEndpoints: Array<{ url: string; label: string; modelId: string; body: Record<string, unknown> }> = [
     {
       url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
       label: `Supabase tuvi-interpreter (${modelName})`,
+      modelId: modelName,
       body: {
         parts,
         model: modelName,
@@ -624,11 +675,11 @@ async function callSingleGeminiVision(
     },
   ];
 
-  // Nếu gọi gemini-4-carbon mà quá tải tạm thời, dự phòng bậc 1 sang gemini-4-argon (giữ chất lượng thế hệ Gemini 4)
   if (isCarbon) {
     edgeEndpoints.push({
       url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
       label: 'Supabase tuvi-interpreter (gemini-4-argon fallback)',
+      modelId: 'gemini-4-argon',
       body: {
         parts,
         model: 'gemini-4-argon',
@@ -641,11 +692,11 @@ async function callSingleGeminiVision(
     });
   }
 
-  // Nếu cổng Gemini 4 quá tải, tự động dự phòng bậc 2 bằng gemini-3.1-pro-preview
   if (isExpert && modelName !== 'gemini-3.1-pro-preview') {
     edgeEndpoints.push({
       url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
       label: 'Supabase tuvi-interpreter (Expert High-Token Engine)',
+      modelId: 'gemini-3.1-pro-preview',
       body: {
         parts,
         model: 'gemini-3.1-pro-preview',
@@ -658,11 +709,11 @@ async function callSingleGeminiVision(
     });
   }
 
-  // Dự phòng cuối cùng qua tuvi-interpreter (gemini-2.5-flash) thay vì gọi sang omni-vision-solver (tránh trả về câu lỗi bài tập)
   if (modelName !== 'gemini-2.5-flash') {
     edgeEndpoints.push({
       url: `${SUPABASE_URL}/functions/v1/tuvi-interpreter`,
       label: 'Supabase tuvi-interpreter (gemini-2.5-flash fallback)',
+      modelId: 'gemini-2.5-flash',
       body: {
         parts,
         model: 'gemini-2.5-flash',
@@ -677,7 +728,13 @@ async function callSingleGeminiVision(
 
   let lastError = 'Thiên bàn tạm thời chưa thể kết nối';
 
-  for (const { url, label, body } of edgeEndpoints) {
+  for (const { url, label, modelId, body } of edgeEndpoints) {
+    const remainingMs = overallDeadlineMs - Date.now();
+    if (remainingMs < 5000) {
+      lastError = 'Hệ thống AI đang quá tải tạm thời (vượt thời gian chờ an toàn).';
+      break;
+    }
+
     try {
       console.log(`[callGeminiVision] Gửi yêu cầu qua ${label}...`);
       const response = await fetch(url, {
@@ -685,9 +742,10 @@ async function callSingleGeminiVision(
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          ...(internalEdgeSecret ? { 'x-edge-internal-secret': internalEdgeSecret } : {}),
         },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: AbortSignal.timeout(Math.min(perAttemptCapMs, remainingMs)),
       });
 
       if (!response.ok) {
@@ -699,6 +757,11 @@ async function callSingleGeminiVision(
 
       const data = await response.json();
       const rawText = String(data.result || data.text || '').trim();
+      const finishReason = String(data.finishReason || 'STOP');
+
+      if (finishReason === 'SAFETY' || finishReason === 'RECITATION') {
+        console.warn(`[callGeminiVision] ${label} bị chặn bởi bộ lọc (${finishReason})`);
+      }
 
       if (
         !rawText ||
@@ -710,7 +773,11 @@ async function callSingleGeminiVision(
         continue;
       }
 
-      return { text: formatTuViHtml(rawText) };
+      if (isPro && modelId === 'gemini-2.5-flash') {
+        console.warn(`[callGeminiVision][PAID FALLBACK ALERT] Yêu cầu ${modelName} đã phải hạ cấp tạm sang ${modelId}`);
+      }
+
+      return { text: formatTuViHtml(rawText), modelUsed: modelId, finishReason };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       lastError = `[${label}] ${message}`;
@@ -718,47 +785,64 @@ async function callSingleGeminiVision(
     }
   }
 
+  console.warn('[callGeminiVision] Tất cả cổng đều thất bại:', lastError);
   return {
     error: `❌ Thầy đang định tâm quán tưởng cho khách trước. Quý khách vui lòng thử lại sau giây lát!`,
   };
 }
 
 /**
- * Gọi AI luận giải Tử Vi
- * - Với gói Chuyên Gia Expert (có marker <!-- EXPERT_SPLIT_PART -->), tự động chia làm 3 luồng song song (Promise.all)
- *   giúp tổng thời gian tạo bài 4.000 - 5.000 từ chỉ còn ~25-35 giây, triệt tiêu 100% lỗi HTTP 504 Timeout!
+ * Thực thi mảng các batch có cấu trúc (ví dụ 3 phần Expert chạy song song Promise.all trong 1 deadline chung <= 145s).
+ * Không bao giờ tách chuỗi theo delimiter bên trong input người dùng.
+ */
+export async function callGeminiVisionBatches(
+  batches: GeminiPart[][],
+  customApiKey?: string,
+  modelName = 'gemini-3.1-pro-preview'
+): Promise<{ text?: string; error?: string; modelUsed?: string; finishReason?: string }> {
+  if (!batches || batches.length === 0) {
+    return { error: 'Thiếu dữ liệu prompt luận giải.' };
+  }
+
+  const deadlineMs = Date.now() + 145_000;
+
+  if (batches.length === 1) {
+    return callSingleGeminiVision(batches[0], customApiKey, modelName, deadlineMs);
+  }
+
+  const results = await Promise.all(
+    batches.map((subParts) =>
+      callSingleGeminiVision(subParts, customApiKey, modelName, deadlineMs)
+    )
+  );
+
+  const successfulTexts = results.map((r) => r.text).filter(Boolean) as string[];
+  if (successfulTexts.length === batches.length) {
+    const modelsUsed = Array.from(new Set(results.map((r) => r.modelUsed).filter(Boolean)));
+    const hasTruncation = results.some((r) => r.finishReason === 'MAX_TOKENS');
+    return {
+      text: formatTuViHtml(successfulTexts.join('\n\n')),
+      modelUsed: modelsUsed.join(',') || modelName,
+      finishReason: hasTruncation ? 'MAX_TOKENS' : 'STOP',
+    };
+  }
+
+  const firstErr = results.find((r) => r.error)?.error;
+  return {
+    error:
+      firstErr ||
+      '❌ Thầy đang định tâm quán tưởng cho khách trước. Quý khách vui lòng thử lại sau giây lát!',
+  };
+}
+
+/**
+ * Gọi đơn lẻ 1 yêu cầu AI luận giải / hỏi đáp (KHÔNG phân tách chuỗi delimiter từ text người dùng)
  */
 export async function callGeminiVision(
   parts: GeminiPart[],
   customApiKey?: string,
   modelName = 'gemini-3.1-pro-preview'
-): Promise<{ text?: string; error?: string }> {
-  const firstText = parts[0]?.text || '';
-  if (firstText.includes('<!-- EXPERT_SPLIT_PART -->')) {
-    const subPrompts = firstText
-      .split('<!-- EXPERT_SPLIT_PART -->')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const imageParts = parts.slice(1);
-
-    const results = await Promise.all(
-      subPrompts.map((subPrompt, idx) => {
-        const subParts: GeminiPart[] =
-          idx === 0 ? [{ text: subPrompt }, ...imageParts] : [{ text: subPrompt }];
-        return callSingleGeminiVision(subParts, customApiKey, modelName);
-      })
-    );
-
-    const successfulTexts = results.map((r) => r.text).filter(Boolean) as string[];
-    if (successfulTexts.length === subPrompts.length) {
-      return { text: formatTuViHtml(successfulTexts.join('\n\n')) };
-    }
-    const firstErr = results.find((r) => r.error)?.error;
-    return {
-      error: firstErr || '❌ Thầy đang định tâm quán tưởng cho khách trước. Quý khách vui lòng thử lại sau giây lát!',
-    };
-  }
-
+): Promise<{ text?: string; error?: string; modelUsed?: string; finishReason?: string }> {
   return callSingleGeminiVision(parts, customApiKey, modelName);
 }
 
@@ -773,12 +857,13 @@ export async function testGeminiApiKey(
   // Nếu người dùng nhập key riêng
   if (apiKey && apiKey.trim()) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
-        apiKey.trim()
-      )}`;
+      const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey.trim(),
+        },
         body: JSON.stringify({
           contents: [{ parts: [{ text: 'Kiểm tra tín hiệu kết nối.' }] }],
         }),
@@ -812,12 +897,14 @@ export async function testGeminiApiKey(
   }
 
   // Mặc định: Kiểm tra kết nối tới Supabase Edge Function
+  const internalEdgeSecret = (process.env.EDGE_INTERNAL_SECRET || '').trim();
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/tuvi-interpreter`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        ...(internalEdgeSecret ? { 'x-edge-internal-secret': internalEdgeSecret } : {}),
       },
       body: JSON.stringify({
         prompt: 'Bạn là Thầy Tôn. Hãy chào ngắn gọn 1 câu để kiểm tra kết nối.',

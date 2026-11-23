@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   Sparkles,
   Compass,
@@ -257,7 +258,7 @@ const ARTICLE_VISUAL_MAP: Record<string, ArticleVisualSpec> = {
       { label: 'Hóa Lộc (Mùa Xuân • Mộc/Thổ)', sub: 'Khởi phát tài lộc, nhân duyên, cơ hội thuận lợi', badge: 'Tài lộc' },
       { label: 'Hóa Quyền (Mùa Hạ • Hỏa/Mộc)', sub: 'Quyền tự quyết, bản lĩnh lãnh đạo, sức bật mạnh', badge: 'Quyền lực' },
       { label: 'Hóa Khoa (Mùa Thu • Thủy/Mộc)', sub: 'Học vấn, uy tín, bằng cấp & quý nhân cứu giải', badge: 'Giải thần' },
-      { label: 'Hóa Kỵ (Mùa Đông • Thủy)', sub: 'Áp lực, thị phi,执 niệm nhưng cũng là điểm sâu sắc', badge: 'Thử thách' },
+      { label: 'Hóa Kỵ (Mùa Đông • Thủy)', sub: 'Áp lực, thị phi, chấp niệm nhưng cũng là điểm sâu sắc', badge: 'Thử thách' },
     ],
     caption: 'Sơ đồ chu trình 4 trạng thái năng lượng của Tứ Hóa (Lộc - Quyền - Khoa - Kỵ)',
   },
@@ -716,11 +717,13 @@ export function ArticleHeroIllustration({
       {/* Khung ảnh nền Nghệ thuật + Sơ đồ Tinh Đẩu trực quan */}
       <div className="relative overflow-hidden p-5 sm:p-7">
         {/* Ảnh nền minh họa chủ đề */}
-        <img
+        <Image
           src={spec.bgImage}
           alt={spec.caption}
-          className="absolute inset-0 w-full h-full object-cover opacity-35 scale-105 pointer-events-none select-none"
-          loading="eager"
+          fill
+          sizes="(max-width: 768px) 100vw, 896px"
+          className="object-cover opacity-35 scale-105 pointer-events-none select-none"
+          priority
         />
         <div
           className={`absolute inset-0 bg-gradient-to-br ${style.glow} backdrop-blur-[2px] pointer-events-none`}
@@ -836,11 +839,12 @@ export function ArticleCardThumbnail({
 
   return (
     <div className="relative h-32 w-full rounded-xl overflow-hidden mb-3 border border-slate-800/90 bg-slate-950 group-hover:border-amber-500/40 transition">
-      <img
+      <Image
         src={spec.bgImage}
         alt={title}
-        className="absolute inset-0 w-full h-full object-cover opacity-55 group-hover:scale-105 transition-transform duration-500"
-        loading="lazy"
+        fill
+        sizes="(max-width: 768px) 100vw, 480px"
+        className="object-cover opacity-55 group-hover:scale-105 transition-transform duration-500"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent" />
 
@@ -956,10 +960,12 @@ export function CourseVisualShowcase({
               }`}
             >
               {/* Ảnh minh họa nền của từng học phần */}
-              <img
+              <Image
                 src={m.image}
                 alt={m.title}
-                className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                className="object-cover opacity-45 group-hover:scale-105 transition-transform duration-500 pointer-events-none"
               />
               <div
                 className={`absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/30`}
@@ -1024,10 +1030,12 @@ export function CourseLessonIllustration({
 
   return (
     <div className="relative rounded-2xl overflow-hidden border border-amber-500/35 bg-slate-950 mb-5 shadow-xl">
-      <img
+      <Image
         src={bgImage}
         alt={title}
-        className="absolute inset-0 w-full h-full object-cover opacity-40 pointer-events-none select-none"
+        fill
+        sizes="(max-width: 1024px) 100vw, 760px"
+        className="object-cover opacity-40 pointer-events-none select-none"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/80 to-indigo-950/65" />
 
@@ -1096,9 +1104,11 @@ export function CourseLessonIllustration({
 
         {/* Chân dung Giảng viên Thầy Tôn */}
         <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 self-start sm:self-center shrink-0">
-          <img
+          <Image
             src="/avatar-thay-ton.jpg"
             alt={ui.courseIllInstructor}
+            width={36}
+            height={36}
             className="w-9 h-9 rounded-full object-cover border border-amber-400/70"
           />
           <div className="text-xs">

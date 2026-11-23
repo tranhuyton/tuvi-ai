@@ -1,31 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTesterByEmail } from '@/lib/testerStore';
-import { supabase } from '@/lib/supabase';
+import { adminSupabase } from '@/lib/supabaseAdmin';
+import { getAuthenticatedUser } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const email = req.nextUrl.searchParams.get('email');
-    if (!email) {
-      return NextResponse.json({ isTester: false });
+    // Chỉ cho phép user đã đăng nhập (Bearer JWT) kiểm tra quyền Tester của chính mình (chống lộ danh sách email Tester!)
+    const authUser = await getAuthenticatedUser(req);
+    if (!authUser?.email) {
+      return NextResponse.json({ isTester: false }, { status: 401 });
     }
 
-    const cleanEmail = email.toLowerCase().trim();
+    const cleanEmail = authUser.email.toLowerCase().trim();
     const tester = await getTesterByEmail(cleanEmail);
 
     if (!tester || !tester.isActive) {
       return NextResponse.json({ isTester: false });
     }
 
-    // Lấy số lượng lá số thực tế đã tạo
     let chartsUsed = tester.chartsUsed || 0;
     try {
-      if (tester.userId) {
-        const { count } = await supabase
+      const targetUserId = tester.userId || authUser.id;
+      if (targetUserId) {
+        const { count } = await adminSupabase
           .from('tuvi_charts')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', tester.userId);
+          .eq('user_id', targetUserId);
         if (count !== null) chartsUsed = count;
       }
     } catch {
@@ -38,9 +40,8 @@ export async function GET(req: NextRequest) {
       maxQuestionsPerChart: tester.maxQuestionsPerChart,
       chartsUsed,
       fullName: tester.fullName,
-      notes: tester.notes,
     });
   } catch (err: any) {
-    return NextResponse.json({ isTester: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ isTester: false, error: err?.message }, { status: 500 });
   }
 }

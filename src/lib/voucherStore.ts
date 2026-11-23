@@ -139,7 +139,7 @@ export async function hasUserPurchasedAnything(
       const { data: byEmail } = await adminSupabase
         .from('tuvi_orders')
         .select('id')
-        .ilike('email', cleanEmail)
+        .eq('email', cleanEmail)
         .eq('status', 'PAID')
         .limit(1);
       if (byEmail && byEmail.length > 0) return true;
@@ -372,27 +372,33 @@ export async function findActiveClickedVoucherForUser(
 }
 
 /**
- * Đánh dấu voucher đã sử dụng và hủy toàn bộ các voucher còn lại của khách sau khi thanh toán thành công
+ * Tiêu thụ voucher nguyên tử (chỉ thành công đúng 1 lần khi status='ACTIVE')
+ * và hủy mọi voucher còn lại của khách sau khi thanh toán thành công (Stop-on-Purchase).
  */
 export async function markVoucherUsedAndCancelAllForUser(params: {
   voucherCode?: string | null;
   orderCode: string;
   userId?: string | null;
   email?: string | null;
-}): Promise<void> {
+}): Promise<{ voucherConsumed: boolean }> {
   const { voucherCode, orderCode, userId, email } = params;
   const nowIso = new Date().toISOString();
+  let voucherConsumed = !voucherCode;
 
   try {
     if (voucherCode) {
-      await adminSupabase
+      const { data: consumedRow } = await adminSupabase
         .from('tuvi_vouchers')
         .update({
           status: 'USED',
           used_at: nowIso,
           used_order_code: orderCode,
         })
-        .eq('code', voucherCode.trim().toUpperCase());
+        .eq('code', voucherCode.trim().toUpperCase())
+        .eq('status', 'ACTIVE')
+        .select('id')
+        .maybeSingle();
+      voucherConsumed = Boolean(consumedRow);
     }
 
     if (userId) {
@@ -407,10 +413,11 @@ export async function markVoucherUsedAndCancelAllForUser(params: {
       await adminSupabase
         .from('tuvi_vouchers')
         .update({ status: 'CANCELLED' })
-        .ilike('email', email.trim().toLowerCase())
+        .eq('email', email.trim().toLowerCase())
         .eq('status', 'ACTIVE');
     }
   } catch (err) {
     console.warn('[VOUCHER STORE] Lỗi cập nhật trạng thái voucher sau thanh toán:', err);
   }
+  return { voucherConsumed };
 }

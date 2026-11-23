@@ -1,5 +1,6 @@
 import {
   getBrowserGaClientId,
+  getBrowserGaSessionId,
   trackGa4BeginCheckout,
   trackGa4Contact,
   trackGa4GenerateChart,
@@ -95,28 +96,39 @@ export function getBrowserMetaAttribution(): {
   fbc?: string;
   fbclid?: string;
   gaCid?: string;
+  gaSessionId?: string;
   sourceUrl?: string;
 } {
   if (typeof window === 'undefined') return {};
   try {
     const fbp = readBrowserCookie('_fbp');
     const gaCid = getBrowserGaClientId();
+    const gaSessionId = getBrowserGaSessionId();
     let fbclid: string | undefined;
+    let storedFbc: string | undefined;
     try {
+      const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+      const savedTs = Number(localStorage.getItem('tuvi_fbc_ts') || '0');
+      const isFbcExpired = Boolean(savedTs && Date.now() - savedTs > NINETY_DAYS_MS);
+      if (isFbcExpired) {
+        localStorage.removeItem('tuvi_fbc');
+        localStorage.removeItem('tuvi_fbclid');
+        localStorage.removeItem('tuvi_fbc_ts');
+      }
       const params = new URLSearchParams(window.location.search);
-      fbclid = params.get('fbclid') || localStorage.getItem('tuvi_fbclid') || undefined;
+      fbclid = params.get('fbclid') || (!isFbcExpired ? localStorage.getItem('tuvi_fbclid') || undefined : undefined);
+      storedFbc = !isFbcExpired ? localStorage.getItem('tuvi_fbc') || undefined : undefined;
     } catch {
       // ignore
     }
-    const fbc =
-      readBrowserCookie('_fbc') ||
-      (typeof localStorage !== 'undefined' ? localStorage.getItem('tuvi_fbc') || undefined : undefined);
+    const fbc = readBrowserCookie('_fbc') || storedFbc;
 
     return {
       fbp,
       fbc,
       fbclid,
       gaCid,
+      gaSessionId,
       sourceUrl: window.location.href,
     };
   } catch {
@@ -134,11 +146,12 @@ export function trackInitiateCheckout(
     'InitiateCheckout',
     {
       content_name: paymentType,
-      content_ids: [orderCode || paymentType],
+      content_ids: [paymentType || 'tuvi_service'],
       content_type: 'product',
       value: price,
       currency: 'VND',
       num_items: 1,
+      ...(orderCode ? { order_id: orderCode } : {}),
     },
     orderCode ? `ic_${orderCode}` : undefined
   );
@@ -146,6 +159,7 @@ export function trackInitiateCheckout(
 }
 
 export function trackPurchase(paymentType: string, price: number, orderCode?: string) {
+  if (!price || price <= 0) return;
   trackGa4Purchase(paymentType, price, orderCode);
   if (typeof window !== 'undefined' && orderCode) {
     const trackedKey = `fbq_purchased_${orderCode}`;
@@ -156,7 +170,7 @@ export function trackPurchase(paymentType: string, price: number, orderCode?: st
     'Purchase',
     {
       content_name: paymentType,
-      content_ids: [orderCode || paymentType],
+      content_ids: [paymentType || 'tuvi_service'],
       content_type: 'product',
       value: price,
       currency: 'VND',

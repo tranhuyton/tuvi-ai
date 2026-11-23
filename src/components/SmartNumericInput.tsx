@@ -46,12 +46,20 @@ export default function SmartNumericInput({
     }
   }, [value]);
 
-  const handleFocus = () => {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     isFocusedRef.current = true;
     if (display) {
       savedBeforeFocusRef.current = display;
     }
-    setDisplay('');
+    // Bôi đen toàn bộ giá trị hiện tại để khách gõ số mới đè lên ngay mà không bị mất số đang xem
+    const target = e.currentTarget;
+    requestAnimationFrame(() => {
+      try {
+        target.select();
+      } catch {
+        // ignore
+      }
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

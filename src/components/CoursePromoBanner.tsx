@@ -2,23 +2,23 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   GraduationCap,
   Headphones,
   CheckCircle2,
   QrCode,
   Play,
-  Compass,
-  BookOpen,
   ShieldCheck,
   ArrowRight,
 } from 'lucide-react';
-import { COURSE_INFO, COURSE_MODULES } from '@/lib/courseData';
+import { COURSE_INFO, COURSE_MODULES } from '@/lib/courseSummary';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { getBearerAuthHeaders } from '@/lib/adminClientAuth';
 
 export default function CoursePromoBanner() {
-  const { user, profile, testerInfo } = useAuth();
+  const { user, testerInfo } = useAuth();
   const { t } = useLanguage();
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
@@ -26,7 +26,6 @@ export default function CoursePromoBanner() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Dọn cờ VIP-ADMIN cũ từng lưu nhầm trong localStorage của trình duyệt
     try {
       if (localStorage.getItem('tuvi_course_order_code') === 'VIP-ADMIN') {
         localStorage.removeItem('tuvi_course_order_code');
@@ -36,57 +35,47 @@ export default function CoursePromoBanner() {
       // ignore
     }
 
-    // Chưa đăng nhập: luôn hiển thị bảng giá 699.000đ & nút mua / học thử trên trang chủ
     if (!user) {
-      setIsUnlocked(false);
-      setCompletedCount(0);
-      return;
-    }
-
-    try {
-      const savedCompleted = localStorage.getItem('tuvi_course_completed');
-      if (savedCompleted) {
-        const parsed = JSON.parse(savedCompleted);
-        if (Array.isArray(parsed)) setCompletedCount(parsed.length);
-      }
-    } catch {
-      // ignore
-    }
-
-    const emailLower = (user.email || profile?.email || '').toLowerCase();
-    const isEmailAdmin =
-      emailLower.includes('tranhuyton') ||
-      emailLower.includes('tonhuytran') ||
-      emailLower.includes('thayton') ||
-      emailLower === 'diep.anh.12135@gmail.com';
-
-    if (isEmailAdmin || testerInfo?.isTester) {
-      setIsUnlocked(true);
       return;
     }
 
     let cancelled = false;
-    fetch('/api/course/check-access', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: user.id,
-        email: emailLower || undefined,
-      }),
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        setIsUnlocked(Boolean(data?.unlocked));
-      })
-      .catch(() => {
-        if (!cancelled) setIsUnlocked(false);
-      });
 
+    const loadState = async () => {
+      try {
+        const savedCompleted = localStorage.getItem('tuvi_course_completed');
+        if (savedCompleted) {
+          const parsed = JSON.parse(savedCompleted);
+          if (!cancelled && Array.isArray(parsed)) setCompletedCount(parsed.length);
+        }
+      } catch {
+        // ignore
+      }
+
+      if (testerInfo?.isTester || user.app_metadata?.role === 'admin') {
+        if (!cancelled) setIsUnlocked(true);
+        return;
+      }
+
+      try {
+        const headers = await getBearerAuthHeaders({ 'Content-Type': 'application/json' });
+        const res = await fetch('/api/course/check-access', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({}),
+        });
+        const data = res.ok ? await res.json() : null;
+        if (!cancelled) setIsUnlocked(Boolean(data?.unlocked));
+      } catch {
+        if (!cancelled) setIsUnlocked(false);
+      }
+    };
+
+    void loadState();
     return () => {
       cancelled = true;
     };
-  }, [user, profile?.email, testerInfo?.isTester]);
+  }, [user, testerInfo?.isTester]);
 
   return (
     <section
@@ -95,10 +84,12 @@ export default function CoursePromoBanner() {
       className="w-full max-w-[1060px] mx-auto relative overflow-hidden rounded-3xl imperial-card p-5 sm:p-8 border border-amber-500/45 text-slate-100 print:hidden before:pointer-events-none before:absolute before:inset-x-12 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-300/80 before:to-transparent"
     >
       {/* Ảnh nền nghệ thuật Học Viện Tinh Đẩu & Podcast */}
-      <img
+      <Image
         src="/images/course-hero-podcast.png"
         alt="Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn"
-        className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none select-none"
+        fill
+        sizes="(max-width: 1060px) 100vw, 1060px"
+        className="object-cover opacity-15 pointer-events-none select-none"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/88 to-slate-950/80 pointer-events-none" />
       <div className="absolute -top-24 -right-24 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -143,10 +134,12 @@ export default function CoursePromoBanner() {
           >
             <div className="grid grid-cols-1 sm:grid-cols-12 items-center">
               <div className="sm:col-span-5 relative h-36 sm:h-full min-h-[132px] overflow-hidden">
-                <img
+                <Image
                   src="/images/course-hero-podcast.png"
                   alt="Podcast & Giáo Trình Tử Vi Đẩu Số Thầy Tôn"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 320px"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-slate-950/80 via-slate-950/20 to-transparent" />
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -155,9 +148,11 @@ export default function CoursePromoBanner() {
                   </div>
                 </div>
                 <div className="absolute bottom-2 left-2.5 flex items-center gap-2 px-2.5 py-1 rounded-xl bg-slate-950/90 border border-amber-400/45 backdrop-blur-md">
-                  <img
+                  <Image
                     src="/avatar-thay-ton.jpg"
                     alt="Thầy Tôn"
+                    width={24}
+                    height={24}
                     className="w-6 h-6 rounded-full object-cover border border-amber-400"
                   />
                   <span className="text-[11px] font-bold text-amber-300">{t('nav.about', 'Thầy Tôn')}</span>

@@ -1,12 +1,16 @@
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ubkvzgwespfvrlpjuxkp.supabase.co';
 
-const serviceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzExNjM1MSwiZXhwIjoyMDkyNjkyMzUxfQ.Ubmws-Yg0pJKaCaXy7aO8rbt6bw4O3PGgM6GzPR0PLk';
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+if (!serviceRoleKey && process.env.NODE_ENV === 'production') {
+  console.error(
+    '[SECURITY CRITICAL] Thiếu biến môi trường SUPABASE_SERVICE_ROLE_KEY trên production!'
+  );
+}
 
 /**
  * ⚠️ CẢNH BÁO CHO AI AGENT:
@@ -16,36 +20,135 @@ const serviceRoleKey =
  * - Khi gọi `adminSupabase.auth.admin.listUsers()`, BẮT BUỘC phải dùng `isTuViAuthUser()`
  *   (từ `@/lib/supabase`) và loại trừ `public.profiles` để không bao giờ trộn lẫn học viên TonyEnglish!
  */
-export const adminSupabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-  },
-});
+export const adminSupabase: SupabaseClient = createClient(
+  supabaseUrl,
+  serviceRoleKey || 'missing-supabase-service-role-key',
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  }
+);
 
-const SIGNING_SECRET =
-  process.env.CRON_SECRET ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'tuvi_drip_cron_2026_thayton';
+type TokenPurpose = 'email' | 'payout' | 'order_status';
 
 /**
- * Ký chữ ký HMAC ngắn gọn để xác thực link mở lá số / hủy nhận mail từ Email
- * (Giúp khách bấm từ Gmail mở bằng Safari/Chrome vẫn xem ngay được lá số của mình mà không cần đăng nhập lại)
+ * Sinh khóa HMAC tách miền độc lập theo mục đích (domain separation),
+ * đảm bảo chữ ký email không bao giờ dùng chéo cho payout hay order_status.
  */
-export function signEmailToken(payload: string): string {
-  return crypto
-    .createHmac('sha256', SIGNING_SECRET)
-    .update(payload)
-    .digest('hex')
-    .slice(0, 24);
+function getDerivedHmacKey(purpose: TokenPurpose): Buffer {
+  let rawSecret = '';
+  if (purpose === 'payout') {
+    rawSecret = (process.env.PAYOUT_HMAC_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  } else if (purpose === 'order_status') {
+    rawSecret = (process.env.EMAIL_HMAC_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  } else {
+    rawSecret = (process.env.EMAIL_HMAC_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  }
+
+  if (!rawSecret) {
+    throw new Error(`Thiếu secret ký HMAC cho mục đích ${purpose}`);
+  }
+
+  return crypto.createHash('sha256').update(`tuvi-hmac-domain-v2:${purpose}:${rawSecret}`).digest();
 }
 
-export function verifyEmailToken(payload: string, signature?: string | null): boolean {
-  if (!signature) return false;
-  const expected = signEmailToken(payload);
-  if (signature.length !== expected.length) return false;
+function getLegacyEmailSecret(): string {
+  return (
+    process.env.EMAIL_HMAC_SECRET ||
+    process.env.CRON_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    ''
+  ).trim();
+}
+
+function timingSafeHexEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  if (bufA.length !== bufB.length) return false;
   try {
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Ký token HMAC có hạn sử dụng (format: `<expUnix>.<sigHex>`) cho link mở lá số / hủy nhận mail / kiểm tra trạng thái đơn
+ */
+export function signExpiringToken(
+  purpose: TokenPurpose,
+  payload: string,
+  ttlSeconds: number
+): string {
+  const exp = Math.floor(Date.now() / 1000) + Math.max(60, Math.floor(ttlSeconds));
+  const sig = crypto
+    .createHmac('sha256', getDerivedHmacKey(purpose))
+    .update(`${payload}|exp=${exp}`)
+    .digest('hex')
+    .slice(0, 28);
+  return `${exp}.${sig}`;
+}
+
+export function verifyExpiringToken(
+  purpose: TokenPurpose,
+  payload: string,
+  token?: string | null
+): boolean {
+  if (!token) return false;
+  const dotIdx = token.indexOf('.');
+  if (dotIdx <= 0) return false;
+  const expStr = token.slice(0, dotIdx);
+  const sig = token.slice(dotIdx + 1);
+  const exp = Number(expStr);
+  if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) {
+    return false;
+  }
+  try {
+    const expected = crypto
+      .createHmac('sha256', getDerivedHmacKey(purpose))
+      .update(`${payload}|exp=${exp}`)
+      .digest('hex')
+      .slice(0, 28);
+    return timingSafeHexEqual(sig, expected);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Ký chữ ký HMAC có TTL mặc định 14 ngày cho các link Email Drip / Unsubscribe mới
+ */
+export function signEmailToken(payload: string, ttlSeconds = 14 * 24 * 3600): string {
+  return signExpiringToken('email', payload, ttlSeconds);
+}
+
+/**
+ * Xác thực token Email (ưu tiên chuẩn mới có TTL; chỉ chấp nhận định dạng cũ 24 hex cho link unsubscribe còn hiệu lực)
+ */
+export function verifyEmailToken(
+  payload: string,
+  signature?: string | null,
+  options?: { allowLegacy?: boolean }
+): boolean {
+  if (!signature) return false;
+  if (signature.includes('.')) {
+    return verifyExpiringToken('email', payload, signature);
+  }
+  if (options?.allowLegacy === false) {
+    return false;
+  }
+  // Tương thích ngược tạm thời cho các email đã gửi trước thời điểm nâng cấp
+  const legacySecret = getLegacyEmailSecret();
+  if (!legacySecret) return false;
+  try {
+    const expected = crypto
+      .createHmac('sha256', legacySecret)
+      .update(payload)
+      .digest('hex')
+      .slice(0, 24);
+    return timingSafeHexEqual(signature, expected);
   } catch {
     return false;
   }

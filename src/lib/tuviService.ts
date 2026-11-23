@@ -8,6 +8,8 @@ export interface SavedChart {
   duong_so_data: DuLieuDuongSo;
   laso_data: LaSoData;
   reading_html?: string | null;
+  has_reading?: boolean;
+  paid_tier?: 'pro' | 'expert';
   created_at: string;
   updated_at: string;
   message_count?: number;
@@ -30,28 +32,57 @@ export async function getUserCharts(): Promise<{ charts: SavedChart[]; error?: s
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { charts: [] };
 
+    // Không kéo reading_html (15–30KB/lá số) trong danh sách để tải siêu nhanh
     const { data, error } = await supabase
       .from('tuvi_charts')
-      .select('id, user_id, title, duong_so_data, laso_data, reading_html, created_at, updated_at')
+      .select('id, user_id, title, duong_so_data, laso_data, created_at, updated_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    // Lấy số lượng tin nhắn cho từng lá số
-    const chartsWithCount: SavedChart[] = await Promise.all(
-      (data || []).map(async (chart) => {
-        const { count } = await supabase
-          .from('tuvi_chat_messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('chart_id', chart.id);
-        return {
-          ...chart,
-          message_count: count || 0,
-        };
-      })
+    const rows = (data || []) as SavedChart[];
+    if (rows.length === 0) return { charts: [] };
+
+    const chartIds = rows.map((c) => c.id);
+
+    // 3 truy vấn gọn song song thay cho N+1 HEAD queries và tải full reading_html
+    const [msgRes, readingIdsRes, paidOrdersRes] = await Promise.all([
+      supabase.from('tuvi_chat_messages').select('chart_id').in('chart_id', chartIds),
+      supabase.from('tuvi_charts').select('id').in('id', chartIds).not('reading_html', 'is', null),
+      supabase
+        .from('tuvi_orders')
+        .select('chart_id, payment_type')
+        .in('chart_id', chartIds)
+        .eq('status', 'PAID'),
+    ]);
+
+    const msgCounts = new Map<string, number>();
+    for (const m of (msgRes.data || []) as { chart_id: string }[]) {
+      msgCounts.set(m.chart_id, (msgCounts.get(m.chart_id) || 0) + 1);
+    }
+
+    const hasReadingSet = new Set<string>(
+      ((readingIdsRes.data || []) as { id: string }[]).map((r) => r.id)
     );
 
-    return { charts: chartsWithCount };
+    const paidTierMap = new Map<string, 'pro' | 'expert'>();
+    for (const o of (paidOrdersRes.data || []) as { chart_id: string | null; payment_type: string }[]) {
+      if (!o.chart_id) continue;
+      if (o.payment_type === 'reading_expert' || o.payment_type === 'upgrade_expert') {
+        paidTierMap.set(o.chart_id, 'expert');
+      } else if (o.payment_type === 'reading_vip' && paidTierMap.get(o.chart_id) !== 'expert') {
+        paidTierMap.set(o.chart_id, 'pro');
+      }
+    }
+
+    const chartsWithMeta: SavedChart[] = rows.map((chart) => ({
+      ...chart,
+      has_reading: hasReadingSet.has(chart.id),
+      paid_tier: paidTierMap.get(chart.id),
+      message_count: msgCounts.get(chart.id) || 0,
+    }));
+
+    return { charts: chartsWithMeta };
   } catch (err: any) {
     console.error('Lỗi getUserCharts:', err.message);
     return { charts: [], error: err.message };
@@ -117,16 +148,20 @@ export async function saveOrUpdateChart(params: {
     if (!user) return { error: 'Bạn cần đăng nhập để lưu lá số' };
 
     if (params.id) {
-      // Cập nhật lá số đã có
+      // Cập nhật lá số đã có — CHỈ cập nhật reading_html khi được truyền rõ ràng (tránh xóa nhầm bài đã trả phí)
+      const updatePayload: Record<string, unknown> = {
+        title: params.title,
+        duong_so_data: params.duongSoData,
+        laso_data: params.lasoData,
+        updated_at: new Date().toISOString(),
+      };
+      if (params.readingHtml !== undefined) {
+        updatePayload.reading_html = params.readingHtml || null;
+      }
+
       const { error } = await supabase
         .from('tuvi_charts')
-        .update({
-          title: params.title,
-          duong_so_data: params.duongSoData,
-          laso_data: params.lasoData,
-          reading_html: params.readingHtml || null,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', params.id);
 
       if (error) throw error;

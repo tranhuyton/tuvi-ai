@@ -1,9 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+const ALLOWED_MODELS = new Set([
+  'gemini-2.5-flash',
+  'gemini-3.1-pro-preview',
+  'gemini-4-argon',
+  'gemini-4-carbon',
+]);
+
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Origin': 'https://www.tuvithayton.vn',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-edge-internal-secret',
 };
+
+function timingSafeEqualStr(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,6 +27,24 @@ serve(async (req) => {
   }
 
   try {
+    // Fail-closed: BẮT BUỘC phải có EDGE_INTERNAL_SECRET trong Supabase Secrets và khớp tuyệt đối
+    const expectedInternalSecret = (Deno.env.get('EDGE_INTERNAL_SECRET') || '').trim();
+    if (!expectedInternalSecret) {
+      console.error('[tuvi-interpreter] CRITICAL: EDGE_INTERNAL_SECRET chưa được cấu hình!');
+      return new Response(JSON.stringify({ error: 'Edge internal secret is not configured' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const providedSecret = (req.headers.get('x-edge-internal-secret') || '').trim();
+    if (!providedSecret || !timingSafeEqualStr(providedSecret, expectedInternalSecret)) {
+      return new Response(JSON.stringify({ error: 'Unauthorized Edge Function call' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { parts, contents, prompt, content, imageUrls, model, generationConfig } = await req.json();
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
@@ -18,36 +52,35 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY is not configured in Supabase Secrets.');
     }
 
-    let requestContents: any[] = [];
+    const requestedModel = typeof model === 'string' ? model.trim() : 'gemini-2.5-flash';
+    if (!ALLOWED_MODELS.has(requestedModel)) {
+      return new Response(JSON.stringify({ error: `Unsupported model: ${requestedModel}` }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    // Nếu đã gửi sẵn contents chuẩn của Gemini
+    let requestContents: Array<Record<string, unknown>> = [];
+
     if (contents && Array.isArray(contents)) {
       requestContents = contents;
-    } 
-    // Nếu gửi mảng parts chuẩn
-    else if (parts && Array.isArray(parts)) {
+    } else if (parts && Array.isArray(parts)) {
       requestContents = [{ role: 'user', parts }];
-    } 
-    // Nếu gửi text prompt + content + images
-    else {
-      const currentParts: any[] = [];
-      if (prompt) {
-        currentParts.push({ text: prompt });
-      }
-      if (content) {
-        currentParts.push({ text: content });
-      }
+    } else {
+      const currentParts: Array<Record<string, unknown>> = [];
+      if (prompt) currentParts.push({ text: prompt });
+      if (content) currentParts.push({ text: content });
       if (imageUrls && Array.isArray(imageUrls)) {
         for (const url of imageUrls) {
-          if (typeof url === 'string' && url.startsWith('data:image/')) {
+          if (typeof url === 'string' && /^data:image\/(jpeg|jpg|png|webp);base64,/i.test(url)) {
             const commaIndex = url.indexOf(',');
             if (commaIndex !== -1) {
               const header = url.substring(0, commaIndex);
-              const match = header.match(/data:(.*?);base64/);
+              const match = header.match(/data:(.*?);base64/i);
               const mimeType = match && match[1] ? match[1] : 'image/jpeg';
               const base64Data = url.substring(commaIndex + 1);
               currentParts.push({
-                inlineData: { mimeType, data: base64Data }
+                inlineData: { mimeType, data: base64Data },
               });
             }
           }
@@ -56,83 +89,104 @@ serve(async (req) => {
       requestContents = [{ role: 'user', parts: currentParts }];
     }
 
-    const targetModel = model || 'gemini-2.5-flash';
+    const targetModel = requestedModel;
     console.log(`[tuvi-interpreter] Calling model: ${targetModel}`);
 
-    // Cấu hình tối ưu tốc độ phản hồi & chiều sâu suy luận:
-    // - Với gemini-4-carbon (Expert Flagship): maxOutputTokens 28000, thinkingBudget 1536
-    // - Với gemini-4-argon (Expert Fast): maxOutputTokens 28000, thinkingBudget 1024
-    // - Với gemini-3.1-pro-preview: Cần thinkingBudget tối thiểu (1024)
-    // - Với gemini-2.5-flash: Dùng thinkingBudget 0 để phản hồi tức thì siêu tốc
     const isCarbon = targetModel.includes('carbon');
     const isExpertModel = isCarbon || targetModel.includes('argon') || targetModel.includes('4');
     const isProPreview = isExpertModel || targetModel.includes('3.1') || targetModel.includes('pro');
     const defaultBudget = isCarbon ? 1536 : isExpertModel ? 1024 : isProPreview ? 1024 : 0;
 
-    const finalGenConfig = generationConfig || {
-      temperature: 0.7,
-      maxOutputTokens: isExpertModel ? 28000 : isProPreview ? 12000 : 6000,
-      thinkingConfig: {
-        thinkingBudget: defaultBudget,
-      },
-    };
+    const finalGenConfig = generationConfig
+      ? {
+          ...generationConfig,
+          maxOutputTokens: Math.min(Number(generationConfig.maxOutputTokens || 14000), 30000),
+        }
+      : {
+          temperature: 0.7,
+          maxOutputTokens: isExpertModel ? 28000 : isProPreview ? 12000 : 6000,
+          thinkingConfig: {
+            thinkingBudget: defaultBudget,
+          },
+        };
 
     if (finalGenConfig.thinkingConfig && isProPreview && finalGenConfig.thinkingConfig.thinkingBudget === 0) {
       finalGenConfig.thinkingConfig.thinkingBudget = defaultBudget;
     }
 
-    const candidateModels = isCarbon
-      ? [targetModel, 'gemini-4-argon', 'gemini-3.1-pro-preview']
-      : isExpertModel && targetModel !== 'gemini-3.1-pro-preview'
-      ? [targetModel, 'gemini-3.1-pro-preview']
-      : [targetModel];
+    // Truyền API key qua header x-goog-api-key thay vì query string ?key=
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(targetModel)}:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY,
+        },
+        body: JSON.stringify({
+          contents: requestContents,
+          generationConfig: finalGenConfig,
+        }),
+        signal: AbortSignal.timeout(55000),
+      }
+    );
 
-    let data: any = null;
-    let usedModel = targetModel;
-    for (const candidateModel of candidateModels) {
-      usedModel = candidateModel;
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${candidateModel}:generateContent?key=${GEMINI_API_KEY}`,
+    const rawBody = await response.text();
+    let data: Record<string, unknown> = {};
+    try {
+      data = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : {};
+    } catch {
+      console.error('[tuvi-interpreter] Non-JSON upstream response:', response.status, rawBody.slice(0, 200));
+      return new Response(
+        JSON.stringify({ error: `Upstream Gemini HTTP ${response.status} (invalid JSON)` }),
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: requestContents,
-            generationConfig: finalGenConfig,
-          })
+          status: response.status >= 400 ? response.status : 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
-
-      data = await response.json();
-      if (!data.error) {
-        break;
-      }
-      console.warn(`[tuvi-interpreter] Model ${candidateModel} returned error:`, data.error.message);
     }
 
-    if (data?.error) {
-      console.error('[tuvi-interpreter] Gemini API error:', data.error);
-      return new Response(JSON.stringify({ error: data.error.message || 'Gemini API error' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (!response.ok || data?.error) {
+      const errObj = data?.error as { message?: string } | undefined;
+      console.error('[tuvi-interpreter] Gemini API error:', errObj || response.status);
+      return new Response(
+        JSON.stringify({ error: errObj?.message || `Gemini API HTTP ${response.status}` }),
+        {
+          status: response.status >= 400 ? response.status : 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
-    const resParts = data?.candidates?.[0]?.content?.parts || [];
+    const candidates = (data?.candidates as Array<{
+      finishReason?: string;
+      content?: { parts?: Array<{ thought?: boolean; text?: string }> };
+    }>) || [];
+    const firstCandidate = candidates[0];
+    const finishReason = firstCandidate?.finishReason || 'STOP';
+    const resParts = firstCandidate?.content?.parts || [];
     const aiText =
       resParts
-        .filter((p: any) => !p?.thought && typeof p?.text === 'string')
-        .map((p: any) => p.text)
+        .filter((p) => !p?.thought && typeof p?.text === 'string')
+        .map((p) => p.text)
         .join('') ||
       resParts[0]?.text ||
       '';
 
-    return new Response(JSON.stringify({ result: aiText, model: usedModel }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error: any) {
-    console.error('[tuvi-interpreter] Server error:', error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    if (finishReason === 'SAFETY' || finishReason === 'RECITATION' || finishReason === 'MAX_TOKENS') {
+      console.warn(`[tuvi-interpreter] Model ${targetModel} finishReason=${finishReason}, len=${aiText.length}`);
+    }
+
+    return new Response(
+      JSON.stringify({ result: aiText, model: targetModel, finishReason }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[tuvi-interpreter] Server error:', msg);
+    return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

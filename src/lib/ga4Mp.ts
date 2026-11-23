@@ -5,6 +5,7 @@ export interface SendGa4ServerPurchaseInput {
   paymentType: string;
   amount: number;
   gaClientId?: string | null;
+  gaSessionId?: string | null;
   userId?: string | null;
   timeoutMs?: number;
 }
@@ -20,9 +21,18 @@ export async function sendGa4ServerPurchase(input: SendGa4ServerPurchaseInput): 
     return false;
   }
 
+  if (!input.amount || input.amount <= 0) {
+    return false;
+  }
+
   const clientId =
-    (input.gaClientId || '').trim() || `webhook.${input.orderCode || Date.now()}`;
+    (input.gaClientId || '').trim() ||
+    (input.userId ? `user.${input.userId}` : `webhook.${input.orderCode || Date.now()}`);
   const item = mapPaymentTypeToGa4Item(input.paymentType, input.amount);
+  const parsedSessionId =
+    input.gaSessionId && /^\d+$/.test(String(input.gaSessionId).trim())
+      ? Number(String(input.gaSessionId).trim())
+      : undefined;
 
   const payload: Record<string, any> = {
     client_id: clientId,
@@ -35,6 +45,7 @@ export async function sendGa4ServerPurchase(input: SendGa4ServerPurchaseInput): 
           value: input.amount,
           currency: 'VND',
           engagement_time_msec: 100,
+          ...(parsedSessionId ? { session_id: parsedSessionId } : {}),
           items: [item],
         },
       },

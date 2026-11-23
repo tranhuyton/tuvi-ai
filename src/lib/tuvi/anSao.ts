@@ -29,10 +29,17 @@ function mod12(n: number): number {
   return ((n % 12) + 12) % 12;
 }
 
+export function isValidSolarDate(day: number, month: number, year: number): boolean {
+  if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) return false;
+  if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const dt = new Date(Date.UTC(year, month - 1, day));
+  return dt.getUTCFullYear() === year && dt.getUTCMonth() === month - 1 && dt.getUTCDate() === day;
+}
+
 export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData {
-  const currentYear = new Date().getFullYear();
-  const namXem = Number(namXemInput || data.namXem || currentYear);
-  data.namXem = namXem;
+  const defaultLunarYear = getCurrentVietnamTimeInfo().namAm;
+  const namXem = Number(namXemInput || data.namXem || defaultLunarYear);
+  const safeDuongSo: DuLieuDuongSo = { ...data, namXem };
 
   const rawVal = String(data.gioSinhVal || '0_0').trim();
   const isLateTy = rawVal === '0_23' || rawVal.toLowerCase().includes('dạ');
@@ -60,13 +67,17 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
     }
   }
 
-  let nd = data.ngayDuong;
-  let td = data.thangDuong;
-  let n_d = data.namDuong;
+  let nd = Number(data.ngayDuong);
+  let td = Number(data.thangDuong);
+  let n_d = Number(data.namDuong);
+
+  if (!isValidSolarDate(nd, td, n_d)) {
+    throw new Error(`Ngày sinh Dương lịch không hợp lệ (${data.ngayDuong}/${data.thangDuong}/${data.namDuong}). Vui lòng kiểm tra lại ngày tháng năm sinh.`);
+  }
 
   // Nếu là giờ Tý Dạ (23h - 24h), ngày dương được tính sang ngày hôm sau
   if (isLateTy) {
-    const daysInMonth = new Date(n_d, td, 0).getDate();
+    const daysInMonth = new Date(Date.UTC(n_d, td, 0)).getUTCDate();
     if (nd < daysInMonth) {
       nd++;
     } else {
@@ -215,7 +226,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
   }
 
   const tvNamXem = mod12(startTv + mod12(chiNamXemIdx - chiNamIdx) * dirTv);
-  const endHouse = mod12(tvNamXem - (thangAmGoc - 1));
+  const endHouse = mod12(tvNamXem - (thangAm - 1));
   const month1House = mod12(endHouse + gioSinh);
   const nguyetVanArr: string[] = [];
   for (let p = 0; p < 12; p++) {
@@ -364,10 +375,10 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
   addPt(coThanMap[chiNamIdx], 'Cô Thần');
   addPt(quaTuMap[chiNamIdx], 'Quả Tú');
 
-  // Các sao theo Tháng sinh
+  // Các sao theo Tháng sinh (Thiên Y đồng cung Thiên Diêu khởi từ Sửu thuận theo chuẩn Tân Biên)
   addPt(9 + thangAm - 1, 'Thiên Hình');
   addPt(1 + thangAm - 1, 'Thiên Diêu');
-  addPt(7 + thangAm - 1, 'Thiên Y');
+  addPt(1 + thangAm - 1, 'Thiên Y');
   addPt(8 + thangAm - 1, 'Thiên Giải');
   addPt(7 + thangAm - 1, 'Địa Giải');
   addPt(10 - chiNamIdx, 'Giải Thần');
@@ -412,7 +423,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
     for (let i = 0; i < 12; i++) {
       for (const cat of ['c', 't', 'x'] as const) {
         for (const star of s[i][cat]) {
-          if (star.includes(baseStar)) {
+          if (star === baseStar) {
             s[i][type].push(name);
             return;
           }
@@ -475,11 +486,11 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
   const maLuu = maMap[chiNamXemIdx];
   addSaoLuu(maLuu, 'L.Thiên Mã', 'tot');
 
-  // 8. L.Đẩu Quân (Hỏa - Đỏ)
-  const douQuanLuu = mod12(chiNamXemIdx - (thangAmGoc - 1) + gioSinh);
+  // 8. L.Đẩu Quân (Hỏa - Đỏ) - đồng nhất dùng thangAm (tính cả quy tắc tháng nhuận > 15)
+  const douQuanLuu = mod12(chiNamXemIdx - (thangAm - 1) + gioSinh);
   addSaoLuu(douQuanLuu, 'L.Đẩu Quân', 'xau');
 
-  // 9. Lưu Tứ Hóa (L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị) theo Can năm xem
+  // 9. Lưu Tứ Hóa (L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kỵ) theo Can năm xem
   const hoaLocLuuStar = HOA_LOC_MAP[canNamXemIdx];
   const hoaQuyenLuuStar = HOA_QUYEN_MAP[canNamXemIdx];
   const hoaKhoaLuuStar = HOA_KHOA_MAP[canNamXemIdx];
@@ -489,7 +500,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
     for (let i = 0; i < 12; i++) {
       for (const cat of ['c', 't', 'x'] as const) {
         for (const star of s[i][cat]) {
-          if (star.includes(baseStar)) {
+          if (star === baseStar) {
             addSaoLuu(i, name, loai);
             return;
           }
@@ -501,7 +512,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
   addHoaLuuStar(hoaLocLuuStar, 'L.Hóa Lộc', 'tot');
   addHoaLuuStar(hoaQuyenLuuStar, 'L.Hóa Quyền', 'tot');
   addHoaLuuStar(hoaKhoaLuuStar, 'L.Hóa Khoa', 'tot');
-  addHoaLuuStar(hoaKyLuuStar, 'L.Hóa Kị', 'xau');
+  addHoaLuuStar(hoaKyLuuStar, 'L.Hóa Kỵ', 'xau');
 
   // 10. An sao chỉ báo Lưu Niên Đại Hạn (LN.Đại Hạn) trực tiếp vào ô cung quá cung từ Đại Vận 10 năm
   let activeDaiVanIdx = -1;
@@ -568,7 +579,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
         dacHam: dacHamVal,
         loai: 'tot',
         color,
-        isLuu: pt.startsWith('L.') || pt.startsWith('LN.'),
+        isLuu: pt.startsWith('L.') || pt === 'LN.Đại Hạn',
       };
     });
 
@@ -585,7 +596,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
         dacHam: dacHamVal,
         loai: 'xau',
         color,
-        isLuu: px.startsWith('L.') || px.startsWith('LN.'),
+        isLuu: px.startsWith('L.') || px === 'LN.Đại Hạn',
       };
     });
 
@@ -611,7 +622,7 @@ export function lapLaSoTuVi(data: DuLieuDuongSo, namXemInput?: number): LaSoData
     luuNienDaiHanIdx !== undefined ? cungs[luuNienDaiHanIdx] : undefined;
 
   return {
-    duongSo: data,
+    duongSo: safeDuongSo,
     amLich: {
       ngayAm,
       thangAm,
@@ -933,12 +944,11 @@ export function computeTamHanAnalysis(laSo: LaSoData): TamHanAnalysis {
  * Gồm cả Dương lịch và Âm lịch chuẩn xác 100%
  */
 export function getCurrentVietnamTimeInfo() {
-  const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-  const vnDate = new Date(utcMs + 7 * 3600000);
-  const ngayDuong = vnDate.getDate();
-  const thangDuong = vnDate.getMonth() + 1;
-  const namDuong = vnDate.getFullYear();
+  const vnDate = new Date(Date.now() + 7 * 3600000);
+  const ngayDuong = vnDate.getUTCDate();
+  const thangDuong = vnDate.getUTCMonth() + 1;
+  const namDuong = vnDate.getUTCFullYear();
+  const gioDuong = vnDate.getUTCHours();
   const [ngayAm, thangAm, namAm, isLeap] = solar2Lunar(ngayDuong, thangDuong, namDuong, 7.0);
   const canNamIdx = (namAm + 6) % 10;
   const chiNamIdx = (namAm + 8) % 12;
@@ -947,6 +957,7 @@ export function getCurrentVietnamTimeInfo() {
     ngayDuong,
     thangDuong,
     namDuong,
+    gioDuong,
     ngayAm,
     thangAm,
     namAm,
@@ -1031,6 +1042,14 @@ export function buildCungDataPrompt(laSo: LaSoData): string {
     res += `\n=== TỌA ĐỘ ĐẠI VẬN & 3 CUNG HẠN NĂM ${namXem} (${namXemCanChi}) [CHÍNH XÁC 100% - CẤM NHẦM LẪN] ===\n`;
     if (cungDaiVan && startAge !== undefined && endAge !== undefined) {
       res += `- ĐẠI VẬN 10 NĂM HIỆN TẠI (${startAge} - ${endAge} tuổi): Đóng tại ${daiVanCoordLabel}.\n`;
+    } else if (typeof laSo.tuoiAmXem === 'number' && laSo.tuoiAmXem <= 0) {
+      res += `- ĐẠI VẬN 10 NĂM: Năm xem (${namXem}) trước năm sinh Âm lịch (${laSo.amLich?.namAm || ''}) nên chưa phát sinh Đại vận.\n`;
+    } else if (
+      cungs.length === 12 &&
+      typeof laSo.tuoiAmXem === 'number' &&
+      laSo.tuoiAmXem >= Math.max(...cungs.map((c) => c.daiVan)) + 10
+    ) {
+      res += `- ĐẠI VẬN 10 NĂM: Tuổi xem (${laSo.tuoiAmXem} tuổi) đã vượt chu kỳ 12 cung Đại vận (hết vòng 120 năm).\n`;
     } else {
       res += `- ĐẠI VẬN 10 NĂM: Đang ở giai đoạn Đồng Hạn (trước tuổi vào Đại vận đầu tiên).\n`;
     }

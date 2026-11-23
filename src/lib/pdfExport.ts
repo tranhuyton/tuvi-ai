@@ -2,8 +2,9 @@ import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 import * as htmlToImage from 'html-to-image';
 import { DuLieuDuongSo, LaSoData, ServiceTier } from '@/types/tuvi';
-import { GIO_ARR } from '@/lib/tuvi/constants';
 import { isInAppBrowser } from './inAppBrowser';
+import { cleanReadingHtml, escapeHtml } from '@/lib/tuvi/cleanReadingHtml';
+import { getCurrentVietnamTimeInfo } from '@/lib/tuvi/anSao';
 
 export interface ExportPdfOptions {
   duongSo?: DuLieuDuongSo | null;
@@ -42,15 +43,70 @@ function isHeadingElement(el: HTMLElement): boolean {
 }
 
 /**
+ * Tách một đoạn văn bản dài theo ranh giới câu trên DOM Text nodes (KHÔNG tách raw innerHTML,
+ * KHÔNG dùng regex lookbehind để tương thích 100% iOS Safari < 16.4 và không bao giờ cắt ngang thuộc tính style="...").
+ */
+function splitParagraphDomSafely(pNode: HTMLElement, maxChunkChars = 160): HTMLElement[] {
+  const fullText = (pNode.textContent || '').trim();
+  if (fullText.length <= 180) return [pNode];
+
+  const pieces: Node[] = [];
+  Array.from(pNode.childNodes).forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) {
+      const txt = child.textContent || '';
+      // Tách giữ lại dấu kết câu (. ? !) + khoảng trắng theo sau (không dùng lookbehind)
+      const parts = txt.match(/[^.?!]+(?:[.?!]+(?:\s+|$)|$)/g);
+      if (parts && parts.length > 1) {
+        parts.forEach((seg) => {
+          if (seg) pieces.push(document.createTextNode(seg));
+        });
+      } else if (txt) {
+        pieces.push(document.createTextNode(txt));
+      }
+    } else {
+      pieces.push(child.cloneNode(true));
+    }
+  });
+
+  if (pieces.length <= 1) return [pNode];
+
+  const chunks: HTMLElement[] = [];
+  let currentP = document.createElement('p');
+  let currentLen = 0;
+
+  for (const piece of pieces) {
+    const pieceText = piece.textContent || '';
+    const pieceLen = pieceText.length;
+    const isSentenceEndBoundary =
+      currentLen >= maxChunkChars && /[.?!]\s*$/.test((currentP.textContent || '').trimEnd());
+
+    if (isSentenceEndBoundary && pieceText.trim().length > 0) {
+      chunks.push(currentP);
+      currentP = document.createElement('p');
+      currentLen = 0;
+    }
+
+    currentP.appendChild(piece);
+    currentLen += pieceLen;
+  }
+
+  if ((currentP.textContent || '').trim().length > 0) {
+    chunks.push(currentP);
+  }
+
+  return chunks.length > 0 ? chunks : [pNode];
+}
+
+/**
  * Phân tích và bẻ nhỏ HTML bài luận giải thành các khối (blocks) chi tiết:
  * 1. Mở phẳng các container lồng nhau (DIV, SECTION, ARTICLE)
- * 2. Mở phẳng UL / OL: Từng thẻ LI trở thành một đoạn văn độc lập có bullet • (tránh tình trạng 4 mùa bị gom vào 1 thẻ UL khổng lồ)
+ * 2. Mở phẳng UL / OL: Từng thẻ LI trở thành một đoạn văn độc lập có bullet • rõ ràng
  * 3. Tách các đoạn văn có chứa thẻ <br> thành các thẻ <p> độc lập
- * 4. Tách các đoạn văn dài (> 180 ký tự) thành các câu nhỏ 1-2 câu để trang lấp đầy tự nhiên, không bao giờ bị khoảng trống lớn
+ * 4. Tách các đoạn văn dài (> 180 ký tự) theo DOM Text node (không bao giờ vỡ thẻ HTML hay style inline)
  */
 function parseHtmlToBlocks(html: string): HTMLElement[] {
   const container = document.createElement('div');
-  container.innerHTML = html;
+  container.innerHTML = cleanReadingHtml(html);
 
   const rawList: HTMLElement[] = [];
 
@@ -78,50 +134,43 @@ function parseHtmlToBlocks(html: string): HTMLElement[] {
       }
     }
 
-    // 3. Xử lý thẻ LI: Biến thành thẻ P có bullet • rõ ràng
+    // 3. Xử lý thẻ LI: Biến thành thẻ P có bullet • bằng DOM API (tránh cắt nhầm style inline)
     if (tag === 'LI') {
       const p = document.createElement('p');
-      p.innerHTML = `<span style="font-weight: 900; margin-right: 6px;">•</span>${node.innerHTML.trim()}`;
+      const bullet = document.createElement('span');
+      bullet.textContent = '• ';
+      bullet.style.fontWeight = '900';
+      bullet.style.marginRight = '4px';
+      p.appendChild(bullet);
+      Array.from(node.childNodes).forEach((child) => p.appendChild(child.cloneNode(true)));
       walk(p);
       return;
     }
 
     // 4. Nếu là thẻ P có chứa ngắt dòng <br> (thường gặp khi liệt kê các mùa hoặc gạch đầu dòng)
-    if (tag === 'P' && /<br\s*\/?>/i.test(node.innerHTML)) {
-      const parts = node.innerHTML.split(/<br\s*\/?>/i);
-      for (const part of parts) {
-        const trimmed = part.trim();
-        if (trimmed) {
-          const newP = document.createElement('p');
-          newP.innerHTML = trimmed;
-          walk(newP);
+    if (tag === 'P' && node.querySelector('br')) {
+      let currentP = document.createElement('p');
+      Array.from(node.childNodes).forEach((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE && (child as HTMLElement).tagName === 'BR') {
+          if ((currentP.textContent || '').trim()) {
+            walk(currentP);
+          }
+          currentP = document.createElement('p');
+        } else {
+          currentP.appendChild(child.cloneNode(true));
         }
+      });
+      if ((currentP.textContent || '').trim()) {
+        walk(currentP);
       }
       return;
     }
 
-    // 5. Nếu là đoạn văn dài (> 180 ký tự) có nhiều câu, bẻ thành các câu nhỏ để phân trang lấp đầy từng trang
+    // 5. Nếu là đoạn văn dài (> 180 ký tự) có nhiều câu, tách an toàn trên DOM Text nodes
     if (tag === 'P' && (node.textContent || '').length > 180 && !isHeadingElement(node)) {
-      const sentences = node.innerHTML.split(/(?<=[.?!:])\s+/);
-      if (sentences.length > 1) {
-        let currentChunk = '';
-        for (const s of sentences) {
-          if ((currentChunk + ' ' + s).length > 150 && currentChunk) {
-            const pChunk = document.createElement('p');
-            pChunk.innerHTML = currentChunk.trim();
-            rawList.push(pChunk);
-            currentChunk = s;
-          } else {
-            currentChunk = currentChunk ? currentChunk + ' ' + s : s;
-          }
-        }
-        if (currentChunk.trim()) {
-          const pChunk = document.createElement('p');
-          pChunk.innerHTML = currentChunk.trim();
-          rawList.push(pChunk);
-        }
-        return;
-      }
+      const chunks = splitParagraphDomSafely(node, 160);
+      chunks.forEach((c) => rawList.push(c));
+      return;
     }
 
     rawList.push(node);
@@ -338,7 +387,7 @@ export async function exportReadingToPdf({
   // 1. Tạo mã QR chất lượng cao dẫn về website tuvithayton.vn
   let qrCodeDataUrl = '';
   try {
-    qrCodeDataUrl = await QRCode.toDataURL('https://tuvithayton.vn', {
+    qrCodeDataUrl = await QRCode.toDataURL('https://www.tuvithayton.vn', {
       width: 260,
       margin: 1,
       color: {
@@ -353,48 +402,10 @@ export async function exportReadingToPdf({
   // 2. Chuẩn bị dữ liệu thân chủ
   const hoTen = duongSo?.hoTen || laSo?.duongSo?.hoTen || chartTitle || 'Đương Số';
   const gioiTinh = duongSo?.gioiTinh || laSo?.duongSo?.gioiTinh || 'Nam';
-  const ngayDuong = duongSo?.ngayDuong ?? laSo?.duongSo?.ngayDuong;
-  const thangDuong = duongSo?.thangDuong ?? laSo?.duongSo?.thangDuong;
-  const namDuong = duongSo?.namDuong ?? laSo?.duongSo?.namDuong;
-  const gioSinhKey = duongSo?.gioSinhVal || laSo?.duongSo?.gioSinhVal || '';
-  const gioSinhLabel = GIO_ARR[gioSinhKey]?.label || gioSinhKey || 'Chưa xác định';
-
-  const ngayDuongStr =
-    ngayDuong && thangDuong && namDuong
-      ? `${String(ngayDuong).padStart(2, '0')}/${String(thangDuong).padStart(2, '0')}/${namDuong}`
-      : 'Chưa rõ';
-
-  const amLich = laSo?.amLich;
-  const ngayAmStr = amLich
-    ? `Ngày ${String(amLich.ngayAm).padStart(2, '0')} tháng ${String(amLich.thangAm).padStart(2, '0')}${
-        amLich.isLeap ? ' (Nhuận)' : ''
-      } năm ${laSo?.namCanChi || ''}`
-    : 'Chưa rõ';
-
-  const batTuStr = [
-    laSo?.namCanChi ? `Năm ${laSo.namCanChi}` : '',
-    laSo?.thangCanChi ? `Tháng ${laSo.thangCanChi}` : '',
-    laSo?.ngayCanChi ? `Ngày ${laSo.ngayCanChi}` : '',
-    laSo?.gioCanChi ? `Giờ ${laSo.gioCanChi}` : '',
-  ]
-    .filter(Boolean)
-    .join(' • ');
-
-  const banMenh = laSo?.napAmMenh || laSo?.banMenh || 'Chưa rõ';
   const amDuongTxt = laSo?.amDuongTxt || '';
-  const tenCuc = laSo?.tenCuc || '';
-  const sinhKhac = laSo?.sinhKhac || '';
-  const rawThanCu = laSo?.thanCuName || '';
-  const thanCu = rawThanCu
-    ? rawThanCu.startsWith('Thân cư')
-      ? rawThanCu
-      : `Thân cư ${rawThanCu}`
-    : 'Mệnh Thân đồng cung';
-  const menhChu = laSo?.menhChu ? `Mệnh chủ: ${laSo.menhChu}` : '';
-  const thanChu = laSo?.thanChu ? `Thân chủ: ${laSo.thanChu}` : '';
-  const namXem = laSo?.namXem || new Date().getFullYear();
+  const vnTime = getCurrentVietnamTimeInfo();
+  const namXem = laSo?.namXem || vnTime.namAm;
   const namXemCanChi = laSo?.namXemCanChi || '';
-  const tuoiAmXem = laSo?.tuoiAmXem ? `${laSo.tuoiAmXem} tuổi (tuổi mụ)` : '';
 
   const cleanNameForFile = sanitizeVietnameseFileName(hoTen, 'Duong_So');
 
@@ -511,14 +522,15 @@ export async function exportReadingToPdf({
     host.removeChild(measureBox);
 
     // 6. Phân trang nội dung luận giải
-    // Nếu có Trang 1 dành riêng cho Hình Lá Số => Các trang luận giải đều dùng chuẩn an toàn 890px
+    // Trang nội dung đầu có thêm introBanner (~96px) nên trừ trực tiếp vào budget để không bị cắt đáy
     const PAGE_HEIGHT_NORMAL = 890;
-    const PAGE_HEIGHT_PAGE1_NO_CHART = 490;
-    const FOOTER_REQUIRED_HEIGHT = 280;
+    const INTRO_BANNER_HEIGHT = 96;
+    const PAGE_HEIGHT_FIRST_CONTENT = PAGE_HEIGHT_NORMAL - INTRO_BANNER_HEIGHT;
+    const FOOTER_REQUIRED_HEIGHT = 285;
 
     const pageBlockGroups: HTMLElement[][] = [];
     let currentGroup: HTMLElement[] = [];
-    let currentRemaining = chartImage ? PAGE_HEIGHT_NORMAL : PAGE_HEIGHT_PAGE1_NO_CHART;
+    let currentRemaining = PAGE_HEIGHT_FIRST_CONTENT;
 
     for (let i = 0; i < blockClones.length; i++) {
       const clone = blockClones[i];
@@ -530,7 +542,10 @@ export async function exportReadingToPdf({
           const lastItem = currentGroup[currentGroup.length - 1];
           if (isHeadingElement(lastItem)) {
             currentGroup.pop();
-            pageBlockGroups.push(currentGroup);
+            // Chỉ đẩy trang cũ nếu còn phần tử (tránh sinh trang trắng khi heading đứng một mình ở đầu trang)
+            if (currentGroup.length > 0) {
+              pageBlockGroups.push(currentGroup);
+            }
             currentGroup = [lastItem, clone];
             currentRemaining = PAGE_HEIGHT_NORMAL - blockHeights[i - 1] - h;
             continue;
@@ -556,7 +571,7 @@ export async function exportReadingToPdf({
 
     const pageElements: HTMLElement[] = [];
 
-    // --- HTML Chân Trang Thương Hiệu Thầy Tôn (Đen tuyền, rõ nét) ---
+    // --- HTML Chân Trang Thương Hiệu Thầy Tôn (QR sẽ được vẽ trực tiếp bằng jsPDF.addImage để không mất trên iOS Safari) ---
     const brandFooterHtml = `
       <div style="
         margin-top: 14px;
@@ -584,7 +599,7 @@ export async function exportReadingToPdf({
           <div style="font-size: 14px; color: #000000; font-weight: 600; display: flex; flex-direction: column; gap: 3px;">
             <div><strong style="color: #000000; font-weight: 800;">Khu vực tham vấn:</strong> Khu đô thị Royal City, Thanh Xuân, Hà Nội (Đặt lịch hẹn trước qua Zalo)</div>
             <div><strong style="color: #000000; font-weight: 800;">Hotline/Zalo:</strong> <span style="font-weight: 900; color: #000000;">0935 058 688</span></div>
-            <div><strong style="color: #000000; font-weight: 800;">Website:</strong> <span style="font-weight: 900; color: #000000;">https://tuvithayton.vn</span></div>
+            <div><strong style="color: #000000; font-weight: 800;">Website:</strong> <span style="font-weight: 900; color: #000000;">https://www.tuvithayton.vn</span></div>
             <div><strong style="color: #000000; font-weight: 800;">Email:</strong> tranhuyton@gmail.com • thayton@tuvithayton.vn</div>
           </div>
           <div style="font-style: italic; font-size: 12.5px; color: #000000; font-weight: 600; margin-top: 6px; line-height: 1.4;">
@@ -598,7 +613,7 @@ export async function exportReadingToPdf({
         <div style="display: flex; flex-direction: column; align-items: center; text-align: center; flex-shrink: 0;">
           ${
             qrCodeDataUrl
-              ? `<img src="${qrCodeDataUrl}" alt="QR tuvithayton.vn" style="width: 95px; height: 95px; border: 2px solid #000000; border-radius: 6px; background: #ffffff; padding: 2px;" />`
+              ? `<div id="tuvi-pdf-qr-box" style="width: 95px; height: 95px; border: 2px solid #000000; border-radius: 6px; background: #ffffff; padding: 2px; box-sizing: border-box;"></div>`
               : ''
           }
           <div style="font-size: 11px; font-weight: 700; color: #000000; max-width: 125px; margin-top: 3px; line-height: 1.25;">
@@ -616,7 +631,7 @@ export async function exportReadingToPdf({
         border-top: 1.5px solid #000000;
         padding-top: 5px;
       ">
-        © ${new Date().getFullYear()} TỬ VI THẦY TÔN (TUVITHAYTON.VN) • BẢN QUYỀN LUẬN GIẢI ĐƯỢC BẢO HỘ • KÍNH CHÚC QUÝ THÂN CHỦ VẠN SỰ HANH THÔNG
+        © ${vnTime.namDuong} TỬ VI THẦY TÔN (TUVITHAYTON.VN) • BẢN QUYỀN LUẬN GIẢI ĐƯỢC BẢO HỘ • KÍNH CHÚC QUÝ THÂN CHỦ VẠN SỰ HANH THÔNG
       </div>
     `;
 
@@ -672,12 +687,12 @@ export async function exportReadingToPdf({
             color: #000000;
             margin-top: 3px;
           ">
-            <span>Thân chủ: <strong style="font-size: 15px; font-weight: 900;">${hoTen.toUpperCase()}</strong></span>
+            <span>Thân chủ: <strong style="font-size: 15px; font-weight: 900;">${escapeHtml(hoTen.toUpperCase())}</strong></span>
             <span>•</span>
-            <span>Giới tính: <strong>${gioiTinh} (${amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ')})</strong></span>
+            <span>Giới tính: <strong>${escapeHtml(gioiTinh)} (${escapeHtml(amDuongTxt || (gioiTinh === 'Nam' ? 'Dương Nam' : 'Âm Nữ'))})</strong></span>
             <span>•</span>
-            <span>Năm xem: <strong>${namXem} (${namXemCanChi})</strong></span>
-            ${orderCode ? `<span>•</span><span>Mã đơn: <strong>${orderCode}</strong></span>` : ''}
+            <span>Năm xem: <strong>${escapeHtml(namXem)} (${escapeHtml(namXemCanChi)})</strong></span>
+            ${orderCode ? `<span>•</span><span>Mã đơn: <strong>${escapeHtml(orderCode)}</strong></span>` : ''}
           </div>
         </div>
 
@@ -717,7 +732,6 @@ export async function exportReadingToPdf({
       `;
       page1.appendChild(bottomBar1);
 
-      host.appendChild(page1);
       pageElements.push(page1);
     }
 
@@ -767,7 +781,7 @@ export async function exportReadingToPdf({
       runningHeader.style.textTransform = 'uppercase';
       runningHeader.innerHTML = `
         <span>Tử Vi Đẩu Số Thầy Tôn • Bản Luận Giải Chi Tiết</span>
-        <span>Thân chủ: ${hoTen}</span>
+        <span>Thân chủ: ${escapeHtml(hoTen)}</span>
       `;
       topContainer.appendChild(runningHeader);
 
@@ -833,7 +847,6 @@ export async function exportReadingToPdf({
       `;
       pageEl.appendChild(bottomBar);
 
-      host.appendChild(pageEl);
       pageElements.push(pageEl);
     }
 
@@ -870,7 +883,7 @@ export async function exportReadingToPdf({
           text-transform: uppercase;
         ">
           <span>Tử Vi Đẩu Số Thầy Tôn • Tổng Kết & Liên Hệ Tư Vấn</span>
-          <span>Thân chủ: ${hoTen}</span>
+          <span>Thân chủ: ${escapeHtml(hoTen)}</span>
         </div>
         ${brandFooterHtml}
       `;
@@ -894,87 +907,109 @@ export async function exportReadingToPdf({
       `;
       extraPage.appendChild(bottomBar);
 
-      host.appendChild(extraPage);
       pageElements.push(extraPage);
     }
 
-    // Đợi 250ms để tất cả hình ảnh lá số, QR và DOM render ổn định
-    await new Promise((resolve) => setTimeout(resolve, 250));
-
-    // 10. Kết xuất từng trang thành ảnh PNG sắc nét (Retina 2x, không nhiễu) và ghép vào PDF
+    // 10. Kết xuất tuần tự từng trang (mount -> chụp -> gỡ khỏi DOM) để tiết kiệm RAM trên iOS Safari / mobile
     const pdfDoc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
+      compress: true,
     });
 
     for (let i = 0; i < pageElements.length; i++) {
       onProgress?.(`Đang tạo trang ${i + 1}/${totalPages}...`);
 
       const pNode = pageElements[i];
-      const imgDataUrl = await htmlToImage.toPng(pNode, {
-        pixelRatio: 2.0, // Độ nét cực cao chuẩn Retina, triệt tiêu mờ nhạt
-        backgroundColor: '#ffffff',
-        style: {
-          opacity: '1',
-          visibility: 'visible',
-          display: 'flex',
-        },
-      });
+      host.appendChild(pNode);
+      await new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 25)))
+      );
 
-      if (i > 0) {
-        pdfDoc.addPage('a4', 'portrait');
-      }
+      try {
+        const imgDataUrl = await htmlToImage.toJpeg(pNode, {
+          pixelRatio: 1.5,
+          quality: 0.88,
+          backgroundColor: '#ffffff',
+          style: {
+            opacity: '1',
+            visibility: 'visible',
+            display: 'flex',
+          },
+        });
 
-      // 10.1 Vẽ toàn bộ khung trang (Header, Viền, Footer)
-      pdfDoc.addImage(imgDataUrl, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+        if (i > 0) {
+          pdfDoc.addPage('a4', 'portrait');
+        }
 
-      // 10.2 Nếu là Trang 1 và có ảnh lá số: nhúng trực tiếp ảnh lá số vào khung bằng jsPDF engine
-      // Điều này loại bỏ hoàn toàn hạn chế bảo mật của WebKit (Safari/Chrome iOS) khi chặn data URL lồng trong SVG foreignObject
-      if (i === 0 && chartImage) {
-        try {
-          const chartBox = pNode.querySelector('#tuvi-page1-chart-box') as HTMLElement | null;
-          const p1Rect = pNode.getBoundingClientRect();
-          const boxRect = chartBox?.getBoundingClientRect();
+        // 10.1 Vẽ toàn bộ khung trang (Header, Viền, Footer)
+        pdfDoc.addImage(imgDataUrl, 'JPEG', 0, 0, 210, 297, undefined, 'MEDIUM');
 
-          const mmPerPxX = 210 / (p1Rect.width || 794);
-          const mmPerPxY = 297 / (p1Rect.height || 1123);
+        const pRect = pNode.getBoundingClientRect();
+        const mmPerPxX = 210 / (pRect.width || 794);
+        const mmPerPxY = 297 / (pRect.height || 1123);
 
-          const boxLeftMm = boxRect ? (boxRect.left - p1Rect.left) * mmPerPxX : 7.4;
-          const boxTopMm = boxRect ? (boxRect.top - p1Rect.top) * mmPerPxY : 22.5;
-          const boxWidthMm = boxRect ? boxRect.width * mmPerPxX : 195.2;
-          const boxHeightMm = boxRect ? boxRect.height * mmPerPxY : 259.5;
-
-          // Chừa lề nhỏ 0.8mm bên trong viền đen 2px để lá số nằm gọn ghẽ, tinh tế
-          const padMm = 0.8;
-          const innerW = Math.max(10, boxWidthMm - padMm * 2);
-          const innerH = Math.max(10, boxHeightMm - padMm * 2);
-          const innerX = boxLeftMm + padMm;
-          const innerY = boxTopMm + padMm;
-
-          // Lấy tỷ lệ ảnh thực tế từ jsPDF
-          let naturalAspect = chartAspectRatio || 760 / 890;
+        // 10.2 Nếu là Trang 1 và có ảnh lá số: nhúng trực tiếp bằng jsPDF (tránh WebKit chặn data URL trong foreignObject)
+        if (i === 0 && chartImage) {
           try {
-            const imgProps = pdfDoc.getImageProperties(chartImage);
-            if (imgProps.width && imgProps.height) {
-              naturalAspect = imgProps.width / imgProps.height;
+            const chartBox = pNode.querySelector('#tuvi-page1-chart-box') as HTMLElement | null;
+            const boxRect = chartBox?.getBoundingClientRect();
+
+            const boxLeftMm = boxRect ? (boxRect.left - pRect.left) * mmPerPxX : 7.4;
+            const boxTopMm = boxRect ? (boxRect.top - pRect.top) * mmPerPxY : 22.5;
+            const boxWidthMm = boxRect ? boxRect.width * mmPerPxX : 195.2;
+            const boxHeightMm = boxRect ? boxRect.height * mmPerPxY : 259.5;
+
+            const padMm = 0.8;
+            const innerW = Math.max(10, boxWidthMm - padMm * 2);
+            const innerH = Math.max(10, boxHeightMm - padMm * 2);
+            const innerX = boxLeftMm + padMm;
+            const innerY = boxTopMm + padMm;
+
+            let naturalAspect = chartAspectRatio || 760 / 890;
+            try {
+              const imgProps = pdfDoc.getImageProperties(chartImage);
+              if (imgProps.width && imgProps.height) {
+                naturalAspect = imgProps.width / imgProps.height;
+              }
+            } catch {}
+
+            let drawW = innerW;
+            let drawH = drawW / naturalAspect;
+
+            if (drawH > innerH) {
+              drawH = innerH;
+              drawW = drawH * naturalAspect;
             }
-          } catch {}
 
-          let drawW = innerW;
-          let drawH = drawW / naturalAspect;
+            const drawX = innerX + (innerW - drawW) / 2;
+            const drawY = innerY + (innerH - drawH) / 2;
 
-          if (drawH > innerH) {
-            drawH = innerH;
-            drawW = drawH * naturalAspect;
+            pdfDoc.addImage(chartImage, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
+          } catch (chartDrawErr) {
+            console.error('Lỗi khi vẽ lá số vào Trang 1 bằng jsPDF:', chartDrawErr);
           }
+        }
 
-          const drawX = innerX + (innerW - drawW) / 2;
-          const drawY = innerY + (innerH - drawH) / 2;
-
-          pdfDoc.addImage(chartImage, 'PNG', drawX, drawY, drawW, drawH, undefined, 'FAST');
-        } catch (chartDrawErr) {
-          console.error('Lỗi khi vẽ lá số vào Trang 1 bằng jsPDF:', chartDrawErr);
+        // 10.3 Nếu trang này có khung QR thương hiệu: vẽ trực tiếp QR bằng jsPDF (chống mất QR trên iOS Safari)
+        const qrBox = pNode.querySelector('#tuvi-pdf-qr-box') as HTMLElement | null;
+        if (qrBox && qrCodeDataUrl) {
+          try {
+            const qrRect = qrBox.getBoundingClientRect();
+            const padMm = 0.9;
+            const qrX = (qrRect.left - pRect.left) * mmPerPxX + padMm;
+            const qrY = (qrRect.top - pRect.top) * mmPerPxY + padMm;
+            const qrW = Math.max(8, qrRect.width * mmPerPxX - padMm * 2);
+            const qrH = Math.max(8, qrRect.height * mmPerPxY - padMm * 2);
+            pdfDoc.addImage(qrCodeDataUrl, 'PNG', qrX, qrY, qrW, qrH, undefined, 'FAST');
+          } catch (qrDrawErr) {
+            console.error('Lỗi khi vẽ QR vào chân trang PDF:', qrDrawErr);
+          }
+        }
+      } finally {
+        if (pNode.parentNode === host) {
+          host.removeChild(pNode);
         }
       }
     }

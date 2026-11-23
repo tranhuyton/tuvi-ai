@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Sparkles,
@@ -67,8 +67,20 @@ export default function CTVPortalPage() {
   const [isRequestingWithdraw, setIsRequestingWithdraw] = useState(false);
 
   const remainingCommission = affInfo
-    ? (affInfo.remainingCommission ?? (affInfo.totalCommission - affInfo.paidCommission))
+    ? (affInfo.remainingCommission ?? Math.max(0, affInfo.totalCommission - affInfo.paidCommission - (affInfo.pendingWithdrawal || 0)))
     : 0;
+
+  useEffect(() => {
+    if (!isBankModalOpen && !isWithdrawModalOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsBankModalOpen(false);
+        setIsWithdrawModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isBankModalOpen, isWithdrawModalOpen]);
 
   const fetchAffiliateDetails = async (phoneVal: string, codeVal?: string) => {
     setIsLoading(true);
@@ -110,11 +122,12 @@ export default function CTVPortalPage() {
 
   const handleCopyLink = () => {
     if (!affInfo) return;
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tuvithayton.vn';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.tuvithayton.vn';
     const link = `${origin}/?ref=${affInfo.code}`;
-    navigator.clipboard.writeText(link);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }).catch(() => {});
   };
 
   // Lưu thông tin ngân hàng (chỉ cho phép nhập lần đầu)
@@ -168,14 +181,13 @@ export default function CTVPortalPage() {
     if (!affInfo) return;
 
     const amount = Number(withdrawAmount);
-    if (!amount || amount <= 0) {
-      alert('Vui lòng nhập số tiền rút hợp lệ (> 0đ)');
+    if (!Number.isInteger(amount) || amount < 50000) {
+      alert('Số tiền rút tối thiểu là 50.000đ (số nguyên dương).');
       return;
     }
 
-    const remaining = affInfo.remainingCommission ?? (affInfo.totalCommission - affInfo.paidCommission);
-    if (amount > remaining) {
-      alert(`Số dư khả dụng của bạn chỉ còn ${remaining.toLocaleString('vi-VN')}đ`);
+    if (amount > remainingCommission) {
+      alert(`Số dư khả dụng của bạn chỉ còn ${remainingCommission.toLocaleString('vi-VN')}đ`);
       return;
     }
 
@@ -279,7 +291,7 @@ export default function CTVPortalPage() {
 
         {/* THÔNG TIN CTV SAU KHI TRA CỨU */}
         {affInfo && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-fade-in">
             {/* THẺ CHÀO & LINK CHIA SẺ */}
             <div className="bg-gradient-to-r from-slate-800 to-slate-800/80 border border-amber-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -296,7 +308,8 @@ export default function CTVPortalPage() {
                     Mã CTV: <b className="text-amber-400 font-mono">{affInfo.code}</b> | Chính sách hoa hồng:{' '}
                     {affInfo.commissionMode === 'tier' && affInfo.commissionTiers ? (
                       <span className="text-emerald-300 font-semibold">
-                        Gói Pro: {(affInfo.commissionTiers.reading_vip ?? 50000).toLocaleString('vi-VN')}đ • Gói Expert:{' '}
+                        Khóa học 699k: {(affInfo.commissionTiers.course_tuvi ?? 200000).toLocaleString('vi-VN')}đ • Gói Pro:{' '}
+                        {(affInfo.commissionTiers.reading_vip ?? 50000).toLocaleString('vi-VN')}đ • Gói Expert:{' '}
                         {(affInfo.commissionTiers.reading_expert ?? 100000).toLocaleString('vi-VN')}đ • Hỏi 2 câu:{' '}
                         {(affInfo.commissionTiers.chat_free ?? 20000).toLocaleString('vi-VN')}đ
                       </span>
@@ -312,7 +325,7 @@ export default function CTVPortalPage() {
 
                 <div className="bg-slate-900/80 border border-slate-700 p-2.5 rounded-xl flex items-center gap-3">
                   <div className="text-xs font-mono text-amber-200 truncate max-w-xs sm:max-w-md">
-                    {typeof window !== 'undefined' ? window.location.origin : 'https://tuvithayton.vn'}/?ref={affInfo.code}
+                    {typeof window !== 'undefined' ? window.location.origin : 'https://www.tuvithayton.vn'}/?ref={affInfo.code}
                   </div>
                   <button
                     onClick={handleCopyLink}
@@ -501,7 +514,9 @@ export default function CTVPortalPage() {
                         <tr key={o.orderCode} className="hover:bg-slate-700/30">
                           <td className="py-3 px-4 font-mono font-bold text-white">{o.orderCode}</td>
                           <td className="py-3 px-4 text-xs">
-                            {o.paymentType === 'reading_expert'
+                            {o.paymentType === 'course_tuvi'
+                              ? 'Khóa Học Tử Vi 699.000đ'
+                              : o.paymentType === 'reading_expert'
                               ? 'Bản Expert 269.000đ'
                               : o.paymentType === 'upgrade_expert'
                               ? 'Nâng Cấp Expert 150.000đ'
@@ -526,6 +541,10 @@ export default function CTVPortalPage() {
                             {o.status === 'PAID' ? (
                               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full">
                                 <CheckCircle2 className="w-3 h-3" /> Thành Công
+                              </span>
+                            ) : o.status === 'CANCELLED' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-rose-400 bg-rose-950/60 border border-rose-800/60 px-2 py-0.5 rounded-full">
+                                Đã Hủy
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2 py-0.5 rounded-full">
@@ -554,14 +573,14 @@ export default function CTVPortalPage() {
             <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-1">
               <b className="text-white text-sm">1. Chia sẻ lên Mạng Xã Hội</b>
               <p className="text-slate-400">
-                Đăng bài lên Facebook cá nhân, story Instagram hoặc gắn link vào Bio TikTok với caption tò mò về vận hạn năm 2026.
+                Đăng bài lên Facebook cá nhân, story Instagram hoặc gắn link vào Bio TikTok với nội dung giải mã lá số &amp; vận hạn năm 2026 – 2027.
               </p>
             </div>
 
             <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-1">
               <b className="text-white text-sm">2. Lưu Vết Thông Minh 30 Ngày</b>
               <p className="text-slate-400">
-                Chỉ cần bạn bè click vào link 1 lần, dù hôm nay họ chỉ xem miễn phí thì trong vòng 30 ngày họ nâng cấp bạn vẫn được tính hoa hồng!
+                Chỉ cần bạn bè click vào link 1 lần (kể cả trang chủ, vận hạn hay khóa học), trong vòng 30 ngày họ nâng cấp đơn nguyên giá bạn sẽ được ghi nhận hoa hồng (không áp dụng cho đơn dùng voucher giảm giá).
               </p>
             </div>
 
@@ -577,16 +596,26 @@ export default function CTVPortalPage() {
 
       {/* MODAL CẬP NHẬT TÀI KHOẢN NGÂN HÀNG */}
       {isBankModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-850 bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ctv-bank-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsBankModalOpen(false);
+          }}
+        >
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <button
+              type="button"
               onClick={() => setIsBankModalOpen(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-white p-1 rounded-lg"
+              aria-label="Đóng cửa sổ cập nhật tài khoản ngân hàng"
+              className="absolute right-4 top-4 text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <h3 id="ctv-bank-modal-title" className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <Landmark className="w-5 h-5 text-amber-400" />
               <span>Cập Nhật Tài Khoản Nhận Hoa Hồng</span>
             </h3>
@@ -664,16 +693,26 @@ export default function CTVPortalPage() {
 
       {/* MODAL YÊU CẦU RÚT TIỀN */}
       {isWithdrawModalOpen && affInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ctv-withdraw-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsWithdrawModalOpen(false);
+          }}
+        >
           <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <button
+              type="button"
               onClick={() => setIsWithdrawModalOpen(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-white p-1 rounded-lg"
+              aria-label="Đóng cửa sổ yêu cầu rút tiền"
+              className="absolute right-4 top-4 text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <h3 id="ctv-withdraw-modal-title" className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-emerald-400" />
               <span>Yêu Cầu Rút Tiền Hoa Hồng</span>
             </h3>
@@ -689,7 +728,7 @@ export default function CTVPortalPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Số tài khoản:</span>
-                  <b className="text-amber-300 font-mono text-sm">{affInfo.bankAccountNumber}</b>
+                  <b className="text-amber-300 font-mono text-sm">{maskBankAccount(affInfo.bankAccountNumber)}</b>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Chủ tài khoản:</span>
@@ -702,7 +741,8 @@ export default function CTVPortalPage() {
                 <div className="relative">
                   <input
                     type="number"
-                    min="1000"
+                    min="50000"
+                    step="1000"
                     max={remainingCommission}
                     required
                     value={withdrawAmount}
@@ -712,12 +752,12 @@ export default function CTVPortalPage() {
                   <button
                     type="button"
                     onClick={() => setWithdrawAmount(String(remainingCommission))}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 px-2 py-1 rounded"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 px-2 py-1 rounded cursor-pointer"
                   >
                     Rút Hết
                   </button>
                 </div>
-                <span className="text-[10px] text-slate-500">Nhập số tiền muốn rút (tối đa {remainingCommission.toLocaleString('vi-VN')}đ)</span>
+                <span className="text-[10px] text-slate-400">Tối thiểu 50.000đ • tối đa {remainingCommission.toLocaleString('vi-VN')}đ</span>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">

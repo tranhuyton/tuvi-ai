@@ -14,15 +14,16 @@ import {
   Layers,
   Clock,
 } from 'lucide-react';
-import { SEO_ARTICLES, FunnelStage } from '@/lib/seoArticles';
-import { FUNNEL_PAGES } from '@/lib/funnelPages';
+import type { FunnelStage } from '@/lib/seoArticles';
+import { SEO_ARTICLES_INDEX } from '@/lib/seoArticlesIndex';
+import { FUNNEL_PAGES_INDEX } from '@/lib/funnelPagesIndex';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   EXTERNAL_PAGE_UI,
   getLocalizedFunnelGroups,
-  getLocalizedFunnelPage,
+  getLocalizedFunnelMeta,
   getLocalizedStageMeta,
-  getLocalizedSeoArticle,
+  getLocalizedSeoArticleMeta,
 } from '@/lib/i18n/externalPagesI18n';
 import GuideMenuDropdown from '@/components/GuideMenuDropdown';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -75,7 +76,7 @@ export default function BaiVietIndexClient() {
       <header className="relative overflow-hidden rounded-3xl bg-slate-900/90 border border-amber-500/35 p-6 sm:p-10 text-center space-y-4 shadow-2xl">
         <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs sm:text-sm font-semibold uppercase tracking-wider">
           <BookOpen className="w-4 h-4 text-amber-400" />
-          <span>{ui.libHeroBadge.replace('{count}', String(FUNNEL_PAGES.length))}</span>
+          <span>{ui.libHeroBadge.replace('{count}', String(FUNNEL_PAGES_INDEX.length))}</span>
         </div>
 
         <h1 className="text-2xl sm:text-4xl font-bold font-serif text-amber-400 tracking-wide leading-tight">
@@ -102,7 +103,7 @@ export default function BaiVietIndexClient() {
       {/* 38 Chuyên Đề Trọng Tâm Theo 3 Nhánh Phễu */}
       <div className="space-y-10">
         {funnelGroups.map((grp) => {
-          const pages = FUNNEL_PAGES.filter((p) => p.groupNum === grp.groupNum);
+          const pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === grp.groupNum);
           const borderCls =
             grp.color === 'amber'
               ? 'border-amber-500/35'
@@ -143,7 +144,7 @@ export default function BaiVietIndexClient() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {pages.map((rawP) => {
-                  const p = getLocalizedFunnelPage(rawP, language);
+                  const p = getLocalizedFunnelMeta(rawP, language);
                   return (
                     <article
                       key={p.code}
@@ -204,7 +205,7 @@ export default function BaiVietIndexClient() {
         </h2>
         {STAGES_ORDER.map((stageKey) => {
           const stageMeta = getLocalizedStageMeta(stageKey, language);
-          const stageArticles = SEO_ARTICLES.filter((a) => a.funnelStage === stageKey);
+          const stageArticles = SEO_ARTICLES_INDEX.filter((a) => a.funnelStage === stageKey);
 
           return (
             <section
@@ -220,7 +221,7 @@ export default function BaiVietIndexClient() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {stageArticles.map((rawArticle) => {
-                  const article = getLocalizedSeoArticle(rawArticle, language);
+                  const article = getLocalizedSeoArticleMeta(rawArticle, language);
                   return (
                     <article
                       key={article.slug}
@@ -310,7 +311,7 @@ export default function BaiVietIndexClient() {
         </div>
       </section>
 
-      <footer className="pt-5 border-t border-slate-800/60 text-center text-[11px] text-slate-500 leading-relaxed max-w-3xl mx-auto">
+      <footer className="pt-5 border-t border-slate-800/60 text-center text-[11px] text-slate-400 leading-relaxed max-w-3xl mx-auto">
         {ui.disclaimer}
       </footer>
     </div>

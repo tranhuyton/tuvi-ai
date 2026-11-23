@@ -7,9 +7,11 @@ export interface OrderCapiMeta {
   fbp?: string;
   fbc?: string;
   gaCid?: string;
+  gaSessionId?: string;
   ip?: string;
   ua?: string;
   url?: string;
+  country?: string;
 }
 
 function sha256(value: string): string {
@@ -89,6 +91,22 @@ function parseCookieHeader(cookieHeader: string | null): Record<string, string> 
   return out;
 }
 
+function parseGaSessionIdCookie(raw?: string | null): string | undefined {
+  if (!raw) return undefined;
+  const val = raw.trim();
+  // GA4 GS1 format: GS1.1.<session_id>.<count>...
+  if (val.startsWith('GS1.')) {
+    const parts = val.split('.');
+    if (parts[2] && /^\d+$/.test(parts[2])) return parts[2];
+  }
+  // GA4 GS2 format: GS2.1.s<session_id>$o...
+  if (val.startsWith('GS2.')) {
+    const m = val.match(/(?:^|[.$])s(\d+)/);
+    if (m?.[1]) return m[1];
+  }
+  return undefined;
+}
+
 /**
  * Thu thập ngữ cảnh trình duyệt từ HTTP Request + body client gửi lên lúc tạo đơn
  */
@@ -99,6 +117,7 @@ export function extractRequestCapiMeta(
     fbc?: string;
     fbclid?: string;
     gaCid?: string;
+    gaSessionId?: string;
     sourceUrl?: string;
   }
 ): OrderCapiMeta {
@@ -128,35 +147,49 @@ export function extractRequestCapiMeta(
         : cookies['_ga'].trim() || undefined;
   }
 
+  let gaSessionId = (clientInput?.gaSessionId || '').trim() || undefined;
+  if (!gaSessionId) {
+    const sessionCookie = cookies['_ga_K09KG9PV1Y'];
+    gaSessionId = parseGaSessionIdCookie(sessionCookie);
+  }
+
   const url =
     (clientInput?.sourceUrl || req.headers.get('referer') || '').trim() || undefined;
+  const country = (req.headers.get('x-vercel-ip-country') || '').trim().toLowerCase() || undefined;
 
-  return { fbp, fbc, gaCid, ip, ua, url };
+  return { fbp, fbc, gaCid, gaSessionId, ip, ua, url, country };
 }
 
 /**
- * Đóng gói thông tin CAPI tạm vào trường transaction_id (giới hạn cứng <= 245 ký tự cho cột varchar(255))
+ * Đóng gói thông tin CAPI tạm vào trường transaction_id (dự phòng khi cột capi_meta JSONB chưa có).
+ * Giữ giới hạn <= 238 ký tự để không bao giờ bị `.slice(0, 240)` cắt cụt dấu ngoặc đóng JSON!
  */
 export function encodeOrderCapiMeta(meta?: OrderCapiMeta | null): string | undefined {
   if (!meta) return undefined;
-  const maxLen = 245;
+  const maxLen = 238;
 
-  // Ưu tiên cao nhất cho điểm chất lượng khớp sự kiện Meta (EMQ) & GA4 MP: fbc > fbp > gaCid > ip > ua
+  const fullFbc = meta.fbc && meta.fbc.length <= 215 ? meta.fbc : undefined;
+
   const candidates: OrderCapiMeta[] = [
     {
-      fbc: meta.fbc?.slice(0, 110),
-      fbp: meta.fbp?.slice(0, 45),
+      fbc: fullFbc,
+      fbp: meta.fbp?.slice(0, 50),
       gaCid: meta.gaCid?.slice(0, 32),
-      ip: meta.ip?.slice(0, 42),
+      gaSessionId: meta.gaSessionId?.slice(0, 20),
+      ip: meta.ip?.slice(0, 45),
     },
     {
-      fbc: meta.fbc?.slice(0, 130),
+      fbc: fullFbc,
       fbp: meta.fbp?.slice(0, 50),
       ip: meta.ip?.slice(0, 45),
     },
     {
+      fbc: fullFbc,
+    },
+    {
       fbp: meta.fbp?.slice(0, 50),
       gaCid: meta.gaCid?.slice(0, 32),
+      gaSessionId: meta.gaSessionId?.slice(0, 20),
       ip: meta.ip?.slice(0, 45),
       ua: meta.ua?.slice(0, 65),
     },
@@ -172,6 +205,7 @@ export function encodeOrderCapiMeta(meta?: OrderCapiMeta | null): string | undef
     if (cand.fbc) clean.fbc = cand.fbc;
     if (cand.fbp) clean.fbp = cand.fbp;
     if (cand.gaCid) clean.gaCid = cand.gaCid;
+    if (cand.gaSessionId) clean.gaSessionId = cand.gaSessionId;
     if (cand.ip) clean.ip = cand.ip;
     if (cand.ua) clean.ua = cand.ua;
     if (Object.keys(clean).length === 0) continue;
@@ -232,8 +266,11 @@ export async function sendMetaCapiEvent(input: SendMetaCapiEventInput): Promise<
     const { fn, ln } = normalizeNameHashes(input.fullName);
     const externalKey = (input.userId || input.email || '').trim().toLowerCase();
 
-    const userData: Record<string, any> = {
-      country: [sha256('vn')],
+    const detectedCountry = (input.meta?.country || '').trim().toLowerCase();
+    const userData: Record<string, unknown> = {
+      ...(detectedCountry && /^[a-z]{2}$/.test(detectedCountry)
+        ? { country: [sha256(detectedCountry)] }
+        : { country: [sha256('vn')] }),
     };
 
     if (emHash) userData.em = [emHash];
@@ -252,7 +289,7 @@ export async function sendMetaCapiEvent(input: SendMetaCapiEventInput): Promise<
         ? 'https://www.tuvithayton.vn/khoa-hoc'
         : 'https://www.tuvithayton.vn/';
 
-    const customData: Record<string, any> = {
+    const customData: Record<string, unknown> = {
       currency: input.currency || 'VND',
     };
     if (typeof input.value === 'number' && input.value > 0) {
@@ -261,15 +298,16 @@ export async function sendMetaCapiEvent(input: SendMetaCapiEventInput): Promise<
     if (input.paymentType) {
       customData.content_name = input.paymentType;
       customData.content_type = 'product';
-    }
-    if (input.orderCode || input.paymentType) {
-      customData.content_ids = [input.orderCode || input.paymentType];
+      customData.content_ids = [input.paymentType];
+    } else if (input.orderCode) {
+      customData.content_ids = ['tuvi_service'];
     }
     if (input.orderCode) {
       customData.order_id = input.orderCode;
     }
 
     const payload = {
+      access_token: accessToken,
       data: [
         {
           event_name: input.eventName,
@@ -283,17 +321,13 @@ export async function sendMetaCapiEvent(input: SendMetaCapiEventInput): Promise<
       ],
     };
 
-    const res = await fetch(
-      `https://graph.facebook.com/v21.0/${META_PIXEL_ID}/events?access_token=${encodeURIComponent(
-        accessToken
-      )}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(input.timeoutMs || 4500),
-      }
-    );
+    // Gửi access_token trong JSON body thay vì URL query string để tránh lộ secret vào log HTTP
+    const res = await fetch(`https://graph.facebook.com/v21.0/${META_PIXEL_ID}/events`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(input.timeoutMs || 4500),
+    });
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {

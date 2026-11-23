@@ -29,7 +29,21 @@ import {
   trackPurchase,
 } from '@/lib/metaPixel';
 import { trackGa4PaymentQrAction } from '@/lib/googleAnalytics';
+import { isInAppBrowser, getInAppBrowserName, isMobileDevice } from '@/lib/inAppBrowser';
+import { getBearerAuthHeaders } from '@/lib/adminClientAuth';
+import { PAYMENT_BANK_CONFIG } from '@/lib/bankConfig';
 import QRCode from 'qrcode';
+
+const QUICK_BANK_APPS = [
+  { id: 'mb', name: 'MBBank' },
+  { id: 'vcb', name: 'VCB' },
+  { id: 'tcb', name: 'Techcombank' },
+  { id: 'vpb', name: 'VPBank' },
+  { id: 'bidv', name: 'BIDV' },
+  { id: 'icb', name: 'VietinBank' },
+  { id: 'acb', name: 'ACB' },
+  { id: 'tpb', name: 'TPBank' },
+];
 
 export type PaymentPurpose =
   | 'reading_vip'
@@ -107,23 +121,35 @@ export default function PaymentModal({
   const [copiedContent, setCopiedContent] = useState(false);
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
+  const [isCheckingNow, setIsCheckingNow] = useState(false);
+  const [manualCheckHint, setManualCheckHint] = useState<string | null>(null);
+  const [qrSaveHint, setQrSaveHint] = useState<string | null>(null);
 
   // Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const successTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const emailDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const activeOrderKeyRef = useRef<string | null>(null);
   const inFlightKeyRef = useRef<string | null>(null);
   const trackedCheckoutCodesRef = useRef<Set<string>>(new Set());
   const orderCodeRef = useRef<string>('');
+  const orderStatusTokenRef = useRef<string>('');
   const userRef = useRef(user);
   const profileRef = useRef(profile);
-  userRef.current = user;
-  profileRef.current = profile;
+  const handlePaymentSuccessRef = useRef<
+    (confirmedCode?: string, confirmedAmount?: number, confirmedPaymentType?: string) => void
+  >(() => {});
 
-  const bankName = 'VPBank (Ngân hàng Việt Nam Thịnh Vượng)';
-  const stk = 'AGBSPVUONG2026';
-  const chuTk = 'TRAN THI DIEP';
+  useEffect(() => {
+    userRef.current = user;
+    profileRef.current = profile;
+  }, [user, profile]);
+
+  const bankName = PAYMENT_BANK_CONFIG.bankName;
+  const stk = PAYMENT_BANK_CONFIG.accountNumber;
+  const chuTk = PAYMENT_BANK_CONFIG.accountName;
 
   let finalPrice = customPrice;
   let title = customTitle;
@@ -294,8 +320,9 @@ export default function PaymentModal({
         ''
       ).trim();
 
-      // CHỐT CHẶN TUYỆT ĐỐI TẠI PAYMENT MODAL: Chưa có tài khoản đăng nhập -> Bắt buộc mở bảng Đăng ký / Đăng nhập, TUYỆT ĐỐI không sinh mã QR!
-      if (!resolvedUserId || !resolvedEmail) {
+      // CHỐT CHẶN TẠI PAYMENT MODAL: Chưa có tài khoản đăng nhập -> Bắt buộc mở bảng Đăng ký / Đăng nhập,
+      // trừ trường hợp khách mở từ link Voucher cá nhân xuyên trình duyệt (server sẽ xác thực qua voucherCode)
+      if ((!resolvedUserId || !resolvedEmail) && !appliedVoucher) {
         setRequireAuthPrompt(true);
         orderCodeRef.current = '';
         setOrderCode('');
@@ -306,7 +333,7 @@ export default function PaymentModal({
         return;
       }
 
-      const resolvedKey = `${paymentType}_${finalPrice}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId}`;
+      const resolvedKey = `${paymentType}_${finalPrice}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId || appliedVoucher}`;
       if (!isRefresh && lockedKey !== resolvedKey && inFlightKeyRef.current === resolvedKey) {
         return;
       }
@@ -330,14 +357,25 @@ export default function PaymentModal({
             curProfile?.full_name ||
             liveUser?.user_metadata?.full_name ||
             curUser?.user_metadata?.full_name ||
-            resolvedEmail.split('@')[0] ||
+            (resolvedEmail ? resolvedEmail.split('@')[0] : '') ||
             cleanInputName ||
             'Khách thành viên'
           ).trim()
         : cleanInputName;
 
-      const affiliateCode =
-        (typeof window !== 'undefined' ? localStorage.getItem('tuvi_affiliate_ref') || '' : '').trim().toLowerCase();
+      // Đơn có mã giảm giá không áp dụng hoa hồng CTV; đồng thời kiểm tra đúng hạn 30 ngày cho affiliate ref
+      let affiliateCode = '';
+      if (!appliedVoucher && typeof window !== 'undefined') {
+        const rawRef = (localStorage.getItem('tuvi_affiliate_ref') || '').trim().toLowerCase();
+        const savedTime = Number(localStorage.getItem('tuvi_affiliate_time') || '0');
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        if (rawRef && (!savedTime || Date.now() - savedTime <= THIRTY_DAYS_MS)) {
+          affiliateCode = rawRef;
+        } else if (rawRef && savedTime && Date.now() - savedTime > THIRTY_DAYS_MS) {
+          localStorage.removeItem('tuvi_affiliate_ref');
+          localStorage.removeItem('tuvi_affiliate_time');
+        }
+      }
 
       const metaAttribution = getBrowserMetaAttribution();
       const res = await fetch('/api/payment/create-order', {
@@ -383,8 +421,9 @@ export default function PaymentModal({
         const code = data.order.orderCode;
         const confirmedAmount = Number(data.order.amount) || finalPrice;
         setOrderAmount(confirmedAmount);
-        activeOrderKeyRef.current = `${paymentType}_${finalPrice}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId}`;
+        activeOrderKeyRef.current = `${paymentType}_${finalPrice}_${appliedVoucher || 'none'}_${chartId || 'default'}_${resolvedUserId || appliedVoucher || ''}`;
         orderCodeRef.current = code;
+        orderStatusTokenRef.current = typeof data.statusToken === 'string' ? data.statusToken : '';
         setOrderCode(code);
         if (!data.reused && !trackedCheckoutCodesRef.current.has(code)) {
           trackedCheckoutCodesRef.current.add(code);
@@ -453,15 +492,16 @@ export default function PaymentModal({
       paymentType === 'reading_vip' || paymentType === 'reading_expert'
         ? voucherCode || 'none'
         : 'none';
-    const targetKey = `${paymentType}_${finalPrice}_${appliedVoucher}_${chartId || 'default'}_${effectiveKeyUser}`;
+    const keyIdentity = effectiveKeyUser || (appliedVoucher !== 'none' ? appliedVoucher : '');
+    const targetKey = `${paymentType}_${finalPrice}_${appliedVoucher}_${chartId || 'default'}_${keyIdentity}`;
     // Nếu đang tạo đơn cho đúng key này hoặc đã có đơn pending hợp lệ cho đúng user & gói & lá số này rồi thì giữ nguyên
-    if (effectiveKeyUser && inFlightKeyRef.current === targetKey) {
+    if (keyIdentity && inFlightKeyRef.current === targetKey) {
       return;
     }
     if (
-      effectiveKeyUser &&
+      keyIdentity &&
       activeOrderKeyRef.current === targetKey &&
-      orderCode &&
+      orderCodeRef.current &&
       orderStatus === 'PENDING'
     ) {
       return;
@@ -473,63 +513,142 @@ export default function PaymentModal({
     setOrderStatus('IDLE');
     setOrderAmount(null);
     createOrFetchOrder();
-  }, [isOpen, paymentType, finalPrice, voucherCode, chartId, user?.id, fallbackUserId, orderCode, orderStatus, createOrFetchOrder]);
+  }, [isOpen, paymentType, finalPrice, voucherCode, chartId, user?.id, fallbackUserId, orderStatus, createOrFetchOrder]);
 
-  // Bắt đầu chu trình Polling kiểm tra trạng thái thanh toán (mỗi 2.5s, CHỈ khi đã có đơn PENDING hợp lệ của lá số hiện tại)
+  // Xử lý khi phát hiện thanh toán thành công (luôn đọc props/state mới nhất qua ref để tránh stale closure!)
+  const handlePaymentSuccess = useCallback(
+    (confirmedCode?: string, confirmedAmount?: number, confirmedPaymentType?: string) => {
+      if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+      const paidCode = confirmedCode || orderCodeRef.current || orderCode;
+      orderCodeRef.current = '';
+      setOrderStatus('PAID');
+      activeOrderKeyRef.current = null;
+      const finalTrackedAmount =
+        typeof confirmedAmount === 'number' && confirmedAmount > 0
+          ? confirmedAmount
+          : effectiveAmount || 0;
+      const finalTrackedType = confirmedPaymentType || paymentType;
+      trackPurchase(finalTrackedType, finalTrackedAmount, paidCode);
+
+      // Lưu email và quyền lợi mở khóa vào localStorage để bền vững qua các lần F5
+      if (typeof window !== 'undefined') {
+        const latestEmail = customerEmailRef.current || customerEmail;
+        if (latestEmail) localStorage.setItem('tuvi_customer_email', latestEmail);
+        if (paidCode) localStorage.setItem('tuvi_last_paid_code', paidCode);
+      }
+
+      // Tự động mở khóa và đóng modal sau 1.8 giây hiển thị chúc mừng
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
+        setOrderCode('');
+        setQrUrl('');
+        setQrDataUrl('');
+        setSepayQrUrl('');
+        onConfirm();
+        onClose();
+      }, 1800);
+    },
+    [orderCode, paymentType, effectiveAmount, customerEmail, onConfirm, onClose]
+  );
+
+  useEffect(() => {
+    handlePaymentSuccessRef.current = handlePaymentSuccess;
+  }, [handlePaymentSuccess]);
+
+  // Hàm kiểm tra trạng thái đơn hàng 1 lần (dùng chung cho polling, visibilitychange & nút Kiểm tra ngay)
+  const checkStatusOnce = useCallback(async (codeToPoll: string): Promise<boolean> => {
+    if (!codeToPoll || orderCodeRef.current !== codeToPoll) return false;
+    try {
+      const headers = await getBearerAuthHeaders();
+      const tokenParam = orderStatusTokenRef.current
+        ? `&token=${encodeURIComponent(orderStatusTokenRef.current)}`
+        : '';
+      const res = await fetch(
+        `/api/payment/check-status?code=${encodeURIComponent(codeToPoll)}${tokenParam}`,
+        {
+          cache: 'no-store',
+          headers,
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (
+          data.status === 'PAID' &&
+          data.orderCode === codeToPoll &&
+          orderCodeRef.current === codeToPoll
+        ) {
+          handlePaymentSuccessRef.current(
+            codeToPoll,
+            typeof data.amount === 'number' ? data.amount : undefined,
+            typeof data.paymentType === 'string' ? data.paymentType : undefined
+          );
+          return true;
+        }
+      }
+    } catch {
+      // Tiếp tục polling
+    }
+    return false;
+  }, []);
+
+  // Bắt đầu chu trình Polling (2.5s) + kiểm tra ngay khi khách từ App Ngân Hàng quay lại trình duyệt (visibilitychange/focus)
   useEffect(() => {
     if (!isOpen || !orderCode || orderStatus !== 'PENDING' || isCreatingOrder) return;
 
     const codeToPoll = orderCode;
-    const checkPaymentStatus = async () => {
-      try {
-        if (orderCodeRef.current !== codeToPoll) return;
-        const res = await fetch(`/api/payment/check-status?code=${codeToPoll}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (
-            data.status === 'PAID' &&
-            data.orderCode === codeToPoll &&
-            orderCodeRef.current === codeToPoll
-          ) {
-            handlePaymentSuccess(codeToPoll);
-          }
-        }
-      } catch (err) {
-        // Tiếp tục polling
+    pollingTimerRef.current = setInterval(() => {
+      checkStatusOnce(codeToPoll);
+    }, 2500);
+
+    const handleReturnToApp = () => {
+      if (document.visibilityState === 'visible') {
+        checkStatusOnce(codeToPoll);
       }
     };
 
-    pollingTimerRef.current = setInterval(checkPaymentStatus, 2500);
+    document.addEventListener('visibilitychange', handleReturnToApp);
+    window.addEventListener('focus', handleReturnToApp);
 
     return () => {
       if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+      document.removeEventListener('visibilitychange', handleReturnToApp);
+      window.removeEventListener('focus', handleReturnToApp);
     };
-  }, [isOpen, orderCode, orderStatus, isCreatingOrder]);
+  }, [isOpen, orderCode, orderStatus, isCreatingOrder, checkStatusOnce]);
 
-  // Xử lý khi phát hiện thanh toán thành công
-  const handlePaymentSuccess = (confirmedCode?: string) => {
-    if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
-    const paidCode = confirmedCode || orderCodeRef.current || orderCode;
-    orderCodeRef.current = '';
-    setOrderStatus('PAID');
-    activeOrderKeyRef.current = null;
-    trackPurchase(paymentType, effectiveAmount || 0, paidCode);
+  // Hỗ trợ phím Escape đóng modal & dọn timer khi unmount
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && orderStatus !== 'PAID') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen, orderStatus, onClose]);
 
-    // Lưu email và quyền lợi mở khóa vào localStorage để bền vững qua các lần F5
-    if (typeof window !== 'undefined') {
-      if (customerEmail) localStorage.setItem('tuvi_customer_email', customerEmail);
-      if (paidCode) localStorage.setItem('tuvi_last_paid_code', paidCode);
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      if (emailDebounceRef.current) clearTimeout(emailDebounceRef.current);
+    };
+  }, []);
+
+  const handleManualCheckNow = async () => {
+    if (!orderCode || isCheckingNow) return;
+    setIsCheckingNow(true);
+    setManualCheckHint(null);
+    const paid = await checkStatusOnce(orderCode);
+    setIsCheckingNow(false);
+    if (!paid) {
+      setManualCheckHint(
+        'Ngân hàng chưa báo về (thường mất 5–15 giây sau khi chuyển). Hệ thống vẫn đang tự động theo dõi!'
+      );
+      setTimeout(() => setManualCheckHint(null), 5000);
     }
-
-    // Tự động mở khóa và đóng modal sau 1.8 giây hiển thị chúc mừng
-    setTimeout(() => {
-      setOrderCode('');
-      setQrUrl('');
-      setQrDataUrl('');
-      setSepayQrUrl('');
-      onConfirm();
-      onClose();
-    }, 1800);
   };
 
   // Vẽ Canvas dự phòng (khi stage === 3 hoặc khi canvas mount)
@@ -584,26 +703,34 @@ export default function PaymentModal({
     return '';
   }, [qrFallbackStage, qrDataUrl, sepayQrUrl, qrUrl]);
 
-  // Cập nhật email cho đơn hàng
-  const handleUpdateEmail = async (newEmail: string) => {
+  // Cập nhật email cho đơn hàng (debounce 600ms tránh spam API trên từng phím gõ + gửi Bearer JWT)
+  const handleUpdateEmail = (newEmail: string) => {
     setCustomerEmail(newEmail);
-    if (newEmail.includes('@') && orderCode) {
+    if (emailDebounceRef.current) clearTimeout(emailDebounceRef.current);
+    if (!newEmail.includes('@') || !orderCode) return;
+
+    const targetCode = orderCode;
+    const cleanEmail = newEmail.trim();
+    emailDebounceRef.current = setTimeout(async () => {
       try {
-        await fetch('/api/payment/create-order', {
+        const headers = await getBearerAuthHeaders({ 'Content-Type': 'application/json' });
+        const res = await fetch('/api/payment/create-order', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             action: 'update_email',
-            orderCode,
-            email: newEmail,
+            orderCode: targetCode,
+            email: cleanEmail,
           }),
         });
-        setEmailSaved(true);
-        setTimeout(() => setEmailSaved(false), 2500);
-      } catch (err) {
+        if (res.ok) {
+          setEmailSaved(true);
+          setTimeout(() => setEmailSaved(false), 2500);
+        }
+      } catch {
         // ignore
       }
-    }
+    }, 600);
   };
 
   const handleCopyStk = () => {
@@ -636,9 +763,10 @@ export default function PaymentModal({
     setTimeout(() => setCopiedAll(false), 2000);
   };
 
-  // Tải ảnh mã QR về máy (hỗ trợ lưu ảnh quét trong App Ngân Hàng)
-  const handleDownloadQr = () => {
+  // Tải / Chia sẻ ảnh mã QR về máy (tối ưu cho iOS Safari & FB/Zalo/TikTok In-App Browser)
+  const handleDownloadQr = async () => {
     trackGa4PaymentQrAction('download_qr', paymentType, effectiveAmount || 0, orderCode);
+    setQrSaveHint(null);
     try {
       let downloadSrc = '';
       if (qrFallbackStage === 3 && canvasRef.current) {
@@ -649,33 +777,56 @@ export default function PaymentModal({
 
       if (!downloadSrc) return;
 
+      const fileName = `VietQR_${orderCode || 'ThanhToan'}.png`;
+
+      // Trên In-App Browser (Facebook / Zalo / TikTok), <a download> thường bị chặn ngầm -> hướng dẫn nhấn giữ ảnh QR hoặc chụp màn hình
+      if (isInAppBrowser()) {
+        const appName = getInAppBrowserName();
+        setQrSaveHint(
+          `Đang mở trong ${appName}: Quý khách chỉ cần NHẤN GIỮ trực tiếp vào ảnh mã QR phía trên rồi chọn "Lưu ảnh" (hoặc chụp màn hình) để mở trong App Ngân hàng!`
+        );
+      }
+
+      // Trên Mobile hiện đại (iOS Safari / Android Chrome): ưu tiên Web Share API để lưu thẳng vào Thư viện ảnh
+      if (isMobileDevice() && typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        try {
+          const resp = await fetch(downloadSrc);
+          const blob = await resp.blob();
+          const file = new File([blob], fileName, { type: 'image/png' });
+          if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: `Mã VietQR ${orderCode}`,
+            });
+            return;
+          }
+        } catch {
+          // User huỷ share hoặc WebView không hỗ trợ -> fallback xuống download truyền thống
+        }
+      }
+
       if (downloadSrc.startsWith('data:')) {
         const link = document.createElement('a');
         link.href = downloadSrc;
-        link.download = `VietQR_${orderCode || 'ThanhToan'}.png`;
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       } else {
-        // Ảnh từ CDN ngoài (SePay / VietQR)
-        fetch(downloadSrc)
-          .then((res) => res.blob())
-          .then((blob) => {
-            const blobUrl = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = `VietQR_${orderCode || 'ThanhToan'}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-          })
-          .catch(() => {
-            window.open(downloadSrc, '_blank');
-          });
+        const res = await fetch(downloadSrc);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
       }
     } catch (err) {
       console.error('Lỗi tải mã QR:', err);
+      setQrSaveHint('Quý khách hãy nhấn giữ trực tiếp vào ảnh mã QR phía trên hoặc chụp màn hình để lưu vào thư viện ảnh!');
     }
   };
 
@@ -709,7 +860,12 @@ export default function PaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+    >
       <div className="relative w-full max-w-lg bg-slate-900 border border-amber-500/40 rounded-2xl shadow-2xl flex flex-col text-slate-100 overflow-hidden max-h-[92vh]">
         {/* Header */}
         <div className="p-3.5 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-amber-950/50 via-slate-900 to-slate-900 shrink-0">
@@ -830,7 +986,7 @@ export default function PaymentModal({
                     <img
                       src={currentQrSrc}
                       alt={`VietQR ${orderCode}`}
-                      className="w-full h-full object-contain select-none"
+                      className="w-full h-full object-contain"
                       onError={handleImgError}
                     />
                   )}
@@ -870,10 +1026,46 @@ export default function PaymentModal({
                   </button>
                 </div>
 
-                {/* Hướng dẫn ngắn gọn */}
-                <div className="mt-2 text-center text-xs text-slate-500">
-                  💡 {t('payment.scanDesc', 'Dùng App Ngân hàng quét QR để tự điền đúng nội dung và số tiền.')}
-                </div>
+                {/* Hướng dẫn ngắn gọn + Hỗ trợ lưu ảnh trên In-App Browser (FB/Zalo/TikTok) */}
+                {qrSaveHint ? (
+                  <div className="mt-2.5 w-full rounded-xl bg-amber-50 border border-amber-300 px-3 py-2 text-center text-xs text-amber-900 font-medium leading-relaxed">
+                    📱 {qrSaveHint}
+                  </div>
+                ) : (
+                  <div className="mt-2 text-center text-xs text-slate-500">
+                    💡 {t('payment.scanDesc', 'Dùng App Ngân hàng quét QR (hoặc nhấn giữ vào ảnh QR để lưu) để tự điền đúng nội dung và số tiền.')}
+                  </div>
+                )}
+
+                {/* Nút Mở Nhanh App Ngân Hàng (VietQR Deep-link trên điện thoại) */}
+                {orderCode && isMobileDevice() && (
+                  <div className="w-full mt-3 pt-2.5 border-t border-slate-200">
+                    <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-700 mb-2">
+                      <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Mở nhanh App Ngân hàng trên điện thoại:</span>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {QUICK_BANK_APPS.map((bank) => {
+                        const deepLink = `https://dl.vietqr.io/pay?app=${bank.id}&ba=${encodeURIComponent(
+                          `${stk}@vpb`
+                        )}&am=${effectiveAmount}&tn=${encodeURIComponent(orderCode)}&bn=${encodeURIComponent(
+                          chuTk
+                        )}`;
+                        return (
+                          <a
+                            key={bank.id}
+                            href={deepLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="py-1.5 px-1 rounded-lg bg-slate-100 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-[11px] font-bold text-slate-800 text-center truncate transition"
+                          >
+                            {bank.name}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Thông tin tài khoản thủ công (Sao chép 1 chạm) */}
@@ -1033,18 +1225,40 @@ export default function PaymentModal({
 
         {/* Footer Actions */}
         {orderStatus !== 'PAID' && (
-          <div className="p-3.5 sm:p-4 border-t border-slate-800 bg-slate-900/95 flex items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center gap-2 text-xs text-slate-300">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400 shrink-0" />
-              <span>{t('payment.waitingStatus', 'Đang chờ chuyển khoản... Tự động mở khóa ngay')}</span>
+          <div className="p-3 sm:p-4 border-t border-slate-800 bg-slate-900/95 space-y-2 shrink-0">
+            {manualCheckHint && (
+              <div className="text-[11px] text-amber-300 bg-amber-950/50 border border-amber-500/30 rounded-lg px-2.5 py-1.5 text-center">
+                {manualCheckHint}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs text-slate-300 min-w-0">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400 shrink-0" />
+                <span className="truncate">{t('payment.waitingStatus', 'Đang chờ chuyển khoản...')}</span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleManualCheckNow}
+                  disabled={!orderCode || isCheckingNow || isCreatingOrder}
+                  className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  {isCheckingNow ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isCheckingNow ? t('payment.checkingBtn', 'Đang kiểm tra...') : t('payment.checkNowBtn', 'Tôi đã chuyển khoản')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg text-xs font-medium transition cursor-pointer"
+                >
+                  {t('floating.close', 'Đóng')}
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-1.5 px-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer"
-            >
-              {t('floating.close', 'Đóng')}
-            </button>
           </div>
         )}
       </div>

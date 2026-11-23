@@ -15,7 +15,7 @@ import {
   MapPin,
   ChevronDown,
 } from 'lucide-react';
-import { FUNNEL_PAGES, getFunnelPageByCode } from '@/lib/funnelPages';
+import { FUNNEL_PAGES_INDEX, HOME_FUNNEL_PAGE } from '@/lib/funnelPagesIndex';
 import { useLanguage } from '@/context/LanguageContext';
 import { HOME_FUNNEL_I18N, translateFunnelPageTitle } from '@/lib/i18n/homeFunnelData';
 
@@ -23,15 +23,14 @@ export default function HomeFunnelContent() {
   const { language } = useLanguage();
   const [isGuideExpanded, setIsGuideExpanded] = useState(false);
   const [isDirectoryExpanded, setIsDirectoryExpanded] = useState(false);
-  const homePage = getFunnelPageByCode('H');
-  if (!homePage) return null;
+  const homePage = HOME_FUNNEL_PAGE;
 
   const isVi = language === 'vi';
   const i18nData = !isVi ? HOME_FUNNEL_I18N[language] : null;
 
-  const group1Pages = FUNNEL_PAGES.filter((p) => p.groupNum === 1 && p.code !== 'H');
-  const group2Pages = FUNNEL_PAGES.filter((p) => p.groupNum === 2);
-  const group3Pages = FUNNEL_PAGES.filter((p) => p.groupNum === 3);
+  const group1Pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === 1 && p.code !== 'H');
+  const group2Pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === 2);
+  const group3Pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === 3);
 
   const badge1 = i18nData ? i18nData.badge1 : 'Cẩm Nang Lập Lá Số & Hệ Sinh Thái Luận Giải';
   const badge2 = i18nData ? i18nData.badge2 : 'Chuẩn Tử Vi Đẩu Số & Phong Thủy Thực Chiến';
@@ -49,8 +48,8 @@ export default function HomeFunnelContent() {
   const secondaryCtaLabel = i18nData ? i18nData.secondaryCtaLabel : homePage.secondaryCta.label;
   const dirBadge = i18nData ? i18nData.dirBadge : 'Sơ Đồ Tri Thức & Dịch Vụ';
   const dirHeading = i18nData
-    ? i18nData.dirHeading.replace('{count}', String(FUNNEL_PAGES.length))
-    : `Hệ Thống ${FUNNEL_PAGES.length} Chuyên Đề Tử Vi Đẩu Số & Phong Thủy Thầy Tôn`;
+    ? i18nData.dirHeading.replace('{count}', String(FUNNEL_PAGES_INDEX.length))
+    : `Hệ Thống ${FUNNEL_PAGES_INDEX.length} Chuyên Đề Tử Vi Đẩu Số & Phong Thủy Thầy Tôn`;
   const dirViewAll = i18nData ? i18nData.dirViewAll : 'Xem Toàn Bộ Thư Viện →';
   const dirBranch1 = i18nData ? i18nData.dirBranch1 : 'Luận Mệnh & Tham Vấn • Ấn Phẩm Chuyên Sâu';
   const dirBranch2 = i18nData ? i18nData.dirBranch2 : 'Phong Thủy & Trạch Nhật • Địa Lợi Cải Vận';
@@ -158,7 +157,10 @@ export default function HomeFunnelContent() {
           </div>
 
           {!isGuideExpanded && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0b101e] via-[#0b101e]/90 to-transparent" />
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-32"
+              style={{ background: 'linear-gradient(to top, var(--bg-color, #0b101e) 22%, transparent)' }}
+            />
           )}
         </div>
 
@@ -296,7 +298,10 @@ export default function HomeFunnelContent() {
           </div>
 
           {!isDirectoryExpanded && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0b101e] via-[#0b101e]/90 to-transparent" />
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-24"
+              style={{ background: 'linear-gradient(to top, var(--bg-color, #0b101e) 25%, transparent)' }}
+            />
           )}
         </div>
 
@@ -312,8 +317,8 @@ export default function HomeFunnelContent() {
                   ? 'Thu gọn danh sách chuyên đề'
                   : 'Collapse topic directory'
                 : isVi
-                ? `Mở xem đầy đủ toàn bộ ${FUNNEL_PAGES.length} chuyên đề`
-                : `Show all ${FUNNEL_PAGES.length} topics`}
+                ? `Mở xem đầy đủ toàn bộ ${FUNNEL_PAGES_INDEX.length} chuyên đề`
+                : `Show all ${FUNNEL_PAGES_INDEX.length} topics`}
             </span>
             <ChevronDown
               className={`w-3.5 h-3.5 transition-transform duration-200 ${

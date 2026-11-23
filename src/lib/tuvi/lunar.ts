@@ -180,3 +180,114 @@ export function solar2Lunar(
 
   return [lunarDay, lunarMonth, lunarYear, isLeap];
 }
+
+/**
+ * Chuyển đổi Số Ngày Julius (Julian Day Number) -> Dương lịch [dd, mm, yy]
+ * Theo thuật toán Thiên văn chuẩn của TS. Hồ Ngọc Đức
+ */
+export function jdToDate(jd: number): [number, number, number] {
+  let a: number;
+  let b: number;
+  let c: number;
+  if (jd > 2299160) {
+    a = jd + 32044;
+    b = INT((4 * a + 3) / 146097);
+    c = a - INT((b * 146097) / 4);
+  } else {
+    b = 0;
+    c = jd + 32082;
+  }
+  const d = INT((4 * c + 3) / 1461);
+  const e = c - INT((1461 * d) / 4);
+  const m = INT((5 * e + 2) / 153);
+  const day = e - INT((153 * m + 2) / 5) + 1;
+  const month = m + 3 - 12 * INT(m / 10);
+  const year = b * 100 + d - 4800 + INT(m / 10);
+  return [day, month, year];
+}
+
+/**
+ * Tìm tháng nhuận (1..12) của một năm Âm lịch (trả về 0 nếu năm đó không nhuận)
+ */
+export function getLeapMonthOfLunarYear(lunarYear: number, timeZone = 7.0): number {
+  const a11 = getLunarMonth11(lunarYear - 1, timeZone);
+  const b11 = getLunarMonth11(lunarYear, timeZone);
+  if (b11 - a11 > 365) {
+    const leapOff = getLeapMonthOffset(a11, timeZone);
+    let leapMonth = leapOff - 2;
+    if (leapMonth <= 0) leapMonth += 12;
+    if (leapMonth < 11) return leapMonth;
+  }
+  const a11Next = b11;
+  const b11Next = getLunarMonth11(lunarYear + 1, timeZone);
+  if (b11Next - a11Next > 365) {
+    const leapOff = getLeapMonthOffset(a11Next, timeZone);
+    let leapMonth = leapOff - 2;
+    if (leapMonth <= 0) leapMonth += 12;
+    if (leapMonth >= 11) return leapMonth;
+  }
+  return 0;
+}
+
+/**
+ * Chuyển đổi Âm lịch Việt Nam -> Dương lịch [dd, mm, yy]
+ * Trả về null nếu ngày/tháng Âm lịch không tồn tại (VD: chọn tháng nhuận của năm không nhuận, hoặc ngày 30 ở tháng thiếu 29 ngày)
+ */
+export function lunar2Solar(
+  lunarDay: number,
+  lunarMonth: number,
+  lunarYear: number,
+  isLeap = false,
+  timeZone = 7.0
+): [number, number, number] | null {
+  if (
+    !Number.isInteger(lunarDay) ||
+    !Number.isInteger(lunarMonth) ||
+    !Number.isInteger(lunarYear) ||
+    lunarDay < 1 ||
+    lunarDay > 30 ||
+    lunarMonth < 1 ||
+    lunarMonth > 12 ||
+    lunarYear < 1800 ||
+    lunarYear > 2200
+  ) {
+    return null;
+  }
+
+  let a11: number;
+  let b11: number;
+  if (lunarMonth < 11) {
+    a11 = getLunarMonth11(lunarYear - 1, timeZone);
+    b11 = getLunarMonth11(lunarYear, timeZone);
+  } else {
+    a11 = getLunarMonth11(lunarYear, timeZone);
+    b11 = getLunarMonth11(lunarYear + 1, timeZone);
+  }
+
+  const k = INT(0.5 + (a11 - 2415021.076998695) / 29.530588853);
+  let off = lunarMonth - 11;
+  if (off < 0) off += 12;
+
+  if (b11 - a11 > 365) {
+    const leapOff = getLeapMonthOffset(a11, timeZone);
+    let leapMonth = leapOff - 2;
+    if (leapMonth <= 0) leapMonth += 12;
+    if (isLeap && lunarMonth !== leapMonth) {
+      return null;
+    }
+    if (isLeap || off >= leapOff) {
+      off += 1;
+    }
+  } else if (isLeap) {
+    return null;
+  }
+
+  const monthStart = getNewMoonDay(k + off, timeZone);
+  const nextMonthStart = getNewMoonDay(k + off + 1, timeZone);
+  const monthLength = nextMonthStart - monthStart;
+  if (lunarDay > monthLength) {
+    return null;
+  }
+
+  return jdToDate(monthStart + lunarDay - 1);
+}

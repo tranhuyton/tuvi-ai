@@ -6,24 +6,14 @@ import {
   deleteTester,
   toggleTesterActive,
 } from '@/lib/testerStore';
+import { verifyAdminRequest } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
-function checkAdminAuth(req: NextRequest): boolean {
-  const pin =
-    req.headers.get('x-admin-pin') ||
-    req.nextUrl.searchParams.get('pin');
-  const validPins = [
-    process.env.ADMIN_PIN || 'thayton2026',
-    '0935058688',
-    'thayton2026',
-  ];
-  return Boolean(pin && validPins.includes(pin));
-}
-
 export async function GET(req: NextRequest) {
-  if (!checkAdminAuth(req)) {
-    return NextResponse.json({ error: 'Mã PIN bảo mật không chính xác' }, { status: 401 });
+  const auth = await verifyAdminRequest(req);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
   }
 
   try {
@@ -35,8 +25,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!checkAdminAuth(req)) {
-    return NextResponse.json({ error: 'Mã PIN bảo mật không chính xác' }, { status: 401 });
+  const auth = await verifyAdminRequest(req);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
   }
 
   try {

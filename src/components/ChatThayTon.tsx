@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { ChatMessage, ServiceTier, QuestionsQuota } from '@/types/tuvi';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { ChatMessage, ServiceTier, QuestionsQuota, LaSoData } from '@/types/tuvi';
 import {
   MessageSquare,
   Send,
@@ -16,10 +16,12 @@ import {
   GripHorizontal,
 } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
+import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
+import { getCurrentVietnamTimeInfo } from '@/lib/tuvi/anSao';
 
 interface ChatThayTonProps {
   chatHistory: ChatMessage[];
-  onSendMessage: (question: string, mode: 'basic' | 'vip' | 'expert') => Promise<void>;
+  onSendMessage: (question: string, mode: 'basic' | 'vip' | 'expert') => Promise<boolean | void>;
   isLoading: boolean;
   tier?: ServiceTier;
   quota?: QuestionsQuota;
@@ -27,6 +29,7 @@ interface ChatThayTonProps {
   onUnlockQuestions: (mode?: 'basic' | 'vip' | 'expert') => void;
   onUpgradeToPro?: () => void;
   onUpgradeToExpert?: () => void;
+  laSo?: LaSoData | null;
 }
 
 export default function ChatThayTon({
@@ -39,6 +42,7 @@ export default function ChatThayTon({
   onUnlockQuestions,
   onUpgradeToPro,
   onUpgradeToExpert,
+  laSo,
 }: ChatThayTonProps) {
   const { t } = useLanguage();
   const [question, setQuestion] = useState('');
@@ -91,8 +95,9 @@ export default function ChatThayTon({
     if (proRemaining > 0) return 'vip';
     return 'basic';
   });
+  const [userExplicitBasic, setUserExplicitBasic] = useState(false);
 
-  // Tự động chuyển mode nếu loại hiện tại hết lượt và loại khác còn lượt
+  // Tự động chuyển mode nếu loại hiện tại hết lượt và loại khác còn lượt (tôn trọng lựa chọn Cơ Bản có chủ đích)
   useEffect(() => {
     if (selectedMode === 'expert' && expertRemaining === 0) {
       if (proRemaining > 0) setSelectedMode('vip');
@@ -100,11 +105,11 @@ export default function ChatThayTon({
     } else if (selectedMode === 'vip' && proRemaining === 0) {
       if (expertRemaining > 0) setSelectedMode('expert');
       else if (basicRemaining > 0) setSelectedMode('basic');
-    } else if (selectedMode === 'basic' && basicRemaining === 0) {
+    } else if (selectedMode === 'basic' && basicRemaining === 0 && !userExplicitBasic) {
       if (expertRemaining > 0) setSelectedMode('expert');
       else if (proRemaining > 0) setSelectedMode('vip');
     }
-  }, [expertRemaining, proRemaining, basicRemaining, selectedMode]);
+  }, [expertRemaining, proRemaining, basicRemaining, selectedMode, userExplicitBasic]);
 
   // 4. Trạng thái giao diện luồng hỏi đáp:
   const [flowStep, setFlowStep] = useState<'unpaid' | 'paid_success' | 'chatting' | 'exhausted'>(() => {
@@ -138,6 +143,7 @@ export default function ChatThayTon({
 
   // 5. Tùy biến kích thước & kéo resize trên PC
   const [chatHeight, setChatHeight] = useState<number>(560);
+  const chatHeightRef = useRef<number>(560);
   const [hasCustomResize, setHasCustomResize] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isResizing, setIsResizing] = useState<boolean>(false);
@@ -154,6 +160,7 @@ export default function ChatThayTon({
         const val = parseInt(saved, 10);
         if (!isNaN(val) && val >= 280 && val <= 1200) {
           setChatHeight(val);
+          chatHeightRef.current = val;
         }
       }
     } catch {}
@@ -164,7 +171,7 @@ export default function ChatThayTon({
     e.preventDefault();
     setIsResizing(true);
     setHasCustomResize(true);
-    const currentRenderedHeight = chatListRef.current?.clientHeight || chatHeight;
+    const currentRenderedHeight = chatListRef.current?.clientHeight || chatHeightRef.current;
     startResizeRef.current = {
       startY: e.clientY,
       startHeight: currentRenderedHeight,
@@ -177,13 +184,14 @@ export default function ChatThayTon({
     const handleMouseMove = (e: MouseEvent) => {
       const deltaY = e.clientY - startResizeRef.current.startY;
       const newHeight = Math.min(1200, Math.max(380, startResizeRef.current.startHeight + deltaY));
+      chatHeightRef.current = newHeight;
       setChatHeight(newHeight);
     };
 
     const handleMouseUp = () => {
       setIsResizing(false);
       try {
-        localStorage.setItem('tuvi_chat_height', chatHeight.toString());
+        localStorage.setItem('tuvi_chat_height', chatHeightRef.current.toString());
       } catch {}
     };
 
@@ -193,7 +201,35 @@ export default function ChatThayTon({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing, chatHeight]);
+  }, [isResizing]);
+
+  // Memoize HTML đã làm sạch theo từng tin nhắn để tránh chạy sanitizer lại mỗi khi người dùng gõ phím
+  const cleanedAnswers = useMemo(
+    () => chatHistory.map((item) => cleanReadingHtml(item.a)),
+    [chatHistory]
+  );
+
+  // Gợi ý 4 câu hỏi cá nhân hóa theo lá số đang xem
+  const suggestedQuestions = useMemo(() => {
+    const viewYear = laSo?.namXem || getCurrentVietnamTimeInfo().namAm;
+    const dienCung = laSo?.cungs?.find((c) => c.cungName.toLowerCase().includes('điền'));
+    const quanCung = laSo?.cungs?.find((c) => c.cungName.toLowerCase().includes('quan'));
+    const taiCung = laSo?.cungs?.find((c) => c.cungName.toLowerCase().includes('tài'));
+    const dienStar = dienCung?.chinhTinh?.[0]?.ten;
+    const quanStar = quanCung?.chinhTinh?.[0]?.ten;
+    const taiStar = taiCung?.chinhTinh?.[0]?.ten;
+
+    return [
+      `Năm ${viewYear} tháng nào thuận lợi nhất để đầu tư, mở rộng công việc hay chuyển đổi sự nghiệp?`,
+      dienStar
+        ? `Cung Điền Trạch có ${dienStar} — năm ${viewYear} tôi có nên mua bán nhà đất hoặc thay đổi chỗ ở không?`
+        : `Xem giúp tôi Cung Điền Trạch — giai đoạn này có thuận lợi để mua bán nhà đất hay tích sản không?`,
+      quanStar || taiStar
+        ? `Với cách cục ${[quanStar && `Quan Lộc (${quanStar})`, taiStar && `Tài Bạch (${taiStar})`].filter(Boolean).join(' & ')}, tôi hợp làm chủ hay làm chuyên gia?`
+        : `Nên tập trung vào hướng sự nghiệp và dòng tiền nào để bứt phá trong đại vận hiện tại?`,
+      `Những tháng cần đặc biệt thận trọng về sức khỏe, pháp lý, thị phi và gia đạo trong năm ${viewYear}?`,
+    ];
+  }, [laSo]);
 
   // Tự động cuộn NỘI BỘ bên trong khung chat khi người dùng đang gửi câu hỏi (TUYỆT ĐỐI KHÔNG cuộn trang web window)
   useEffect(() => {
@@ -218,13 +254,15 @@ export default function ChatThayTon({
       modeToUse = proRemaining > 0 ? 'vip' : 'basic';
     } else if (modeToUse === 'vip' && proRemaining <= 0) {
       modeToUse = expertRemaining > 0 ? 'expert' : 'basic';
-    } else if (modeToUse === 'basic' && basicRemaining <= 0) {
+    } else if (modeToUse === 'basic' && basicRemaining <= 0 && !userExplicitBasic) {
       modeToUse = expertRemaining > 0 ? 'expert' : proRemaining > 0 ? 'vip' : 'basic';
     }
 
     const q = question.trim();
-    setQuestion('');
-    await onSendMessage(q, modeToUse);
+    const ok = await onSendMessage(q, modeToUse);
+    if (ok !== false) {
+      setQuestion('');
+    }
   };
 
   const handleOpenChat = () => {
@@ -422,8 +460,8 @@ export default function ChatThayTon({
                     )}
                   </div>
                   <div
-                    className="chat-content text-justify text-base sm:text-base leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: item.a }}
+                    className="chat-content text-left sm:text-justify text-base sm:text-base leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: cleanedAnswers[idx] || '' }}
                   />
                 </div>
               </div>
@@ -537,27 +575,33 @@ export default function ChatThayTon({
             </div>
 
             {!isExpert && (onUpgradeToPro || onUpgradeToExpert) && !isPro && (
-              <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-center gap-2.5 flex-wrap">
-                {onUpgradeToPro && (
-                  <button
-                    type="button"
-                    onClick={onUpgradeToPro}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-amber-500/20 transition cursor-pointer"
-                  >
-                    <Crown className="w-4 h-4" />
-                    <span>👑 Mở Khóa Trọn Gói Bản Pro (119.000đ - Tặng 2 câu VIP)</span>
-                  </button>
-                )}
-                {onUpgradeToExpert && (
-                  <button
-                    type="button"
-                    onClick={onUpgradeToExpert}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-purple-500/25 transition cursor-pointer"
-                  >
-                    <Gem className="w-4 h-4" />
-                    <span>💎 Mở Khóa Trọn Gói Bản Expert (269.000đ - Tặng 2 câu Chuyên Gia)</span>
-                  </button>
-                )}
+              <div className="pt-3 border-t border-slate-800/80 space-y-2.5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-200 text-xs font-bold">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Gợi ý tiết kiệm nhất: Chỉ thêm 20K so với mua lẻ 2 câu VIP (99K), nhận trọn bộ Luận Giải Pro + 2 câu hỏi!</span>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 flex-wrap">
+                  {onUpgradeToPro && (
+                    <button
+                      type="button"
+                      onClick={onUpgradeToPro}
+                      className="btn-shimmer w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition cursor-pointer"
+                    >
+                      <Crown className="w-4 h-4" />
+                      <span>👑 Mở Trọn Gói Bản Pro (119.000đ • Tặng sẵn 2 câu VIP)</span>
+                    </button>
+                  )}
+                  {onUpgradeToExpert && (
+                    <button
+                      type="button"
+                      onClick={onUpgradeToExpert}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-purple-500/25 transition cursor-pointer"
+                    >
+                      <Gem className="w-4 h-4" />
+                      <span>💎 Mở Trọn Gói Bản Expert (269.000đ • Tặng 2 câu Chuyên Gia)</span>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -642,6 +686,7 @@ export default function ChatThayTon({
                     type="button"
                     onClick={() => {
                       if (expertRemaining > 0) {
+                        setUserExplicitBasic(false);
                         setSelectedMode('expert');
                       } else {
                         onUnlockQuestions('expert');
@@ -667,6 +712,7 @@ export default function ChatThayTon({
                     type="button"
                     onClick={() => {
                       if (proRemaining > 0) {
+                        setUserExplicitBasic(false);
                         setSelectedMode('vip');
                       } else {
                         onUnlockQuestions('vip');
@@ -691,7 +737,12 @@ export default function ChatThayTon({
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedMode('basic');
+                      if (totalRemaining > 0) {
+                        setUserExplicitBasic(basicRemaining === 0);
+                        setSelectedMode('basic');
+                      } else {
+                        onUnlockQuestions('basic');
+                      }
                     }}
                     className={`px-3 py-1.5 rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
                       selectedMode === 'basic'
@@ -747,11 +798,33 @@ export default function ChatThayTon({
               </div>
             </div>
 
+            {/* Gợi ý câu hỏi cá nhân hóa theo lá số */}
+            {!isLoading && (
+              <div className="space-y-1.5">
+                <div className="text-[11px] text-slate-400 font-medium px-0.5">
+                  💡 Gợi ý câu hỏi hay (chạm để điền nhanh, bạn có thể sửa thêm chi tiết):
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {suggestedQuestions.map((sq, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setQuestion(sq)}
+                      className="text-left text-xs px-3 py-2 rounded-xl bg-slate-950/75 hover:bg-slate-800/90 text-slate-300 hover:text-amber-200 border border-slate-800 hover:border-amber-500/40 transition cursor-pointer leading-snug"
+                    >
+                      “{sq}”
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Ô nhập câu hỏi */}
             <form onSubmit={handleSubmit} className="flex gap-2">
               <input
                 type="text"
                 required
+                maxLength={2500}
                 disabled={isLoading}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}

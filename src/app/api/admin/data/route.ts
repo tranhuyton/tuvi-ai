@@ -1,108 +1,142 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { adminSupabase } from '@/lib/supabaseAdmin';
+import { verifyAdminRequest } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ubkvzgwespfvrlpjuxkp.supabase.co';
-const serviceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzExNjM1MSwiZXhwIjoyMDkyNjkyMzUxfQ.Ubmws-Yg0pJKaCaXy7aO8rbt6bw4O3PGgM6GzPR0PLk';
+async function fetchTonyEnglishIdsForUserIds(userIds: string[]): Promise<Set<string>> {
+  const result = new Set<string>();
+  const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
+  const CHUNK_SIZE = 200;
+  for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+    const chunk = uniqueIds.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await adminSupabase
+      .from('profiles')
+      .select('id')
+      .in('id', chunk);
+    if (!error && data) {
+      for (const row of data as Array<{ id: string }>) {
+        if (row.id) result.add(row.id);
+      }
+    }
+  }
+  return result;
+}
 
-const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
+async function fetchAllRows<T>(
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  pageSize = 1000,
+  maxRows = 10000
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const { data, error } = await buildQuery(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < pageSize) break;
+  }
+  return all;
+}
 
 export async function GET(req: NextRequest) {
   try {
-    const pin = req.headers.get('x-admin-pin') || req.nextUrl.searchParams.get('pin');
-    const validPins = [
-      process.env.ADMIN_PIN || 'thayton2026',
-      '0935058688',
-      'thayton2026',
-    ];
-
-    if (!pin || !validPins.includes(pin)) {
-      return NextResponse.json({ error: 'Mã PIN bảo mật không chính xác' }, { status: 401 });
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
     }
 
     const { getAllOrders } = await import('@/lib/orderStore');
 
-    // Truy vấn song song siêu nhẹ bằng Service Role (loại bỏ hoàn toàn ảnh Base64 hàng chục MB gây nghẽn/timeout)
+    // Truy vấn song song có phân trang thực (tránh PostgREST mặc định cắt ở 1.000 dòng)
     const [
-      profilesRes,
-      tonyProfilesRes,
-      chartsRes,
-      readingIdsRes,
-      anhMatIdsRes,
-      anhTayIdsRes,
-      messagesRes,
+      profiles,
+      rawCharts,
+      readingIds,
+      anhMatIds,
+      anhTayIds,
+      messages,
       orders,
     ] = await Promise.all([
-      adminSupabase
-        .from('tuvi_profiles')
-        .select('id, email, full_name, phone, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5000),
-      adminSupabase
-        .from('profiles')
-        .select('id')
-        .limit(5000),
-      adminSupabase
-        .from('tuvi_charts')
-        .select(
-          'id, user_id, title, created_at, updated_at, hoTen:duong_so_data->>hoTen, gioiTinh:duong_so_data->>gioiTinh, ngayDuong:duong_so_data->ngayDuong, thangDuong:duong_so_data->thangDuong, namDuong:duong_so_data->namDuong, gioSinhVal:duong_so_data->>gioSinhVal, namXem:duong_so_data->namXem, tier:duong_so_data->>tier, chieuCao:duong_so_data->chieuCao, canNang:duong_so_data->canNang, thongTinThem:duong_so_data->>thongTinThem, lasoTier:laso_data->>tier'
-        )
-        .order('created_at', { ascending: false })
-        .limit(5000),
-      adminSupabase
-        .from('tuvi_charts')
-        .select('id')
-        .not('reading_html', 'is', null)
-        .neq('reading_html', '')
-        .limit(5000),
-      adminSupabase
-        .from('tuvi_charts')
-        .select('id')
-        .not('duong_so_data->>anhMat', 'is', null)
-        .neq('duong_so_data->>anhMat', '')
-        .limit(5000),
-      adminSupabase
-        .from('tuvi_charts')
-        .select('id')
-        .not('duong_so_data->>anhTay', 'is', null)
-        .neq('duong_so_data->>anhTay', '')
-        .limit(5000),
-      adminSupabase
-        .from('tuvi_chat_messages')
-        .select('id, chart_id, user_id, question, answer, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5000),
+      fetchAllRows<{ id: string; email: string | null; full_name: string | null; phone: string | null; created_at: string }>(
+        (from, to) =>
+          adminSupabase
+            .from('tuvi_profiles')
+            .select('id, email, full_name, phone, created_at')
+            .order('created_at', { ascending: false })
+            .range(from, to)
+      ),
+      fetchAllRows<Record<string, unknown>>((from, to) =>
+        adminSupabase
+          .from('tuvi_charts')
+          .select(
+            'id, user_id, title, created_at, updated_at, hoTen:duong_so_data->>hoTen, gioiTinh:duong_so_data->>gioiTinh, ngayDuong:duong_so_data->ngayDuong, thangDuong:duong_so_data->thangDuong, namDuong:duong_so_data->namDuong, gioSinhVal:duong_so_data->>gioSinhVal, namXem:duong_so_data->namXem, tier:duong_so_data->>tier, chieuCao:duong_so_data->chieuCao, canNang:duong_so_data->canNang, thongTinThem:duong_so_data->>thongTinThem, lasoTier:laso_data->>tier'
+          )
+          .order('created_at', { ascending: false })
+          .range(from, to)
+      ),
+      fetchAllRows<{ id: string }>((from, to) =>
+        adminSupabase
+          .from('tuvi_charts')
+          .select('id')
+          .not('reading_html', 'is', null)
+          .neq('reading_html', '')
+          .range(from, to)
+      ),
+      fetchAllRows<{ id: string }>((from, to) =>
+        adminSupabase
+          .from('tuvi_charts')
+          .select('id')
+          .not('duong_so_data->>anhMat', 'is', null)
+          .neq('duong_so_data->>anhMat', '')
+          .range(from, to)
+      ),
+      fetchAllRows<{ id: string }>((from, to) =>
+        adminSupabase
+          .from('tuvi_charts')
+          .select('id')
+          .not('duong_so_data->>anhTay', 'is', null)
+          .neq('duong_so_data->>anhTay', '')
+          .range(from, to)
+      ),
+      fetchAllRows<{
+        id: string;
+        chart_id: string | null;
+        user_id: string | null;
+        question: string;
+        answer: string;
+        created_at: string;
+      }>((from, to) =>
+        adminSupabase
+          .from('tuvi_chat_messages')
+          .select('id, chart_id, user_id, question, answer, created_at')
+          .order('created_at', { ascending: false })
+          .range(from, to)
+      ),
       getAllOrders(),
     ]);
 
-    if (chartsRes.error) {
-      throw new Error(`Lỗi truy vấn tuvi_charts: ${chartsRes.error.message}`);
-    }
+    // Lọc chính xác học viên TonyEnglish theo từng chunk 200 ID (không bao giờ bị cắt ở 1.000 dòng!)
+    const tonyProfileIdSet = await fetchTonyEnglishIdsForUserIds(profiles.map((p) => p.id));
 
-    const profiles = profilesRes.data || [];
-    const rawCharts = (chartsRes.data || []) as Array<Record<string, any>>;
-    const messages = messagesRes.data || [];
-
-    const readingIdSet = new Set((readingIdsRes.data || []).map((r: any) => r.id));
-    const anhMatIdSet = new Set((anhMatIdsRes.data || []).map((r: any) => r.id));
-    const anhTayIdSet = new Set((anhTayIdsRes.data || []).map((r: any) => r.id));
+    const readingIdSet = new Set(readingIds.map((r) => r.id));
+    const anhMatIdSet = new Set(anhMatIds.map((r) => r.id));
+    const anhTayIdSet = new Set(anhTayIds.map((r) => r.id));
 
     const profileMap = new Map<string, { email?: string; full_name?: string }>();
     for (const u of profiles) {
-      profileMap.set(u.id, { email: u.email, full_name: u.full_name });
+      profileMap.set(u.id, { email: u.email || undefined, full_name: u.full_name || undefined });
     }
 
     const chartCountByUser = new Map<string, number>();
     const chartTitleMap = new Map<string, string>();
     for (const c of rawCharts) {
-      if (c.user_id) {
-        chartCountByUser.set(c.user_id, (chartCountByUser.get(c.user_id) || 0) + 1);
+      const uid = typeof c.user_id === 'string' ? c.user_id : '';
+      const cid = String(c.id || '');
+      if (uid) {
+        chartCountByUser.set(uid, (chartCountByUser.get(uid) || 0) + 1);
       }
-      chartTitleMap.set(c.id, c.title || c.hoTen || '');
+      chartTitleMap.set(cid, String(c.title || c.hoTen || ''));
     }
 
     const msgCountByUser = new Map<string, number>();
@@ -116,7 +150,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const tonyProfileIdSet = new Set((tonyProfilesRes?.data || []).map((p: any) => p.id));
     const formattedUsers = profiles
       .filter((u) => !tonyProfileIdSet.has(u.id) || (chartCountByUser.get(u.id) || 0) > 0)
       .map((u) => ({
@@ -130,32 +163,34 @@ export async function GET(req: NextRequest) {
       }));
 
     const formattedCharts = rawCharts.map((c) => {
-      const resolvedTier = c.tier || c.lasoTier || 'free';
-      const userInfo = c.user_id ? profileMap.get(c.user_id) : undefined;
+      const cid = String(c.id || '');
+      const uid = typeof c.user_id === 'string' ? c.user_id : '';
+      const resolvedTier = String(c.tier || c.lasoTier || 'free');
+      const userInfo = uid ? profileMap.get(uid) : undefined;
       return {
-        id: c.id,
-        user_id: c.user_id,
-        title: c.title,
+        id: cid,
+        user_id: uid,
+        title: String(c.title || ''),
         duong_so_data: {
-          hoTen: c.hoTen || c.title || '',
-          gioiTinh: c.gioiTinh || 'Nam',
+          hoTen: String(c.hoTen || c.title || ''),
+          gioiTinh: String(c.gioiTinh || 'Nam'),
           ngayDuong: Number(c.ngayDuong) || 1,
           thangDuong: Number(c.thangDuong) || 1,
           namDuong: Number(c.namDuong) || 1990,
-          gioSinhVal: c.gioSinhVal ?? '0',
+          gioSinhVal: String(c.gioSinhVal ?? '0'),
           namXem: c.namXem ? Number(c.namXem) : undefined,
           tier: resolvedTier,
           chieuCao: c.chieuCao ? Number(c.chieuCao) : undefined,
           canNang: c.canNang ? Number(c.canNang) : undefined,
-          thongTinThem: c.thongTinThem || undefined,
-          anhMat: anhMatIdSet.has(c.id) ? '__HAS_IMAGE__' : undefined,
-          anhTay: anhTayIdSet.has(c.id) ? '__HAS_IMAGE__' : undefined,
+          thongTinThem: c.thongTinThem ? String(c.thongTinThem) : undefined,
+          anhMat: anhMatIdSet.has(cid) ? '__HAS_IMAGE__' : undefined,
+          anhTay: anhTayIdSet.has(cid) ? '__HAS_IMAGE__' : undefined,
         },
         laso_data: { tier: resolvedTier },
-        created_at: c.created_at,
-        updated_at: c.updated_at,
-        has_reading: readingIdSet.has(c.id),
-        message_count: msgCountByChart.get(c.id) || 0,
+        created_at: String(c.created_at || ''),
+        updated_at: String(c.updated_at || ''),
+        has_reading: readingIdSet.has(cid),
+        message_count: msgCountByChart.get(cid) || 0,
         user_name: userInfo?.full_name || '',
         user_email: userInfo?.email || '',
       };
@@ -197,12 +232,12 @@ export async function GET(req: NextRequest) {
       stats: {
         total_users: totalUsers,
         total_charts: totalCharts,
-        total_pro: paidProOrders > 0 ? paidProOrders : totalPro,
+        total_pro: paidProOrders,
         total_free: totalFree,
         total_messages: totalMessages,
         total_orders: orders.length,
         paid_orders: paidOrders.length,
-        estimated_revenue: actualRevenue > 0 ? actualRevenue : totalPro * 119000,
+        estimated_revenue: actualRevenue,
       },
     });
   } catch (error: unknown) {

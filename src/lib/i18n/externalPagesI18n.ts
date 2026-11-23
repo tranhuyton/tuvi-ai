@@ -1,7 +1,9 @@
 import type { Language } from './translations';
 import type { FunnelPageData, FunnelFaq } from '@/lib/funnelPages';
+import type { FunnelPageMeta } from '@/lib/funnelPagesIndex';
 import type { SeoArticle, FunnelStage } from '@/lib/seoArticles';
-import type { CourseLesson, CourseModule } from '@/lib/courseData';
+import type { SeoArticleMeta } from '@/lib/seoArticlesIndex';
+import type { CourseLesson } from '@/lib/courseMeta';
 import { translateFunnelPageTitle } from './homeFunnelData';
 
 export interface ExternalPageUiStrings {
@@ -1072,7 +1074,7 @@ export function getLocalizedFunnelPage(page: FunnelPageData, lang: Language): Fu
 
     const introHtml = isTr
       ? 'An accurate Zi Wei Dou Shu reading requires both classical metaphysical depth and rigorous analytical logic. Below is the complete academic profile, research methodology, and consultation framework of <a href="/" class="text-amber-400 hover:text-amber-300 underline underline-offset-4 font-semibold">Master Ton Zi Wei & Feng Shui</a>.'
-      : `In Zi Wei Dou Shu, understanding <strong>${localizedH1}</strong> requires examining the full Three Harmonies and Four的正 (San Fang Si Zheng) star formations alongside your 10-year Major Limit and Annual Transit rather than isolated stars. Start by casting your personal chart on our <a href="/#lap-la-so" class="text-amber-400 hover:text-amber-300 underline underline-offset-4 font-semibold">Free Zi Wei Chart Caster</a>.`;
+      : `In Zi Wei Dou Shu, understanding <strong>${localizedH1}</strong> requires examining the full Three Harmonies and Four Cardinal Palaces (San Fang Si Zheng) star formations alongside your 10-year Major Limit and Annual Transit rather than isolated stars. Start by casting your personal chart on our <a href="/#lap-la-so" class="text-amber-400 hover:text-amber-300 underline underline-offset-4 font-semibold">Free Zi Wei Chart Caster</a>.`;
 
     const bodyHtml = `<h2 class="text-xl sm:text-2xl font-bold text-amber-300 mt-10 mb-4 pb-2 border-b border-slate-800">1. Core Principles & Analytical Framework for ${localizedH1}</h2>
 <p class="text-slate-300 leading-relaxed my-4">Every reading and specialized monograph by Master Ton follows a strict, verifiable 4-step analytical framework rooted in Mathematical Logic and 18+ years of empirical chart verification:</p>
@@ -1243,7 +1245,7 @@ export function getLocalizedFunnelPage(page: FunnelPageData, lang: Language): Fu
 <ol class="list-decimal pl-6 my-4 space-y-2.5 text-slate-300 leading-relaxed">
   <li class="pl-1"><strong class="text-slate-100 font-semibold">단일 성요가 아닌 격국(格局) 중심 해독:</strong> 14주성, 육길성·육살성, 사화(화록·화권·화과·화기), 순공·절공의 삼방사정 상호작용을 종합 분석합니다.</li>
   <li class="pl-1"><strong class="text-slate-100 font-semibold">3중 시간축 동기화:</strong> 선천 명반, 10년 대운, 그리고 유년 3대 궁위(소한·유년대한·유태세)를 입체적으로 대조합니다.</li>
-  <li class="pl-1"><strong class="text-slate-100 font-semibold">관상·수상 교차 검증:</strong> Pro 및 Expert 버전에서는 관상(삼정오관) 및 수상 3대선을 함께 대조하여 출생 시辰 오차를 줄입니다.</li>
+  <li class="pl-1"><strong class="text-slate-100 font-semibold">관상·수상 교차 검증:</strong> Pro 및 Expert 버전에서는 관상(삼정오관) 및 수상 3대선을 함께 대조하여 출생 시진(時辰) 오차를 줄입니다.</li>
   <li class="pl-1"><strong class="text-slate-100 font-semibold">미신 배제 & 실용적 전략 제시:</strong> 모든 판단의 근거가 되는 궁위와 성요를 명확히 밝히며, 공포 조장이나 굿·부적 강요를 철저히 배제합니다.</li>
 </ol>
 <h2 class="text-xl sm:text-2xl font-bold text-amber-300 mt-10 mb-4 pb-2 border-b border-slate-800">2. 3가지 명반 풀이 패키지 비교</h2>
@@ -1313,7 +1315,7 @@ export function getLocalizedFunnelPage(page: FunnelPageData, lang: Language): Fu
   // Japanese (ja)
   const isTr = page.code === 'TR';
   const quickSummaryHtml = isTr
-    ? 'トン先生（Trần Huy Tôn）は18年以上の実証研究歴を持つ紫微斗数・風水の専門家であり、「トン先生の紫微斗数＆風水」の創설者です。ハノイ総合大学付属の数学・情報特進クラス出身で、英国ランカスター大学（Lancaster University）にて会計・ファイナンスの学士号および修士号を取得。英国での7年以上の留学・勤務経験に加え、IELTSやケンブリッジIGCSE（数学・科学・経済・ビジネス・地理）の指導歴15年以上を誇ります。'
+    ? 'トン先生（Trần Huy Tôn）は18年以上の実証研究歴を持つ紫微斗数・風水の専門家であり、「トン先生の紫微斗数＆風水」の創設者です。ハノイ総合大学付属の数学・情報特進クラス出身で、英国ランカスター大学（Lancaster University）にて会計・ファイナンスの学士号および修士号を取得。英国での7年以上の留学・勤務経験に加え、IELTSやケンブリッジIGCSE（数学・科学・経済・ビジネス・地理）の指導歴15年以上を誇ります。'
     : `<strong>${localizedH1}</strong> は、<strong>トン先生（Trần Huy Tôn）</strong>により編纂・学術監修されています。ホーム画面から110以上の星を配置した十二宮命盤と約1,000語の基本鑑定を完全無料（0 VND）で受け取れるほか、<strong>専門Pro版（119,000 VND）</strong>や<strong>12宮大宗師Expert版（269,000 VND）</strong>（アップグレード時は差額150,000 VNDのみ）をアンロックできます。`;
 
   const introHtml = `<p class="text-slate-200 leading-relaxed">紫微斗数において <strong>${localizedH1}</strong> を正しく理解するには、単一の星だけを見るのではなく、三方四正（命宮・財帛宮・官禄宮・遷移宮）の星の組み合わせと10年大運・流年運限を総合的に読み解く必要があります。まずは <a href="/#lap-la-so" class="text-amber-400 hover:text-amber-300 underline underline-offset-4 font-semibold">無料紫微斗数命盤作成ツール</a> でご自身の命盤を作成してみてください。</p>`;
@@ -1466,7 +1468,7 @@ export function getLocalizedFunnelGroups(lang: Language) {
       {
         badge: '성요 및 운한 • 자미두수 핵심',
         title: '자미두수 명반 해독 가이드: 12궁, 14주성, 사화 & 2027년 운세',
-        desc: '입문자부터 실전까지 체계적인 가이드: 12궁 해독 5단계, 14주성 묘왕함지표, 10천간 사화표, 명무정요 해석, 출생 시辰 역추적 및 2027년 정미년 12띠 운세.',
+        desc: '입문자부터 실전까지 체계적인 가이드: 12궁 해독 5단계, 14주성 묘왕함지표, 10천간 사화표, 명무정요 해석, 출생 시진(時辰) 역추적 및 2027년 정미년 12띠 운세.',
       },
     ],
     ja: [
@@ -1639,7 +1641,7 @@ const SEO_ARTICLE_TITLES_I18N: Record<string, Record<Exclude<Language, 'vi'>, { 
       readTime: '6 分钟阅读',
     },
     ko: {
-      title: '출생 시辰별 정확한 자미두수 명반 작성 및 무료 풀이 받는 법 (실증 기준)',
+      title: '출생 시진(時辰)별 정확한 자미두수 명반 작성 및 무료 풀이 받는 법 (실증 기준)',
       shortTitle: '무료 자미두수 명반 작성 및 기본 풀이 (0 VND)',
       category: '입문 가이드',
       readTime: '6분 소요',
@@ -1900,7 +1902,7 @@ export function getLocalizedSeoArticle(article: SeoArticle, lang: Language): Seo
       geoSummary: `${title} is a core empirical monograph compiled by Master Ton (Tran Huy Ton — BSc & MSc in Accounting & Finance, Lancaster University UK, 18+ years of Zi Wei Dou Shu & Feng Shui research). You can immediately apply these principles on the homepage by casting your 110+ star natal chart and receiving a ~1,000-word Foundation Reading completely free (0 VND).`,
       keyTakeaways: [
         'Accurately converts Solar birth dates to Lunar (Stem-Branch) calendar and plots 110+ stars across all 12 palaces.',
-        'Evaluates full Three Harmonies and Four的正 star formations rather than reading isolated stars.',
+        'Evaluates full Three Harmonies and Four Cardinal Palaces star formations rather than reading isolated stars.',
         'Cross-references 10-year Major Limits, 3-Layer Annual Transits, and Physiognomy (Face & Palm Reading).',
         'Includes a 100% free ~1,000-word Foundation Reading; upgrade to Pro (119k) or Expert (269k) anytime by paying only the difference.',
       ],
@@ -1989,6 +1991,60 @@ export function getLocalizedSeoArticle(article: SeoArticle, lang: Language): Seo
       question: f.question,
       answer: f.answerText,
     })),
+  };
+}
+
+export function getLocalizedFunnelMeta(meta: FunnelPageMeta, lang: Language): FunnelPageMeta {
+  if (lang === 'vi') return meta;
+  const localized = getLocalizedFunnelPage(
+    {
+      ...meta,
+      metaTitle: meta.h1,
+      metaDescription: meta.quickSummaryText,
+      authorLine: '',
+      quickSummaryHtml: meta.quickSummaryText,
+      introHtml: '',
+      bodyHtml: '',
+      faqs: [],
+      closingHtml: '',
+      primaryCta: { label: '', href: '/' },
+      secondaryCta: { label: '', href: 'https://zalo.me/0935058688' },
+    },
+    lang
+  );
+  return {
+    ...meta,
+    h1: localized.h1,
+    quickSummaryText: localized.quickSummaryText,
+  };
+}
+
+export function getLocalizedSeoArticleMeta(meta: SeoArticleMeta, lang: Language): SeoArticleMeta {
+  if (lang === 'vi') return meta;
+  const localized = getLocalizedSeoArticle(
+    {
+      ...meta,
+      metaTitle: meta.title,
+      metaDescription: meta.geoSummary,
+      funnelBadge: '',
+      funnelRoleDesc: '',
+      keywords: [],
+      keyTakeaways: [],
+      sections: [],
+      faqs: [],
+      primaryCtaText: '',
+      primaryCtaSubtext: '',
+      relatedSlugs: [],
+    },
+    lang
+  );
+  return {
+    ...meta,
+    title: localized.title,
+    shortTitle: localized.shortTitle,
+    category: localized.category,
+    readTime: localized.readTime,
+    geoSummary: localized.geoSummary,
   };
 }
 
@@ -2553,86 +2609,20 @@ export function getLocalizedCourseLesson(lesson: CourseLesson, lang: Language): 
   const meta = LESSON_TITLES_I18N[lesson.number]?.[lang];
   if (!meta) return lesson;
 
-  const chapPrefix = lang === 'en' ? 'Part' : lang === 'zh' ? '第' : lang === 'ko' ? '파트' : 'パート';
-  const localizedChapters = lesson.podcastChapters.map((c, idx) => ({
-    ...c,
-    title:
-      lang === 'en'
-        ? `${chapPrefix} ${idx + 1}: Core Lecture & Chart Verification (${c.time})`
-        : lang === 'zh'
-          ? `第 ${idx + 1} 节：核心精讲与命盘实证 (${c.time})`
-          : lang === 'ko'
-            ? `파트 ${idx + 1}: 핵심 강의 및 명반 대조 (${c.time})`
-            : `パート ${idx + 1}：核心講義＆命盤実証 (${c.time})`,
-    transcript:
-      lang === 'en'
-        ? `[Studio Audio Lecture by Master Ton — ${meta.title}] ${meta.subtitle} Listen to the audio track above while cross-referencing the stars (${lesson.relatedStars.join(', ')}) on your personal natal chart below.`
-        : lang === 'zh'
-          ? `【孙老师录音室精讲音频 —— ${meta.title}】${meta.subtitle} 请点击上方播放按钮收听音频，并结合下方“个人命盘星曜对照框”查看（${lesson.relatedStars.join('、')}）在您命盘中的具体落宫。`
-          : lang === 'ko'
-            ? `[선생 톤 스튜디오 오디오 강의 — ${meta.title}] ${meta.subtitle} 상단의 재생 버튼을 눌러 오디오를 청취하면서 아래의 개인 명반 대조 박스에서 (${lesson.relatedStars.join(', ')}) 성요의 위치를 확인해 보세요.`
-            : `【トン先生スタジオ収録講義 — ${meta.title}】${meta.subtitle} 上部の再生ボタンで音声を聴きながら、下の個人命盤照合ボックスでご自身の命盤における（${lesson.relatedStars.join('・')}）の配置をご確認ください。`,
-  }));
+  const langNoticeMap: Record<Exclude<Language, 'vi'>, string> = {
+    en: 'Note: Full lecture audio, transcripts, and classical text below are preserved in original Vietnamese by Master Ton so no curriculum detail is lost.',
+    zh: '提示：为完整保留孙老师原版课程细节，下方完整讲义、原声音频与文字稿均保留越南语原版内容。',
+    ko: '안내: 선생 톤의 원문 강의 내용을 온전히 보존하기 위해 아래 전체 교재, 오디오 및 대본은 베트남어 원문으로 제공됩니다.',
+    ja: 'ご案内：トン先生の講義内容を正確に保持するため、以下の詳細な講義テキスト・音声・文字起こしはベトナム語原文のまま提供されます。',
+  };
 
-  const dummyPage = getLocalizedFunnelPage(
-    {
-      index: lesson.number,
-      code: 'B1',
-      role: '',
-      groupNum: 3,
-      groupTitle: '',
-      url: '/khoa-hoc',
-      slug: 'khoa-hoc',
-      metaTitle: meta.title,
-      metaDescription: meta.subtitle,
-      h1: meta.title,
-      authorLine: '',
-      quickSummaryHtml: meta.subtitle,
-      quickSummaryText: meta.subtitle,
-      introHtml: '',
-      bodyHtml: '',
-      faqs: [],
-      closingHtml: '',
-      primaryCta: { label: '', href: '/' },
-      secondaryCta: { label: '', href: '/' },
-    },
-    lang
-  );
+  const noticeBanner = `<div class="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">${langNoticeMap[lang]}</div>`;
 
   return {
     ...lesson,
     title: meta.title,
     subtitle: meta.subtitle,
-    podcastChapters: localizedChapters,
-    flashcard: {
-      nguHanh:
-        lang === 'en'
-          ? 'Five Elements (Yin-Yang & Generation/Control)'
-          : lang === 'zh'
-            ? '阴阳五行与生克制化'
-            : lang === 'ko'
-              ? '음양오행 및 상생·상극'
-              : '陰陽五行＆相生・相剋',
-      hoaKhi: meta.title.split(':')[0],
-      chuSu: meta.subtitle,
-      dacHam:
-        lang === 'en'
-          ? 'Evaluate Temple (Mieu), Prosperous (Vuong), Gain (Dac), Neutral (Binh) & Fallen (Ham) states across 12 Branches'
-          : lang === 'zh'
-            ? '审视在十二地支中的庙、旺、得、平、陷状态及三方四正会照'
-            : lang === 'ko'
-              ? '12지지에서의 묘·왕·득·평·함 상태 및 삼방사정 회조 판별'
-              : '十二支における廟・旺・得・平・陥の状態および三方四正の会照を判定',
-      cauPhu:
-        lang === 'en'
-          ? 'Never judge a single star in isolation — always read the full Three Harmonies & Four的正 formation.'
-          : lang === 'zh'
-            ? '独守不成格 —— 切忌单星独断，必合参本宫（40%）、对宫（30%）与三合宫（30%）。'
-            : lang === 'ko'
-              ? '독수불성격(獨守不成格) — 단일 성요로 단정하지 말고 본궁(40%)·대궁(30%)·삼합(30%)을 함께 보라.'
-              : '独守不成格 — 単独の星で断定せず、必ず本宮（40%）・対宮（30%）・三合宮（30%）を合わせて読む。',
-      cotLoi: meta.subtitle,
-    },
-    contentHtml: dummyPage.bodyHtml,
+    // Giữ nguyên 100% nội dung bài học thật, flashcard & transcript gốc để học viên không bị mất giáo trình
+    contentHtml: lesson.contentHtml ? `${noticeBanner}${lesson.contentHtml}` : '',
   };
 }

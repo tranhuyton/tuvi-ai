@@ -1,184 +1,120 @@
-import fs from 'fs';
-import path from 'path';
-import { createClient } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import crypto from 'crypto';
+import { adminSupabase as supabase } from './supabaseAdmin';
 import { TesterAccount } from '@/types/tester';
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ubkvzgwespfvrlpjuxkp.supabase.co';
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMTYzNTEsImV4cCI6MjA5MjY5MjM1MX0.ZEgXs3LfI9diL9aji56N9HIxPOl0e1sMeRxbMfSM2qw';
-
-// Tạo Supabase Auth client độc lập (stateless, không lưu token vào cookie/localStorage)
-const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
-
-// Cache bộ nhớ trong Node runtime
-declare global {
-  var __tuviTestersCache: Map<string, TesterAccount> | undefined;
-}
-
-const testersMap: Map<string, TesterAccount> =
-  globalThis.__tuviTestersCache || new Map<string, TesterAccount>();
-globalThis.__tuviTestersCache = testersMap;
-
-function getDataFilePath(): string {
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    return path.join('/tmp', 'testers.json');
-  }
-  const localDir = path.join(process.cwd(), '.data');
-  try {
-    if (!fs.existsSync(localDir)) {
-      fs.mkdirSync(localDir, { recursive: true });
-    }
-    return path.join(localDir, 'testers.json');
-  } catch {
-    return path.join('/tmp', 'testers.json');
-  }
-}
-
-function loadFromFile() {
-  try {
-    const dataFile = getDataFilePath();
-    if (fs.existsSync(dataFile)) {
-      const content = fs.readFileSync(dataFile, 'utf-8');
-      const list: TesterAccount[] = JSON.parse(content);
-      if (Array.isArray(list)) {
-        for (const item of list) {
-          testersMap.set(item.email.toLowerCase().trim(), item);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[TESTER STORE] Lỗi nạp cache từ file:', err);
-  }
-}
-
-function saveToFile() {
-  try {
-    const dataFile = getDataFilePath();
-    const dir = path.dirname(dataFile);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    const list = Array.from(testersMap.values());
-    fs.writeFileSync(dataFile, JSON.stringify(list, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('[TESTER STORE] Lỗi ghi cache ra file:', err);
-  }
-}
-
-loadFromFile();
-
-function rowToTesterAccount(row: any): TesterAccount {
+function rowToTesterAccount(row: Record<string, unknown>): TesterAccount {
   return {
-    id: row.id,
-    userId: row.user_id || undefined,
+    id: String(row.id || ''),
+    userId: typeof row.user_id === 'string' && row.user_id ? row.user_id : undefined,
     email: String(row.email || '').toLowerCase().trim(),
-    fullName: row.full_name || 'Tester',
-    passwordPlain: row.password_plain || '',
+    fullName: String(row.full_name || 'Tester'),
+    // Không trả lộ mật khẩu plaintext cũ ra giao diện Admin
+    passwordPlain: '',
     maxCharts: Number(row.max_charts ?? 3),
     maxQuestionsPerChart: Number(row.max_questions_per_chart ?? 5),
     isActive: row.is_active !== false,
-    notes: row.notes || undefined,
-    createdAt: row.created_at || new Date().toISOString(),
-    updatedAt: row.updated_at || row.created_at || new Date().toISOString(),
+    notes: typeof row.notes === 'string' && row.notes ? row.notes : undefined,
+    createdAt: String(row.created_at || new Date().toISOString()),
+    updatedAt: String(row.updated_at || row.created_at || new Date().toISOString()),
   };
 }
 
 /**
- * Lấy danh sách toàn bộ Tester kèm thống kê số lá số & số câu hỏi đã dùng
+ * Tìm userId hiện có trong auth.users theo email (không phân biệt hoa thường),
+ * đồng thời kiểm tra chặt cách ly Multi-Tenant: từ chối nếu user thuộc bảng public.profiles (TonyEnglish).
  */
-export async function getAllTesters(): Promise<TesterAccount[]> {
-  loadFromFile();
+async function findExistingTuViAuthUserByEmail(
+  cleanEmail: string
+): Promise<{ userId?: string; isTonyEnglishConflict?: boolean }> {
+  const { data: tuviProf } = await supabase
+    .from('tuvi_profiles')
+    .select('id')
+    .eq('email', cleanEmail)
+    .maybeSingle();
 
-  try {
-    const { data, error } = await supabase
-      .from('tuvi_testers')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (!error && data && data.length > 0) {
-      testersMap.clear();
-      for (const row of data) {
-        const item = rowToTesterAccount(row);
-        testersMap.set(item.email.toLowerCase().trim(), item);
-      }
-      saveToFile();
-    }
-  } catch (err) {
-    // Supabase table chưa tạo, sử dụng cache fallback
+  if (tuviProf?.id) {
+    return { userId: String(tuviProf.id) };
   }
 
-  const list = Array.from(testersMap.values());
+  // Kiểm tra trong bảng public.profiles (TonyEnglish) để tuyệt đối không làm ô nhiễm chéo!
+  const { data: tonyProf } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('email', cleanEmail)
+    .maybeSingle();
 
-  // Lấy thêm thống kê số lượng lá số và câu hỏi thực tế của từng tester
-  try {
-    const { data: charts } = await supabase
-      .from('tuvi_charts')
-      .select('id, user_id');
-
-    const { data: messages } = await supabase
-      .from('tuvi_chat_messages')
-      .select('id, user_id');
-
-    for (const t of list) {
-      if (t.userId) {
-        t.chartsUsed = charts?.filter((c) => c.user_id === t.userId).length || 0;
-        t.questionsUsed = messages?.filter((m) => m.user_id === t.userId).length || 0;
-      } else {
-        t.chartsUsed = t.chartsUsed || 0;
-        t.questionsUsed = t.questionsUsed || 0;
-      }
-    }
-  } catch {
-    // ignore
+  if (tonyProf?.id) {
+    return { isTonyEnglishConflict: true };
   }
 
-  return list.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  return {};
 }
 
 /**
- * Tìm kiếm Tester theo Email
+ * Lấy danh sách toàn bộ Tester trực tiếp từ Supabase kèm thống kê chính xác theo từng testerUserId
+ * (KHÔNG kéo toàn bộ tuvi_charts/tuvi_chat_messages bị cắt ở 1.000 dòng!)
+ */
+export async function getAllTesters(): Promise<TesterAccount[]> {
+  const { data, error } = await supabase
+    .from('tuvi_testers')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`Lỗi truy vấn danh sách Tester: ${error.message}`);
+  }
+
+  const list = ((data as Array<Record<string, unknown>>) || []).map(rowToTesterAccount);
+  const testerUserIds = list.map((t) => t.userId).filter((uid): uid is string => Boolean(uid));
+
+  if (testerUserIds.length > 0) {
+    try {
+      const [{ data: charts }, { data: messages }] = await Promise.all([
+        supabase.from('tuvi_charts').select('id, user_id').in('user_id', testerUserIds),
+        supabase.from('tuvi_chat_messages').select('id, user_id').in('user_id', testerUserIds),
+      ]);
+
+      const chartCounts = new Map<string, number>();
+      for (const c of charts || []) {
+        if (c.user_id) chartCounts.set(c.user_id, (chartCounts.get(c.user_id) || 0) + 1);
+      }
+      const msgCounts = new Map<string, number>();
+      for (const m of messages || []) {
+        if (m.user_id) msgCounts.set(m.user_id, (msgCounts.get(m.user_id) || 0) + 1);
+      }
+
+      for (const t of list) {
+        t.chartsUsed = t.userId ? chartCounts.get(t.userId) || 0 : 0;
+        t.questionsUsed = t.userId ? msgCounts.get(t.userId) || 0 : 0;
+      }
+    } catch {
+      // ignore stats errors
+    }
+  }
+
+  return list;
+}
+
+/**
+ * Tìm kiếm Tester trực tiếp trên Supabase (luôn nhất quán giữa mọi serverless container sau khi thu hồi quyền!)
  */
 export async function getTesterByEmail(email: string): Promise<TesterAccount | null> {
   const cleanEmail = email.toLowerCase().trim();
   if (!cleanEmail) return null;
 
-  loadFromFile();
+  const { data, error } = await supabase
+    .from('tuvi_testers')
+    .select('*')
+    .eq('email', cleanEmail)
+    .maybeSingle();
 
-  // Kiểm tra cache trước
-  if (testersMap.has(cleanEmail)) {
-    const cached = testersMap.get(cleanEmail)!;
-    return cached;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('tuvi_testers')
-      .select('*')
-      .eq('email', cleanEmail)
-      .maybeSingle();
-
-    if (!error && data) {
-      const item = rowToTesterAccount(data);
-      testersMap.set(cleanEmail, item);
-      saveToFile();
-      return item;
-    }
-  } catch {
-    // ignore
-  }
-
-  return null;
+  if (error || !data) return null;
+  return rowToTesterAccount(data as Record<string, unknown>);
 }
 
 /**
- * Tạo mới tài khoản Tester
+ * Tạo mới tài khoản Tester bằng Admin Auth API (gắn options.data.app = 'tuvi',
+ * cách ly tuyệt đối khỏi học viên TonyEnglish, không lưu mật khẩu plaintext vào DB).
  */
 export async function createTester(params: {
   email: string;
@@ -192,223 +128,228 @@ export async function createTester(params: {
   if (!cleanEmail || !cleanEmail.includes('@')) {
     return { success: false, error: 'Địa chỉ email không hợp lệ.' };
   }
-  if (!params.password || params.password.length < 6) {
-    return { success: false, error: 'Mật khẩu cần tối thiểu 6 ký tự.' };
+  if (!params.password || params.password.length < 8) {
+    return { success: false, error: 'Mật khẩu cần tối thiểu 8 ký tự.' };
   }
 
-  // 1. Đăng ký tài khoản trong Supabase Auth bằng authClient stateless
-  let userId: string | undefined = undefined;
-  try {
-    const { data: authData, error: authError } = await authClient.auth.signUp({
+  // Kiểm tra cách ly Multi-Tenant trước khi tạo tài khoản
+  const existingCheck = await findExistingTuViAuthUserByEmail(cleanEmail);
+  if (existingCheck.isTonyEnglishConflict) {
+    return {
+      success: false,
+      error:
+        'Email này thuộc tài khoản học viên TonyEnglish. Theo quy tắc cách ly hệ thống, vui lòng dùng một email khác cho Tester Tử Vi.',
+    };
+  }
+
+  let userId: string | undefined = existingCheck.userId;
+
+  if (!userId) {
+    const { data: createdAuth, error: createErr } = await supabase.auth.admin.createUser({
       email: cleanEmail,
       password: params.password,
-      options: {
-        data: {
-          full_name: params.fullName.trim(),
-          app: 'tuvi',
-          role: 'tester',
-          max_charts: params.maxCharts,
-          max_questions_per_chart: params.maxQuestionsPerChart,
-        },
+      email_confirm: true,
+      user_metadata: {
+        full_name: params.fullName.trim() || 'Tester',
+        app: 'tuvi',
+        role: 'tester',
+        max_charts: Number(params.maxCharts) || 3,
+        max_questions_per_chart: Number(params.maxQuestionsPerChart) || 5,
       },
     });
 
-    if (authData?.user) {
-      userId = authData.user.id;
-    } else if (authError && authError.message.includes('already registered')) {
-      // Nếu email đã từng đăng ký trước đó, tìm userId từ tuvi_profiles
-      try {
-        const { data: profileData } = await supabase
-          .from('tuvi_profiles')
-          .select('id')
-          .eq('email', cleanEmail)
-          .maybeSingle();
-        if (profileData) {
-          userId = profileData.id;
-        }
-      } catch {
-        // ignore
+    if (createErr) {
+      if (!/already been registered|already exists/i.test(createErr.message || '')) {
+        return { success: false, error: `Lỗi tạo tài khoản Auth: ${createErr.message}` };
       }
-    } else if (authError) {
-      return { success: false, error: `Lỗi tạo Auth: ${authError.message}` };
+      // Thử tìm lại userId đã tồn tại trong tuvi_profiles
+      const recheck = await findExistingTuViAuthUserByEmail(cleanEmail);
+      if (recheck.isTonyEnglishConflict) {
+        return {
+          success: false,
+          error: 'Email này đã thuộc hệ thống TonyEnglish, không thể gắn làm Tester Tử Vi.',
+        };
+      }
+      userId = recheck.userId;
+    } else if (createdAuth?.user?.id) {
+      userId = createdAuth.user.id;
     }
-  } catch (err: any) {
-    console.warn('[TESTER STORE] Lỗi đăng ký auth:', err);
+  } else {
+    // Đồng bộ mật khẩu cho tài khoản Tử Vi đã có nếu Admin cấp mới
+    await supabase.auth.admin.updateUserById(userId, {
+      password: params.password,
+      user_metadata: {
+        full_name: params.fullName.trim() || 'Tester',
+        app: 'tuvi',
+        role: 'tester',
+      },
+    });
   }
 
   const now = new Date().toISOString();
-  const newTester: TesterAccount = {
-    id: `tester_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    userId,
-    email: cleanEmail,
-    fullName: params.fullName.trim() || 'Tester',
-    passwordPlain: params.password,
-    maxCharts: Number(params.maxCharts) || 3,
-    maxQuestionsPerChart: Number(params.maxQuestionsPerChart) || 5,
-    isActive: true,
-    notes: params.notes?.trim() || undefined,
-    chartsUsed: 0,
-    questionsUsed: 0,
-    createdAt: now,
-    updatedAt: now,
-  };
+  const maxCharts = Math.max(1, Number(params.maxCharts) || 3);
+  const maxQuestionsPerChart = Math.max(1, Number(params.maxQuestionsPerChart) || 5);
+  const fullName = params.fullName.trim() || 'Tester';
 
-  // 2. Lưu vào Supabase Database nếu có bảng
-  try {
-    const { data: inserted, error: dbError } = await supabase
-      .from('tuvi_testers')
-      .upsert({
+  const { data: inserted, error: dbError } = await supabase
+    .from('tuvi_testers')
+    .upsert(
+      {
         user_id: userId || null,
         email: cleanEmail,
-        full_name: newTester.fullName,
-        password_plain: newTester.passwordPlain,
-        max_charts: newTester.maxCharts,
-        max_questions_per_chart: newTester.maxQuestionsPerChart,
+        full_name: fullName,
+        // Không lưu plaintext password vào DB (chỉ trả 1 lần về UI lúc vừa tạo!)
+        password_plain: '',
+        max_charts: maxCharts,
+        max_questions_per_chart: maxQuestionsPerChart,
         is_active: true,
-        notes: newTester.notes || null,
+        notes: params.notes?.trim() || null,
         updated_at: now,
-      })
-      .select('id')
-      .maybeSingle();
+      },
+      { onConflict: 'email' }
+    )
+    .select('*')
+    .single();
 
-    if (!dbError && inserted?.id) {
-      newTester.id = inserted.id;
-    }
-  } catch (dbErr) {
-    console.warn('[TESTER STORE] Không thể ghi vào Supabase, sử dụng file local:', dbErr);
+  if (dbError || !inserted) {
+    return {
+      success: false,
+      error: `Không thể lưu Tester vào Supabase: ${dbError?.message || 'Unknown error'}`,
+    };
   }
 
-  // 3. Cập nhật tuvi_profiles với role tester
   if (userId) {
-    try {
-      await supabase.from('tuvi_profiles').upsert({
-        id: userId,
-        email: cleanEmail,
-        full_name: newTester.fullName,
-        role: 'tester',
-        max_charts: newTester.maxCharts,
-        max_questions_per_chart: newTester.maxQuestionsPerChart,
-        updated_at: now,
-      });
-    } catch {
-      // ignore
-    }
+    await supabase.from('tuvi_profiles').upsert({
+      id: userId,
+      email: cleanEmail,
+      full_name: fullName,
+      role: 'tester',
+      max_charts: maxCharts,
+      max_questions_per_chart: maxQuestionsPerChart,
+      updated_at: now,
+    });
   }
 
-  // 4. Lưu cache và file
-  testersMap.set(cleanEmail, newTester);
-  saveToFile();
-
-  return { success: true, tester: newTester };
+  const tester = rowToTesterAccount(inserted as Record<string, unknown>);
+  // Trả password 1 lần duy nhất cho Admin sao chép ngay lúc vừa tạo
+  tester.passwordPlain = params.password;
+  return { success: true, tester };
 }
 
 /**
- * Cập nhật cấu hình hạn mức Tester
+ * Cập nhật cấu hình hạn mức / trạng thái / mật khẩu Tester trực tiếp trên Supabase
  */
 export async function updateTester(
   id: string,
   params: Partial<TesterAccount>
 ): Promise<{ success: boolean; tester?: TesterAccount; error?: string }> {
-  loadFromFile();
+  const { data: existingRow, error: findErr } = await supabase
+    .from('tuvi_testers')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
 
-  let target: TesterAccount | undefined;
-  for (const t of testersMap.values()) {
-    if (t.id === id || (params.email && t.email === params.email.toLowerCase().trim())) {
-      target = t;
-      break;
-    }
-  }
-
-  if (!target) {
+  if (findErr || !existingRow) {
     return { success: false, error: 'Không tìm thấy tài khoản tester để cập nhật.' };
   }
 
+  const existing = rowToTesterAccount(existingRow as Record<string, unknown>);
   const now = new Date().toISOString();
-  if (params.fullName !== undefined) target.fullName = params.fullName.trim();
-  if (params.maxCharts !== undefined) target.maxCharts = Number(params.maxCharts);
-  if (params.maxQuestionsPerChart !== undefined) target.maxQuestionsPerChart = Number(params.maxQuestionsPerChart);
-  if (params.passwordPlain !== undefined && params.passwordPlain) target.passwordPlain = params.passwordPlain;
-  if (params.notes !== undefined) target.notes = params.notes;
-  if (params.isActive !== undefined) target.isActive = params.isActive;
-  target.updatedAt = now;
 
-  // Cập nhật Supabase
-  try {
-    await supabase
-      .from('tuvi_testers')
-      .update({
-        full_name: target.fullName,
-        password_plain: target.passwordPlain,
-        max_charts: target.maxCharts,
-        max_questions_per_chart: target.maxQuestionsPerChart,
-        is_active: target.isActive,
-        notes: target.notes || null,
-        updated_at: now,
-      })
-      .eq('email', target.email);
+  const nextFullName = params.fullName !== undefined ? params.fullName.trim() : existing.fullName;
+  const nextMaxCharts = params.maxCharts !== undefined ? Number(params.maxCharts) : existing.maxCharts;
+  const nextMaxQ =
+    params.maxQuestionsPerChart !== undefined
+      ? Number(params.maxQuestionsPerChart)
+      : existing.maxQuestionsPerChart;
+  const nextNotes = params.notes !== undefined ? params.notes : existing.notes;
+  const nextActive = params.isActive !== undefined ? params.isActive : existing.isActive;
 
-    if (target.userId) {
-      await supabase
-        .from('tuvi_profiles')
-        .update({
-          full_name: target.fullName,
-          role: target.isActive ? 'tester' : 'user',
-          max_charts: target.maxCharts,
-          max_questions_per_chart: target.maxQuestionsPerChart,
-          updated_at: now,
-        })
-        .eq('id', target.userId);
+  // Nếu Admin đặt mật khẩu mới -> đồng bộ thật vào Supabase Auth (không chỉ ghi text DB!)
+  if (params.passwordPlain && params.passwordPlain.trim().length >= 6 && existing.userId) {
+    const { error: pwErr } = await supabase.auth.admin.updateUserById(existing.userId, {
+      password: params.passwordPlain.trim(),
+    });
+    if (pwErr) {
+      return { success: false, error: `Lỗi cập nhật mật khẩu Auth: ${pwErr.message}` };
     }
-  } catch {
-    // ignore
   }
 
-  testersMap.set(target.email, target);
-  saveToFile();
+  const { data: updated, error: updErr } = await supabase
+    .from('tuvi_testers')
+    .update({
+      full_name: nextFullName,
+      password_plain: '',
+      max_charts: nextMaxCharts,
+      max_questions_per_chart: nextMaxQ,
+      is_active: nextActive,
+      notes: nextNotes || null,
+      updated_at: now,
+    })
+    .eq('id', existing.id)
+    .select('*')
+    .single();
 
-  return { success: true, tester: target };
+  if (updErr || !updated) {
+    return { success: false, error: updErr?.message || 'Lỗi cập nhật tester' };
+  }
+
+  if (existing.userId) {
+    await supabase
+      .from('tuvi_profiles')
+      .update({
+        full_name: nextFullName,
+        role: nextActive ? 'tester' : 'user',
+        max_charts: nextMaxCharts,
+        max_questions_per_chart: nextMaxQ,
+        updated_at: now,
+      })
+      .eq('id', existing.userId);
+  }
+
+  return { success: true, tester: rowToTesterAccount(updated as Record<string, unknown>) };
 }
 
 /**
- * Xóa tài khoản Tester
+ * Xóa tài khoản Tester trực tiếp trên Supabase (hoạt động tin cậy trên mọi cold serverless instance)
  */
 export async function deleteTester(id: string): Promise<{ success: boolean; error?: string }> {
-  loadFromFile();
+  const { data: existingRow } = await supabase
+    .from('tuvi_testers')
+    .select('id, user_id')
+    .eq('id', id)
+    .maybeSingle();
 
-  let targetEmail: string | null = null;
-  let targetUserId: string | undefined = undefined;
-
-  for (const [email, t] of testersMap.entries()) {
-    if (t.id === id) {
-      targetEmail = email;
-      targetUserId = t.userId;
-      testersMap.delete(email);
-      break;
-    }
+  if (!existingRow) {
+    return { success: false, error: 'Không tìm thấy tài khoản để xóa.' };
   }
 
-  if (targetEmail) {
-    try {
-      await supabase.from('tuvi_testers').delete().eq('email', targetEmail);
-      if (targetUserId) {
-        await supabase
-          .from('tuvi_profiles')
-          .update({ role: 'user' })
-          .eq('id', targetUserId);
-      }
-    } catch {
-      // ignore
-    }
-    saveToFile();
-    return { success: true };
+  const { error: delErr } = await supabase.from('tuvi_testers').delete().eq('id', id);
+  if (delErr) {
+    return { success: false, error: delErr.message };
   }
 
-  return { success: false, error: 'Không tìm thấy tài khoản để xóa.' };
+  if (existingRow.user_id) {
+    await supabase
+      .from('tuvi_profiles')
+      .update({ role: 'user', updated_at: new Date().toISOString() })
+      .eq('id', existingRow.user_id);
+  }
+
+  return { success: true };
 }
 
 /**
  * Bật / tắt trạng thái kích hoạt Tester
  */
-export async function toggleTesterActive(id: string, isActive: boolean): Promise<{ success: boolean; error?: string }> {
-  return updateTester(id, { isActive });
+export async function toggleTesterActive(
+  id: string,
+  isActive: boolean
+): Promise<{ success: boolean; error?: string }> {
+  const res = await updateTester(id, { isActive });
+  return { success: res.success, error: res.error };
+}
+
+export function generateSecureTesterPassword(): string {
+  return crypto.randomBytes(9).toString('base64url');
 }

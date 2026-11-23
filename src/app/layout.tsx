@@ -1,23 +1,29 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Be_Vietnam_Pro, Lora } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import RouteTracker from '@/components/RouteTracker';
 
 const beVietnam = Be_Vietnam_Pro({
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '600', '700', '800'],
   subsets: ['latin', 'vietnamese'],
   variable: '--font-be-vietnam',
   display: 'swap',
 });
 
 const lora = Lora({
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '600', '700'],
   subsets: ['latin', 'vietnamese'],
   variable: '--font-lora',
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0f',
+  colorScheme: 'dark',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.tuvithayton.vn'),
@@ -52,9 +58,6 @@ export const metadata: Metadata = {
   authors: [{ name: 'Thầy Tôn (Trần Huy Tôn)', url: 'https://www.tuvithayton.vn' }],
   creator: 'Thầy Tôn (Trần Huy Tôn)',
   publisher: 'Tử Vi & Phong Thủy Thầy Tôn',
-  alternates: {
-    canonical: 'https://www.tuvithayton.vn',
-  },
   openGraph: {
     type: 'website',
     locale: 'vi_VN',
@@ -63,12 +66,21 @@ export const metadata: Metadata = {
     title: 'Tử Vi & Phong Thủy Thầy Tôn — An Sao Bình Giải Tử Vi Miễn Phí | Tư Vấn Phong Thủy Thực Chứng',
     description:
       'Trải nghiệm miễn phí hệ thống An sao Tử Vi 108 tinh đẩu chuẩn cổ truyền & Bình giải Mệnh lý thực chứng từ Thầy Tôn (Trần Huy Tôn). Tư vấn Phong Thủy Dương Trạch nhà ở, biệt thự, chung cư, văn phòng, xem ngày giờ tốt kết hợp Diện Tướng & Chỉ Tay.',
+    images: [
+      {
+        url: 'https://www.tuvithayton.vn/thay-ton.png',
+        width: 800,
+        height: 800,
+        alt: 'Thầy Tôn (Trần Huy Tôn) — Tử Vi & Phong Thủy Thực Chứng',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Tử Vi & Phong Thủy Thầy Tôn — An Sao & Bình Giải Tử Vi Miễn Phí',
     description:
       'An sao 108 tinh đẩu & Bình giải Tử Vi miễn phí kết hợp Phong Thủy Thực Chứng, Diện Tướng & Chỉ Tay từ Thầy Tôn (Trần Huy Tôn).',
+    images: ['https://www.tuvithayton.vn/thay-ton.png'],
   },
   robots: {
     index: true,
@@ -83,17 +95,6 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'J4uigOEDVixcFiqOB4X0eyMpQw8zKMhuBn1S7VkeNS0',
-  },
-  icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon.ico' },
-    ],
-    apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
   },
 };
 
@@ -140,102 +141,6 @@ const seoGeoJsonLd = {
       sameAs: ['https://tonyenglish.vn/', 'https://zalo.me/0935058688'],
       url: 'https://www.tuvithayton.vn/#gioi-thieu-thay-ton',
     },
-    {
-      '@type': 'ProfessionalService',
-      '@id': 'https://www.tuvithayton.vn/#service',
-      name: 'Tử Vi & Phong Thủy Thầy Tôn — An Sao Tử Vi & Tư Vấn Phong Thủy Thực Chứng',
-      url: 'https://www.tuvithayton.vn',
-      telephone: '+84935058688',
-      email: 'tranhuyton@gmail.com',
-      priceRange: '0 VNĐ - 269.000 VNĐ',
-      address: {
-        '@type': 'PostalAddress',
-        streetAddress: 'Khu đô thị Royal City, 72A Nguyễn Trãi, Thanh Xuân',
-        addressLocality: 'Hà Nội',
-        addressCountry: 'VN',
-      },
-      founder: { '@id': 'https://www.tuvithayton.vn/#thayton' },
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.9',
-        bestRating: '5',
-        ratingCount: '15420',
-      },
-      hasOfferCatalog: {
-        '@type': 'OfferCatalog',
-        name: 'Các Gói Dịch Vụ An Sao, Luận Giải Tử Vi & Tư Vấn Phong Thủy Thầy Tôn',
-        itemListElement: [
-          {
-            '@type': 'Offer',
-            name: 'Gói Khởi Nguyên — An Sao & Bình Giải Tử Vi Miễn Phí',
-            description:
-              'Lập lá số Tử Vi 108 sao chính xác theo giờ sinh và nhận bài bình giải Khởi Nguyên miễn phí (~1.000 từ) về Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận & Tiểu Vận.',
-            price: '0',
-            priceCurrency: 'VND',
-          },
-          {
-            '@type': 'Offer',
-            name: 'Gói Chuyên Sâu VIP Pro (Kèm Xem Ảnh Mặt, Chỉ Tay & 02 Câu Hỏi VIP)',
-            description:
-              'Luận giải chuyên sâu (~2.500 từ) mổ xẻ Tứ Trụ Mệnh - Thân - Tài - Quan - Phu Thê, kết hợp soi Diện Tướng khuôn mặt, Thủ Tướng bàn tay, Đại Vận 10 năm, Vận khí 4 mùa và tặng kèm 02 câu hỏi VIP.',
-            price: '119000',
-            priceCurrency: 'VND',
-          },
-          {
-            '@type': 'Offer',
-            name: 'Gói Chuyên Gia Đại Tông Sư Expert (Luận Giải Trọn Bộ 12 Cung, 12 Tháng Lưu Nguyệt & Phong Thủy Cải Vận)',
-            description:
-              'Bản luận giải cao cấp nhất (~4.500 - 6.000 từ) phân tích riêng biệt toàn bộ 12 Cung + Cung Thân, đối chiếu Diện Tướng & Chỉ Tay chuyên gia, Phong Thủy Cải Vận theo Dụng thần, Đại Vận 10 năm, chi tiết 12 tháng Âm lịch và tặng 02 câu hỏi Chuyên Gia.',
-            price: '269000',
-            priceCurrency: 'VND',
-          },
-          {
-            '@type': 'Offer',
-            name: 'Tư Vấn Phong Thủy Thực Chứng & Xem Tử Vi Trực Tiếp 1-1 Cùng Thầy Tôn',
-            description:
-              'Đàm đạo 1-1 trực tiếp tại Royal City (Hà Nội), khảo sát Phong Thủy thực địa hoặc tư vấn qua Video Call: Khảo sát & bố cục Phong Thủy Nhà ở, Biệt thự, Chung cư, Văn phòng, Cửa hàng; Xem ngày giờ tốt Động thổ, Nhập trạch, Khai trương kết hợp Lá số Tử Vi gia chủ.',
-          },
-        ],
-      },
-    },
-    {
-      '@type': 'FAQPage',
-      '@id': 'https://www.tuvithayton.vn/#faq',
-      mainEntity: [
-        {
-          '@type': 'Question',
-          name: 'Lập lá số và bình giải tử vi tại Tử Vi & Phong Thủy Thầy Tôn có miễn phí không?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Có! Quý khách được lập lá số Tử Vi 108 sao chuẩn cổ truyền và nhận ngay Bản Bình Giải Khởi Nguyên (~1.000 từ) hoàn toàn MIỄN PHÍ (0 VNĐ), bao quát cốt cách Bản Mệnh, Tam Hợp Mệnh - Tài - Quan, Đại Vận 10 năm hiện tại và Tiểu Vận năm xem.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'Thầy Tôn (Trần Huy Tôn) là ai và phương pháp Tử Vi & Phong Thủy của Thầy có gì đặc biệt?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Thầy Tôn (Trần Huy Tôn) là cựu học sinh chuyên Toán - Tin ĐH Tổng Hợp Hà Nội, tốt nghiệp Cử nhân và Thạc sỹ chuyên ngành Tài chính - Kế toán tại Đại học Lancaster (Top 5 Vương Quốc Anh), có hơn 7 năm học tập & làm việc tại Anh Quốc; đồng thời là Giáo viên Tiếng Anh chuyên luyện thi IELTS, Giao tiếp và giảng dạy các môn Toán, Khoa học, Kinh tế, Kinh doanh, Địa lý của chương trình Quốc tế IGCSE hơn 15 năm (sáng lập TonyEnglish.vn). Với hơn 18 năm nghiên cứu Tử Vi Đẩu Số, Bát Bộ Thần Sát, Phong Thủy Dương Trạch, Diện Tướng & Chỉ Tay, phương pháp của Thầy Tôn nổi tiếng nhờ tính khoa học, thực chứng, logic chặt chẽ và hoàn toàn không mê tín dị đoan.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'Thầy Tôn tư vấn những hạng mục Phong Thủy nào? Có khảo sát thực địa và tư vấn từ xa không?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Thầy Tôn trực tiếp tư vấn toàn diện các hạng mục Phong Thủy Dương Trạch: Nhà phố, Biệt thự, Căn hộ chung cư, Văn phòng công ty, Cửa hàng kinh doanh; Bố cục bàn thờ, bếp, phòng ngủ, bàn làm việc lãnh đạo; Kích hoạt Tài vị và Xem ngày giờ tốt (Động thổ, Nhập trạch, Khai trương, Cưới hỏi). Thầy nhận khảo sát thực địa trực tiếp tại Hà Nội & các tỉnh, đồng thời tư vấn từ xa qua Bản vẽ mặt bằng + Video thực tế + Toạ độ vệ tinh.',
-          },
-        },
-        {
-          '@type': 'Question',
-          name: 'Sự khác biệt giữa Bản Miễn Phí, Bản Chuyên Sâu Pro và Bản Chuyên Gia Expert là gì?',
-          acceptedAnswer: {
-            '@type': 'Answer',
-            text: 'Bản Miễn Phí (0đ) cung cấp lá số 108 sao và bình giải tổng quan (~1.000 từ). Bản Chuyên Sâu Pro (119.000đ) phân tích sâu gấp 2,5 lần (~2.500 từ), kết hợp trực tiếp Ảnh Khuôn Mặt & Chỉ Tay, luận giải 4 mùa và tặng 02 câu hỏi VIP. Bản Chuyên Gia Expert (269.000đ) là tuyệt phẩm ~4.500-6.000 từ, mổ xẻ riêng biệt từng cung trong trọn bộ 12 Cung + Cung Thân, luận giải chi tiết 12 tháng Âm lịch, Phong Thủy cải vận và tặng 02 câu hỏi Chuyên Gia.',
-          },
-        },
-      ],
-    },
   ],
 };
 
@@ -247,13 +152,22 @@ export default function RootLayout({
   return (
     <html lang="vi" className={`${beVietnam.variable} ${lora.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        {/* Google Tag (GTM-M5V95KJ4 / GA4 G-K09KG9PV1Y) */}
-        <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-M5V95KJ4" />
+        {/* Google Tag Manager (GTM-M5V95KJ4 / GA4 G-K09KG9PV1Y) — chỉ tải trên production, bỏ qua localhost / vercel preview / /admin */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());`,
+            __html: `(function(){
+window.dataLayer = window.dataLayer || [];
+window.gtag = function(){window.dataLayer.push(arguments);};
+var h = window.location.hostname;
+var p = window.location.pathname || '';
+var isProd = h !== 'localhost' && h !== '127.0.0.1' && !h.endsWith('.vercel.app') && !p.startsWith('/admin');
+if (!isProd) return;
+window.dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+var s = document.createElement('script');
+s.async = true;
+s.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-M5V95KJ4';
+document.head.appendChild(s);
+})();`,
           }}
         />
         <script
@@ -265,10 +179,16 @@ gtag('js', new Date());`,
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(seoGeoJsonLd) }}
         />
-        {/* Meta Pixel Code (ID: 2104187747130873) */}
+        {/* Meta Pixel Code (ID: 2104187747130873) — chỉ tải trên production, bỏ qua localhost / vercel preview / /admin */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `!function(f,b,e,v,n,t,s)
+            __html: `(function(){
+try{var p=new URLSearchParams(window.location.search),clid=p.get('fbclid');if(clid){var now=Date.now();localStorage.setItem('tuvi_fbclid',clid);localStorage.setItem('tuvi_fbc','fb.1.'+now+'.'+clid);localStorage.setItem('tuvi_fbc_ts',String(now));}}catch(e){}
+var h = window.location.hostname;
+var path = window.location.pathname || '';
+var isProd = h !== 'localhost' && h !== '127.0.0.1' && !h.endsWith('.vercel.app') && !path.startsWith('/admin');
+if (!isProd) return;
+!function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
 if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
@@ -276,14 +196,20 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-try{var p=new URLSearchParams(window.location.search),clid=p.get('fbclid');if(clid){localStorage.setItem('tuvi_fbclid',clid);localStorage.setItem('tuvi_fbc','fb.1.'+Date.now()+'.'+clid);}}catch(e){}
 fbq('init', '2104187747130873');
-fbq('track', 'PageView');`,
+fbq('track', 'PageView');
+})();`,
           }}
         />
       </head>
       <body className="min-h-full flex flex-col text-slate-100 font-sans selection:bg-blue-600 selection:text-white">
         <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-M5V95KJ4"
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             height="1"
@@ -295,7 +221,10 @@ fbq('track', 'PageView');`,
         </noscript>
         <ThemeProvider>
           <LanguageProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <RouteTracker />
+              {children}
+            </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

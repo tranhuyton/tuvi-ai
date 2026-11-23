@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import crypto from 'crypto';
 import { adminSupabase as supabase } from './supabaseAdmin';
+import type { OrderCapiMeta } from './metaCapi';
 
 export interface OrderItem {
   id: string;
-  orderCode: string; // e.g. "TV84920"
+  orderCode: string; // e.g. "TV849201"
   paymentType:
     | 'reading_vip'
     | 'reading_expert'
@@ -12,6 +12,7 @@ export interface OrderItem {
     | 'chat_free'
     | 'chat_vip'
     | 'chat_expert'
+    | 'course_tuvi'
     | string;
   amount: number;
   hoTen: string;
@@ -19,82 +20,60 @@ export interface OrderItem {
   status: 'PENDING' | 'PAID' | 'CANCELLED';
   createdAt: string;
   paidAt?: string;
+  expiresAt?: string;
   transactionId?: string;
+  capiMeta?: OrderCapiMeta;
   chartId?: string;
   userId?: string;
   affiliateCode?: string;
   commissionAmount?: number;
+  commissionRecordedAt?: string;
+  commissionReversedAt?: string;
   voucherCode?: string;
   discountAmount?: number;
 }
 
-// Global cache trong runtime Node
-declare global {
-  var __tuviOrdersCache: Map<string, OrderItem> | undefined;
+function mapRowToOrder(data: Record<string, unknown>): OrderItem {
+  return {
+    id: String(data.id || ''),
+    orderCode: String(data.order_code || '').toUpperCase(),
+    paymentType: String(data.payment_type || 'reading_vip'),
+    amount: Number(data.amount || 0),
+    hoTen: String(data.ho_ten || 'Đương số'),
+    email: typeof data.email === 'string' && data.email ? data.email : undefined,
+    status: (data.status as OrderItem['status']) || 'PENDING',
+    createdAt: String(data.created_at || ''),
+    paidAt: typeof data.paid_at === 'string' ? data.paid_at : undefined,
+    expiresAt: typeof data.expires_at === 'string' ? data.expires_at : undefined,
+    transactionId: typeof data.transaction_id === 'string' ? data.transaction_id : undefined,
+    capiMeta:
+      data.capi_meta && typeof data.capi_meta === 'object'
+        ? (data.capi_meta as OrderCapiMeta)
+        : undefined,
+    chartId: typeof data.chart_id === 'string' ? data.chart_id : undefined,
+    userId: typeof data.user_id === 'string' ? data.user_id : undefined,
+    affiliateCode: typeof data.affiliate_code === 'string' && data.affiliate_code ? data.affiliate_code : undefined,
+    commissionAmount: Number(data.commission_amount || 0),
+    commissionRecordedAt:
+      typeof data.commission_recorded_at === 'string' ? data.commission_recorded_at : undefined,
+    commissionReversedAt:
+      typeof data.commission_reversed_at === 'string' ? data.commission_reversed_at : undefined,
+    voucherCode: typeof data.voucher_code === 'string' && data.voucher_code ? data.voucher_code : undefined,
+    discountAmount: Number(data.discount_amount || 0),
+  };
 }
-
-const ordersMap: Map<string, OrderItem> =
-  globalThis.__tuviOrdersCache || new Map<string, OrderItem>();
-globalThis.__tuviOrdersCache = ordersMap;
-
-// Đường dẫn file lưu trữ local fallback
-const DATA_DIR = path.join(process.cwd(), '.data');
-const DATA_FILE = path.join(DATA_DIR, 'orders.json');
-
-// Khởi tạo đọc từ file nếu bộ nhớ đang rỗng
-function loadOrdersFromFile() {
-  try {
-    if (ordersMap.size === 0 && fs.existsSync(DATA_FILE)) {
-      const content = fs.readFileSync(DATA_FILE, 'utf-8');
-      const list: OrderItem[] = JSON.parse(content);
-      for (const item of list) {
-        ordersMap.set(item.orderCode.toUpperCase(), item);
-      }
-    }
-  } catch (err) {
-    console.warn('[ORDER STORE] Không thể đọc file cache orders:', err);
-  }
-}
-
-// Lưu ra file local
-function saveOrdersToFile() {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    const list = Array.from(ordersMap.values());
-    fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('[ORDER STORE] Không thể ghi file cache orders:', err);
-  }
-}
-
-loadOrdersFromFile();
 
 /**
- * Sinh mã đơn hàng dạng "TV" + 5 số (Ví dụ: TV58291)
- * Giúp người dùng chuyển khoản dễ dàng, không bị cắt ngắn bởi ngân hàng
+ * Sinh mã đơn hàng dạng "TV" + 6 số bằng CSPRNG (Ví dụ: TV582914)
  */
 export function generateOrderCode(): string {
-  loadOrdersFromFile();
-  let code = '';
-  let exists = true;
-  let attempts = 0;
-
-  while (exists && attempts < 100) {
-    attempts++;
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    code = `TV${randomNum}`;
-    if (!ordersMap.has(code)) {
-      exists = false;
-    }
-  }
-
-  return code;
+  const randomNum = crypto.randomInt(100000, 1000000);
+  return `TV${randomNum}`;
 }
 
 /**
- * Tạo đơn hàng mới
+ * Tạo đơn hàng mới trực tiếp trên Supabase (có xử lý retry khi trùng mã order_code 23505,
+ * tuyệt đối không đánh rơi affiliate_code / voucher_code / discount_amount khi fallback cột mới).
  */
 export async function createOrder(data: {
   paymentType: string;
@@ -108,326 +87,244 @@ export async function createOrder(data: {
   commissionAmount?: number;
   voucherCode?: string;
   discountAmount?: number;
+  expiresAt?: string;
   initialTransactionMeta?: string;
+  capiMeta?: OrderCapiMeta;
 }): Promise<OrderItem> {
-  loadOrdersFromFile();
-
-  const orderCode = (data.customCode || generateOrderCode()).toUpperCase();
-  const id = `ord_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const now = new Date().toISOString();
+  const maxAttempts = data.customCode ? 1 : 6;
+  let lastErrorMsg = 'Không thể khởi tạo đơn hàng';
 
-  const newOrder: OrderItem = {
-    id,
-    orderCode,
-    paymentType: data.paymentType,
-    amount: data.amount,
-    hoTen: data.hoTen || 'Đương số',
-    email: data.email?.trim() || undefined,
-    status: 'PENDING',
-    createdAt: now,
-    transactionId: data.initialTransactionMeta || undefined,
-    chartId: data.chartId,
-    userId: data.userId,
-    affiliateCode: data.affiliateCode?.trim() || undefined,
-    commissionAmount: data.commissionAmount || 0,
-    voucherCode: data.voucherCode?.trim().toUpperCase() || undefined,
-    discountAmount: data.discountAmount || 0,
-  };
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const orderCode = (data.customCode || generateOrderCode()).toUpperCase();
+    const id = `ord_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
 
-  // Lưu vào cache Map & local file
-  ordersMap.set(orderCode, newOrder);
-  saveOrdersToFile();
+    const baseRow: Record<string, unknown> = {
+      id,
+      order_code: orderCode,
+      payment_type: String(data.paymentType || 'reading_vip').slice(0, 50),
+      amount: data.amount,
+      ho_ten: String(data.hoTen || 'Khách thành viên').slice(0, 180),
+      email: data.email ? String(data.email).trim().toLowerCase().slice(0, 180) : null,
+      status: 'PENDING',
+      created_at: now,
+      transaction_id: data.initialTransactionMeta ? String(data.initialTransactionMeta).slice(0, 240) : null,
+      chart_id: data.chartId || null,
+      user_id: data.userId || null,
+      affiliate_code: data.affiliateCode ? String(data.affiliateCode).trim().toLowerCase().slice(0, 100) : null,
+      commission_amount: data.commissionAmount || 0,
+      voucher_code: data.voucherCode ? String(data.voucherCode).trim().toUpperCase().slice(0, 60) : null,
+      discount_amount: data.discountAmount || 0,
+    };
 
-  // Đồng bộ bắt buộc với bảng Supabase tuvi_orders (bảo toàn 100% đơn hàng cho Admin & Webhook đa instance)
-  const baseRow = {
-    id: newOrder.id,
-    order_code: newOrder.orderCode,
-    payment_type: String(newOrder.paymentType || 'reading_vip').slice(0, 50),
-    amount: newOrder.amount,
-    ho_ten: String(newOrder.hoTen || 'Khách thành viên').slice(0, 180),
-    email: newOrder.email ? String(newOrder.email).slice(0, 180) : null,
-    status: 'PENDING',
-    created_at: newOrder.createdAt,
-    transaction_id: newOrder.transactionId ? String(newOrder.transactionId).slice(0, 240) : null,
-    chart_id: newOrder.chartId || null,
-    user_id: newOrder.userId || null,
-    affiliate_code: newOrder.affiliateCode ? String(newOrder.affiliateCode).slice(0, 100) : null,
-    commission_amount: newOrder.commissionAmount || 0,
-    voucher_code: newOrder.voucherCode ? String(newOrder.voucherCode).slice(0, 60) : null,
-    discount_amount: newOrder.discountAmount || 0,
-  };
-
-  const { error: insErr } = await supabase.from('tuvi_orders').insert(baseRow);
-  if (insErr) {
-    console.warn('[ORDER STORE] Retry core insert into tuvi_orders after error:', insErr.message);
-    const { error: retryErr } = await supabase.from('tuvi_orders').insert({
+    const fullRow: Record<string, unknown> = {
       ...baseRow,
-      transaction_id: null,
-      affiliate_code: null,
-      voucher_code: null,
-      commission_amount: 0,
-      discount_amount: 0,
-    });
-    if (retryErr) {
-      ordersMap.delete(orderCode);
-      throw new Error(`Không thể lưu đơn hàng vào cơ sở dữ liệu: ${retryErr.message}`);
+      ...(data.capiMeta ? { capi_meta: data.capiMeta } : {}),
+      ...(data.expiresAt ? { expires_at: data.expiresAt } : {}),
+    };
+
+    let res = await supabase.from('tuvi_orders').insert(fullRow).select('*').maybeSingle();
+
+    // Chỉ bỏ cột mới (`capi_meta` / `expires_at`) nếu DB chưa chạy migration, KHÔNG BAO GIỜ bỏ voucher/affiliate!
+    if (res.error && /capi_meta|expires_at|column .* does not exist/i.test(res.error.message || '')) {
+      res = await supabase.from('tuvi_orders').insert(baseRow).select('*').maybeSingle();
     }
+
+    if (!res.error && res.data) {
+      return mapRowToOrder(res.data as Record<string, unknown>);
+    }
+
+    const pgCode = (res.error as { code?: string } | null)?.code || '';
+    const errMsg = res.error?.message || 'Database insert error';
+    lastErrorMsg = errMsg;
+
+    // Nếu trùng order_code (23505) và không phải customCode -> tự sinh mã mới thử lại
+    if (pgCode === '23505' && /order_code/i.test(errMsg) && !data.customCode) {
+      continue;
+    }
+
+    throw new Error(`Không thể lưu đơn hàng vào cơ sở dữ liệu: ${errMsg}`);
   }
 
-  return newOrder;
+  throw new Error(`Không thể sinh mã đơn hàng duy nhất: ${lastErrorMsg}`);
 }
 
 /**
- * Tìm đơn hàng theo mã đơn
+ * Tìm đơn hàng theo mã đơn trực tiếp từ Supabase (không dùng file cache cục bộ)
  */
 export async function getOrderByCode(code: string): Promise<OrderItem | null> {
   const cleanCode = code.trim().toUpperCase();
+  if (!cleanCode) return null;
 
-  // 1. Luôn truy vấn Supabase trước (nguồn dữ liệu chính xác trên Serverless đa container)
-  try {
-    const { data } = await supabase
-      .from('tuvi_orders')
-      .select('*')
-      .eq('order_code', cleanCode)
-      .maybeSingle();
+  const { data, error } = await supabase
+    .from('tuvi_orders')
+    .select('*')
+    .eq('order_code', cleanCode)
+    .maybeSingle();
 
-    if (data) {
-      const order: OrderItem = {
-        id: data.id,
-        orderCode: data.order_code,
-        paymentType: data.payment_type,
-        amount: Number(data.amount),
-        hoTen: data.ho_ten,
-        email: data.email,
-        status: data.status,
-        createdAt: data.created_at,
-        paidAt: data.paid_at,
-        transactionId: data.transaction_id,
-        chartId: data.chart_id,
-        userId: data.user_id,
-        affiliateCode: data.affiliate_code || undefined,
-        commissionAmount: Number(data.commission_amount || 0),
-        voucherCode: data.voucher_code || undefined,
-        discountAmount: Number(data.discount_amount || 0),
-      };
-      ordersMap.set(cleanCode, order);
-      saveOrdersToFile();
-      return order;
-    }
-  } catch (err) {
-    // Lỗi mạng hoặc Supabase tạm thời, dùng cache fallback
-  }
-
-  // 2. Fallback sang cache in-memory / file local nếu Supabase không có
-  loadOrdersFromFile();
-  if (ordersMap.has(cleanCode)) {
-    return ordersMap.get(cleanCode)!;
-  }
-
-  return null;
+  if (error || !data) return null;
+  return mapRowToOrder(data as Record<string, unknown>);
 }
 
 /**
- * Cập nhật email cho đơn hàng (khi khách nhập email trên modal)
+ * Cập nhật email cho đơn hàng PENDING
  */
 export async function updateOrderEmail(code: string, email: string): Promise<OrderItem | null> {
-  const order = await getOrderByCode(code);
-  if (!order) return null;
+  const cleanCode = code.trim().toUpperCase();
+  const cleanEmail = email.trim().toLowerCase();
+  const { data, error } = await supabase
+    .from('tuvi_orders')
+    .update({ email: cleanEmail })
+    .eq('order_code', cleanCode)
+    .eq('status', 'PENDING')
+    .select('*')
+    .maybeSingle();
 
-  order.email = email.trim();
-  ordersMap.set(order.orderCode, order);
-  saveOrdersToFile();
-
-  try {
-    await supabase
-      .from('tuvi_orders')
-      .update({ email: order.email })
-      .eq('order_code', order.orderCode);
-  } catch (err) {
-    // ignore
-  }
-
-  return order;
+  if (error || !data) return null;
+  return mapRowToOrder(data as Record<string, unknown>);
 }
 
 /**
- * Cập nhật đơn hàng thành ĐÃ THANH TOÁN (PAID)
+ * Chuyển trạng thái đơn hàng từ PENDING -> PAID hoàn toàn NGUYÊN TỬ trên PostgreSQL.
+ * - KHÔNG BAO GIỜ fallback non-atomic (chống 100% hồi sinh đơn CANCELLED và chống cộng đôi khi webhook bắn song song).
  */
-export async function markOrderPaid(
+export async function markOrderPaidAtomic(
   code: string,
   transactionId?: string
-): Promise<OrderItem | null> {
-  const order = await getOrderByCode(code);
-  if (!order) return null;
+): Promise<{ order: OrderItem | null; transitioned: boolean }> {
+  const cleanCode = code.trim().toUpperCase();
+  const paidAt = new Date().toISOString();
+  const cleanTxId = transactionId ? String(transactionId).slice(0, 240) : null;
 
-  order.status = 'PAID';
-  order.paidAt = new Date().toISOString();
-  if (transactionId) order.transactionId = transactionId;
-
-  ordersMap.set(order.orderCode, order);
-  saveOrdersToFile();
-
-  try {
-    const cleanTxId = transactionId
-      ? String(transactionId).slice(0, 240)
-      : order.transactionId &&
-        !order.transactionId.startsWith('fbmeta:') &&
-        !order.transactionId.startsWith('capi:')
-      ? String(order.transactionId).slice(0, 240)
-      : null;
-
-    const paidRow = {
-      id: order.id,
-      order_code: order.orderCode,
-      payment_type: String(order.paymentType || 'reading_vip').slice(0, 50),
-      amount: order.amount,
-      ho_ten: String(order.hoTen || 'Khách thành viên').slice(0, 180),
-      email: order.email ? String(order.email).slice(0, 180) : null,
+  const { data, error } = await supabase
+    .from('tuvi_orders')
+    .update({
       status: 'PAID',
-      created_at: order.createdAt,
-      paid_at: order.paidAt,
-      transaction_id: cleanTxId,
-      chart_id: order.chartId || null,
-      user_id: order.userId || null,
-      affiliate_code: order.affiliateCode ? String(order.affiliateCode).slice(0, 100) : null,
-      commission_amount: order.commissionAmount || 0,
-      voucher_code: order.voucherCode ? String(order.voucherCode).slice(0, 60) : null,
-      discount_amount: order.discountAmount || 0,
-    };
+      paid_at: paidAt,
+      ...(cleanTxId ? { transaction_id: cleanTxId } : {}),
+    })
+    .eq('order_code', cleanCode)
+    .eq('status', 'PENDING')
+    .select('*')
+    .maybeSingle();
 
-    const { error: upErr } = await supabase
-      .from('tuvi_orders')
-      .upsert(paidRow, { onConflict: 'order_code' });
-
-    if (upErr) {
-      console.warn('[ORDER STORE] Retry core upsert in markOrderPaid:', upErr.message);
-      await supabase.from('tuvi_orders').upsert(
-        {
-          ...paidRow,
-          transaction_id: null,
-          affiliate_code: null,
-          voucher_code: null,
-        },
-        { onConflict: 'order_code' }
-      );
-    }
-  } catch (err) {
-    console.error('[ORDER STORE] Lỗi lưu PAID vào tuvi_orders:', err);
+  if (error) {
+    console.error('[ORDER STORE] Lỗi markOrderPaidAtomic:', error.message);
+    throw new Error(`Không thể xác nhận thanh toán đơn ${cleanCode}: ${error.message}`);
   }
 
-  return order;
+  if (data) {
+    return { order: mapRowToOrder(data as Record<string, unknown>), transitioned: true };
+  }
+
+  // Không khớp dòng PENDING nào (đơn đã PAID trước đó hoặc đã CANCELLED) -> KHÔNG chuyển trạng thái!
+  const existing = await getOrderByCode(cleanCode);
+  return { order: existing, transitioned: false };
 }
 
 /**
- * Cập nhật trạng thái đơn hàng (PAID, PENDING, CANCELLED)
+ * Cập nhật trạng thái đơn hàng an toàn (dùng cho Admin):
+ * - Cấm chuyển trực tiếp sang PAID (phải dùng /api/payment/simulate để chạy đủ fulfillment)
+ * - Cấm khôi phục đơn đã từng PAID từ CANCELLED về PENDING (chống cộng đúp hoa hồng / quota)
  */
-export async function updateOrderStatus(
+export async function updateOrderStatusSafe(
   code: string,
-  status: 'PENDING' | 'PAID' | 'CANCELLED'
-): Promise<OrderItem | null> {
-  const order = await getOrderByCode(code);
-  if (!order) return null;
+  nextStatus: 'PENDING' | 'CANCELLED'
+): Promise<{ order: OrderItem | null; previousStatus?: OrderItem['status']; error?: string }> {
+  const existing = await getOrderByCode(code);
+  if (!existing) return { order: null, error: 'Không tìm thấy đơn hàng' };
 
-  order.status = status;
-  ordersMap.set(order.orderCode, order);
-  saveOrdersToFile();
-
-  try {
-    await supabase
-      .from('tuvi_orders')
-      .update({ status })
-      .eq('order_code', order.orderCode);
-  } catch (err) {
-    // ignore
+  if (existing.status === 'CANCELLED' && nextStatus === 'PENDING' && existing.paidAt) {
+    return {
+      order: existing,
+      error: 'Không được chuyển lại về PENDING với đơn hàng đã từng thanh toán trước đó.',
+    };
   }
 
-  return order;
+  const { data, error } = await supabase
+    .from('tuvi_orders')
+    .update({ status: nextStatus })
+    .eq('order_code', existing.orderCode)
+    .select('*')
+    .maybeSingle();
+
+  if (error || !data) {
+    return { order: null, error: error?.message || 'Không thể cập nhật trạng thái đơn hàng' };
+  }
+
+  return {
+    order: mapRowToOrder(data as Record<string, unknown>),
+    previousStatus: existing.status,
+  };
 }
 
 /**
- * Cập nhật chartId cho đơn hàng (khi lá số được tạo sau khi thanh toán)
+ * Cập nhật chartId cho đơn hàng
  */
 export async function linkOrderToChart(
   code: string,
   chartId: string
 ): Promise<OrderItem | null> {
-  const order = await getOrderByCode(code);
-  if (!order) return null;
+  const cleanCode = code.trim().toUpperCase();
+  const { data, error } = await supabase
+    .from('tuvi_orders')
+    .update({ chart_id: chartId })
+    .eq('order_code', cleanCode)
+    .select('*')
+    .maybeSingle();
 
-  order.chartId = chartId;
-  ordersMap.set(order.orderCode, order);
-  saveOrdersToFile();
-
-  try {
-    await supabase
-      .from('tuvi_orders')
-      .update({ chart_id: chartId })
-      .eq('order_code', order.orderCode);
-  } catch (err) {
-    // ignore
-  }
-
-  return order;
+  if (error || !data) return null;
+  return mapRowToOrder(data as Record<string, unknown>);
 }
 
 /**
- * Lấy danh sách toàn bộ đơn hàng (Dùng cho Admin / Affiliate)
- * Mặc định lấy tối đa 5000 đơn hàng mới nhất từ database
+ * Lấy danh sách đơn hàng theo đúng mã CTV (không quét toàn bảng!)
  */
-export async function getAllOrders(limit?: number): Promise<OrderItem[]> {
-  loadOrdersFromFile();
+export async function getOrdersByAffiliateCode(
+  affiliateCode: string,
+  limit = 100
+): Promise<OrderItem[]> {
+  const cleanCode = affiliateCode.trim().toLowerCase();
+  if (!cleanCode) return [];
 
-  // Thử lấy từ Supabase
-  try {
-    let query = supabase
-      .from('tuvi_orders')
-      .select('*')
-      .order('created_at', { ascending: false });
+  const { data, error } = await supabase
+    .from('tuvi_orders')
+    .select('*')
+    .eq('affiliate_code', cleanCode)
+    .order('created_at', { ascending: false })
+    .limit(limit);
 
-    if (limit && limit > 0) {
-      query = query.limit(limit);
-    } else {
-      query = query.limit(5000);
-    }
-
-    const { data } = await query;
-
-    if (data && data.length > 0) {
-      if (!limit || limit >= 500) {
-        ordersMap.clear();
-      }
-      for (const row of data) {
-        const item: OrderItem = {
-          id: row.id,
-          orderCode: row.order_code,
-          paymentType: row.payment_type,
-          amount: Number(row.amount),
-          hoTen: row.ho_ten,
-          email: row.email,
-          status: row.status,
-          createdAt: row.created_at,
-          paidAt: row.paid_at,
-          transactionId: row.transaction_id,
-          chartId: row.chart_id,
-          userId: row.user_id,
-          affiliateCode: row.affiliate_code || undefined,
-          commissionAmount: Number(row.commission_amount || 0),
-          voucherCode: row.voucher_code || undefined,
-          discountAmount: Number(row.discount_amount || 0),
-        };
-        ordersMap.set(item.orderCode, item);
-      }
-      saveOrdersToFile();
-    }
-  } catch (err) {
-    // Supabase table might not exist
-  }
-
-  const list = Array.from(ordersMap.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  return limit && limit > 0 ? list.slice(0, limit) : list;
+  if (error || !data) return [];
+  return (data as Array<Record<string, unknown>>).map(mapRowToOrder);
 }
 
+/**
+ * Lấy danh sách toàn bộ đơn hàng có phân trang thực (vượt trần 1.000 / 5.000 dòng của PostgREST)
+ */
+export async function getAllOrders(limit?: number): Promise<OrderItem[]> {
+  const pageSize = 1000;
+  const maxRows = limit && limit > 0 ? limit : 20000;
+  const all: OrderItem[] = [];
 
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const to = Math.min(offset + pageSize - 1, maxRows - 1);
+    const { data, error } = await supabase
+      .from('tuvi_orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(offset, to);
+
+    if (error) {
+      console.error('[ORDER STORE] Lỗi truy vấn getAllOrders:', error.message);
+      break;
+    }
+    if (!data || data.length === 0) break;
+
+    for (const row of data as Array<Record<string, unknown>>) {
+      all.push(mapRowToOrder(row));
+    }
+    if (data.length < pageSize) break;
+  }
+
+  return all;
+}

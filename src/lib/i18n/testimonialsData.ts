@@ -94,7 +94,7 @@ export const TESTIMONIALS_HEADERS: Record<Language, TestimonialsHeader> = {
     tabStudent: '家长与青年创业者',
     verifiedLabel: '真实实测',
     privacyTitle: '求测缘主隐私与命盘信息绝对保密承诺',
-    privacyDesc: '您的所有八字命盘、面相掌纹影像及 đàm đạo/批命对话记录，均获得100%严格保密与安全防护。',
+    privacyDesc: '您的所有八字命盘、面相掌纹影像及批命交流对话记录，均获得100%严格保密与安全防护。',
     ctaBtn: '即刻体验专业命理详批',
   },
 

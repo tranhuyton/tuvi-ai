@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { DuLieuDuongSo, LaSoData } from '@/types/tuvi';
+import { getAdminAuthHeaders } from '@/lib/adminClientAuth';
+import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 import {
   DollarSign,
   BookOpen,
@@ -30,7 +32,6 @@ import LaSoBanCo from '@/components/LaSoBanCo';
 import BiometricImageLightbox from '@/components/BiometricImageLightbox';
 import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
 import { GIO_ARR } from '@/lib/tuvi/constants';
-import { exportReadingToPdf } from '@/lib/pdfExport';
 
 export interface AdminChartItem {
   id: string;
@@ -111,7 +112,8 @@ export default function AdminTransactionsTable({
 
     setIsLoadingPreviewReading(!chart.reading_html);
     try {
-      const res = await fetch(`/api/admin/chart-reading?id=${chart.id}`);
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`/api/admin/chart-reading?id=${chart.id}`, { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.reading_html) {
@@ -135,7 +137,7 @@ export default function AdminTransactionsTable({
   const handleCopyReading = () => {
     if (!previewReadingHtml) return;
     const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = previewReadingHtml;
+    tempDiv.innerHTML = cleanReadingHtml(previewReadingHtml);
     navigator.clipboard.writeText(tempDiv.innerText || tempDiv.textContent || '');
     setCopiedReading(true);
     setTimeout(() => setCopiedReading(false), 2000);
@@ -158,6 +160,7 @@ export default function AdminTransactionsTable({
             quota: previewChart.laso_data?.quota,
           }
         : previewChart.laso_data;
+      const { exportReadingToPdf } = await import('@/lib/pdfExport');
       await exportReadingToPdf({
         duongSo: previewChart.duong_so_data,
         laSo: resolvedLaSo,
@@ -231,9 +234,10 @@ export default function AdminTransactionsTable({
 
     setApprovingCode(orderCode);
     try {
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/payment/simulate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ orderCode, isGift }),
       });
       const data = await res.json();
@@ -263,9 +267,10 @@ export default function AdminTransactionsTable({
     if (!window.confirm(msg)) return;
 
     try {
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/payment/orders', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ orderCode, status: newStatus }),
       });
       const data = await res.json();
@@ -286,7 +291,7 @@ export default function AdminTransactionsTable({
   const actualOrdersRevenue = orders
     .filter((o) => o.status === 'PAID')
     .reduce((sum, o) => sum + (o.amount || 0), 0);
-  const totalRevenue = Math.max(stats.estimated_revenue || 0, actualOrdersRevenue);
+  const totalRevenue = actualOrdersRevenue;
 
   return (
     <div className="space-y-6">
@@ -1143,7 +1148,7 @@ export default function AdminTransactionsTable({
                   <div className="bg-white text-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl border border-slate-300">
                     <div
                       className="prose max-w-none text-base sm:text-lg leading-relaxed sm:leading-loose space-y-4 font-sans text-justify"
-                      dangerouslySetInnerHTML={{ __html: previewReadingHtml }}
+                      dangerouslySetInnerHTML={{ __html: cleanReadingHtml(previewReadingHtml) }}
                     />
                   </div>
                 ) : (

@@ -29,9 +29,9 @@ import {
 } from 'lucide-react';
 import {
   COURSE_MODULES,
-  COURSE_LESSONS,
+  COURSE_LESSONS_META,
   type CourseLesson,
-} from '@/lib/courseData';
+} from '@/lib/courseMeta';
 import PaymentModal from '@/components/PaymentModal';
 import AuthModal from '@/components/AuthModal';
 import GuideMenuDropdown from '@/components/GuideMenuDropdown';
@@ -50,6 +50,8 @@ import {
   getLocalizedCourseShowcaseModules,
 } from '@/lib/i18n/externalPagesI18n';
 import { supabase } from '@/lib/supabase';
+import { getAdminAuthHeaders, getBearerAuthHeaders } from '@/lib/adminClientAuth';
+import { getUserCharts } from '@/lib/tuviService';
 import { trackViewCourse, trackPlayCourseLesson } from '@/lib/metaPixel';
 import type { LaSoData } from '@/types/tuvi';
 
@@ -77,9 +79,21 @@ export default function CoursePlayerClient({
     () => getLocalizedCourseShowcaseModules(language),
     [language]
   );
+
+  // Cache bài giảng đã mở khóa nạp từ server (chứa nội dung đầy đủ & signed audio URLs 30 phút)
+  const [loadedLessonsMap, setLoadedLessonsMap] = useState<
+    Record<string, { lesson: CourseLesson; loadedAt: number }>
+  >({});
+  const [isLoadingLesson, setIsLoadingLesson] = useState<boolean>(false);
+  const [lessonLoadError, setLessonLoadError] = useState<string | null>(null);
+
   const localizedLessons: CourseLesson[] = useMemo(
-    () => COURSE_LESSONS.map((l) => getLocalizedCourseLesson(l, language)),
-    [language]
+    () =>
+      COURSE_LESSONS_META.map((metaLesson) => {
+        const merged = loadedLessonsMap[metaLesson.id]?.lesson || metaLesson;
+        return getLocalizedCourseLesson(merged, language);
+      }),
+    [language, loadedLessonsMap]
   );
 
   // Trạng thái mở khóa khóa học
@@ -145,14 +159,68 @@ export default function CoursePlayerClient({
     return localizedLessons.find((l) => l.id === activeLessonId) || localizedLessons[0];
   }, [activeLessonId, localizedLessons]);
 
+  const canAccessActiveLesson = isUnlocked || activeLesson.isFreePreview;
+
+  // Chỉ cung cấp URL audio khi học viên thực sự có quyền truy cập bài đó (bài 3-24 dùng Signed URL từ private bucket!)
   const currentChapterAudioUrl = useMemo(() => {
+    if (!canAccessActiveLesson) return '';
     const chap = activeLesson.podcastChapters[activeChapterIdx];
-    return (
-      chap?.audioUrl ||
-      activeLesson.audioUrl ||
-      `/audio/course/bai-${activeLesson.number}-chap-${activeChapterIdx + 1}.mp3`
-    );
-  }, [activeLesson, activeChapterIdx]);
+    if (chap?.audioUrl) return chap.audioUrl;
+    if (activeLesson.isFreePreview) {
+      return activeLesson.audioUrl || `/audio/course/bai-${activeLesson.number}-chap-${activeChapterIdx + 1}.mp3`;
+    }
+    return '';
+  }, [activeLesson, activeChapterIdx, canAccessActiveLesson]);
+
+  // Nạp nội dung đầy đủ + Signed Audio URL từ server API khi mở Bài 3–24 đã mở khóa (tự gia hạn signed URL sau 20 phút)
+  useEffect(() => {
+    if (activeLesson.isFreePreview || !isUnlocked) return;
+    const cached = loadedLessonsMap[activeLesson.id];
+    const TWENTY_MINUTES_MS = 20 * 60 * 1000;
+    if (cached && Date.now() - cached.loadedAt < TWENTY_MINUTES_MS) {
+      return;
+    }
+
+    let cancelled = false;
+    const fetchProtectedLesson = async () => {
+      setIsLoadingLesson(true);
+      setLessonLoadError(null);
+      try {
+        const headers =
+          embeddedInAdmin || forceUnlock
+            ? await getAdminAuthHeaders()
+            : await getBearerAuthHeaders();
+        const res = await fetch(`/api/course/lesson/${encodeURIComponent(activeLesson.id)}`, {
+          headers,
+          cache: 'no-store',
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled) {
+          if (res.ok && data.success && data.lesson) {
+            setLoadedLessonsMap((prev) => ({
+              ...prev,
+              [activeLesson.id]: { lesson: data.lesson as CourseLesson, loadedAt: Date.now() },
+            }));
+          } else {
+            setLessonLoadError(
+              data.error || 'Không thể tải nội dung bài giảng. Vui lòng đăng nhập đúng tài khoản đã mua khóa học.'
+            );
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setLessonLoadError('Lỗi kết nối khi tải bài giảng. Vui lòng thử lại.');
+        }
+      } finally {
+        if (!cancelled) setIsLoadingLesson(false);
+      }
+    };
+
+    void fetchProtectedLesson();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeLesson.id, activeLesson.isFreePreview, isUnlocked, embeddedInAdmin, forceUnlock, loadedLessonsMap]);
 
   const formatAudioTime = (sec: number) => {
     if (!sec || !Number.isFinite(sec) || sec < 0) return '00:00';
@@ -160,8 +228,6 @@ export default function CoursePlayerClient({
     const secs = Math.floor(sec % 60);
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
-
-  const canAccessActiveLesson = isUnlocked || activeLesson.isFreePreview;
 
   // 1. Khởi tạo dữ liệu từ localStorage & kiểm tra quyền truy cập từ Server
   useEffect(() => {
@@ -216,21 +282,7 @@ export default function CoursePlayerClient({
           return;
         }
 
-        // Chỉ mở quyền Admin / Tester khi ĐANG ĐĂNG NHẬP vào tài khoản tương ứng (hoặc nhúng trong trang /admin)
-        const savedAdminPin =
-          embeddedInAdmin && typeof window !== 'undefined'
-            ? localStorage.getItem('tuvi_admin_pin') || ''
-            : '';
-        const isEmbeddedAdmin = embeddedInAdmin && ['thayton2026', '0935058688'].includes(savedAdminPin);
-        const emailLower = user ? (user.email || profile?.email || '').toLowerCase() : '';
-        const isEmailAdmin =
-          Boolean(user) &&
-          (emailLower.includes('tranhuyton') ||
-            emailLower.includes('tonhuytran') ||
-            emailLower.includes('thayton') ||
-            emailLower === 'diep.anh.12135@gmail.com');
-
-        if (isEmbeddedAdmin || isEmailAdmin) {
+        if (embeddedInAdmin) {
           setIsUnlocked(true);
           setUnlockedCode('VIP-ADMIN');
           setIsCheckingAccess(false);
@@ -248,26 +300,25 @@ export default function CoursePlayerClient({
           typeof window !== 'undefined'
             ? localStorage.getItem('tuvi_course_order_code') || ''
             : '';
-        // Chỉ chấp nhận mã giao dịch thực tế dạng TVxxxxx (bỏ qua các nhãn nội bộ như VIP-ADMIN)
         const validSavedOrderCode = /^TV[A-Z0-9]{4,}$/i.test(rawOrderCode.trim())
           ? rawOrderCode.trim().toUpperCase()
           : '';
 
-        const activeEmail = user ? emailLower : '';
-
-        if (!user?.id && !activeEmail && !validSavedOrderCode) {
+        if (!user?.id && !validSavedOrderCode) {
           setIsUnlocked(false);
           setUnlockedCode('');
           setIsCheckingAccess(false);
           return;
         }
 
+        const authHeaders = await getBearerAuthHeaders();
         const res = await fetch('/api/course/check-access', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+          },
           body: JSON.stringify({
-            userId: user?.id,
-            email: activeEmail || undefined,
             orderCode: validSavedOrderCode || undefined,
           }),
         });
@@ -295,6 +346,25 @@ export default function CoursePlayerClient({
 
     verifyAccess();
   }, [user, profile?.email, testerInfo?.isTester, forceUnlock, embeddedInAdmin]);
+
+  // Nếu trên thiết bị mới chưa có lá số trong localStorage nhưng học viên đã đăng nhập, tự nạp lá số gần nhất từ Sổ Tay
+  useEffect(() => {
+    if (userLaSo || !user?.id) return;
+    let cancelled = false;
+    getUserCharts()
+      .then(({ charts }) => {
+        if (cancelled || !charts?.length) return;
+        const latest = charts.find((c) => c.laso_data?.cungs?.length);
+        if (latest?.laso_data) {
+          setUserLaSo(latest.laso_data);
+          setUserHoTen(latest.duong_so_data?.hoTen || latest.title || 'Bạn');
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, userLaSo]);
 
   // Tự động mở bảng thanh toán QR nếu khách bấm nút "Đăng Ký & Mở Khóa Ngay" từ Trang Chủ (?buy=1)
   useEffect(() => {
@@ -479,13 +549,25 @@ export default function CoursePlayerClient({
     setRestoreMessage(null);
     try {
       const isEmail = cleaned.includes('@');
+      if (!user?.id) {
+        setRestoreMessage({
+          type: 'err',
+          text: isEmail
+            ? 'Để bảo vệ tài khoản, quý khách vui lòng đăng nhập bằng đúng email đã thanh toán để hệ thống tự động mở khóa!'
+            : 'Quý khách vui lòng đăng nhập tài khoản trước khi đối chiếu mã giao dịch.',
+        });
+        setIsAuthModalOpen(true);
+        return;
+      }
+      const authHeaders = await getBearerAuthHeaders();
       const res = await fetch('/api/course/check-access', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
         body: JSON.stringify({
           orderCode: isEmail ? undefined : cleaned.toUpperCase(),
-          email: isEmail ? cleaned.toLowerCase() : undefined,
-          userId: user?.id,
         }),
       });
       const data = await res.json();
@@ -550,13 +632,13 @@ export default function CoursePlayerClient({
   return (
     <div
       className={`${
-        embeddedInAdmin ? 'bg-transparent pb-16' : 'min-h-screen bg-[#070a14] pb-28 print:hidden'
+        embeddedInAdmin ? 'bg-transparent pb-16' : 'min-h-screen cosmic-bg pb-28 print:hidden'
       } text-slate-100`}
       onKeyDown={handleProtectedKeyDown}
     >
       <audio
         ref={audioRef}
-        src={currentChapterAudioUrl}
+        src={canAccessActiveLesson && currentChapterAudioUrl ? currentChapterAudioUrl : undefined}
         preload="metadata"
         onLoadedMetadata={(e) => {
           const dur = e.currentTarget.duration;
@@ -1154,6 +1236,19 @@ export default function CoursePlayerClient({
                 </div>
               ) : (
                 <>
+                  {isLoadingLesson && !activeLesson.contentHtml && (
+                    <div className="rounded-2xl bg-slate-900/90 border border-amber-500/35 p-6 text-center space-y-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-amber-400 mx-auto" />
+                      <p className="text-sm text-amber-200 font-semibold">
+                        Đang tải giáo trình &amp; luồng Podcast bảo mật...
+                      </p>
+                    </div>
+                  )}
+                  {lessonLoadError && (
+                    <div className="rounded-2xl bg-red-950/50 border border-red-500/40 p-4 text-sm text-red-200">
+                      {lessonLoadError}
+                    </div>
+                  )}
                   {/* 1. TRÌNH PHÁT PODCAST TƯƠNG TÁC THEO CHƯƠNG (CHAPTERS) */}
                   <div className="rounded-2xl bg-gradient-to-br from-indigo-950/60 via-slate-950 to-amber-950/30 border border-amber-500/40 p-4 sm:p-6 space-y-4 shadow-xl">
                     <div className="flex flex-wrap items-center justify-between gap-3">

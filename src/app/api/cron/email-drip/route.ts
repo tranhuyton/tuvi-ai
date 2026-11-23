@@ -3,6 +3,7 @@ import { adminSupabase, signEmailToken } from '@/lib/supabaseAdmin';
 import { isTuViAuthUser } from '@/lib/supabase';
 import { createPersonalVoucher, DripStage } from '@/lib/voucherStore';
 import { sendDripFunnelEmail } from '@/lib/email';
+import { timingSafeStringEqual, verifyAdminRequest } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -20,17 +21,91 @@ const EXCLUDED_ADMIN_EMAILS = new Set([
   'diep.anh1205@gmail.com',
 ]);
 
-function isAuthorized(req: NextRequest): boolean {
-  const cronSecret = process.env.CRON_SECRET || 'tuvi_drip_cron_2026_thayton';
+async function isAuthorized(req: NextRequest): Promise<boolean> {
+  const cronSecret = (process.env.CRON_SECRET || '').trim();
   const headerSecret = req.headers.get('x-cron-secret');
   const authHeader = req.headers.get('authorization');
-  const pin = req.headers.get('x-admin-pin') || req.nextUrl.searchParams.get('pin');
-  const validPins = [process.env.ADMIN_PIN || 'thayton2026', '0935058688', 'thayton2026'];
 
-  if (headerSecret && headerSecret === cronSecret) return true;
-  if (authHeader && authHeader === `Bearer ${cronSecret}`) return true;
-  if (pin && validPins.includes(pin)) return true;
-  return false;
+  if (cronSecret) {
+    if (headerSecret && timingSafeStringEqual(headerSecret, cronSecret)) return true;
+    if (
+      authHeader &&
+      authHeader.startsWith('Bearer ') &&
+      timingSafeStringEqual(authHeader.slice(7).trim(), cronSecret)
+    ) {
+      return true;
+    }
+  } else {
+    console.warn('[EMAIL DRIP CRON] Biến môi trường CRON_SECRET chưa được cấu hình — chỉ chấp nhận Admin JWT!');
+  }
+
+  const adminAuth = await verifyAdminRequest(req);
+  return adminAuth.authorized;
+}
+
+async function fetchAllPaginated<T>(
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  pageSize = 1000,
+  maxRows = 20000
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const { data, error } = await buildQuery(offset, offset + pageSize - 1);
+    if (error || !data || data.length === 0) break;
+    out.push(...data);
+    if (data.length < pageSize) break;
+  }
+  return out;
+}
+
+async function fetchByIdsChunked<T>(
+  ids: string[],
+  buildChunkQuery: (chunk: string[]) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  chunkSize = 200
+): Promise<T[]> {
+  const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+  const out: T[] = [];
+  for (let i = 0; i < uniqueIds.length; i += chunkSize) {
+    const chunk = uniqueIds.slice(i, i + chunkSize);
+    const { data, error } = await buildChunkQuery(chunk);
+    if (!error && data && data.length > 0) {
+      out.push(...data);
+    }
+  }
+  return out;
+}
+
+/**
+ * Tải phân trang toàn bộ auth.users (tránh bị cắt cụt ở 1.000 dòng khi hệ thống dùng chung TonyEnglish tăng trưởng)
+ */
+async function listAllAuthUsers(): Promise<any[]> {
+  const allUsers: any[] = [];
+  const perPage = 1000;
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await adminSupabase.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users?.length) break;
+    allUsers.push(...data.users);
+    if (data.users.length < perPage) break;
+  }
+  return allUsers;
+}
+
+/**
+ * Kiểm tra chính xác tập ID thuộc bảng `public.profiles` (TonyEnglish) cho danh sách candidateIds
+ * Dùng `.in('id', chunk)` thay vì tải toàn bảng `profiles` để KHÔNG BAO GIỜ bị cắt ở giới hạn 1.000 dòng!
+ */
+async function fetchTonyEnglishIdSetForIds(ids: string[]): Promise<Set<string>> {
+  const result = new Set<string>();
+  const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+  const chunkSize = 400;
+  for (let i = 0; i < uniqueIds.length; i += chunkSize) {
+    const chunk = uniqueIds.slice(i, i + chunkSize);
+    const { data } = await adminSupabase.from('profiles').select('id').in('id', chunk);
+    for (const row of data || []) {
+      if (row?.id) result.add(row.id);
+    }
+  }
+  return result;
 }
 
 function getVietnamHourDecimal(date = new Date()): number {
@@ -69,7 +144,7 @@ function extractChartSummary(chart: any) {
 }
 
 async function runDripJob(req: NextRequest) {
-  if (!isAuthorized(req)) {
+  if (!(await isAuthorized(req))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -123,37 +198,81 @@ async function runDripJob(req: NextRequest) {
   const sixMonthsStartIso = new Date(nowMs - 210 * 24 * 3600 * 1000).toISOString();
   const sixMonthsEndIso = new Date(nowMs - 180 * 24 * 3600 * 1000).toISOString();
 
-  // 1. Lấy danh sách user mới (từ 31/10/2026 đến cách đây >= 1 giờ), user mốc 6 tháng, đơn PAID, danh sách học viên TonyEnglish và auth.users
-  const [
-    { data: recentProfiles },
-    { data: sixMonthProfiles },
-    { data: paidOrders },
-    { data: tonyEnglishProfiles },
-    authUsersRes,
-  ] = await Promise.all([
-    adminSupabase
-      .from('tuvi_profiles')
-      .select('id, email, full_name, created_at, email_unsubscribed, role')
-      .gte('created_at', RECENT_ENROLLMENT_CUTOFF)
-      .lte('created_at', oneHourAgoIso)
-      .order('created_at', { ascending: true }),
-    adminSupabase
-      .from('tuvi_profiles')
-      .select('id, email, full_name, created_at, email_unsubscribed, role')
-      .gte('created_at', sixMonthsStartIso)
-      .lte('created_at', sixMonthsEndIso)
-      .order('created_at', { ascending: true }),
-    adminSupabase
-      .from('tuvi_orders')
-      .select('user_id, email, chart_id, payment_type, paid_at, created_at')
-      .eq('status', 'PAID'),
-    adminSupabase
-      .from('profiles')
-      .select('id, email'),
-    adminSupabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+  interface ProfileRow {
+    id: string;
+    email?: string | null;
+    full_name?: string | null;
+    created_at: string;
+    email_unsubscribed?: boolean | null;
+    role?: string | null;
+  }
+  interface PaidOrderRow {
+    user_id?: string | null;
+    email?: string | null;
+    chart_id?: string | null;
+    payment_type?: string | null;
+    paid_at?: string | null;
+    created_at: string;
+  }
+  interface PendingOrderRow {
+    user_id?: string | null;
+    chart_id?: string | null;
+    created_at: string;
+  }
+  interface EmailLogRow {
+    user_id: string;
+    stage: string;
+    sent_at?: string | null;
+    status?: string | null;
+  }
+  interface CandidateChartRow {
+    id: string;
+    user_id: string;
+    title?: string | null;
+    duong_so_data?: { tier?: string; hoTen?: string; [k: string]: unknown } | null;
+    laso_data?: { tier?: string; [k: string]: unknown } | null;
+    created_at: string;
+  }
+
+  // 1. Phân trang toàn bộ user mới, mốc 6 tháng, toàn bộ đơn PAID (không bao giờ bị cắt cụt ở 1.000 dòng!) và auth.users
+  const [recentProfiles, sixMonthProfiles, paidOrders, allAuthUsers] = await Promise.all([
+    fetchAllPaginated<ProfileRow>((from, to) =>
+      adminSupabase
+        .from('tuvi_profiles')
+        .select('id, email, full_name, created_at, email_unsubscribed, role')
+        .gte('created_at', RECENT_ENROLLMENT_CUTOFF)
+        .lte('created_at', oneHourAgoIso)
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllPaginated<ProfileRow>((from, to) =>
+      adminSupabase
+        .from('tuvi_profiles')
+        .select('id, email, full_name, created_at, email_unsubscribed, role')
+        .gte('created_at', sixMonthsStartIso)
+        .lte('created_at', sixMonthsEndIso)
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllPaginated<PaidOrderRow>((from, to) =>
+      adminSupabase
+        .from('tuvi_orders')
+        .select('user_id, email, chart_id, payment_type, paid_at, created_at')
+        .eq('status', 'PAID')
+        .range(from, to)
+    ),
+    listAllAuthUsers(),
   ]);
 
-  const tonyEnglishIdSet = new Set<string>((tonyEnglishProfiles || []).map((p: any) => p.id).filter(Boolean));
+  // Kiểm tra chính xác 100% tập ID thuộc TonyEnglish (`public.profiles`) bằng `.in('id', ...)` — KHÔNG BAO GIỜ bị cắt cụt ở 1.000 dòng!
+  const allPossibleIds = [
+    ...(recentProfiles || []).map((p: any) => p.id),
+    ...(sixMonthProfiles || []).map((p: any) => p.id),
+    ...(paidOrders || []).map((o: any) => o.user_id),
+    ...allAuthUsers.map((u: any) => u.id),
+  ].filter(Boolean);
+
+  const tonyEnglishIdSet = await fetchTonyEnglishIdSetForIds(allPossibleIds);
   const seenProfileIds = new Set<string>();
   const profileMap = new Map<string, any>();
 
@@ -174,7 +293,7 @@ async function runDripJob(req: NextRequest) {
 
   // 1b. Đồng bộ các tài khoản auth.users đăng ký bên Tử Vi (app === 'tuvi') nhưng bị thiếu bản ghi trong tuvi_profiles
   // TUYỆT ĐỐI KHÔNG đồng bộ học viên của hệ thống TonyEnglish (dùng chung Supabase Auth) sang tuvi_profiles!
-  const recentMissingAuthUsers = (authUsersRes?.data?.users || []).filter((u) => {
+  const recentMissingAuthUsers = allAuthUsers.filter((u) => {
     if (!u?.id || !u?.email) return false;
     if (u.created_at < RECENT_ENROLLMENT_CUTOFF || u.created_at > oneHourAgoIso) return false;
     if (seenProfileIds.has(u.id)) return false;
@@ -247,29 +366,30 @@ async function runDripJob(req: NextRequest) {
   }
 
   // 2. Lấy đơn hàng PENDING, danh sách Tester, lịch sử Email đã gửi, và Lá số của các ứng viên
-  const [
-    { data: pendingOrders },
-    { data: testers },
-    { data: emailLogs },
-    { data: candidateCharts },
-  ] = await Promise.all([
-    adminSupabase
-      .from('tuvi_orders')
-      .select('user_id, chart_id, created_at')
-      .eq('status', 'PENDING')
-      .in('payment_type', ['reading_vip', 'reading_expert'])
-      .in('user_id', candidateIds)
-      .order('created_at', { ascending: true }),
+  const [pendingOrders, { data: testers }, emailLogs, candidateCharts] = await Promise.all([
+    fetchByIdsChunked<PendingOrderRow>(candidateIds, (chunk) =>
+      adminSupabase
+        .from('tuvi_orders')
+        .select('user_id, chart_id, created_at')
+        .eq('status', 'PENDING')
+        .in('payment_type', ['reading_vip', 'reading_expert'])
+        .in('user_id', chunk)
+        .order('created_at', { ascending: true })
+    ),
     adminSupabase.from('tuvi_testers').select('email'),
-    adminSupabase
-      .from('tuvi_email_logs')
-      .select('user_id, stage, sent_at, status')
-      .in('user_id', candidateIds),
-    adminSupabase
-      .from('tuvi_charts')
-      .select('id, user_id, title, duong_so_data, laso_data, created_at')
-      .in('user_id', candidateIds)
-      .order('created_at', { ascending: false }),
+    fetchByIdsChunked<EmailLogRow>(candidateIds, (chunk) =>
+      adminSupabase
+        .from('tuvi_email_logs')
+        .select('user_id, stage, sent_at, status')
+        .in('user_id', chunk)
+    ),
+    fetchByIdsChunked<CandidateChartRow>(candidateIds, (chunk) =>
+      adminSupabase
+        .from('tuvi_charts')
+        .select('id, user_id, title, duong_so_data, laso_data, created_at')
+        .in('user_id', chunk)
+        .order('created_at', { ascending: false })
+    ),
   ]);
 
   const paidUserIds = new Set<string>();

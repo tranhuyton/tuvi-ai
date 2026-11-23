@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
-import { LaSoData } from '@/types/tuvi';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { LaSoData, CungLaSo } from '@/types/tuvi';
 import CungView from './CungView';
-import { GIO_ARR } from '@/lib/tuvi/constants';
+import { GIO_ARR, CHINH_TINH_COLORS, STAR_NGU_HANH_COLOR } from '@/lib/tuvi/constants';
 import { computeTamHanAnalysis } from '@/lib/tuvi/anSao';
-import { sanitizeVietnameseFileName } from '@/lib/pdfExport';
-import { Download, RefreshCw, ZoomIn, ZoomOut, BookOpen, Pencil } from 'lucide-react';
+import { sanitizeVietnameseFileName } from '@/lib/tuvi/cleanReadingHtml';
+import { Download, RefreshCw, ZoomIn, ZoomOut, BookOpen, Pencil, X, Compass, Eye } from 'lucide-react';
 import { useLanguage } from '@/context/LanguageContext';
 
 interface LaSoBanCoProps {
@@ -59,6 +59,7 @@ const TT_COORDS: Record<number, { l: string; t: string }> = {
 export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: LaSoBanCoProps) {
   const {
     t,
+    tCung,
     tCanChi,
     tNapAm,
     tTenCuc,
@@ -67,6 +68,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
     tAmDuong,
     tThuanNghich,
     tStar,
+    language,
   } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
@@ -74,6 +76,7 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
   const [scale, setScale] = useState(1);
   const [boardHeight, setBoardHeight] = useState(880);
   const [isFitMode, setIsFitMode] = useState(true);
+  const [inspectedCungId, setInspectedCungId] = useState<number | null>(null);
 
   const {
     duongSo,
@@ -133,6 +136,60 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
 
   const tamHan = computeTamHanAnalysis(laSo);
   const lndhCungId = tamHan.cungLuuNienDaiHan?.cungId;
+
+  // Bản đồ 12 cung đã gắn sao LN.Đại Hạn (dùng chung cho Grid và Palace Inspector)
+  const renderedCungs = useMemo(() => {
+    return cungs.map((cung) => {
+      const hasLndhStar = cung.phuTinhTot.some(
+        (s) => s.ten === 'LN.Đại Hạn' || s.ten === 'LN. Đại hạn'
+      );
+      if (lndhCungId === cung.cungId && !hasLndhStar) {
+        return {
+          ...cung,
+          phuTinhTot: [
+            ...cung.phuTinhTot,
+            {
+              ten: 'LN.Đại Hạn',
+              loai: 'tot' as const,
+              color: '#555555',
+              isLuu: true,
+            },
+          ],
+        };
+      }
+      return cung;
+    });
+  }, [cungs, lndhCungId]);
+
+  const inspectedCung: CungLaSo | null = useMemo(() => {
+    if (inspectedCungId === null) return null;
+    return renderedCungs.find((c) => c.cungId === inspectedCungId) || null;
+  }, [inspectedCungId, renderedCungs]);
+
+  const relatedPalaces = useMemo(() => {
+    if (!inspectedCung) return [];
+    const id = inspectedCung.cungId;
+    const relations = [
+      { label: 'Đối Cung (Xung Chiếu)', targetId: (id + 6) % 12 },
+      { label: 'Tam Hợp 1', targetId: (id + 4) % 12 },
+      { label: 'Tam Hợp 2', targetId: (id + 8) % 12 },
+    ];
+    return relations
+      .map((rel) => {
+        const found = renderedCungs.find((c) => c.cungId === rel.targetId);
+        return found ? { ...rel, cung: found } : null;
+      })
+      .filter((x): x is { label: string; targetId: number; cung: CungLaSo } => Boolean(x));
+  }, [inspectedCung, renderedCungs]);
+
+  useEffect(() => {
+    if (inspectedCungId === null) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setInspectedCungId(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [inspectedCungId]);
 
   const safeMenhIdx =
     typeof menhCungIdx === 'number' && !isNaN(menhCungIdx) && menhCungIdx in THIEN_BAN_POINTS
@@ -297,6 +354,12 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
         </div>
       </div>
 
+      {/* Mẹo chạm phóng to từng cung trên màn hình điện thoại */}
+      <div className="mb-2.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-200/95 text-xs flex items-center justify-center gap-1.5 text-center print:hidden">
+        <Eye className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+        <span>Chạm vào bất kỳ cung nào trên lá số để phóng to rõ nét &amp; xem Tam Phương Tứ Chính</span>
+      </div>
+
       {/* Khung chứa lá số - Tự động co giãn theo chiều rộng màn hình mobile & căn giữa chuẩn xác */}
       <div
         ref={containerRef}
@@ -320,30 +383,14 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
             className="grid grid-cols-4 grid-rows-4 bg-black gap-[1px] border border-black relative z-0"
           >
             {/* 12 Cung */}
-            {cungs.map((cung) => {
-              const pos = GRID_STYLES[cung.cungId];
-              const hasLndhStar = cung.phuTinhTot.some(
-                (s) => s.ten === 'LN.Đại Hạn' || s.ten === 'LN. Đại hạn'
-              );
-              const renderedCung =
-                lndhCungId === cung.cungId && !hasLndhStar
-                  ? {
-                      ...cung,
-                      phuTinhTot: [
-                        ...cung.phuTinhTot,
-                        {
-                          ten: 'LN.Đại Hạn',
-                          loai: 'tot' as const,
-                          color: '#555555',
-                          isLuu: true,
-                        },
-                      ],
-                    }
-                  : cung;
+            {renderedCungs.map((renderedCung) => {
+              const pos = GRID_STYLES[renderedCung.cungId];
               return (
                 <CungView
-                  key={cung.cungId}
+                  key={renderedCung.cungId}
                   cung={renderedCung}
+                  onSelect={(c) => setInspectedCungId(c.cungId)}
+                  isHighlighted={inspectedCungId === renderedCung.cungId}
                   className="min-h-[200px] sm:min-h-[225px]"
                   style={{
                     gridColumn: pos.gridColumn,
@@ -563,6 +610,162 @@ export default function LaSoBanCo({ laSo, onReset, onEdit, onOpenSavedCharts }: 
           </div>
         </div>
       </div>
+
+      {/* Modal Phóng To Chi Tiết Từng Cung (Mobile-Friendly Palace Inspector) */}
+      {inspectedCung && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm print:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Chi tiết cung ${inspectedCung.cungName}`}
+          onClick={() => setInspectedCungId(null)}
+        >
+          <div
+            className="w-full max-w-lg bg-white text-slate-900 rounded-2xl border-2 border-amber-500/70 shadow-2xl overflow-hidden max-h-[88vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Cung */}
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white px-4 py-3.5 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/40">
+                    {tCanChi(inspectedCung.canChi)}
+                  </span>
+                  <h3 className="font-serif font-extrabold text-lg sm:text-xl uppercase tracking-wide text-amber-300">
+                    {tCung(inspectedCung.cungName)}
+                    {inspectedCung.isThan && (
+                      <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded bg-red-600 text-white align-middle">
+                        THÂN
+                      </span>
+                    )}
+                  </h3>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-slate-300 mt-1 flex-wrap">
+                  <span>Đại vận: <strong className="text-white">{inspectedCung.daiVan}</strong></span>
+                  <span>•</span>
+                  <span>Tiểu vận: <strong className="text-white">{inspectedCung.tieuVan}</strong></span>
+                  <span>•</span>
+                  <span>Trường sinh: <strong className="text-amber-300">{inspectedCung.truongSinh}</strong></span>
+                  <span>•</span>
+                  <span>{inspectedCung.nguyetVan}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInspectedCungId(null)}
+                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/80 transition cursor-pointer shrink-0"
+                aria-label="Đóng chi tiết cung"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Nội dung Sao */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+              {/* Chính Tinh */}
+              <div className="rounded-xl bg-amber-50/70 border border-amber-200 p-3.5 text-center">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-800 mb-1.5">
+                  Chính Tinh Tọa Thủ
+                </div>
+                {inspectedCung.chinhTinh.length > 0 ? (
+                  <div className="flex items-center justify-center gap-3 flex-wrap">
+                    {inspectedCung.chinhTinh.map((ct, idx) => {
+                      const starColor = CHINH_TINH_COLORS[ct.ten] || STAR_NGU_HANH_COLOR[ct.ten] || ct.color || '#000000';
+                      return (
+                        <span
+                          key={idx}
+                          style={{ color: starColor }}
+                          className="text-base sm:text-lg font-extrabold"
+                        >
+                          {language === 'vi' ? ct.ten : tStar(ct.ten)}
+                          {ct.dacHam ? <span className="text-sm font-semibold ml-1">({ct.dacHam})</span> : null}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-sm font-semibold text-slate-600 italic">
+                    Vô Chính Diệu — Xét chính tinh xung chiếu từ Đối Cung &amp; Tam Hợp bên dưới
+                  </div>
+                )}
+              </div>
+
+              {/* Phụ Tinh 2 Cột Rõ Nét */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                  <div className="text-xs font-extrabold uppercase tracking-wide text-emerald-800 border-b border-slate-200 pb-1.5 mb-2">
+                    Cát Tinh &amp; Sao Tốt ({inspectedCung.phuTinhTot.length})
+                  </div>
+                  <div className="space-y-1.5 text-sm">
+                    {inspectedCung.phuTinhTot.map((sao, idx) => {
+                      const starColor = STAR_NGU_HANH_COLOR[sao.ten] || sao.color || '#111827';
+                      return (
+                        <div key={idx} style={{ color: starColor }} className="font-semibold leading-snug">
+                          {sao.ten}
+                          {sao.dacHam ? <span className="text-xs font-normal ml-1 opacity-85">({sao.dacHam})</span> : null}
+                        </div>
+                      );
+                    })}
+                    {inspectedCung.phuTinhTot.length === 0 && (
+                      <div className="text-xs text-slate-400 italic">Không có</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                  <div className="text-xs font-extrabold uppercase tracking-wide text-red-800 border-b border-slate-200 pb-1.5 mb-2">
+                    Sát Tinh &amp; Bại Tinh ({inspectedCung.phuTinhXau.length})
+                  </div>
+                  <div className="space-y-1.5 text-sm">
+                    {inspectedCung.phuTinhXau.map((sao, idx) => {
+                      const starColor = STAR_NGU_HANH_COLOR[sao.ten] || sao.color || '#b91c1c';
+                      return (
+                        <div key={idx} style={{ color: starColor }} className="font-semibold leading-snug">
+                          {sao.ten}
+                          {sao.dacHam ? <span className="text-xs font-normal ml-1 opacity-85">({sao.dacHam})</span> : null}
+                        </div>
+                      );
+                    })}
+                    {inspectedCung.phuTinhXau.length === 0 && (
+                      <div className="text-xs text-slate-400 italic">Không có</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Chuyển nhanh Tam Phương Tứ Chính */}
+              {relatedPalaces.length > 0 && (
+                <div className="pt-2 border-t border-slate-200 space-y-2">
+                  <div className="text-xs font-bold text-slate-600 flex items-center gap-1.5 uppercase tracking-wide">
+                    <Compass className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Soi Nhanh Tam Phương Tứ Chính Hội Chiếu:</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {relatedPalaces.map((rel) => (
+                      <button
+                        key={rel.targetId}
+                        type="button"
+                        onClick={() => setInspectedCungId(rel.targetId)}
+                        className="text-left px-3 py-2 rounded-xl bg-slate-100 hover:bg-amber-100 border border-slate-200 hover:border-amber-400 transition cursor-pointer"
+                      >
+                        <div className="text-[10px] font-bold uppercase text-amber-700">{rel.label}</div>
+                        <div className="text-xs font-extrabold text-slate-900 mt-0.5">
+                          {tCung(rel.cung.cungName)} ({rel.cung.chi})
+                        </div>
+                        <div className="text-[11px] text-slate-600 truncate">
+                          {rel.cung.chinhTinh.length > 0
+                            ? rel.cung.chinhTinh.map((s) => s.ten).join(', ')
+                            : 'Vô Chính Diệu'}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

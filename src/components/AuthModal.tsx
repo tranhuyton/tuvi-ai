@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { X, Lock, Mail, User, Phone, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, KeyRound } from 'lucide-react';
+import { X, Lock, Mail, User, Phone, Sparkles, AlertCircle, CheckCircle2, ArrowLeft, KeyRound, Eye, EyeOff } from 'lucide-react';
 
 export type AuthModalTab = 'signin' | 'signup' | 'forgot' | 'update_password';
 
@@ -12,6 +12,7 @@ interface AuthModalProps {
   onClose: () => void;
   defaultTab?: AuthModalTab;
   customNotice?: string;
+  initialName?: string;
   onSuccess?: () => void;
 }
 
@@ -20,6 +21,7 @@ export default function AuthModal({
   onClose,
   defaultTab = 'signin',
   customNotice,
+  initialName,
   onSuccess,
 }: AuthModalProps) {
   const { user, profile, isPasswordRecovery, signIn, signUp, resetPasswordForEmail, updatePassword, setIsPasswordRecovery } = useAuth();
@@ -28,6 +30,7 @@ export default function AuthModal({
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -42,21 +45,33 @@ export default function AuthModal({
       setErrorMsg('');
       setSuccessMsg('');
       setIsLoading(false);
+      setShowPassword(false);
       if (defaultTab === 'update_password' && user) {
         setFullName(profile?.full_name || user.user_metadata?.full_name || '');
         setPhone(profile?.phone || user.user_metadata?.phone || '');
         setPassword('');
         setConfirmPassword('');
+      } else if (defaultTab === 'signup' && initialName && !fullName) {
+        setFullName(initialName.trim());
       }
     }
-  }, [isOpen, defaultTab, user, profile]);
+  }, [isOpen, defaultTab, user, profile, initialName]);
 
-  if (!isOpen) return null;
-
-  const handleClose = () => {
+  const handleClose = React.useCallback(() => {
     setIsPasswordRecovery(false);
     onClose();
-  };
+  }, [setIsPasswordRecovery, onClose]);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, handleClose]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,12 +194,22 @@ export default function AuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
       <div className="relative w-full max-w-md bg-slate-900 border border-amber-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl text-slate-200 max-h-[92vh] overflow-y-auto">
         {/* Nút đóng */}
         <button
+          type="button"
           onClick={handleClose}
-          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition"
+          aria-label="Đóng hộp thoại tài khoản"
+          className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -198,7 +223,7 @@ export default function AuthModal({
               <Sparkles className="w-6 h-6 animate-pulse text-amber-400" />
             )}
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold font-serif text-amber-400">
+          <h2 id="auth-modal-title" className="text-2xl sm:text-3xl font-bold font-serif text-amber-400">
             {tab === 'signin' && t('auth.titleLogin', 'Đăng Nhập Tài Khoản')}
             {tab === 'signup' && t('auth.titleRegister', 'Đăng Ký Thành Viên')}
             {tab === 'forgot' && t('auth.titleForgot', 'Khôi Phục Mật Khẩu')}
@@ -299,6 +324,7 @@ export default function AuthModal({
                   <input
                     type="text"
                     required
+                    autoComplete="name"
                     placeholder={t('form.fullNamePlaceholder', 'Ví dụ: Trần Văn An')}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -309,12 +335,14 @@ export default function AuthModal({
 
               <div>
                 <label className="block text-sm sm:text-xs font-semibold text-slate-300 mb-1.5">
-                  {t('auth.phoneLabel', 'Số điện thoại')}
+                  {t('auth.phoneLabel', 'Số điện thoại')}{' '}
+                  <span className="text-slate-400 font-normal">(Không bắt buộc)</span>
                 </label>
                 <div className="relative">
                   <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
+                    autoComplete="tel"
                     placeholder="0912 345 678"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -333,6 +361,7 @@ export default function AuthModal({
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -363,13 +392,22 @@ export default function AuthModal({
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="••••••"
+                  autoComplete={tab === 'signup' ? 'new-password' : 'current-password'}
+                  placeholder="Tối thiểu 6 ký tự"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-4 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
+                  className="w-full bg-slate-950/70 border border-slate-700/80 rounded-xl pl-9 pr-10 py-3 sm:py-2.5 text-base sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-400/80"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-300 transition cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
           )}

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DuLieuDuongSo, LaSoData } from '@/types/tuvi';
-import { supabase } from './supabase';
+import { adminSupabase as supabase } from './supabaseAdmin';
 
 export type OfflineChartTag = 'offline' | 'sample' | 'vip_offline';
 

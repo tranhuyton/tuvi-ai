@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import CoursePlayerClient from '@/components/CoursePlayerClient';
-import { COURSE_INFO, COURSE_MODULES, COURSE_LESSONS } from '@/lib/courseData';
+import { COURSE_INFO, COURSE_MODULES } from '@/lib/courseSummary';
 
 export const metadata: Metadata = {
   title: {
@@ -17,6 +17,8 @@ export const metadata: Metadata = {
     description:
       'Làm chủ 14 Chính Tinh, Lục Cát, Lục Sát, Tứ Hóa, 4 Cách Cục lớn và quy trình xem vận hạn qua 24 bài Podcast & giáo trình tương tác trên Web. Quét mã VietQR 699.000đ mở khóa tự động 24/7.',
     url: 'https://www.tuvithayton.vn/khoa-hoc',
+    siteName: 'Tử Vi & Phong Thủy Thầy Tôn',
+    locale: 'vi_VN',
     type: 'website',
     images: [
       {
@@ -26,6 +28,13 @@ export const metadata: Metadata = {
         alt: 'Khóa Học Tử Vi Đẩu Số Thực Chiến Cùng Thầy Tôn',
       },
     ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast & Giáo Trình) | Thầy Tôn',
+    description:
+      '24 bài giảng Podcast & giáo trình tương tác về 14 Chính Tinh, Phụ Tinh, Tứ Hóa, 4 Cách Cục lớn và quy trình 5 bước chấm hạn năm.',
+    images: ['/thay-ton.png'],
   },
 };
 
@@ -64,7 +73,7 @@ export default function KhoaHocTuViPage() {
       name: m.title,
       description: m.description,
     })),
-    numberOfCredits: COURSE_LESSONS.length,
+    numberOfCredits: COURSE_INFO.totalLessons,
   };
 
   return (

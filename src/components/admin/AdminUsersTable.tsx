@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { User, Search, Calendar, BookOpen, MessageSquare, Mail, Phone, RefreshCw, X, MessageCircle, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 
 export interface AdminUser {
   id: string;
@@ -273,7 +274,7 @@ export default function AdminUsersTable({ users, messages = [], isLoading, onRef
                       </div>
                       <div
                         className="prose max-w-none text-justify text-sm sm:text-base text-slate-800 leading-relaxed sm:leading-loose space-y-3 font-sans [&>p]:mb-3 [&>b]:text-amber-950 [&>strong]:text-amber-950"
-                        dangerouslySetInnerHTML={{ __html: msg.answer }}
+                        dangerouslySetInnerHTML={{ __html: cleanReadingHtml(msg.answer) }}
                       />
                     </div>
                   </div>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Sparkles,
   Compass,
@@ -17,7 +18,8 @@ import {
   Briefcase,
   ExternalLink,
 } from 'lucide-react';
-import { FUNNEL_PAGES, type FunnelPageData } from '@/lib/funnelPages';
+import type { FunnelPageData } from '@/lib/funnelPages';
+import { FUNNEL_PAGES_INDEX } from '@/lib/funnelPagesIndex';
 import { ABOUT_DATA } from '@/lib/i18n/aboutData';
 import { useLanguage } from '@/context/LanguageContext';
 import { translateFunnelPageTitle } from '@/lib/i18n/homeFunnelData';
@@ -37,9 +39,9 @@ export default function FunnelSlugClient({ page: rawPage }: { page: FunnelPageDa
   const page = getLocalizedFunnelPage(rawPage, language);
   const about = ABOUT_DATA[language] || ABOUT_DATA.vi;
 
-  const group1Pages = FUNNEL_PAGES.filter((p) => p.groupNum === 1 && p.code !== rawPage.code);
-  const group2Pages = FUNNEL_PAGES.filter((p) => p.groupNum === 2 && p.code !== rawPage.code);
-  const group3Pages = FUNNEL_PAGES.filter((p) => p.groupNum === 3 && p.code !== rawPage.code);
+  const group1Pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === 1 && p.code !== rawPage.code);
+  const group2Pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === 2 && p.code !== rawPage.code);
+  const group3Pages = FUNNEL_PAGES_INDEX.filter((p) => p.groupNum === 3 && p.code !== rawPage.code);
 
   const isExternalPrimary =
     page.primaryCta.href.startsWith('http') || page.primaryCta.href.startsWith('tel:');
@@ -118,9 +120,11 @@ export default function FunnelSlugClient({ page: rawPage }: { page: FunnelPageDa
 
         {/* Author & Expert Verification Line */}
         <div className="flex flex-wrap items-center gap-3.5 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/90 mb-8 text-xs sm:text-sm text-slate-300">
-          <img
+          <Image
             src="/avatar-thay-ton.jpg"
             alt={about.name}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover border-2 border-amber-500/60 shadow-md shrink-0"
           />
           <div className="flex-1 min-w-[200px]">
@@ -171,9 +175,11 @@ export default function FunnelSlugClient({ page: rawPage }: { page: FunnelPageDa
           <section className="mb-10 space-y-6 rounded-3xl bg-slate-950/75 border border-amber-500/35 p-5 sm:p-8 shadow-xl">
             {/* Chân dung & Giới thiệu Chuyên Gia */}
             <div className="flex flex-col sm:flex-row items-center gap-5 pb-6 border-b border-slate-800/80">
-              <img
+              <Image
                 src="/avatar-thay-ton.jpg"
                 alt={about.name}
+                width={128}
+                height={128}
                 className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-2 border-amber-400/80 shadow-xl shadow-amber-950/50 shrink-0"
               />
               <div className="text-center sm:text-left">
@@ -498,7 +504,7 @@ export default function FunnelSlugClient({ page: rawPage }: { page: FunnelPageDa
         </div>
       </section>
 
-      <footer className="mt-8 pt-5 border-t border-slate-800/60 text-center text-[11px] text-slate-500 leading-relaxed max-w-3xl mx-auto">
+      <footer className="mt-8 pt-5 border-t border-slate-800/60 text-center text-[11px] text-slate-400 leading-relaxed max-w-3xl mx-auto">
         {ui.disclaimer}
       </footer>
     </div>

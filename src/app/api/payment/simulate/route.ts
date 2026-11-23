@@ -1,42 +1,86 @@
 import { NextResponse } from 'next/server';
-import { getOrderByCode, markOrderPaid } from '@/lib/orderStore';
+import { getOrderByCode, markOrderPaidAtomic } from '@/lib/orderStore';
 import { sendPaymentSuccessEmail } from '@/lib/email';
-import { supabase } from '@/lib/supabase';
+import { adminSupabase as supabase } from '@/lib/supabaseAdmin';
+import { verifyAdminRequest } from '@/lib/adminAuth';
+import { markVoucherUsedAndCancelAllForUser } from '@/lib/voucherStore';
+import { decodeOrderCapiMeta, sendMetaCapiEvent } from '@/lib/metaCapi';
+import { sendGa4ServerPurchase } from '@/lib/ga4Mp';
 
 /**
- * API mô phỏng / duyệt thanh toán thủ công từ Admin hoặc Test Button
+ * API duyệt thanh toán thủ công / Duyệt Tặng (0đ) — CHỈ DÀNH CHO ADMIN ĐÃ XÁC THỰC
  */
 export async function POST(req: Request) {
+  const auth = await verifyAdminRequest(req);
+  if (!auth.authorized) {
+    return NextResponse.json(
+      { success: false, error: 'Chỉ quản trị viên đã xác thực mới được duyệt thanh toán thủ công' },
+      { status: 401 }
+    );
+  }
+
   try {
     const { orderCode, isGift } = await req.json();
 
     if (!orderCode) {
-      return NextResponse.json(
-        { success: false, error: 'Thiếu mã đơn hàng' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Thiếu mã đơn hàng' }, { status: 400 });
     }
 
     let order = await getOrderByCode(orderCode);
     if (!order) {
-      const { createOrder } = await import('@/lib/orderStore');
-      order = await createOrder({
-        customCode: orderCode,
-        paymentType: 'chat_free',
-        amount: isGift ? 0 : 49000,
-        hoTen: 'Đương số',
+      return NextResponse.json(
+        { success: false, error: `Không tìm thấy đơn hàng ${orderCode}` },
+        { status: 404 }
+      );
+    }
+
+    if (order.status === 'CANCELLED') {
+      return NextResponse.json(
+        { success: false, error: 'Không thể duyệt đơn hàng đã hủy (CANCELLED).' },
+        { status: 400 }
+      );
+    }
+
+    const savedCapiMeta = order.capiMeta || decodeOrderCapiMeta(order.transactionId);
+    const txPrefix = isGift ? 'gift' : 'admin';
+    const { order: paidOrder, transitioned } = await markOrderPaidAtomic(
+      order.orderCode,
+      `${txPrefix}_${Date.now()}`
+    );
+
+    if (!paidOrder) {
+      return NextResponse.json(
+        { success: false, error: 'Không thể cập nhật trạng thái đơn hàng' },
+        { status: 500 }
+      );
+    }
+
+    if (!transitioned) {
+      return NextResponse.json({
+        success: true,
+        alreadyPaid: true,
+        message: 'Đơn hàng này đã được thanh toán trước đó',
+        order: paidOrder,
       });
     }
 
-    const txPrefix = isGift ? 'gift' : 'sim';
-    const paidOrder = await markOrderPaid(order.orderCode, `${txPrefix}_${Date.now()}`);
+    order = paidOrder;
+
+    // Tiêu thụ & hủy các voucher còn lại của khách hàng (Stop-on-Purchase)
+    await markVoucherUsedAndCancelAllForUser({
+      voucherCode: order.voucherCode,
+      orderCode: order.orderCode,
+      userId: order.userId,
+      email: order.email,
+    });
+
+    const isDiscountedOrder = Boolean(order.voucherCode) || Number(order.discountAmount || 0) > 0;
 
     if (isGift) {
-      // Nếu là đơn Duyệt Tặng (0đ): đặt amount = 0, commission_amount = 0 để không cộng vào doanh thu hay hoa hồng CTV
+      // Đơn Duyệt Tặng (0đ): đặt amount = 0, xóa hoa hồng & affiliate
       order.amount = 0;
-      if (paidOrder) {
-        paidOrder.amount = 0;
-      }
+      order.affiliateCode = undefined;
+      order.commissionAmount = 0;
       try {
         await supabase
           .from('tuvi_orders')
@@ -45,39 +89,52 @@ export async function POST(req: Request) {
       } catch (e) {
         console.warn('[SIMULATE GIFT] Lỗi cập nhật amount=0:', e);
       }
-    } else if (order.affiliateCode) {
-      // Ghi nhận hoa hồng cho CTV chỉ khi đây là đơn thu tiền thật (không phải đơn tặng 0đ)
+    } else if (order.affiliateCode && !isDiscountedOrder && !order.commissionRecordedAt) {
+      // Ghi nhận hoa hồng CTV chỉ khi đơn thu tiền thật VÀ không áp mã giảm giá
       try {
         const { recordAffiliateCommission } = await import('@/lib/affiliateStore');
-        await recordAffiliateCommission(
+        const comm = await recordAffiliateCommission(
           order.affiliateCode,
           order.amount,
           order.orderCode,
-          order.paymentType
+          order.paymentType,
+          order.email
         );
+        if (comm > 0) {
+          await supabase
+            .from('tuvi_orders')
+            .update({
+              commission_amount: comm,
+              commission_recorded_at: new Date().toISOString(),
+            })
+            .eq('order_code', order.orderCode);
+        }
       } catch (affErr) {
         console.warn('[SIMULATE] Lỗi ghi nhận hoa hồng CTV:', affErr);
       }
     }
 
-    // Nâng cấp chart & cập nhật quota câu hỏi nếu có
+    // Nâng cấp chart & cập nhật quota câu hỏi
     try {
       let targetChartId = order.chartId;
 
-      // Nếu order chưa có chartId, thử tìm lá số trùng tên của user để liên kết tự động
-      if (!targetChartId && (order.userId || order.email)) {
-        let query = supabase.from('tuvi_charts').select('id, duong_so_data, laso_data');
-        if (order.userId) {
-          query = query.eq('user_id', order.userId);
-        }
-        const { data: userCharts } = await query;
+      if (!targetChartId && order.userId && order.hoTen) {
+        const { data: userCharts } = await supabase
+          .from('tuvi_charts')
+          .select('id, duong_so_data, laso_data')
+          .eq('user_id', order.userId);
         const matched = (userCharts || []).find(
-          (c: any) => c.duong_so_data?.hoTen?.trim().toLowerCase() === order.hoTen?.trim().toLowerCase()
+          (c) =>
+            String(c.duong_so_data?.hoTen || '').trim().toLowerCase() ===
+            order.hoTen.trim().toLowerCase()
         );
         if (matched) {
           targetChartId = matched.id;
           order.chartId = matched.id;
-          await supabase.from('tuvi_orders').update({ chart_id: matched.id }).eq('order_code', order.orderCode);
+          await supabase
+            .from('tuvi_orders')
+            .update({ chart_id: matched.id })
+            .eq('order_code', order.orderCode);
         }
       }
 
@@ -104,9 +161,7 @@ export async function POST(req: Request) {
           let needsReadingUpgrade = Boolean(chartData.laso_data?.needsReadingUpgrade);
 
           if (order.paymentType === 'reading_expert' || order.paymentType === 'upgrade_expert') {
-            if (targetTier !== 'expert') {
-              needsReadingUpgrade = true;
-            }
+            if (targetTier !== 'expert') needsReadingUpgrade = true;
             targetTier = 'expert';
             nextQuota.expertAllowed += 2;
           } else if (order.paymentType === 'reading_vip') {
@@ -123,16 +178,17 @@ export async function POST(req: Request) {
             nextQuota.basicAllowed += 2;
           }
 
-          const updatedDuongSo = { ...chartData.duong_so_data, tier: targetTier };
-          const updatedLaSo = {
-            ...chartData.laso_data,
-            tier: targetTier,
-            quota: nextQuota,
-            needsReadingUpgrade,
-          };
           await supabase
             .from('tuvi_charts')
-            .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
+            .update({
+              duong_so_data: { ...chartData.duong_so_data, tier: targetTier },
+              laso_data: {
+                ...chartData.laso_data,
+                tier: targetTier,
+                quota: nextQuota,
+                needsReadingUpgrade,
+              },
+            })
             .eq('id', targetChartId);
         }
       }
@@ -140,7 +196,51 @@ export async function POST(req: Request) {
       console.warn('[SIMULATE] Không thể cập nhật chart:', e);
     }
 
-    // Gửi email nếu có
+    // Khi Admin duyệt tay chuyển khoản thật (!isGift && amount > 0) -> đồng bộ bắn Meta CAPI & GA4 MP Purchase
+    let capiSent = false;
+    let ga4Sent = false;
+    if (!isGift && order.amount > 0) {
+      try {
+        let resolvedPhone: string | null = null;
+        if (order.userId) {
+          const { data: prof } = await supabase
+            .from('tuvi_profiles')
+            .select('phone')
+            .eq('id', order.userId)
+            .maybeSingle();
+          if (prof?.phone) resolvedPhone = String(prof.phone);
+        }
+        const [capiOk, ga4Ok] = await Promise.all([
+          sendMetaCapiEvent({
+            eventName: 'Purchase',
+            eventId: order.orderCode,
+            value: order.amount,
+            currency: 'VND',
+            paymentType: order.paymentType,
+            orderCode: order.orderCode,
+            email: order.email || null,
+            phone: resolvedPhone,
+            fullName: order.hoTen,
+            userId: order.userId,
+            meta: savedCapiMeta,
+          }),
+          sendGa4ServerPurchase({
+            orderCode: order.orderCode,
+            paymentType: order.paymentType,
+            amount: order.amount,
+            gaClientId: savedCapiMeta?.gaCid,
+            gaSessionId: savedCapiMeta?.gaSessionId,
+            userId: order.userId,
+          }),
+        ]);
+        capiSent = capiOk;
+        ga4Sent = ga4Ok;
+      } catch (capiErr) {
+        console.warn('[SIMULATE] Lỗi gửi Server-Side Purchase:', capiErr);
+      }
+    }
+
+    // Gửi email xác nhận cho khách nếu có
     let emailResult = null;
     if (order.email) {
       emailResult = await sendPaymentSuccessEmail({
@@ -155,15 +255,15 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Mô phỏng thanh toán thành công',
-      order: paidOrder,
+      message: isGift ? 'Đã duyệt tặng 0đ thành công' : 'Đã duyệt thanh toán thành công',
+      order,
+      capiSent,
+      ga4Sent,
       emailResult,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Lỗi server';
     console.error('[SIMULATE PAYMENT] Lỗi:', err);
-    return NextResponse.json(
-      { success: false, error: err?.message || 'Lỗi server' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

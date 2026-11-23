@@ -7,22 +7,15 @@ import {
   payoutAffiliate,
 } from '@/lib/affiliateStore';
 import { getAllOrders } from '@/lib/orderStore';
+import { verifyAdminRequest } from '@/lib/adminAuth';
+import { escapeHtml } from '@/lib/tuvi/cleanReadingHtml';
 
 export const dynamic = 'force-dynamic';
 
-function isAuthorized(req: NextRequest): boolean {
-  const pin = req.headers.get('x-admin-pin') || req.nextUrl.searchParams.get('pin');
-  const validPins = [
-    process.env.ADMIN_PIN || 'thayton2026',
-    '0935058688',
-    'thayton2026',
-  ];
-  return !!pin && validPins.includes(pin);
-}
-
 export async function GET(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: 'Mã PIN bảo mật không chính xác' }, { status: 401 });
+  const auth = await verifyAdminRequest(req);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
   }
 
   try {
@@ -44,8 +37,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isAuthorized(req)) {
-    return NextResponse.json({ error: 'Mã PIN bảo mật không chính xác' }, { status: 401 });
+  const auth = await verifyAdminRequest(req);
+  if (!auth.authorized) {
+    return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
   }
 
   try {
@@ -94,11 +88,15 @@ export async function POST(req: NextRequest) {
 
     if (action === 'payout') {
       const { id, amount, note } = body;
-      if (!id || !amount) {
-        return NextResponse.json({ error: 'Thiếu ID CTV hoặc số tiền' }, { status: 400 });
+      const numAmount = Number(amount);
+      if (!id || !Number.isFinite(numAmount) || !Number.isInteger(numAmount) || numAmount <= 0) {
+        return NextResponse.json(
+          { error: 'Thiếu ID CTV hoặc số tiền chi trả không hợp lệ (phải là số nguyên dương)' },
+          { status: 400 }
+        );
       }
 
-      const updated = await payoutAffiliate(id, Number(amount), note);
+      const updated = await payoutAffiliate(id, numAmount, note);
 
       // Nếu CTV có email, gửi email xác nhận đã chi trả hoa hồng thành công
       if (updated && updated.email && updated.email.includes('@')) {
@@ -115,13 +113,13 @@ export async function POST(req: NextRequest) {
       <h2 style="color: #34d399; margin: 0; font-size: 18px;">✔ CHI TRẢ HOA HỒNG THÀNH CÔNG</h2>
     </div>
     <div style="padding: 24px; color: #cbd5e1; line-height: 1.6; font-size: 14px;">
-      <p>Xin chào <strong>${updated.name}</strong>,</p>
-      <p>Thầy Tôn đã hoàn tất chuyển khoản tiền hoa hồng cho bạn với số tiền: <b style="color: #34d399; font-size: 18px;">${formattedAmount}</b>.</p>
+      <p>Xin chào <strong>${escapeHtml(updated.name)}</strong>,</p>
+      <p>Thầy Tôn đã hoàn tất chuyển khoản tiền hoa hồng cho bạn với số tiền: <b style="color: #34d399; font-size: 18px;">${escapeHtml(formattedAmount)}</b>.</p>
       <div style="background: #0f172a; padding: 14px; border-radius: 8px; margin: 16px 0; border: 1px solid #1f2937;">
-        • Tài khoản nhận: <b>${updated.bankName || ''}</b> - <b>${updated.bankAccountNumber || ''}</b> (${updated.bankAccountName || ''})<br/>
-        • Ghi chú: <b>${note || `HOA HONG ${updated.code.toUpperCase()}`}</b>
+        • Tài khoản nhận: <b>${escapeHtml(updated.bankName || '')}</b> - <b>${escapeHtml(updated.bankAccountNumber || '')}</b> (${escapeHtml(updated.bankAccountName || '')})<br/>
+        • Ghi chú: <b>${escapeHtml(note || `HOA HONG ${updated.code.toUpperCase()}`)}</b>
       </div>
-      <p>Bạn có thể đăng nhập vào cổng <a href="https://tuvithayton.vn/ctv" style="color: #fbbf24; font-weight: bold;">tuvithayton.vn/ctv</a> để kiểm tra lịch sử chi trả và số dư ví mới nhất.</p>
+      <p>Bạn có thể đăng nhập vào cổng <a href="https://www.tuvithayton.vn/ctv" style="color: #fbbf24; font-weight: bold;">tuvithayton.vn/ctv</a> để kiểm tra lịch sử chi trả và số dư ví mới nhất.</p>
       <p>Chúc bạn thật nhiều may mắn và tiếp tục lan tỏa năng lượng tích cực cùng Tử Vi Thầy Tôn!</p>
     </div>
   </div>

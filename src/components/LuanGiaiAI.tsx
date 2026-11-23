@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, Copy, Check, AlertCircle, Crown, Gem, FileDown, RefreshCw, Compass, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Sparkles, Copy, Check, AlertCircle, Crown, Gem, FileDown, RefreshCw, Compass, X, List, Sun, Moon, PhoneCall } from 'lucide-react';
 import { ServiceTier, DuLieuDuongSo, LaSoData } from '@/types/tuvi';
 import { useLanguage } from '@/context/LanguageContext';
-import { exportReadingToPdf } from '@/lib/pdfExport';
 import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 import { isInAppBrowser, getInAppBrowserName } from '@/lib/inAppBrowser';
 import { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
@@ -17,6 +16,7 @@ interface LuanGiaiAIProps {
   tier?: ServiceTier;
   onUpgrade?: () => void;
   onUpgradeToExpert?: () => void;
+  onRetry?: () => void;
   isUpgrading?: boolean;
   duongSo?: DuLieuDuongSo;
   laSo?: LaSoData;
@@ -30,6 +30,7 @@ export default function LuanGiaiAI({
   tier = 'free',
   onUpgrade,
   onUpgradeToExpert,
+  onRetry,
   isUpgrading,
   duongSo,
   laSo,
@@ -41,23 +42,89 @@ export default function LuanGiaiAI({
   const [pdfProgressText, setPdfProgressText] = useState('');
   const [showInAppModal, setShowInAppModal] = useState(false);
   const [inAppName, setInAppName] = useState('');
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const [fontSizeLevel, setFontSizeLevel] = useState<'sm' | 'md' | 'lg'>('md');
+  const [isDarkReader, setIsDarkReader] = useState(false);
+  const [showToc, setShowToc] = useState(false);
 
-  const safeReadingHtml = cleanReadingHtml(readingHtml);
+  const safeReadingHtml = useMemo(() => cleanReadingHtml(readingHtml), [readingHtml]);
 
-  const handleCopy = () => {
+  // Trích xuất mục lục (H2/H3) & gắn ID neo an toàn (tránh trùng thuộc tính id/class) để người đọc bài dài nhảy nhanh từng chương
+  const { htmlWithAnchors, tocItems } = useMemo(() => {
+    if (!safeReadingHtml) return { htmlWithAnchors: '', tocItems: [] as { id: string; title: string }[] };
+    const items: { id: string; title: string }[] = [];
+    let idx = 0;
+    const injected = safeReadingHtml.replace(
+      /<(h[23])([^>]*)>([\s\S]*?)<\/\1>/gi,
+      (_match, tag, rawAttrs, inner) => {
+        const plainTitle = String(inner || '')
+          .replace(/<[^>]+>/g, '')
+          .replace(/&amp;/g, '&')
+          .replace(/&nbsp;/g, ' ')
+          .trim();
+        const anchorId = `tuvi-sec-${idx++}`;
+        if (plainTitle.length > 0 && plainTitle.length <= 140) {
+          items.push({ id: anchorId, title: plainTitle });
+        }
+        let attrs = String(rawAttrs || '').replace(/\s+id\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+        if (/\s+class\s*=\s*(["'])([\s\S]*?)\1/i.test(attrs)) {
+          attrs = attrs.replace(/\s+class\s*=\s*(["'])([\s\S]*?)\1/i, (_m, q, cls) =>
+            String(cls).includes('scroll-mt-24') ? ` class=${q}${cls}${q}` : ` class=${q}${cls} scroll-mt-24${q}`
+          );
+          return `<${tag}${attrs} id="${anchorId}">${inner}</${tag}>`;
+        }
+        return `<${tag}${attrs} id="${anchorId}" class="scroll-mt-24">${inner}</${tag}>`;
+      }
+    );
+    return { htmlWithAnchors: injected, tocItems: items };
+  }, [safeReadingHtml]);
+
+  // Bộ đếm thời gian & bước tiến trình khi AI đang luận giải
+  useEffect(() => {
+    if (!isLoading) {
+      setElapsedSec(0);
+      return;
+    }
+    const start = Date.now();
+    const timer = setInterval(() => {
+      setElapsedSec(Math.floor((Date.now() - start) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isLoading]);
+
+  const handleCopy = async () => {
     if (!safeReadingHtml) return;
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = safeReadingHtml;
-    navigator.clipboard.writeText(tempDiv.innerText || tempDiv.textContent || '');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const text = tempDiv.innerText || tempDiv.textContent || '';
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        alert('Trình duyệt không cho phép sao chép tự động. Quý khách vui lòng bôi đen văn bản để sao chép.');
+      }
+    }
   };
 
   const executeExportPdf = async () => {
     if (!safeReadingHtml || isExportingPdf) return;
     setIsExportingPdf(true);
-    setPdfProgressText('Đang tạo PDF...');
+    setPdfProgressText('Đang tải bộ xuất PDF...');
     try {
+      const { exportReadingToPdf } = await import('@/lib/pdfExport');
       await exportReadingToPdf({
         duongSo,
         laSo,
@@ -67,6 +134,8 @@ export default function LuanGiaiAI({
       });
     } catch (err) {
       console.error('Lỗi khi xuất PDF:', err);
+      const msg = err instanceof Error ? err.message : 'Vui lòng mở trang bằng Safari/Chrome và thử lại.';
+      alert(`Không thể xuất file PDF lúc này (${msg}).`);
     } finally {
       setIsExportingPdf(false);
       setPdfProgressText('');
@@ -175,45 +244,108 @@ export default function LuanGiaiAI({
       </div>
 
       {isLoading && (
-        <div className="imperial-card border border-amber-500/40 rounded-3xl p-8 sm:p-12 flex flex-col items-center justify-center text-center shadow-2xl backdrop-blur-xl">
-          <div className="relative w-20 h-20 mb-5 flex items-center justify-center">
+        <div className="imperial-card border border-amber-500/40 rounded-3xl p-6 sm:p-10 flex flex-col items-center justify-center text-center shadow-2xl backdrop-blur-xl space-y-4">
+          <div className="relative w-20 h-20 flex items-center justify-center">
             <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 border-t-amber-400 animate-spin" />
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 flex items-center justify-center font-serif font-black text-lg shadow-lg shadow-amber-500/40">
               ☯
             </div>
           </div>
-          <h3 className="text-xl sm:text-2xl font-extrabold text-gold-gradient tracking-wider uppercase font-serif">
-            {isUpgrading
-              ? isExpert
-                ? t('reading.loadingUpgradingExpert', 'Thầy Đang Nâng Cấp Luận Giải Chuyên Gia Expert...')
-                : t('reading.loadingUpgrading', 'Thầy Đang Nâng Cấp Luận Giải Pro...')
-              : t('reading.loadingNormal', 'Thầy Đang Quán Tưởng...')}
-          </h3>
-          <p className="text-sm sm:text-base text-slate-300 mt-2.5 max-w-lg leading-relaxed">
-            {isExpert
-              ? t(
-                  'reading.loadingExpertDesc',
-                  'Thầy Tôn đang định tâm quán tưởng thâm sâu toàn diện từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ). Quý khách vui lòng tịnh tâm đợi khoảng 45 - 90 giây!'
-                )
-              : isPro || isUpgrading
-              ? t(
-                  'reading.loadingProDesc',
-                  'Thầy Tôn đang định tâm quán tưởng thâm sâu, soi rọi 14 Chính tinh, đối chiếu Tướng pháp và luận giải vận khí 4 mùa. Quý khách vui lòng tịnh tâm đợi trong giây lát!'
-                )
-              : t(
-                  'reading.loadingFreeDesc',
-                  'Thầy Tôn đang định tâm chắt lọc huyền cơ lá số tử vi và bản mệnh. Quý khách vui lòng kiên nhẫn đợi trong giây lát!'
-                )}
+          <div>
+            <h3 className="text-xl sm:text-2xl font-extrabold text-gold-gradient tracking-wider uppercase font-serif">
+              {isUpgrading
+                ? isExpert
+                  ? t('reading.loadingUpgradingExpert', 'Thầy Đang Nâng Cấp Luận Giải Chuyên Gia Expert...')
+                  : t('reading.loadingUpgrading', 'Thầy Đang Nâng Cấp Luận Giải Pro...')
+                : t('reading.loadingNormal', 'Thầy Đang Quán Tưởng...')}
+            </h3>
+            <p className="text-sm sm:text-base text-slate-300 mt-2 max-w-lg mx-auto leading-relaxed">
+              {isExpert
+                ? t(
+                    'reading.loadingExpertDesc',
+                    'Thầy Tôn đang định tâm quán tưởng thâm sâu toàn diện từng cung trong 12 Cung + Cung Thân, độ dài gấp 2 lần Bản Pro (~3.600 - 5.000 từ). Quý khách vui lòng tịnh tâm đợi khoảng 45 - 90 giây!'
+                  )
+                : isPro || isUpgrading
+                ? t(
+                    'reading.loadingProDesc',
+                    'Thầy Tôn đang định tâm quán tưởng thâm sâu, soi rọi 14 Chính tinh, đối chiếu Tướng pháp và luận giải vận khí 4 mùa. Quý khách vui lòng tịnh tâm đợi trong giây lát!'
+                  )
+                : t(
+                    'reading.loadingFreeDesc',
+                    'Thầy Tôn đang định tâm chắt lọc huyền cơ lá số tử vi và bản mệnh. Quý khách vui lòng kiên nhẫn đợi trong giây lát!'
+                  )}
+            </p>
+          </div>
+
+          {/* 4 bước tiến trình trực quan + đếm giây */}
+          <div className="w-full max-w-md bg-slate-950/75 border border-slate-800 rounded-2xl p-4 text-left space-y-2">
+            {[
+              { label: 'An 108+ sao & Tứ Hóa chuẩn phái Tân Biên', threshold: 0 },
+              { label: 'Đối chiếu Đại Vận & 3 Tầng Vận Hạn năm xem', threshold: isExpert ? 12 : 6 },
+              { label: 'Hợp nhất Bản Mệnh, Nhân Tướng & Chỉ Tay', threshold: isExpert ? 28 : 14 },
+              { label: 'Chắp bút bài luận giải & sách lược hóa giải', threshold: isExpert ? 48 : 24 },
+            ].map((step, i) => {
+              const isDone = elapsedSec >= step.threshold + (isExpert ? 12 : 6);
+              const isActive = !isDone && elapsedSec >= step.threshold;
+              return (
+                <div key={i} className="flex items-center gap-2.5 text-xs sm:text-sm">
+                  <span
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                      isDone
+                        ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/50'
+                        : isActive
+                        ? 'bg-amber-500/25 text-amber-300 border border-amber-400/60 animate-pulse'
+                        : 'bg-slate-800 text-slate-500 border border-slate-700'
+                    }`}
+                  >
+                    {isDone ? '✓' : i + 1}
+                  </span>
+                  <span className={isDone ? 'text-emerald-300' : isActive ? 'text-amber-200 font-semibold' : 'text-slate-500'}>
+                    {step.label}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <span>Thời gian đang luận: <strong className="text-amber-300">{elapsedSec}s</strong></span>
+              <span className="text-emerald-400/90">✓ Tự động lưu vào Sổ Tay</span>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 max-w-md">
+            💡 Quý khách có thể yên tâm chờ đợi — bài luận sau khi hoàn tất sẽ được tự động lưu vĩnh viễn vào <strong>Sổ Tay Số Mệnh</strong> của bạn.
           </p>
         </div>
       )}
 
       {error && !isLoading && (
-        <div className="bg-red-950/70 border border-red-500/40 rounded-xl p-5 text-red-200 flex items-start gap-3 shadow-lg">
-          <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-semibold text-red-300 text-base">{t('reading.errorTitle', 'Thông báo từ Thầy Tôn:')}</h4>
-            <p className="text-base sm:text-sm mt-1 whitespace-pre-wrap leading-relaxed">{error}</p>
+        <div className="bg-red-950/75 border border-red-500/45 rounded-2xl p-5 sm:p-6 text-red-200 flex flex-col sm:flex-row items-start justify-between gap-4 shadow-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-red-300 text-base">{t('reading.errorTitle', 'Thông báo từ Thầy Tôn:')}</h4>
+              <p className="text-sm sm:text-base mt-1 whitespace-pre-wrap leading-relaxed">{error}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm transition cursor-pointer shadow-md"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Thử luận giải lại</span>
+              </button>
+            )}
+            <a
+              href="https://zalo.me/0935058688"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-500/35 font-semibold text-xs sm:text-sm transition"
+            >
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>Zalo hỗ trợ</span>
+            </a>
           </div>
         </div>
       )}
@@ -272,7 +404,13 @@ export default function LuanGiaiAI({
       )}
 
       {safeReadingHtml && !isLoading && (
-        <div className="relative royal-scroll-paper text-slate-800 rounded-3xl p-5 sm:p-10 print:shadow-none print:p-4">
+        <div
+          className={`relative rounded-3xl p-5 sm:p-10 print:shadow-none print:p-4 transition-colors ${
+            isDarkReader
+              ? 'bg-slate-950/95 text-slate-100 border border-amber-500/35 shadow-2xl'
+              : 'royal-scroll-paper text-slate-800'
+          }`}
+        >
           {/* 4 Hoa Văn Góc Sớ Hoàng Gia */}
           <svg className="pointer-events-none absolute top-3 left-3 w-6 h-6 text-amber-700/40 print:hidden" viewBox="0 0 24 24" fill="none">
             <path d="M2 10V2H10M5 7V5H7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -375,7 +513,7 @@ export default function LuanGiaiAI({
               <button
                 type="button"
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm sm:text-xs font-semibold transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm sm:text-xs font-semibold transition cursor-pointer"
               >
                 {copied ? (
                   <>
@@ -392,9 +530,123 @@ export default function LuanGiaiAI({
             </div>
           </div>
 
+          {/* Thanh tiện ích đọc bài dài: Mục lục nhanh, Cỡ chữ A-/A/A+, Chế độ Ban Đêm */}
           <div
-            className="prose max-w-none text-justify text-base sm:text-lg leading-relaxed sm:leading-loose space-y-4 font-sans"
-            dangerouslySetInnerHTML={{ __html: safeReadingHtml }}
+            className={`flex flex-wrap items-center justify-between gap-2 mb-5 pb-3 border-b print:hidden ${
+              isDarkReader ? 'border-slate-800' : 'border-amber-700/15'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {tocItems.length >= 2 && (
+                <button
+                  type="button"
+                  onClick={() => setShowToc((prev) => !prev)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer border ${
+                    isDarkReader
+                      ? 'bg-slate-900 hover:bg-slate-800 text-amber-300 border-amber-500/35'
+                      : 'bg-amber-50 hover:bg-amber-100 text-amber-950 border-amber-300/80'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>{showToc ? 'Ẩn Mục Lục' : `Mục Lục (${tocItems.length} phần)`}</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {/* Cỡ chữ */}
+              <div
+                className={`inline-flex items-center rounded-lg border p-0.5 ${
+                  isDarkReader ? 'bg-slate-900 border-slate-700' : 'bg-amber-50/80 border-amber-300/60'
+                }`}
+                role="group"
+                aria-label="Cỡ chữ bài đọc"
+              >
+                {(['sm', 'md', 'lg'] as const).map((lvl, i) => (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => setFontSizeLevel(lvl)}
+                    className={`px-2 py-1 rounded text-xs font-bold transition cursor-pointer ${
+                      fontSizeLevel === lvl
+                        ? isDarkReader
+                          ? 'bg-amber-500 text-slate-950'
+                          : 'bg-amber-700 text-white'
+                        : isDarkReader
+                        ? 'text-slate-300 hover:text-white'
+                        : 'text-amber-900 hover:bg-amber-200/60'
+                    }`}
+                    title={lvl === 'sm' ? 'Chữ nhỏ' : lvl === 'md' ? 'Chữ vừa' : 'Chữ lớn'}
+                  >
+                    {i === 0 ? 'A-' : i === 1 ? 'A' : 'A+'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Đọc Ban Đêm / Giấy Sớ */}
+              <button
+                type="button"
+                onClick={() => setIsDarkReader((prev) => !prev)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${
+                  isDarkReader
+                    ? 'bg-slate-900 hover:bg-slate-800 text-amber-300 border-slate-700'
+                    : 'bg-amber-50/80 hover:bg-amber-100 text-amber-950 border-amber-300/60'
+                }`}
+                title={isDarkReader ? 'Chuyển về nền Giấy Sớ Sáng' : 'Chuyển sang chế độ Đọc Ban Đêm dịu mắt'}
+              >
+                {isDarkReader ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-amber-800" />}
+                <span>{isDarkReader ? 'Giấy Sớ' : 'Đọc Đêm'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Danh sách mục lục nhanh khi mở */}
+          {showToc && tocItems.length >= 2 && (
+            <div
+              className={`mb-6 rounded-2xl p-4 border print:hidden ${
+                isDarkReader
+                  ? 'bg-slate-900/90 border-amber-500/30 text-slate-200'
+                  : 'bg-amber-50/90 border-amber-300/70 text-amber-950'
+              }`}
+            >
+              <div className="text-xs font-extrabold uppercase tracking-wider mb-2 opacity-80">
+                Đi nhanh tới từng phần luận giải:
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {tocItems.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById(item.id);
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      setShowToc(false);
+                    }}
+                    className={`text-left text-xs sm:text-sm px-2.5 py-1.5 rounded-lg transition cursor-pointer truncate ${
+                      isDarkReader
+                        ? 'hover:bg-slate-800 text-amber-200'
+                        : 'hover:bg-amber-200/70 text-amber-950 font-medium'
+                    }`}
+                  >
+                    <span className="opacity-60 mr-1.5">{idx + 1}.</span>
+                    <span>{item.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`prose max-w-none text-left sm:text-justify leading-relaxed sm:leading-loose space-y-4 font-sans ${
+              isDarkReader ? 'prose-invert text-slate-100 [&_h2]:text-amber-300 [&_h3]:text-amber-300 [&_strong]:text-amber-200 [&_b]:text-amber-200' : ''
+            } ${
+              fontSizeLevel === 'sm'
+                ? 'text-sm sm:text-base'
+                : fontSizeLevel === 'lg'
+                ? 'text-lg sm:text-xl'
+                : 'text-base sm:text-lg'
+            }`}
+            dangerouslySetInnerHTML={{ __html: htmlWithAnchors }}
           />
 
           {tier === 'free' && (onUpgrade || onUpgradeToExpert) && (

@@ -6,23 +6,15 @@ import {
   deleteOfflineChart,
   OfflineChartItem,
 } from '@/lib/offlineChartStore';
+import { verifyAdminRequest } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
-function verifyPin(req: NextRequest): boolean {
-  const pin = req.headers.get('x-admin-pin') || req.nextUrl.searchParams.get('pin');
-  const validPins = [
-    process.env.ADMIN_PIN || 'thayton2026',
-    '0935058688',
-    'thayton2026',
-  ];
-  return Boolean(pin && validPins.includes(pin));
-}
-
 export async function GET(req: NextRequest) {
   try {
-    if (!verifyPin(req)) {
-      return NextResponse.json({ error: 'Mã PIN bảo mật không chính xác' }, { status: 401 });
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
     }
 
     const charts = await getAllOfflineCharts();
@@ -34,8 +26,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    if (!verifyPin(req)) {
-      return NextResponse.json({ error: 'Mã PIN bảo mật không chính xác' }, { status: 401 });
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -59,8 +52,9 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    if (!verifyPin(req)) {
-      return NextResponse.json({ error: 'Mã PIN bảo mật không chính xác' }, { status: 401 });
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
     }
 
     const id = req.nextUrl.searchParams.get('id');

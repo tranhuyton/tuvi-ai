@@ -1,45 +1,114 @@
 import { NextResponse } from 'next/server';
-import { getOrderByCode, markOrderPaid } from '@/lib/orderStore';
+import { getOrderByCode, markOrderPaidAtomic } from '@/lib/orderStore';
 import { sendPaymentSuccessEmail } from '@/lib/email';
 import { adminSupabase as supabase } from '@/lib/supabaseAdmin';
 import { markVoucherUsedAndCancelAllForUser } from '@/lib/voucherStore';
 import { decodeOrderCapiMeta, sendMetaCapiEvent } from '@/lib/metaCapi';
 import { sendGa4ServerPurchase } from '@/lib/ga4Mp';
+import { timingSafeStringEqual } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
+function verifyWebhookAuth(req: Request): boolean {
+  const configuredSecrets = [
+    process.env.SEPAY_WEBHOOK_API_KEY,
+    process.env.CASSO_SECURE_TOKEN,
+    process.env.PAYMENT_WEBHOOK_SECRET,
+  ]
+    .map((s) => (s || '').trim())
+    .filter(Boolean);
+
+  // Fail-closed: Tuyệt đối không chấp nhận webhook nếu chưa cấu hình khóa bảo mật!
+  if (configuredSecrets.length === 0) {
+    console.error(
+      '[PAYMENT WEBHOOK][SECURITY CRITICAL] Thiếu SEPAY_WEBHOOK_API_KEY / CASSO_SECURE_TOKEN / PAYMENT_WEBHOOK_SECRET — từ chối request!'
+    );
+    return false;
+  }
+
+  const authHeader = (req.headers.get('authorization') || '').trim();
+  let extractedAuthToken = '';
+  if (/^(?:apikey|bearer)\s+/i.test(authHeader)) {
+    extractedAuthToken = authHeader.replace(/^(?:apikey|bearer)\s+/i, '').trim();
+  } else if (authHeader) {
+    extractedAuthToken = authHeader;
+  }
+
+  const candidates = [
+    extractedAuthToken,
+    (req.headers.get('secure-token') || '').trim(),
+    (req.headers.get('x-webhook-secret') || '').trim(),
+    (req.headers.get('x-sepay-apikey') || '').trim(),
+  ].filter(Boolean);
+
+  return candidates.some((provided) =>
+    configuredSecrets.some((expected) => timingSafeStringEqual(provided, expected))
+  );
+}
+
 /**
- * Endpoint Webhook nhận thông báo chuyển khoản ngân hàng (SePay / Casso / PayOS / Custom)
+ * Trích xuất danh sách mã đơn hàng TVxxxxx theo đúng ranh giới từ (tránh khớp nhầm CTV091234 hay dính ngày đằng sau)
+ */
+function extractOrderCodeCandidates(fields: Array<unknown>): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const regex = /(?<![A-Z0-9])TV\s*[:\-_]?\s*(\d{5,8})(?!\d)/gi;
+
+  for (const field of fields) {
+    if (!field) continue;
+    const str = String(field);
+    regex.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(str)) !== null) {
+      const candidate = `TV${m[1]}`.toUpperCase();
+      if (!seen.has(candidate)) {
+        seen.add(candidate);
+        out.push(candidate);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Endpoint Webhook nhận thông báo chuyển khoản ngân hàng (SePay / Casso / PayOS)
  */
 export async function POST(req: Request) {
+  if (!verifyWebhookAuth(req)) {
+    console.warn('[PAYMENT WEBHOOK] Từ chối request không đúng chữ ký/API Key webhook');
+    return NextResponse.json({ success: false, error: 'Unauthorized webhook' }, { status: 401 });
+  }
+
   try {
     const payload = await req.json();
-    console.log('[PAYMENT WEBHOOK] Nhận dữ liệu webhook:', JSON.stringify(payload));
+    console.log('[PAYMENT WEBHOOK] Nhận webhook hợp lệ từ cổng thanh toán');
 
-    // Thu thập các giao dịch cần xử lý
     interface IncomingTx {
+      orderedFields: Array<unknown>;
       codeCandidate: string;
       amount: number;
       txId: string;
       rawContent: string;
-      transferType?: 'in' | 'out';
+      transferType: 'in' | 'out';
     }
 
     const txList: IncomingTx[] = [];
 
-    // 1. Trường hợp payload trực tiếp từ Casso: { data: [ { description, amount, id, ... } ] }
+    // 1. Casso: { data: [ { description, amount, id, ... } ] }
     if (Array.isArray(payload.data)) {
       for (const item of payload.data) {
+        const rawAmt = Number(item.amount || 0);
         txList.push({
-          codeCandidate: item.description || '',
-          amount: Math.abs(Number(item.amount || 0)),
-          txId: String(item.id || item.tid || ''),
-          rawContent: item.description || '',
-          transferType: Number(item.amount || 0) < 0 ? 'out' : 'in',
+          orderedFields: [item.description, item.referenceCode, item.tid],
+          codeCandidate: String(item.description || ''),
+          amount: Math.abs(rawAmt),
+          txId: String(item.id || item.tid || item.referenceCode || ''),
+          rawContent: String(item.description || ''),
+          transferType: rawAmt < 0 ? 'out' : 'in',
         });
       }
     }
-    // 2. Trường hợp SePay: { content, description, transferAmount, transferType, code, id, ... }
+    // 2. SePay: { content, description, transferAmount, transferType, code, id, ... }
     else if (
       payload.transferAmount !== undefined ||
       payload.amount !== undefined ||
@@ -47,124 +116,113 @@ export async function POST(req: Request) {
       payload.description !== undefined ||
       payload.code !== undefined
     ) {
-      const fullContent = [
+      const orderedFields = [
         payload.code,
         payload.content,
         payload.description,
-        payload.subAccount,
         payload.referenceCode,
-      ]
-        .filter(Boolean)
-        .join(' ');
+        payload.subAccount,
+      ];
+      const fullContent = orderedFields.filter(Boolean).join(' ');
+      const normalizedTransferType = String(payload.transferType || 'in').trim().toLowerCase();
 
       txList.push({
+        orderedFields,
         codeCandidate: fullContent,
-        amount: Number(payload.transferAmount || payload.amount || 0),
-        txId: String(payload.id || payload.referenceCode || payload.tid || `sepay_${Date.now()}`),
+        amount: Math.abs(Number(payload.transferAmount || payload.amount || 0)),
+        txId: String(payload.id || payload.referenceCode || payload.tid || ''),
         rawContent: fullContent,
-        transferType: payload.transferType === 'out' ? 'out' : 'in',
+        transferType: normalizedTransferType === 'out' ? 'out' : 'in',
       });
     }
-    // 3. Trường hợp PayOS: { data: { orderCode, amount, description, ... } }
+    // 3. PayOS: { data: { orderCode, amount, description, ... } }
     else if (payload.data && typeof payload.data === 'object') {
       const pData = payload.data;
       txList.push({
+        orderedFields: [pData.orderCode, pData.description, pData.reference],
         codeCandidate: String(pData.orderCode || pData.description || ''),
-        amount: Number(pData.amount || 0),
+        amount: Math.abs(Number(pData.amount || 0)),
         txId: String(pData.paymentLinkId || pData.reference || ''),
-        rawContent: pData.description || '',
-        transferType: 'in',
-      });
-    }
-    // 4. Trường hợp payload tùy chỉnh / Manual test: { orderCode, amount, transactionId }
-    else if (payload.orderCode) {
-      txList.push({
-        codeCandidate: String(payload.orderCode),
-        amount: Number(payload.amount || 0),
-        txId: String(payload.transactionId || `tx_${Date.now()}`),
-        rawContent: payload.orderCode,
+        rawContent: String(pData.description || ''),
         transferType: 'in',
       });
     }
 
     if (txList.length === 0) {
-      return NextResponse.json({ success: false, message: 'Payload không chứa giao dịch nhận diện được' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: 'Payload không chứa giao dịch nhận diện được' },
+        { status: 400 }
+      );
     }
 
     const results = [];
 
     for (const tx of txList) {
-      // 0. Kiểm tra nếu đây là giao dịch Admin quét QR trả hoa hồng cho CTV (Nội dung: HOA HONG <MÃ_CTV>)
-      const payoutMatch = tx.codeCandidate.match(/HOA\s*HONG\s*[:\-_]?\s*([A-Z0-9_-]{2,25})/i);
-      if (payoutMatch && tx.amount > 0) {
+      // 0. Giao dịch Tiền Ra (out) Admin chuyển hoa hồng cho CTV (Nội dung: HOA HONG <MÃ_CTV>)
+      const payoutMatch = tx.codeCandidate.match(/(?<![A-Z0-9])HOA\s*HONG\s*[:\-_]?\s*([A-Z0-9_]{2,25})(?![A-Z0-9_])/i);
+      if (payoutMatch && tx.amount > 0 && tx.transferType === 'out') {
         const affCode = payoutMatch[1].toLowerCase();
-        const { getAffiliateByCode, payoutAffiliate } = await import('@/lib/affiliateStore');
+        const { getAffiliateByCode, settleAffiliatePayout } = await import('@/lib/affiliateStore');
         const aff = await getAffiliateByCode(affCode);
         if (aff) {
-          const txMarker = `tx#${tx.txId}`;
-          if (aff.notes && aff.notes.includes(txMarker)) {
-            console.log(`[PAYMENT WEBHOOK] Giao dịch chi trả hoa hồng ${txMarker} cho CTV ${affCode} đã được xử lý trước đó.`);
-            results.push({ code: `PAYOUT_${affCode.toUpperCase()}`, status: 'ALREADY_PROCESSED' });
-            continue;
-          }
-
-          await payoutAffiliate(aff.id, tx.amount, `Tự động trừ số dư qua VietQR (${txMarker})`);
-          console.log(`[PAYMENT WEBHOOK] ĐÃ TỰ ĐỘNG TRỪ SỐ DƯ RÚT TIỀN ${tx.amount.toLocaleString('vi-VN')}đ CHO CTV ${affCode}`);
-          results.push({
-            code: `PAYOUT_${affCode.toUpperCase()}`,
-            affiliateCode: affCode,
-            amount: tx.amount,
-            status: 'PAYOUT_CONFIRMED',
+          const bankTxId = tx.txId ? `sepay_out_${tx.txId}` : undefined;
+          const settleRes = await settleAffiliatePayout({
+            affiliateId: aff.id,
+            amount: Math.round(tx.amount),
+            bankTxId,
+            note: `Tự động trừ số dư qua VietQR (${bankTxId || 'bank_out'})`,
           });
+          if (settleRes.alreadyProcessed) {
+            results.push({ code: `PAYOUT_${affCode.toUpperCase()}`, status: 'ALREADY_PROCESSED' });
+          } else if (settleRes.ok) {
+            console.log(
+              `[PAYMENT WEBHOOK] ĐÃ TỰ ĐỘNG TRỪ SỐ DƯ RÚT TIỀN ${tx.amount.toLocaleString('vi-VN')}đ CHO CTV ${affCode}`
+            );
+            results.push({
+              code: `PAYOUT_${affCode.toUpperCase()}`,
+              affiliateCode: affCode,
+              amount: tx.amount,
+              status: 'PAYOUT_CONFIRMED',
+            });
+          } else {
+            console.warn('[PAYMENT WEBHOOK] Không thể quyết toán CTV:', settleRes.error);
+            results.push({
+              code: `PAYOUT_${affCode.toUpperCase()}`,
+              status: 'PAYOUT_REJECTED',
+              error: settleRes.error,
+            });
+          }
           continue;
         }
       }
 
-      // Nếu là giao dịch Tiền Ra (out) thông thường (không phải trả hoa hồng CTV), bỏ qua an toàn để không kích hoạt nhầm đơn hàng của khách
       if (tx.transferType === 'out') {
         console.log('[PAYMENT WEBHOOK] Bỏ qua giao dịch tiền ra thông thường:', tx.rawContent);
-        results.push({ code: tx.txId, status: 'IGNORED_OUTGOING_TX' });
+        results.push({ code: tx.txId || 'OUT_TX', status: 'IGNORED_OUTGOING_TX' });
         continue;
       }
 
-      // 1. Tìm mã đơn TVxxxxx (hỗ trợ có khoảng trắng, gạch nối: TV49354, TV 49354, TV-49354, TV: 49354)
-      const match = tx.codeCandidate.match(/TV\s*[:\-_]?\s*(\d{4,8})/i);
-      const matchedCode = match ? `TV${match[1]}`.toUpperCase() : null;
-
+      // 1. Tìm tất cả mã đơn TVxxxxx đúng ranh giới từ và thử khớp với DB
+      const candidates = extractOrderCodeCandidates(tx.orderedFields);
       let order = null;
-      if (matchedCode) {
-        order = await getOrderByCode(matchedCode);
-      }
+      let matchedCode: string | null = null;
 
-      // Fallback thông minh: Nếu không tìm thấy mã trong nội dung,
-      // tìm đơn hàng PENDING gần nhất (trong 30 phút qua) có đúng số tiền khớp
-      if (!order && tx.amount > 0) {
-        try {
-          const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-          const { data: candidateOrders } = await supabase
-            .from('tuvi_orders')
-            .select('*')
-            .eq('status', 'PENDING')
-            .eq('amount', tx.amount)
-            .gte('created_at', thirtyMinsAgo)
-            .order('created_at', { ascending: false })
-            .limit(1);
-
-          if (candidateOrders && candidateOrders.length > 0) {
-            const cand = candidateOrders[0];
-            console.log(`[PAYMENT WEBHOOK] Khớp fallback đơn PENDING gần nhất: ${cand.order_code}`);
-            order = await getOrderByCode(cand.order_code);
-          }
-        } catch (e) {
-          console.warn('[PAYMENT WEBHOOK] Lỗi fallback khớp theo số tiền:', e);
+      for (const cand of candidates) {
+        const found = await getOrderByCode(cand);
+        if (found) {
+          order = found;
+          matchedCode = cand;
+          break;
         }
       }
 
-      if (!order && matchedCode) {
-        console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong DB, tự động khởi tạo để duyệt`);
+      // KHÔNG khớp mù theo số tiền sang đơn PENDING của người dùng bất kỳ (chống cướp đơn / kích hoạt nhầm giao dịch cá nhân!)
+      if (!order && candidates.length > 0 && tx.amount > 0) {
+        matchedCode = candidates[0];
+        console.warn(`[PAYMENT WEBHOOK] Đơn ${matchedCode} chưa có trong DB, khởi tạo bản ghi đối soát`);
         const { createOrder } = await import('@/lib/orderStore');
         const pType =
-          tx.amount >= 600000
+          tx.amount >= 699000
             ? 'course_tuvi'
             : tx.amount >= 269000
             ? 'reading_expert'
@@ -180,13 +238,18 @@ export async function POST(req: Request) {
         order = await createOrder({
           customCode: matchedCode,
           paymentType: pType,
-          amount: tx.amount || 49000,
+          amount: tx.amount,
           hoTen: 'Đương số',
         });
       }
 
       if (!order) {
-        console.warn('[PAYMENT WEBHOOK] Không thể xác định đơn hàng cho giao dịch:', tx);
+        console.warn('[PAYMENT WEBHOOK][UNMATCHED_BANK_TX] Không tìm thấy mã đơn TVxxxxx hợp lệ:', {
+          txId: tx.txId,
+          amount: tx.amount,
+          rawContent: tx.rawContent.slice(0, 200),
+        });
+        results.push({ code: tx.txId || 'UNMATCHED', status: 'UNMATCHED_MANUAL_REVIEW' });
         continue;
       }
 
@@ -196,10 +259,27 @@ export async function POST(req: Request) {
         continue;
       }
 
-      // Chống gian lận chuyển thiếu tiền (cho phép sai số nhỏ tối đa 1.000đ)
-      if (tx.amount > 0 && order.amount > 0 && tx.amount < order.amount - 1000) {
+      // Tuyệt đối không hồi sinh đơn hàng đã bị hủy (CANCELLED)
+      if (order.status === 'CANCELLED') {
+        console.warn(`[PAYMENT WEBHOOK] Từ chối kích hoạt lại đơn đã hủy ${order.orderCode} — cần Admin đối soát.`);
+        results.push({ code: order.orderCode, status: 'ORDER_CANCELLED_REVIEW' });
+        continue;
+      }
+
+      // Kiểm tra hạn thanh toán cho đơn giảm giá Voucher (cho phép ân hạn 2 giờ phòng nghẽn ngân hàng)
+      if (order.voucherCode && order.expiresAt) {
+        const expMs = new Date(order.expiresAt).getTime();
+        if (Number.isFinite(expMs) && Date.now() > expMs + 2 * 60 * 60 * 1000) {
+          console.warn(`[PAYMENT WEBHOOK] Đơn voucher ${order.orderCode} chuyển khoản sau khi quá hạn ưu đãi.`);
+          results.push({ code: order.orderCode, status: 'VOUCHER_EXPIRED_REVIEW' });
+          continue;
+        }
+      }
+
+      // Chống gian lận chuyển thiếu tiền hoặc giao dịch 0đ (cho phép sai số nhỏ tối đa 1.000đ)
+      if (!Number.isFinite(tx.amount) || tx.amount <= 0 || (order.amount > 0 && tx.amount < order.amount - 1000)) {
         console.warn(
-          `[PAYMENT WEBHOOK] Giao dịch ${order.orderCode} chuyển thiếu tiền: nhận ${tx.amount}đ / cần ${order.amount}đ`
+          `[PAYMENT WEBHOOK] Giao dịch ${order.orderCode} không đủ số tiền: nhận ${tx.amount}đ / cần ${order.amount}đ`
         );
         results.push({
           code: order.orderCode,
@@ -210,14 +290,19 @@ export async function POST(req: Request) {
         continue;
       }
 
-      // Đọc lại ngữ cảnh trình duyệt (fbp/fbc/ip/ua) đã lưu tạm trước khi ghi đè transaction_id ngân hàng
-      const savedCapiMeta = decodeOrderCapiMeta(order.transactionId);
+      const savedCapiMeta = order.capiMeta || decodeOrderCapiMeta(order.transactionId);
 
-      // Đánh dấu đơn hàng là đã thanh toán
-      await markOrderPaid(order.orderCode, tx.txId);
+      // Chuyển trạng thái PENDING -> PAID hoàn toàn nguyên tử
+      const txIdSafe = tx.txId || `bank_${Date.now()}`;
+      const { transitioned } = await markOrderPaidAtomic(order.orderCode, txIdSafe);
+      if (!transitioned) {
+        console.log(`[PAYMENT WEBHOOK] Đơn hàng ${order.orderCode} đã được xử lý đồng thời trước đó.`);
+        results.push({ code: order.orderCode, status: 'ALREADY_PAID' });
+        continue;
+      }
       console.log(`[PAYMENT WEBHOOK] ĐÃ KÍCH HOẠT ĐƠN HÀNG THÀNH CÔNG: ${order.orderCode}`);
 
-      // Đánh dấu Voucher đã sử dụng (nếu có) và tự động hủy mọi Voucher còn lại của khách hàng này (Stop-on-Purchase)
+      // Tiêu thụ Voucher nguyên tử và hủy mọi Voucher còn lại của khách (Stop-on-Purchase)
       await markVoucherUsedAndCancelAllForUser({
         voucherCode: order.voucherCode,
         orderCode: order.orderCode,
@@ -225,33 +310,47 @@ export async function POST(req: Request) {
         email: order.email,
       });
 
-      // Ghi nhận hoa hồng cho CTV nếu đơn hàng có mã Affiliate
-      if (order.affiliateCode) {
+      // CHÍNH SÁCH HOA HỒNG CTV: Đơn có mã giảm giá / discountAmount > 0 => TUYỆT ĐỐI KHÔNG TRẢ HOA HỒNG CTV!
+      const isDiscountedOrder = Boolean(order.voucherCode) || Number(order.discountAmount || 0) > 0;
+      if (order.affiliateCode && !isDiscountedOrder && !order.commissionRecordedAt) {
         try {
           const { recordAffiliateCommission } = await import('@/lib/affiliateStore');
           const comm = await recordAffiliateCommission(
             order.affiliateCode,
             order.amount,
             order.orderCode,
-            order.paymentType
+            order.paymentType,
+            order.email
           );
-          console.log(`[PAYMENT WEBHOOK] Đã cộng hoa hồng ${comm.toLocaleString('vi-VN')}đ cho CTV ${order.affiliateCode}`);
+          if (comm > 0) {
+            await supabase
+              .from('tuvi_orders')
+              .update({
+                commission_amount: comm,
+                commission_recorded_at: new Date().toISOString(),
+              })
+              .eq('order_code', order.orderCode);
+            console.log(
+              `[PAYMENT WEBHOOK] Đã cộng hoa hồng ${comm.toLocaleString('vi-VN')}đ cho CTV ${order.affiliateCode}`
+            );
+          }
         } catch (affErr) {
           console.warn('[PAYMENT WEBHOOK] Lỗi ghi nhận hoa hồng CTV:', affErr);
         }
       }
 
-      // Nếu đơn hàng có chartId (hoặc tìm thấy lá số trùng tên của user), cập nhật tier & quota trong Supabase
+      // Nâng cấp lá số & quota câu hỏi
       try {
         let targetChartId = order.chartId;
-        if (!targetChartId && (order.userId || order.email)) {
-          let query = supabase.from('tuvi_charts').select('id, duong_so_data, laso_data');
-          if (order.userId) {
-            query = query.eq('user_id', order.userId);
-          }
-          const { data: userCharts } = await query;
+        if (!targetChartId && order.userId && order.hoTen) {
+          const { data: userCharts } = await supabase
+            .from('tuvi_charts')
+            .select('id, duong_so_data, laso_data')
+            .eq('user_id', order.userId);
           const matched = (userCharts || []).find(
-            (c: any) => c.duong_so_data?.hoTen?.trim().toLowerCase() === order.hoTen?.trim().toLowerCase()
+            (c) =>
+              String(c.duong_so_data?.hoTen || '').trim().toLowerCase() ===
+              order.hoTen.trim().toLowerCase()
           );
           if (matched) {
             targetChartId = matched.id;
@@ -313,14 +412,13 @@ export async function POST(req: Request) {
               .from('tuvi_charts')
               .update({ duong_so_data: updatedDuongSo, laso_data: updatedLaSo })
               .eq('id', targetChartId);
-            console.log(`[PAYMENT WEBHOOK] Đã cập nhật chart ${targetChartId}: tier=${targetTier}, quota=`, nextQuota);
           }
         }
       } catch (e) {
         console.warn('[PAYMENT WEBHOOK] Không thể cập nhật chart:', e);
       }
 
-      // Bắn sự kiện Purchase qua Meta Conversions API & GA4 Measurement Protocol (Server-Side)
+      // Bắn sự kiện Purchase qua Meta CAPI & GA4 Measurement Protocol (Server-Side)
       let capiSent = false;
       let ga4Sent = false;
       try {
@@ -328,24 +426,26 @@ export async function POST(req: Request) {
         let resolvedPhone: string | null = null;
 
         if (order.userId) {
-          try {
-            const { data: userRes } = await supabase.auth.admin.getUserById(order.userId);
-            const authUser = userRes?.user;
-            if (authUser) {
-              if (!resolvedEmail && authUser.email) {
-                resolvedEmail = authUser.email;
-              }
-              const metaPhone =
-                authUser.phone ||
-                authUser.user_metadata?.phone ||
-                authUser.user_metadata?.so_dien_thoai ||
-                authUser.user_metadata?.phoneNumber;
-              if (metaPhone && typeof metaPhone === 'string') {
-                resolvedPhone = metaPhone;
-              }
-            }
-          } catch {
-            // ignore auth lookup error
+          const [userRes, profRes] = await Promise.all([
+            supabase.auth.admin.getUserById(order.userId).catch(() => ({ data: { user: null } })),
+            supabase
+              .from('tuvi_profiles')
+              .select('phone')
+              .eq('id', order.userId)
+              .maybeSingle(),
+          ]);
+          const authUser = userRes?.data?.user;
+          if (authUser) {
+            if (!resolvedEmail && authUser.email) resolvedEmail = authUser.email;
+            const metaPhone =
+              authUser.phone ||
+              authUser.user_metadata?.phone ||
+              authUser.user_metadata?.so_dien_thoai ||
+              authUser.user_metadata?.phoneNumber;
+            if (metaPhone && typeof metaPhone === 'string') resolvedPhone = metaPhone;
+          }
+          if (!resolvedPhone && profRes?.data?.phone) {
+            resolvedPhone = String(profRes.data.phone);
           }
         }
 
@@ -368,6 +468,7 @@ export async function POST(req: Request) {
             paymentType: order.paymentType,
             amount: order.amount,
             gaClientId: savedCapiMeta?.gaCid,
+            gaSessionId: savedCapiMeta?.gaSessionId,
             userId: order.userId,
           }),
         ]);
@@ -377,7 +478,7 @@ export async function POST(req: Request) {
         console.warn('[PAYMENT WEBHOOK] Lỗi gửi Server-Side Purchase:', capiErr);
       }
 
-      // Gửi email thông báo cho khách hàng nếu có email
+      // Gửi email xác nhận thanh toán cho khách
       let emailResult = null;
       if (order.email) {
         emailResult = await sendPaymentSuccessEmail({
@@ -404,11 +505,9 @@ export async function POST(req: Request) {
       message: 'Xử lý webhook thành công',
       results,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Lỗi xử lý webhook';
     console.error('[PAYMENT WEBHOOK] Lỗi xử lý webhook:', err);
-    return NextResponse.json(
-      { success: false, error: err?.message || 'Lỗi xử lý webhook' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }

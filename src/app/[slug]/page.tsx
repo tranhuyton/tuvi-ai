@@ -20,7 +20,8 @@ export async function generateMetadata({
 
   if (!page) {
     return {
-      title: 'Trang không tồn tại | Tử Vi & Phong Thủy Thầy Tôn',
+      title: { absolute: 'Trang không tồn tại | Tử Vi & Phong Thủy Thầy Tôn' },
+      robots: { index: false, follow: false },
     };
   }
 
@@ -178,6 +179,7 @@ function buildPageJsonLd(page: FunnelPageData) {
       '@type': 'Product',
       name: page.h1,
       description: page.metaDescription,
+      image: 'https://www.tuvithayton.vn/thay-ton.png',
       brand: {
         '@type': 'Brand',
         name: 'Tử Vi & Phong Thủy Thầy Tôn',

@@ -85,14 +85,25 @@ export function mapPaymentTypeToGa4Item(paymentType: string, price?: number): Ga
   }
 }
 
-export function trackGa4Event(eventName: string, params?: Record<string, any>) {
+export function setGa4UserId(userId?: string | null) {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
+  try {
+    window.gtag('config', GA4_MEASUREMENT_ID, {
+      user_id: userId || undefined,
+    });
+  } catch {
+    // ignore
+  }
+}
+
+export function trackGa4Event(eventName: string, params?: Record<string, unknown>) {
   if (typeof window === 'undefined') return;
   try {
     if (typeof window.gtag === 'function') {
       window.gtag('event', eventName, params || {});
     } else if (Array.isArray(window.dataLayer)) {
-      // Fallback đẩy vào hàng đợi chuẩn của gtag khi script đang tải bất đồng bộ
-      window.dataLayer.push(['event', eventName, params || {}]);
+      // Đẩy object chuẩn GTM thay vì plain Array (plain Array bị GTM/gtag bỏ qua!)
+      window.dataLayer.push({ event: eventName, ...(params || {}) });
     }
   } catch (err) {
     console.warn('[GA4] trackGa4Event error:', err);
@@ -122,6 +133,35 @@ export function getBrowserGaClientId(): string | undefined {
   }
 }
 
+/**
+ * Đọc session_id từ cookie `_ga_K09KG9PV1Y` để nối đúng phiên gốc (Campaign/Source/Medium)
+ * khi bắn Server-Side Measurement Protocol từ VietQR Webhook
+ */
+export function getBrowserGaSessionId(): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  try {
+    const suffix = GA4_MEASUREMENT_ID.replace(/^G-/, '');
+    const cookiePrefix = `_ga_${suffix}=`;
+    const match = document.cookie
+      .split(';')
+      .map((c) => c.trim())
+      .find((c) => c.startsWith(cookiePrefix));
+    if (!match) return undefined;
+    const raw = decodeURIComponent(match.slice(cookiePrefix.length));
+    if (raw.startsWith('GS1.')) {
+      const parts = raw.split('.');
+      if (parts[2] && /^\d+$/.test(parts[2])) return parts[2];
+    }
+    if (raw.startsWith('GS2.')) {
+      const m = raw.match(/(?:^|[.$])s(\d+)/);
+      if (m?.[1]) return m[1];
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function trackGa4SignUp(method: string = 'email', hasPhone: boolean = false) {
   trackGa4Event('sign_up', {
     method,
@@ -142,18 +182,28 @@ export function trackGa4GenerateChart(tier: string, namDuong?: number, gioiTinh?
     birth_year: namDuong,
     gender: gioiTinh,
   });
+  const isPaidTier = tier === 'pro' || tier === 'expert';
+  const expectedVal = tier === 'expert' ? 269000 : tier === 'pro' ? 119000 : 0;
   trackGa4Event('add_to_wishlist', {
     currency: 'VND',
-    value: 119000,
+    value: expectedVal,
     items: [
       {
         item_id: `chart_${tier || 'free'}`,
         item_name: 'An Sao & Bình Giải Lá Số Tử Vi',
         item_category: 'Lá Số Tử Vi',
-        price: 0,
+        price: isPaidTier ? expectedVal : 0,
         quantity: 1,
       },
     ],
+  });
+}
+
+export function trackGa4ViewVanHan() {
+  trackGa4Event('view_item', {
+    currency: 'VND',
+    value: 119000,
+    items: [mapPaymentTypeToGa4Item('reading_vip', 119000)],
   });
 }
 

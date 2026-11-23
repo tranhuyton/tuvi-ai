@@ -37,7 +37,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const res = await fetch(`/api/tester/me?email=${encodeURIComponent(email)}`);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) {
+        setTesterInfo(null);
+        return;
+      }
+      const res = await fetch('/api/tester/me', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.isTester) {
@@ -237,8 +247,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('tuvi_active_session');
         localStorage.removeItem('tuvi_course_unlocked');
         localStorage.removeItem('tuvi_course_order_code');
+        localStorage.removeItem('tuvi_course_completed');
+        localStorage.removeItem('tuvi_course_notes');
+        localStorage.removeItem('tuvi_active_voucher');
+        localStorage.removeItem('tuvi_admin_pin');
         localStorage.removeItem('tuvi_last_paid_code');
         localStorage.removeItem('tuvi_customer_email');
+        sessionStorage.removeItem('tuvi_admin_env_pin');
+        sessionStorage.removeItem('tuvi_email_link_owner');
       }
       await supabase.auth.signOut();
       setUser(null);
@@ -268,22 +284,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: 'Vui lòng nhập địa chỉ email hợp lệ.' };
       }
 
-      // 1. Kiểm tra tài khoản có tồn tại trong hệ thống Tử Vi Thầy Tôn hay không
-      try {
-        const { data: exists, error: checkError } = await supabase.rpc('check_tuvi_user_exists', {
-          p_email: trimmedEmail,
-        });
-
-        if (!checkError && exists === false) {
-          return {
-            error: 'Email này chưa được đăng ký trong hệ thống Tử Vi Thầy Tôn. Quý khách vui lòng kiểm tra lại địa chỉ email hoặc bấm Đăng Ký tài khoản mới.',
-          };
-        }
-      } catch (checkErr) {
-        console.warn('Không thể kiểm tra tồn tại email qua RPC:', checkErr);
-      }
-
-      // 2. Gửi link đặt lại mật khẩu qua Supabase Auth
+      // Gửi link đặt lại mật khẩu qua Supabase Auth với thông báo đồng nhất (chống quét email & bảo toàn cách ly Multi-Tenant)
       const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.tuvithayton.vn';
       const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
         redirectTo: `${siteUrl}/?reset_password=true`,
@@ -292,7 +293,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         return { error: error.message };
       }
-      return { message: 'Đã gửi hướng dẫn khôi phục mật khẩu vào hòm thư email của bạn.' };
+      return {
+        message:
+          'Nếu email này đã được đăng ký trong hệ thống Tử Vi Thầy Tôn, hướng dẫn khôi phục mật khẩu đã được gửi vào hòm thư của bạn.',
+      };
     } catch (err: any) {
       return { error: err.message || 'Lỗi gửi yêu cầu khôi phục mật khẩu' };
     }
@@ -322,20 +326,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const updatedName = fullName !== undefined ? fullName.trim() : (data.user.user_metadata?.full_name || profile?.full_name || '');
         const updatedPhone = phone !== undefined ? phone.trim() : (data.user.user_metadata?.phone || profile?.phone || '');
 
-        const { error: upsertErr } = await supabase.from('tuvi_profiles').upsert({
-          id: data.user.id,
-          email: data.user.email,
-          full_name: updatedName,
-          phone: updatedPhone,
-          updated_at: new Date().toISOString(),
-        });
-        if (upsertErr) {
-          await supabase.from('tuvi_profiles').upsert({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: updatedName,
-            updated_at: new Date().toISOString(),
-          });
+        // Cách ly tuyệt đối Multi-Tenant: TUYỆT ĐỐI KHÔNG tự tạo dòng mới trong tuvi_profiles cho tài khoản TonyEnglish/legacy
+        const meta = data.user.user_metadata || {};
+        const isTonyEnglishOnlyAccount =
+          meta.app === 'tonyenglish' ||
+          meta.role === 'student' ||
+          meta.role === 'teacher' ||
+          Boolean(meta.account_type);
+        const isConfirmedTuViAccount = !isTonyEnglishOnlyAccount && (meta.app === 'tuvi' || Boolean(profile));
+
+        if (isConfirmedTuViAccount) {
+          if (profile) {
+            const { error: updErr } = await supabase
+              .from('tuvi_profiles')
+              .update({
+                full_name: updatedName,
+                phone: updatedPhone,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', data.user.id);
+            if (updErr) {
+              await supabase
+                .from('tuvi_profiles')
+                .update({
+                  full_name: updatedName,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', data.user.id);
+            }
+          } else {
+            const { error: upsertErr } = await supabase.from('tuvi_profiles').upsert({
+              id: data.user.id,
+              email: data.user.email,
+              full_name: updatedName,
+              phone: updatedPhone,
+              updated_at: new Date().toISOString(),
+            });
+            if (upsertErr) {
+              console.warn('[AuthContext] Bỏ qua đồng bộ tuvi_profiles:', upsertErr.message);
+            }
+          }
         }
 
         setUser(data.user);

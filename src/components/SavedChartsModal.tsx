@@ -12,6 +12,7 @@ interface SavedChartsModalProps {
   onNewChart: () => void;
   onUpgradeChart?: (chartId: string) => void;
   onUpgradeExpertChart?: (chartId: string, fromTier: 'free' | 'pro') => void;
+  onDeleteActiveChart?: (chartId: string) => void;
   activeChartId?: string | null;
 }
 
@@ -22,17 +23,23 @@ export default function SavedChartsModal({
   onNewChart,
   onUpgradeChart,
   onUpgradeExpertChart,
+  onDeleteActiveChart,
   activeChartId,
 }: SavedChartsModalProps) {
   const { t } = useLanguage();
   const [charts, setCharts] = useState<SavedChart[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchCharts = async () => {
     setIsLoading(true);
+    setLoadError(null);
     const res = await getUserCharts();
+    if (res.error) {
+      setLoadError(res.error);
+    }
     setCharts(res.charts);
     setIsLoading(false);
   };
@@ -42,6 +49,15 @@ export default function SavedChartsModal({
       fetchCharts();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -53,6 +69,9 @@ export default function SavedChartsModal({
     const res = await deleteChart(chartId);
     if (res.success) {
       setCharts((prev) => prev.filter((c) => c.id !== chartId));
+      if (chartId === activeChartId && onDeleteActiveChart) {
+        onDeleteActiveChart(chartId);
+      }
     } else {
       alert('Không thể xóa lá số: ' + res.error);
     }
@@ -69,7 +88,15 @@ export default function SavedChartsModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="saved-charts-modal-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="relative w-full max-w-2xl max-h-[88vh] bg-slate-900 border border-amber-500/30 rounded-2xl shadow-2xl flex flex-col text-slate-200 overflow-hidden">
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
@@ -78,7 +105,10 @@ export default function SavedChartsModal({
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-bold font-serif text-amber-400 flex items-center gap-2">
+              <h2
+                id="saved-charts-modal-title"
+                className="text-lg sm:text-xl font-bold font-serif text-amber-400 flex items-center gap-2"
+              >
                 {t('saved.title', 'Sổ Tay Mệnh Số Của Bạn')}
               </h2>
               <p className="text-sm sm:text-xs text-slate-300">
@@ -87,7 +117,9 @@ export default function SavedChartsModal({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Đóng sổ tay mệnh số"
             className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -120,6 +152,18 @@ export default function SavedChartsModal({
 
         {/* Danh sách lá số */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3">
+          {loadError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center justify-between gap-2">
+              <span>Không thể tải sổ tay mệnh số: {loadError}</span>
+              <button
+                type="button"
+                onClick={fetchCharts}
+                className="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 font-semibold cursor-pointer shrink-0"
+              >
+                Thử lại
+              </button>
+            </div>
+          )}
           {isLoading ? (
             <div className="py-12 text-center text-slate-400 flex flex-col items-center justify-center gap-2">
               <div className="w-6 h-6 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
@@ -138,10 +182,11 @@ export default function SavedChartsModal({
           ) : (
             filteredCharts.map((chart) => {
               const isActive = chart.id === activeChartId;
-              const hasReading = !!chart.reading_html;
+              const hasReading = Boolean(chart.has_reading || chart.reading_html);
               const msgCount = chart.message_count || 0;
               const ds = chart.duong_so_data;
               const tier =
+                chart.paid_tier ||
                 ds?.tier ||
                 chart.laso_data?.tier ||
                 (chart.reading_html?.includes('Bản Expert') || chart.reading_html?.includes('CHUYÊN GIA EXPERT')

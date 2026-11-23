@@ -1,93 +1,43 @@
 import { NextResponse } from 'next/server';
-import { getOrderByCode, getAllOrders } from '@/lib/orderStore';
+import { checkRateLimitDistributed, getClientIp } from '@/lib/rateLimit';
+import { resolveCourseAccess } from '@/lib/courseAccessServer';
 
 export const dynamic = 'force-dynamic';
 
-const ADMIN_EMAILS = ['tranhuyton@gmail.com', 'tonhuytran@gmail.com', 'diep.anh.12135@gmail.com'];
-const ADMIN_PINS = ['thayton2026', '0935058688'];
-
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const orderCode = body.orderCode ? String(body.orderCode).trim().toUpperCase() : '';
-    const email = body.email ? String(body.email).trim().toLowerCase() : '';
-    const userId = body.userId ? String(body.userId).trim() : '';
-    const adminPin = body.adminPin ? String(body.adminPin).trim() : '';
-
-    // 1. Admin luôn có toàn quyền truy cập khóa học
-    const isAdminEmail =
-      email &&
-      (ADMIN_EMAILS.includes(email) ||
-        email.includes('tranhuyton') ||
-        email.includes('tonhuytran') ||
-        email.includes('thayton'));
-    const isAdminPin = adminPin && ADMIN_PINS.includes(adminPin);
-
-    if (isAdminEmail || isAdminPin) {
-      return NextResponse.json({
-        success: true,
-        unlocked: true,
-        orderCode: 'VIP-ADMIN',
-        email: email || 'tonhuytran@gmail.com',
-        hoTen: 'Thầy Tôn (Quản trị viên)',
-      });
-    }
-
-    // 2. Kiểm tra trực tiếp bằng Mã đơn hàng (TVxxxxx)
-    if (orderCode) {
-      const cleanCode = orderCode.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      const order = await getOrderByCode(cleanCode);
-      if (
-        order &&
-        order.status === 'PAID' &&
-        (order.paymentType === 'course_tuvi' || order.amount >= 600000)
-      ) {
-        return NextResponse.json({
-          success: true,
-          unlocked: true,
-          orderCode: order.orderCode,
-          email: order.email || email,
-          hoTen: order.hoTen,
-          paidAt: order.paidAt,
-        });
-      }
-    }
-
-    // 3. Kiểm tra theo userId hoặc Email trong danh sách đơn hàng đã thanh toán
-    if (userId || email) {
-      const allOrders = await getAllOrders(2000);
-      const matchedOrder = allOrders.find(
-        (o) =>
-          o.status === 'PAID' &&
-          (o.paymentType === 'course_tuvi' || o.amount >= 600000) &&
-          ((userId && o.userId === userId) ||
-            (email && o.email && o.email.trim().toLowerCase() === email))
+    const ip = getClientIp(req);
+    const rl = await checkRateLimitDistributed({
+      key: `course_access:${ip}`,
+      limit: 25,
+      windowMs: 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { success: false, unlocked: false, error: 'Quá nhiều yêu cầu, vui lòng thử lại sau giây lát.' },
+        { status: 429 }
       );
-
-      if (matchedOrder) {
-        return NextResponse.json({
-          success: true,
-          unlocked: true,
-          orderCode: matchedOrder.orderCode,
-          email: matchedOrder.email || email,
-          hoTen: matchedOrder.hoTen,
-          paidAt: matchedOrder.paidAt,
-        });
-      }
     }
+
+    const body = await req.json().catch(() => ({}));
+    const orderCode = body.orderCode ? String(body.orderCode).trim().toUpperCase() : '';
+
+    const access = await resolveCourseAccess(req, orderCode);
 
     return NextResponse.json({
       success: true,
-      unlocked: false,
-      message: orderCode
-        ? 'Mã giao dịch chưa thanh toán hoặc không phải đơn Khóa học Tử Vi (699.000đ).'
-        : 'Tài khoản chưa kích hoạt khóa học.',
+      unlocked: access.unlocked,
+      isAdmin: access.isAdmin,
+      isTester: access.isTester,
+      orderCode: access.orderCode,
+      email: access.email,
+      hoTen: access.hoTen,
+      paidAt: access.paidAt,
+      message: access.message,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Lỗi kiểm tra quyền truy cập';
     console.error('[COURSE CHECK-ACCESS] Lỗi:', err);
-    return NextResponse.json(
-      { success: false, unlocked: false, error: err?.message || 'Lỗi kiểm tra quyền truy cập' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, unlocked: false, error: msg }, { status: 500 });
   }
 }

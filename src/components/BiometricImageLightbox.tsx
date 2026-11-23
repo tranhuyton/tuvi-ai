@@ -61,7 +61,12 @@ export default function BiometricImageLightbox({
 
   if (!isOpen) return null;
 
-  const currentSrc = activeType === 'mat' ? anhMat : anhTay;
+  const isSafeDataImage = (src?: string): src is string =>
+    typeof src === 'string' && /^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(src.trim());
+
+  const safeAnhMat = isSafeDataImage(anhMat) ? anhMat : undefined;
+  const safeAnhTay = isSafeDataImage(anhTay) ? anhTay : undefined;
+  const currentSrc = activeType === 'mat' ? safeAnhMat : safeAnhTay;
   if (!currentSrc) return null;
 
   const handleResetView = () => {
@@ -114,6 +119,9 @@ export default function BiometricImageLightbox({
   return (
     <div
       className="fixed inset-0 z-[120] bg-black/92 backdrop-blur-md flex flex-col select-none animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Soi chi tiết tướng pháp${customerName ? `: ${customerName}` : ''}`}
       onClick={onClose}
     >
       {/* Top Toolbar */}
@@ -128,7 +136,7 @@ export default function BiometricImageLightbox({
 
           {/* Switcher between Face & Palm */}
           <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800">
-            {anhMat && (
+            {safeAnhMat && (
               <button
                 type="button"
                 onClick={() => handleSwitchTab('mat')}
@@ -141,7 +149,7 @@ export default function BiometricImageLightbox({
                 <span>📸 Ảnh Diện Tướng</span>
               </button>
             )}
-            {anhTay && (
+            {safeAnhTay && (
               <button
                 type="button"
                 onClick={() => handleSwitchTab('tay')}
@@ -237,6 +245,7 @@ export default function BiometricImageLightbox({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Đóng khung xem ảnh"
             className="ml-1 p-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 transition cursor-pointer"
             title="Đóng (Esc)"
           >

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Sparkles,
   ShieldCheck,
@@ -30,9 +31,11 @@ export default function AboutThayTon() {
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 mb-6">
           <div className="relative shrink-0">
             <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-600 opacity-75 blur-xs" />
-            <img
+            <Image
               src="/avatar-thay-ton.jpg"
               alt="Thầy Tôn - Chuyên Gia Tử Vi Đẩu Số và Phong Thủy"
+              width={112}
+              height={112}
               className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-2 border-amber-300 shadow-xl shadow-amber-950/50"
             />
           </div>

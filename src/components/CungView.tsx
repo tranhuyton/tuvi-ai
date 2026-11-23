@@ -9,6 +9,8 @@ interface CungViewProps {
   cung: CungLaSo;
   className?: string;
   style?: React.CSSProperties;
+  onSelect?: (cung: CungLaSo) => void;
+  isHighlighted?: boolean;
 }
 
 const BOLD_STARS = new Set([
@@ -19,7 +21,7 @@ const BOLD_STARS = new Set([
   'Tả Phù', 'Hữu Bật', 'Lộc Tồn',
 ]);
 
-export default function CungView({ cung, className = '', style }: CungViewProps) {
+export default function CungView({ cung, className = '', style, onSelect, isHighlighted = false }: CungViewProps) {
   const { tCung, tCanChi, tStar, language } = useLanguage();
   const displayName = tCung(cung.cungName);
   const thanLabel = language === 'zh' || language === 'ja' ? '身' : language === 'ko' ? '신' : language === 'en' ? 'BODY' : 'THÂN';
@@ -48,7 +50,22 @@ export default function CungView({ cung, className = '', style }: CungViewProps)
 
   return (
     <div
-      className={`bg-white flex flex-col relative overflow-hidden px-1 py-0.5 select-none text-black font-sans ${className}`}
+      onClick={onSelect ? () => onSelect(cung) : undefined}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={
+        onSelect
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect(cung);
+              }
+            }
+          : undefined
+      }
+      className={`bg-white flex flex-col relative overflow-hidden px-1 py-0.5 select-none text-black font-sans ${
+        onSelect ? 'cursor-pointer hover:bg-amber-50/70 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500' : ''
+      } ${isHighlighted ? 'ring-2 ring-inset ring-amber-500 bg-amber-50/60' : ''} ${className}`}
       style={style}
     >
       {/* 1. Header Cung: Can Chi - Tên Cung - Đại Vận */}

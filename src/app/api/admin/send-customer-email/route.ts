@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signEmailToken } from '@/lib/supabaseAdmin';
 import { sendEmail } from '@/lib/email';
+import { verifyAdminRequest, isValidUuid } from '@/lib/adminAuth';
+import { escapeHtml, sanitizeHtmlAllowlist } from '@/lib/tuvi/cleanReadingHtml';
 
 export const dynamic = 'force-dynamic';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.tuvithayton.vn';
 
-function isAuthorized(req: NextRequest): boolean {
-  const pin = req.headers.get('x-admin-pin') || req.nextUrl.searchParams.get('pin');
-  const validPins = [process.env.ADMIN_PIN || 'thayton2026', '0935058688', 'thayton2026'];
-  return Boolean(pin && validPins.includes(pin));
-}
-
 export async function POST(req: NextRequest) {
-  if (!isAuthorized(req)) {
+  const auth = await verifyAdminRequest(req);
+  if (!auth.authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -44,9 +41,10 @@ export async function POST(req: NextRequest) {
     }
 
     let ctaUrl = SITE_URL;
-    if (chartId) {
-      const etoken = signEmailToken(`chart:${chartId}`);
-      ctaUrl = `${SITE_URL}/?chartId=${encodeURIComponent(chartId)}&etoken=${encodeURIComponent(etoken)}`;
+    if (chartId && isValidUuid(chartId)) {
+      const safeId = chartId.trim();
+      const etoken = signEmailToken(`chart:${safeId}`);
+      ctaUrl = `${SITE_URL}/?chartId=${encodeURIComponent(safeId)}&etoken=${encodeURIComponent(etoken)}`;
     }
 
     const isExpert = tier === 'expert';
@@ -69,7 +67,7 @@ export async function POST(req: NextRequest) {
             ✦ Nội dung đã được lưu sẵn trong Sổ Tay Số Mệnh:
           </div>
           <ul style="margin: 0; padding-left: 18px; color: #e2e8f0; font-size: 14px; line-height: 1.75;">
-            ${highlights.map((item) => `<li style="margin-bottom: 6px;">${item}</li>`).join('')}
+            ${highlights.map((item) => `<li style="margin-bottom: 6px;">${escapeHtml(item)}</li>`).join('')}
           </ul>
         </div>`
       : '';
@@ -103,19 +101,19 @@ export async function POST(req: NextRequest) {
       </div>
 
       <div style="padding: 28px 24px; color: #e2e8f0; font-size: 15px; line-height: 1.7;">
-        ${introHtml || `<p>Kính chào <strong>${customerName}</strong>,</p>`}
+        ${introHtml ? sanitizeHtmlAllowlist(introHtml) : `<p>Kính chào <strong>${escapeHtml(customerName)}</strong>,</p>`}
 
         ${highlightItemsHtml}
 
         <div style="text-align: center; margin: 28px 0 22px;">
-          <a href="${ctaUrl}" style="display: inline-block; background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); color: #0f172a; font-weight: 800; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 12px; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);">
-            ${finalCtaLabel}
+          <a href="${escapeHtml(ctaUrl)}" style="display: inline-block; background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%); color: #0f172a; font-weight: 800; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 12px; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);">
+            ${escapeHtml(finalCtaLabel)}
           </a>
         </div>
 
         <p style="font-size: 13px; color: #94a3b8; line-height: 1.6; margin-top: 18px;">
           Nếu nút bấm trên không tự mở trên trình duyệt, quý khách có thể truy cập trực tiếp tại đường dẫn:<br />
-          <a href="${ctaUrl}" style="color: #fbbf24; word-break: break-all;">${ctaUrl}</a>
+          <a href="${escapeHtml(ctaUrl)}" style="color: #fbbf24; word-break: break-all;">${escapeHtml(ctaUrl)}</a>
         </p>
 
         <hr style="border: none; border-top: 1px solid rgba(148, 163, 184, 0.18); margin: 24px 0 18px;" />

@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
 import { inferBankCode } from '@/types/affiliate';
+import { escapeHtml } from '@/lib/tuvi/cleanReadingHtml';
+import { PAYMENT_BANK_CONFIG } from '@/lib/bankConfig';
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -31,6 +33,7 @@ export interface WithdrawalEmailDetails {
   bankAccountName: string;
   remainingBalance?: number;
   requestedAt?: string;
+  reqId?: string;
 }
 
 /**
@@ -217,6 +220,8 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
   const timeStr = paidAt
     ? new Date(paidAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
     : new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const safeCustomerName = escapeHtml(customerName);
+  const safeOrderCode = escapeHtml(orderCode);
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -257,7 +262,7 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
     </div>
 
     <div class="content">
-      <p class="greeting">Kính gửi quý khách <strong>${customerName}</strong>,</p>
+      <p class="greeting">Kính gửi quý khách <strong>${safeCustomerName}</strong>,</p>
 
       <div class="status-box">
         <div class="status-title">✔ Giao dịch thanh toán thành công</div>
@@ -271,7 +276,7 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
       <table class="order-table">
         <tr>
           <td class="label">Mã giao dịch:</td>
-          <td class="value" style="color: #fbbf24; font-family: monospace; font-size: 14px;">${orderCode}</td>
+          <td class="value" style="color: #fbbf24; font-family: monospace; font-size: 14px;">${safeOrderCode}</td>
         </tr>
         <tr>
           <td class="label">Dịch vụ kích hoạt:</td>
@@ -287,11 +292,11 @@ export async function sendPaymentSuccessEmail(details: PaymentEmailDetails): Pro
         </tr>
         <tr>
           <td class="label">Tài khoản nhận:</td>
-          <td class="value">VPBank • 3386386 (TRAN THI DIEP)</td>
+          <td class="value">VPBank • ${escapeHtml(PAYMENT_BANK_CONFIG.accountNumber)} (${escapeHtml(PAYMENT_BANK_CONFIG.accountName)})</td>
         </tr>
       </table>
 
-      <a href="https://tuvithayton.vn" class="cta-btn">
+      <a href="https://www.tuvithayton.vn" class="cta-btn">
         Trải Nghiệm Dịch Vụ Ngay ➜
       </a>
 
@@ -338,6 +343,7 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
     bankAccountName,
     remainingBalance = 0,
     requestedAt,
+    reqId: providedReqId,
   } = details;
 
   const primaryAdminEmail =
@@ -352,30 +358,38 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
     : new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
   const transferNote = `HOA HONG ${affiliateCode.toUpperCase()}`;
-  const cleanBankCode = bankCode || inferBankCode(bankName);
-  const cleanAccNum = bankAccountNumber.trim();
+  const cleanBankCode = String(bankCode || inferBankCode(bankName) || 'MB')
+    .trim()
+    .replace(/[^A-Za-z0-9]/g, '')
+    .toUpperCase();
+  const cleanAccNum = bankAccountNumber.trim().replace(/[^A-Za-z0-9]/g, '');
   const cleanAccName = bankAccountName.trim().toUpperCase();
+  const safeAffiliateName = escapeHtml(affiliateName);
+  const safeAffiliateCode = escapeHtml(affiliateCode);
+  const safePhone = phone ? escapeHtml(phone) : '';
+  const safeEmail = email ? escapeHtml(email) : '';
+  const safeBankName = escapeHtml(bankName);
+  const safeBankCode = escapeHtml(cleanBankCode);
+  const safeAccNum = escapeHtml(cleanAccNum);
+  const safeAccName = escapeHtml(cleanAccName);
+  const safeTransferNote = escapeHtml(transferNote);
 
-  const vietQrUrl = `https://img.vietqr.io/image/${cleanBankCode}-${cleanAccNum}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(
+  const vietQrUrl = `https://img.vietqr.io/image/${encodeURIComponent(cleanBankCode)}-${encodeURIComponent(
+    cleanAccNum
+  )}-compact2.png?amount=${encodeURIComponent(String(amount))}&addInfo=${encodeURIComponent(
     transferNote
   )}&accountName=${encodeURIComponent(cleanAccName)}`;
+  const safeVietQrUrl = escapeHtml(vietQrUrl);
 
-  // Tạo link xác nhận 1-Click ngay trong Email (phòng trường hợp chuyển từ ngân hàng không gắn SePay)
-  const reqId = String(Date.now());
-  const secret =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    'tuvi_thay_ton_payout_secret';
-  const crypto = await import('crypto');
-  const sig = crypto
-    .createHmac('sha256', secret)
-    .update(`${affiliateCode.toLowerCase()}:${amount}:${reqId}`)
-    .digest('hex')
-    .slice(0, 20);
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tuvithayton.vn';
+  // Tạo link xác nhận ngay trong Email (dùng chung reqId với bảng tuvi_affiliate_payouts & chữ ký HMAC 72h)
+  const reqId = (providedReqId || `WD_${Date.now()}`).trim();
+  const { generatePayoutSign } = await import('@/app/api/affiliate/confirm-payout/route');
+  const sig = generatePayoutSign(affiliateCode, amount, reqId);
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.tuvithayton.vn';
   const oneClickConfirmUrl = `${baseUrl}/api/affiliate/confirm-payout?code=${encodeURIComponent(
     affiliateCode
-  )}&amount=${amount}&reqId=${reqId}&sig=${sig}`;
+  )}&amount=${encodeURIComponent(String(amount))}&reqId=${encodeURIComponent(reqId)}&sig=${encodeURIComponent(sig)}`;
+  const safeOneClickConfirmUrl = escapeHtml(oneClickConfirmUrl);
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -431,14 +445,14 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
       <table class="info-table">
         <tr>
           <td class="label">Cộng tác viên:</td>
-          <td class="value">${affiliateName}</td>
+          <td class="value">${safeAffiliateName}</td>
         </tr>
         <tr>
           <td class="label">Mã CTV:</td>
-          <td class="value" style="color: #fbbf24; font-family: monospace; font-size: 14px;">${affiliateCode}</td>
+          <td class="value" style="color: #fbbf24; font-family: monospace; font-size: 14px;">${safeAffiliateCode}</td>
         </tr>
-        ${phone ? `<tr><td class="label">Số điện thoại:</td><td class="value"><a href="tel:${phone}" style="color: #60a5fa; text-decoration: none;">${phone}</a></td></tr>` : ''}
-        ${email ? `<tr><td class="label">Email CTV:</td><td class="value">${email}</td></tr>` : ''}
+        ${safePhone ? `<tr><td class="label">Số điện thoại:</td><td class="value"><a href="tel:${safePhone}" style="color: #60a5fa; text-decoration: none;">${safePhone}</a></td></tr>` : ''}
+        ${safeEmail ? `<tr><td class="label">Email CTV:</td><td class="value">${safeEmail}</td></tr>` : ''}
         <tr>
           <td class="label">Số dư khả dụng hiện tại:</td>
           <td class="value" style="color: #a7f3d0;">${remainingFormatted}</td>
@@ -449,29 +463,29 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
         </tr>
         <tr>
           <td class="label">Ngân hàng thụ hưởng:</td>
-          <td class="value">${bankName}</td>
+          <td class="value">${safeBankName}</td>
         </tr>
         <tr>
           <td class="label">Số tài khoản nhận:</td>
-          <td class="value" style="color: #fbbf24; font-family: monospace; font-size: 15px;">${cleanAccNum}</td>
+          <td class="value" style="color: #fbbf24; font-family: monospace; font-size: 15px;">${safeAccNum}</td>
         </tr>
         <tr>
           <td class="label">Tên chủ tài khoản:</td>
-          <td class="value" style="text-transform: uppercase;">${cleanAccName}</td>
+          <td class="value" style="text-transform: uppercase;">${safeAccName}</td>
         </tr>
       </table>
 
       <!-- KHỐI MÃ VIETQR ĐỘNG -->
       <div class="qr-card">
         <div class="qr-title">⚡ QUÉT MÃ VIETQR CHUYỂN KHOẢN TRONG 3 GIÂY</div>
-        <img src="${vietQrUrl}" alt="Mã VietQR Chuyển Tiền Cho CTV" class="qr-img" />
+        <img src="${safeVietQrUrl}" alt="Mã VietQR Chuyển Tiền Cho CTV" class="qr-img" />
         <p class="qr-sub">
-          Mã QR đã chứa sẵn: <strong>${cleanAccNum}</strong> (${cleanBankCode}) • <strong>${formattedAmount}</strong><br/>
-          Nội dung: <code style="color: #fbbf24; font-weight: bold;">${transferNote}</code>
+          Mã QR đã chứa sẵn: <strong>${safeAccNum}</strong> (${safeBankCode}) • <strong>${formattedAmount}</strong><br/>
+          Nội dung: <code style="color: #fbbf24; font-weight: bold;">${safeTransferNote}</code>
         </p>
       </div>
 
-      <a href="${oneClickConfirmUrl}" class="confirm-btn">
+      <a href="${safeOneClickConfirmUrl}" class="confirm-btn">
         ✅ Xác Nhận Đã Chuyển Khoản (Trừ Số Dư CTV Ngay)
       </a>
 
@@ -480,7 +494,7 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
       </a>
 
       <p style="text-align: center; font-size: 12px; color: #94a3b8; margin: 0; line-height: 1.5;">
-        • <b>Tự động 100%:</b> Nếu Thầy quét QR bằng tài khoản ngân hàng đã kết nối SePay (có bật báo biến động tiền ra), hệ thống sẽ tự động bắt nội dung <code>${transferNote}</code> và trừ số dư CTV ngay khi tiền đi.<br/>
+        • <b>Tự động 100%:</b> Nếu Thầy quét QR bằng tài khoản ngân hàng đã kết nối SePay (có bật báo biến động tiền ra), hệ thống sẽ tự động bắt nội dung <code>${safeTransferNote}</code> và trừ số dư CTV ngay khi tiền đi.<br/>
         • <b>Hoặc 1-Click:</b> Nếu Thầy quét QR từ tài khoản ngân hàng cá nhân khác, chỉ cần bấm nút <b>"Xác Nhận Đã Chuyển Khoản"</b> màu xanh ngay trên email này là xong!
       </p>
     </div>
@@ -514,10 +528,10 @@ export async function sendWithdrawalNotificationEmail(details: WithdrawalEmailDe
       <h2 style="color: #fbbf24; margin: 0; font-size: 18px;">✦ TỬ VI THẦY TÔN • CỔNG CỘNG TÁC VIÊN ✦</h2>
     </div>
     <div style="padding: 24px; color: #cbd5e1; line-height: 1.6; font-size: 14px;">
-      <p>Xin chào <strong>${affiliateName}</strong>,</p>
+      <p>Xin chào <strong>${safeAffiliateName}</strong>,</p>
       <p>Hệ thống đã tiếp nhận yêu cầu rút tiền hoa hồng của bạn với số tiền: <b style="color: #34d399; font-size: 16px;">${formattedAmount}</b>.</p>
       <div style="background: #0f172a; padding: 14px; border-radius: 8px; margin: 16px 0;">
-        • Tài khoản nhận: <b>${bankName}</b> - <b>${cleanAccNum}</b> (${cleanAccName})<br/>
+        • Tài khoản nhận: <b>${safeBankName}</b> - <b>${safeAccNum}</b> (${safeAccName})<br/>
         • Thời gian gửi: <b>${timeStr}</b>
       </div>
       <p>Thầy Tôn sẽ kiểm tra và chuyển khoản trực tiếp qua VietQR đến tài khoản của bạn trong thời gian sớm nhất.</p>
@@ -593,18 +607,21 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
     unsubscribeUrl,
   } = details;
 
-  const displayName = (chartSummary?.hoTen || customerName || 'Quý khách').trim();
+  const rawDisplayName = (chartSummary?.hoTen || customerName || 'Quý khách').trim();
+  const displayName = escapeHtml(rawDisplayName);
   const namXem = chartSummary?.namXem || new Date().getFullYear();
   const hasChart = Boolean(chartSummary?.namDuong);
-  const canChiLabel = chartSummary?.namCanChi
+  const rawCanChiLabel = chartSummary?.namCanChi
     ? `${chartSummary.namCanChi} (${chartSummary.namDuong})`
     : chartSummary?.namDuong
     ? `sinh năm ${chartSummary.namDuong}`
     : '';
+  const canChiLabel = escapeHtml(rawCanChiLabel);
+  const safeVoucherCode = escapeHtml(voucherCode || '');
   const menhDetail = [
-    chartSummary?.banMenh ? `Bản mệnh <strong>${chartSummary.banMenh}</strong>` : '',
+    chartSummary?.banMenh ? `Bản mệnh <strong>${escapeHtml(chartSummary.banMenh)}</strong>` : '',
     chartSummary?.chinhTinhMenh
-      ? `Cung Mệnh tọa thủ <strong>${chartSummary.chinhTinhMenh}</strong>`
+      ? `Cung Mệnh tọa thủ <strong>${escapeHtml(chartSummary.chinhTinhMenh)}</strong>`
       : '',
   ]
     .filter(Boolean)
@@ -619,8 +636,8 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
 
   if (stage === 'reminder_1h') {
     subject = hasChart
-      ? `Lá số ${canChiLabel} của ${displayName} còn những ẩn số quan trọng trong năm ${namXem}...`
-      : `${displayName} ơi, Sổ Tay Số Mệnh của quý khách đã sẵn sàng khai mở lá số năm ${namXem}`;
+      ? `Lá số ${rawCanChiLabel} của ${rawDisplayName} còn những ẩn số quan trọng trong năm ${namXem}...`
+      : `${rawDisplayName} ơi, Sổ Tay Số Mệnh của quý khách đã sẵn sàng khai mở lá số năm ${namXem}`;
     badgeText = '✦ LƯU GIỮ LÁ SỐ • TỬ VI THẦY TÔN ✦';
     headerTitle = 'ẨN SỐ CUNG MỆNH & ĐẠI VẬN CHƯA KHAI MỞ';
     introHtml = hasChart
@@ -662,7 +679,7 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
       </div>
     `;
   } else if (stage === 'voucher_20_24h') {
-    subject = `🎁 Dành riêng cho ${displayName}: Tặng mã giảm 20% mở khóa Luận Giải (Tự hủy sau 12 giờ)`;
+    subject = `🎁 Dành riêng cho ${rawDisplayName}: Tặng mã giảm 20% mở khóa Luận Giải (Tự hủy sau 12 giờ)`;
     badgeText = '✦ ĐẶC QUYỀN HỮU DUYÊN • GIẢM 20% ✦';
     headerTitle = 'ƯU ĐÃI 20% DÀNH RIÊNG CHO LÁ SỐ CỦA BẠN';
     introHtml = `
@@ -677,7 +694,7 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
     highlightBoxHtml = `
       <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(124, 45, 18, 0.28) 100%); border: 1.5px dashed #fbbf24; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 22px;">
         <div style="font-size: 12px; color: #fde68a; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Mã Ưu Đãi Cá Nhân (Chỉ Dùng 01 Lần)</div>
-        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${voucherCode}</div>
+        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${safeVoucherCode}</div>
         <div style="font-size: 13px; color: #fca5a5; font-weight: 600;">⏳ Tự động hết hạn sau 12 giờ kể từ lúc mở thư</div>
       </div>
     `;
@@ -716,7 +733,7 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
       </div>
     `;
   } else if (stage === 'voucher_30_72h') {
-    subject = `⚡ Ưu đãi lớn nhất (-30% trong 6 giờ): Mở khóa trọn bộ Lá Số của ${displayName}`;
+    subject = `⚡ Ưu đãi lớn nhất (-30% trong 6 giờ): Mở khóa trọn bộ Lá Số của ${rawDisplayName}`;
     badgeText = '✦ ĐẶC QUYỀN TỐI ĐA • GIẢM SÂU 30% ✦';
     headerTitle = 'MÓN QUÀ HỖ TRỢ CUỐI TUẦN ĐẦU: GIẢM 30%';
     introHtml = `
@@ -731,7 +748,7 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
     highlightBoxHtml = `
       <div style="background: linear-gradient(135deg, rgba(220, 38, 38, 0.2) 0%, rgba(147, 51, 234, 0.25) 100%); border: 1.5px dashed #f87171; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 22px;">
         <div style="font-size: 12px; color: #fecaca; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Đặc Quyền Giảm 30% • Dùng 01 Lần Duy Nhất</div>
-        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${voucherCode}</div>
+        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${safeVoucherCode}</div>
         <div style="font-size: 13px; color: #fca5a5; font-weight: 700;">🔥 Tự hủy sau đúng 06 giờ kể từ lúc bấm vào nút bên dưới!</div>
       </div>
     `;
@@ -773,7 +790,7 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
     const courseUrl =
       ctaCourseUrl ||
       'https://www.tuvithayton.vn/khoa-hoc?utm_source=email_drip&utm_medium=email&utm_campaign=course_cross_sell_36h';
-    const cleanFamilyNames = (extraFamilyChartNames || []).map((n) => n.trim()).filter(Boolean);
+    const cleanFamilyNames = (extraFamilyChartNames || []).map((n) => escapeHtml(n.trim())).filter(Boolean);
     const hasExtraFamily = cleanFamilyNames.length > 0;
     const familyParagraphHtml = hasExtraFamily
       ? `
@@ -790,8 +807,8 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
       `;
 
     subject = hasExtraFamily
-      ? `🎓 Thư ngỏ từ Thầy Tôn gửi ${displayName}: Tự tay luận giải lá số & chấm hạn hàng năm cho cả gia đình`
-      : `🎓 Thư ngỏ từ Thầy Tôn gửi ${displayName}: Tự đọc vị 12 Cung & quy trình 5 bước chấm hạn năm`;
+      ? `🎓 Thư ngỏ từ Thầy Tôn gửi ${rawDisplayName}: Tự tay luận giải lá số & chấm hạn hàng năm cho cả gia đình`
+      : `🎓 Thư ngỏ từ Thầy Tôn gửi ${rawDisplayName}: Tự đọc vị 12 Cung & quy trình 5 bước chấm hạn năm`;
     badgeText = '✦ CHÂN TRUYỀN TỬ VI ĐẨU SỐ • THẦY TÔN ✦';
     headerTitle = 'LÀM CHỦ TỬ VI THỰC CHIẾN QUA 24 BÀI PODCAST & GIÁO TRÌNH';
     introHtml = `
@@ -829,7 +846,7 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
     `;
   } else {
     // voucher_30_6m (6 tháng hội ngộ lần cuối)
-    subject = `🌟 Nửa năm hội ngộ: Gửi tặng lại ${displayName} ưu đãi 30% lần cuối (Hiệu lực 6 giờ)`;
+    subject = `🌟 Nửa năm hội ngộ: Gửi tặng lại ${rawDisplayName} ưu đãi 30% lần cuối (Hiệu lực 6 giờ)`;
     badgeText = '✦ HỘI NGỘ SAU 6 THÁNG • LẦN CUỐI CÙNG ✦';
     headerTitle = 'NHÌN LẠI NỬA NĂM QUA & ĐỊNH HƯỚNG CHẶNG TỚI';
     introHtml = `
@@ -844,7 +861,7 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
     highlightBoxHtml = `
       <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(147, 51, 234, 0.25) 100%); border: 1.5px dashed #fbbf24; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 22px;">
         <div style="font-size: 12px; color: #fde68a; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Quà Tặng Hội Ngộ Lần Cuối • Giảm 30%</div>
-        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${voucherCode}</div>
+        <div style="font-size: 26px; font-weight: 800; color: #fbbf24; font-family: monospace; letter-spacing: 2px; margin: 8px 0;">${safeVoucherCode}</div>
         <div style="font-size: 13px; color: #fca5a5; font-weight: 700;">⏳ Hiệu lực 06 giờ kể từ lúc mở liên kết (Ưu đãi cuối cùng)</div>
       </div>
     `;
@@ -867,7 +884,7 @@ export async function sendDripFunnelEmail(details: DripFunnelEmailDetails): Prom
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${subject}</title>
+  <title>${escapeHtml(subject)}</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0f19; color: #e2e8f0; margin: 0; padding: 16px;">
   <div style="max-width: 600px; margin: 0 auto; background: #111827; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.55);">

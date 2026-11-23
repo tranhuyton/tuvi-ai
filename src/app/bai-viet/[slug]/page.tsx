@@ -20,17 +20,18 @@ export async function generateMetadata({
 
   if (!article) {
     return {
-      title: 'Bài viết không tồn tại | Tử Vi Thầy Tôn',
+      title: { absolute: 'Bài viết không tồn tại | Tử Vi Thầy Tôn' },
+      robots: { index: false, follow: false },
     };
   }
 
-  const url = `https://tuvithayton.vn/bai-viet/${article.slug}`;
+  const url = `https://www.tuvithayton.vn/bai-viet/${article.slug}`;
 
   return {
-    title: article.metaTitle,
+    title: { absolute: article.metaTitle },
     description: article.metaDescription,
     keywords: article.keywords,
-    authors: [{ name: 'Thầy Tôn (Trần Huy Tôn)', url: 'https://tuvithayton.vn' }],
+    authors: [{ name: 'Thầy Tôn (Trần Huy Tôn)', url: 'https://www.tuvithayton.vn' }],
     alternates: {
       canonical: url,
     },
@@ -38,17 +39,26 @@ export async function generateMetadata({
       title: article.metaTitle,
       description: article.metaDescription,
       url,
-      siteName: 'Tử Vi Thầy Tôn',
+      siteName: 'Tử Vi & Phong Thủy Thầy Tôn',
       locale: 'vi_VN',
       type: 'article',
       publishedTime: article.publishedAt,
       modifiedTime: article.updatedAt,
       authors: ['Thầy Tôn (Trần Huy Tôn)'],
+      images: [
+        {
+          url: '/thay-ton.png',
+          width: 800,
+          height: 800,
+          alt: article.title,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: article.metaTitle,
       description: article.metaDescription,
+      images: ['/thay-ton.png'],
     },
   };
 }
@@ -65,7 +75,7 @@ export default async function BaiVietDetailPage({
     notFound();
   }
 
-  const articleUrl = `https://tuvithayton.vn/bai-viet/${article.slug}`;
+  const articleUrl = `https://www.tuvithayton.vn/bai-viet/${article.slug}`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -77,13 +87,13 @@ export default async function BaiVietDetailPage({
             '@type': 'ListItem',
             position: 1,
             name: 'Tử Vi Thầy Tôn (An Sao Miễn Phí)',
-            item: 'https://tuvithayton.vn',
+            item: 'https://www.tuvithayton.vn',
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Cẩm Nang Tử Vi & Tướng Pháp',
-            item: 'https://tuvithayton.vn/bai-viet',
+            item: 'https://www.tuvithayton.vn/bai-viet',
           },
           {
             '@type': 'ListItem',
@@ -99,6 +109,7 @@ export default async function BaiVietDetailPage({
         headline: article.title,
         description: article.metaDescription,
         abstract: article.geoSummary,
+        image: 'https://www.tuvithayton.vn/thay-ton.png',
         datePublished: article.publishedAt,
         dateModified: article.updatedAt,
         inLanguage: 'vi-VN',
@@ -106,7 +117,7 @@ export default async function BaiVietDetailPage({
         keywords: article.keywords.join(', '),
         author: {
           '@type': 'Person',
-          '@id': 'https://tuvithayton.vn/#thay-ton',
+          '@id': 'https://www.tuvithayton.vn/#thayton',
           name: 'Thầy Tôn (Trần Huy Tôn)',
           jobTitle: 'Chuyên gia Tử Vi Đẩu Số, Bát Bộ Thần Sát & Tướng Pháp Thực Chứng',
           alumniOf: [
@@ -119,12 +130,16 @@ export default async function BaiVietDetailPage({
               name: 'Khối Chuyên Toán - Tin, Trường Đại học Tổng Hợp Hà Nội',
             },
           ],
-          url: 'https://tuvithayton.vn/#gioi-thieu-thay-ton',
+          url: 'https://www.tuvithayton.vn/#gioi-thieu-thay-ton',
         },
         publisher: {
           '@type': 'Organization',
-          name: 'Tử Vi Thầy Tôn',
-          url: 'https://tuvithayton.vn',
+          name: 'Tử Vi & Phong Thủy Thầy Tôn',
+          url: 'https://www.tuvithayton.vn',
+          logo: {
+            '@type': 'ImageObject',
+            url: 'https://www.tuvithayton.vn/thay-ton.png',
+          },
         },
       },
       ...(article.faqs.length > 0

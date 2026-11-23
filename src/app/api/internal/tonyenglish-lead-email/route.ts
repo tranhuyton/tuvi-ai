@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
+import { checkRateLimitDistributed, getClientIp } from '@/lib/rateLimit';
+import { timingSafeStringEqual } from '@/lib/adminAuth';
+import { sanitizeSafeUrl } from '@/lib/tuvi/cleanReadingHtml';
 
 const TARGET_ADMIN_EMAIL = 'tranhuyton@gmail.com';
+const SINGLE_EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const recentNotifiedKeys = new Map<string, number>();
 
 function escapeHtml(raw: string): string {
@@ -15,8 +19,29 @@ function escapeHtml(raw: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const relayHeader = req.headers.get('x-tony-lead-relay');
-    if (relayHeader !== 'tonyenglish-v1') {
+    const ip = getClientIp(req);
+    const rl = await checkRateLimitDistributed({
+      key: `tony_lead_relay:${ip}`,
+      limit: 15,
+      windowMs: 10 * 60_000,
+    });
+    if (!rl.allowed) {
+      return NextResponse.json({ ok: false, error: 'Too many requests' }, { status: 429 });
+    }
+
+    const expectedSecret = (process.env.INTERNAL_RELAY_SECRET || '').trim();
+    if (!expectedSecret) {
+      console.error('[TONYENGLISH LEAD RELAY] Thiếu biến môi trường INTERNAL_RELAY_SECRET!');
+      return NextResponse.json({ ok: false, error: 'Relay secret not configured' }, { status: 503 });
+    }
+
+    const relayHeader = (req.headers.get('x-tony-lead-relay') || '').trim();
+    const secretHeader = (req.headers.get('x-internal-secret') || '').trim();
+    const isAuthorized =
+      timingSafeStringEqual(secretHeader, expectedSecret) ||
+      timingSafeStringEqual(relayHeader, expectedSecret);
+
+    if (!isAuthorized) {
       return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 });
     }
 
@@ -27,25 +52,27 @@ export async function POST(req: NextRequest) {
     const email = String(body?.email || '').trim().slice(0, 120);
     const course = String(body?.course || 'Tư vấn khóa học TonyEnglish').trim().slice(0, 160);
     const note = String(body?.note || '').trim().slice(0, 1000);
-    const pageUrl = String(body?.pageUrl || 'https://tonyenglish.vn/courses').trim().slice(0, 400);
+    const pageUrl = sanitizeSafeUrl(
+      String(body?.pageUrl || 'https://tonyenglish.vn/courses').trim().slice(0, 400),
+      'https://tonyenglish.vn/courses'
+    );
     const sourceType = String(body?.sourceType || 'CallbackForm').trim();
 
     if (!phone) {
       return NextResponse.json({ ok: false, error: 'Missing phone' }, { status: 400 });
     }
 
-    // Deduplicate within 10 minutes
+    // Deduplicate within 10 minutes (kể cả khi không truyền contactId)
     const now = Date.now();
     for (const [k, ts] of recentNotifiedKeys.entries()) {
       if (now - ts > 10 * 60 * 1000) recentNotifiedKeys.delete(k);
     }
-    const dedupKey = `${contactId}:${phone}`;
-    if (contactId && recentNotifiedKeys.has(dedupKey)) {
+    const normalizedPhone = phone.replace(/[^\d+]/g, '');
+    const dedupKey = contactId ? `cid:${contactId}:${normalizedPhone}` : `phone:${normalizedPhone}`;
+    if (recentNotifiedKeys.has(dedupKey)) {
       return NextResponse.json({ ok: true, deduplicated: true });
     }
-    if (contactId) {
-      recentNotifiedKeys.set(dedupKey, now);
-    }
+    recentNotifiedKeys.set(dedupKey, now);
 
     const cleanDigits = phone.replace(/[^\d+]/g, '');
     const zaloDigits = cleanDigits.replace(/^\+84/, '0').replace(/^84(?=\d{9}$)/, '0');
@@ -136,10 +163,11 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`;
 
+    const safeReplyTo = SINGLE_EMAIL_RE.test(email) ? email : TARGET_ADMIN_EMAIL;
     const result = await sendEmail({
       to: TARGET_ADMIN_EMAIL,
       from: 'TonyEnglish Tuyển Sinh <thayton@tuvithayton.vn>',
-      replyTo: email && email.includes('@') ? email : TARGET_ADMIN_EMAIL,
+      replyTo: safeReplyTo,
       subject,
       html,
     });

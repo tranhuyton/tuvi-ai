@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { DuLieuDuongSo, LaSoData, ChatMessage, ServiceTier, QuestionsQuota } from '@/types/tuvi';
-import { lapLaSoTuVi } from '@/lib/tuvi/anSao';
+import { lapLaSoTuVi, computeTamHanAnalysis, getCurrentVietnamTimeInfo } from '@/lib/tuvi/anSao';
 import TuViForm from '@/components/TuViForm';
 import LaSoBanCo from '@/components/LaSoBanCo';
 import LuanGiaiAI from '@/components/LuanGiaiAI';
 import ChatThayTon from '@/components/ChatThayTon';
-import AuthModal, { AuthModalTab } from '@/components/AuthModal';
-import SavedChartsModal from '@/components/SavedChartsModal';
-import PaymentModal, { PaymentPurpose } from '@/components/PaymentModal';
+import type { AuthModalTab } from '@/components/AuthModal';
+import type { PaymentPurpose } from '@/components/PaymentModal';
 import VoucherCountdownBanner, { ClientVoucherInfo } from '@/components/VoucherCountdownBanner';
 import UserNav from '@/components/UserNav';
 import FloatingContact from '@/components/FloatingContact';
@@ -33,6 +34,17 @@ import { Sparkles, Crown, Gem, PhoneCall, MapPin, Mail, FlaskConical } from 'luc
 import { useLanguage } from '@/context/LanguageContext';
 import { cleanReadingHtml } from '@/lib/tuvi/cleanReadingHtml';
 import { trackLeadChart, trackMetaEvent } from '@/lib/metaPixel';
+import { trackGa4ViewVanHan } from '@/lib/googleAnalytics';
+import { getBearerAuthHeaders } from '@/lib/adminClientAuth';
+
+const AuthModal = dynamic(() => import('@/components/AuthModal'), { ssr: false });
+const SavedChartsModal = dynamic(() => import('@/components/SavedChartsModal'), { ssr: false });
+const PaymentModal = dynamic(() => import('@/components/PaymentModal'), { ssr: false });
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isValidUuidClient(val?: string | null): val is string {
+  return typeof val === 'string' && UUID_REGEX.test(val.trim());
+}
 
 export interface TuViWorkspaceProps {
   landingMode?: 'default' | 'van-han';
@@ -100,13 +112,29 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
   } | null>(null);
   const isHydratingEmailLinkRef = useRef<boolean>(false);
 
-  const clearActiveVoucher = () => {
+  const clearActiveVoucher = useCallback(() => {
     activeVoucherRef.current = null;
     setActiveVoucher(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem('tuvi_active_voucher');
     }
-  };
+  }, []);
+
+  const handlePaymentVoucherExpired = useCallback(() => {
+    clearActiveVoucher();
+    setPaymentModalConfig((prev) => ({
+      ...prev,
+      price:
+        prev.type === 'reading_expert'
+          ? 269000
+          : prev.type === 'reading_vip'
+          ? 119000
+          : prev.price,
+      originalPrice: undefined,
+      voucherCode: undefined,
+      discountPercent: undefined,
+    }));
+  }, [clearActiveVoucher]);
 
   useEffect(() => {
     activeVoucherRef.current = activeVoucher;
@@ -146,7 +174,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
   const getChartStorageKey = (duongSo?: DuLieuDuongSo | null, chartId?: string | null) =>
     chartId || (duongSo ? `${duongSo.hoTen}_${duongSo.namDuong}` : 'default');
 
-  // Ghi nhận ViewContent cho Landing Page Giải Mã Vận Hạn 2026 - 2027 (/van-han)
+  // Ghi nhận ViewContent (Meta + GA4) cho Landing Page Giải Mã Vận Hạn 2026 - 2027 (/van-han)
   useEffect(() => {
     if (!isVanHanLanding || typeof window === 'undefined') return;
     trackMetaEvent('ViewContent', {
@@ -155,6 +183,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       value: 119000,
       currency: 'VND',
     });
+    trackGa4ViewVanHan();
   }, [isVanHanLanding]);
 
   // Bắt mã giới thiệu Affiliate (Ví dụ: tuvithayton.vn/?ref=diep93 hoặc ?aff=diep93)
@@ -203,7 +232,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
 
     const params = new URLSearchParams(window.location.search);
     const urlVoucher = (params.get('voucher') || '').trim().toUpperCase();
-    const urlChartId = (params.get('chartId') || '').trim();
+    const rawUrlChartId = (params.get('chartId') || '').trim();
+    const urlChartId = isValidUuidClient(rawUrlChartId) ? rawUrlChartId : '';
     const urlEtoken = (params.get('etoken') || '').trim();
     const urlPkg = (params.get('pkg') || '').trim().toLowerCase(); // 'pro' | 'expert'
     const savedVoucher = (localStorage.getItem('tuvi_active_voucher') || '').trim().toUpperCase();
@@ -222,16 +252,19 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
 
     let cancelled = false;
 
-    fetch('/api/voucher/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code: codeToValidate || undefined,
-        chartId: urlChartId || undefined,
-        etoken: urlEtoken || undefined,
-        userId: user?.id || undefined,
-      }),
-    })
+    getBearerAuthHeaders({ 'Content-Type': 'application/json' })
+      .then((headers) =>
+        fetch('/api/voucher/validate', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            code: codeToValidate || undefined,
+            chartId: urlChartId || undefined,
+            etoken: urlEtoken || undefined,
+            userId: user?.id || undefined,
+          }),
+        })
+      )
       .then((res) => res.json())
       .then((data) => {
         if (cancelled) return;
@@ -293,7 +326,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
           let hydratedLaSo = chart.laso_data;
           if (chart.duong_so_data) {
             try {
-              const resolvedNamXem = chart.duong_so_data.namXem || new Date().getFullYear();
+              const resolvedNamXem = chart.duong_so_data.namXem || getCurrentVietnamTimeInfo().namAm;
               hydratedLaSo = lapLaSoTuVi(chart.duong_so_data, resolvedNamXem);
               hydratedLaSo.tier = detectedTier;
               if (chart.laso_data?.quota) hydratedLaSo.quota = chart.laso_data.quota;
@@ -614,14 +647,9 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     const activeDuongSo = duongSoRef.current || currentDuongSo;
     if (activeLaSo && activeDuongSo && !activeChartId) {
       try {
-        const cleanDuongSo = {
-          ...activeDuongSo,
-          anhMat: activeDuongSo.anhMat ? '[Ảnh khuôn mặt đã tải lên]' : undefined,
-          anhTay: activeDuongSo.anhTay ? '[Ảnh bàn tay đã tải lên]' : undefined,
-        };
         const saveRes = await saveOrUpdateChart({
           title: `${activeDuongSo.hoTen} (${activeDuongSo.gioiTinh} - ${activeDuongSo.namDuong})`,
-          duongSoData: cleanDuongSo,
+          duongSoData: activeDuongSo,
           lasoData: activeLaSo,
           readingHtml: readingHtml,
         });
@@ -663,11 +691,12 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     let readingResult: string | null = null;
     let lastErrMsg: string | null = null;
 
-    // Bước 1: Gọi qua Next.js API Route (Server sẽ tự lưu kết quả vào DB ngay khi AI xong, dù khách tắt cửa sổ giữa chừng)
+    // Gọi qua Next.js API Route (xác thực JWT + kiểm tra gói thanh toán + tự lưu DB từ server)
     try {
+      const authHeaders = await getBearerAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/tuvi/reading', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           laSo: calculatedLaSo,
           tier,
@@ -704,36 +733,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
         lastErrMsg = parsedError || `Lỗi máy chủ (HTTP ${res.status})`;
       }
     } catch (fetchErr) {
-      console.warn('API route gặp sự cố mạng hoặc timeout, chuyển sang cổng trực tiếp Supabase Edge...', fetchErr);
-    }
-
-    // Bước 2: Fallback trực tiếp Supabase Edge Function từ trình duyệt nếu Vercel bị timeout
-    if (!readingResult) {
-      try {
-        const { callGeminiVision, buildReadingParts } = await import('@/lib/gemini');
-        const parts = buildReadingParts({
-          laSo: calculatedLaSo,
-          tier,
-          thongTinThem: duongSoData.thongTinThem,
-          chieuCao: duongSoData.chieuCao,
-          canNang: duongSoData.canNang,
-          anhMat: duongSoData.anhMat,
-          anhTay: duongSoData.anhTay,
-          lang: language,
-        });
-
-        const directRes = await callGeminiVision(parts, undefined, selectedModel);
-        if (directRes.text) {
-          readingResult = directRes.text;
-          lastErrMsg = null;
-        } else if (directRes.error) {
-          lastErrMsg = directRes.error;
-        }
-      } catch (directErr) {
-        console.error('Lỗi cổng trực tiếp:', directErr);
-        const msg = directErr instanceof Error ? directErr.message : String(directErr);
-        lastErrMsg = `Không thể kết nối đến máy chủ: ${msg}`;
-      }
+      const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+      lastErrMsg = `Không thể kết nối đến máy chủ: ${msg}`;
     }
 
     if (!readingResult && lastErrMsg) {
@@ -746,9 +747,17 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
   // Xử lý khi nộp form lập lá số mới hoặc cập nhật lá số (chọn Free, Pro hoặc Expert)
   const handleFormSubmit = async (data: DuLieuDuongSo, tier: ServiceTier) => {
     const previousTier = tierRef.current || currentTier;
-    const existingChartId = isEditing ? (chartIdRef.current || currentChartId) : null;
-    const existingReadingHtml = isEditing ? readingHtml : undefined;
-    const existingChatHistory = isEditing ? chatHistory : [];
+    const matchesCurrentSavedChart =
+      !isEditing &&
+      Boolean(chartIdRef.current || currentChartId) &&
+      duongSoRef.current?.hoTen?.trim() === data.hoTen.trim() &&
+      duongSoRef.current?.ngayDuong === data.ngayDuong &&
+      duongSoRef.current?.thangDuong === data.thangDuong &&
+      duongSoRef.current?.namDuong === data.namDuong &&
+      duongSoRef.current?.gioSinhVal === data.gioSinhVal;
+    const existingChartId = isEditing || matchesCurrentSavedChart ? (chartIdRef.current || currentChartId) : null;
+    const existingReadingHtml = isEditing || matchesCurrentSavedChart ? readingHtml : undefined;
+    const existingChatHistory = isEditing || matchesCurrentSavedChart ? chatHistory : [];
 
     // Lấy user hiện tại (hỗ trợ cả trường hợp vừa đăng nhập xong qua AuthModal mà React state chưa kịp re-render)
     let activeUser = user;
@@ -778,8 +787,11 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       }
     }
 
-    // CHỐT CHẶN BẮT BUỘC: Chưa có tài khoản hợp lệ thì không lập lá số hay mở thanh toán, bắt buộc tạo tài khoản / đăng nhập trước
-    if (!activeUser?.id || !activeUser.email) {
+    // Gói Trả Phí (Pro / Expert): Yêu cầu có tài khoản trước khi mở QR để gắn quyền lợi trọn đời.
+    // Gói Miễn Phí (Free): Cho hiển thị NGAY Lá Số 12 Cung không cần đăng nhập (giảm 45-65% rớt khách lạnh!),
+    // rồi mời đăng ký miễn phí ngay bên dưới lá số để nhận bài Bình Giải AI ~1.000 từ & lưu Sổ Tay.
+    const isGuestPreviewMode = (!activeUser?.id || !activeUser.email) && tier === 'free';
+    if ((!activeUser?.id || !activeUser.email) && tier !== 'free') {
       pendingPostAuthActionRef.current = () => {
         handleFormSubmit(data, tier);
       };
@@ -787,9 +799,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       setAuthModalNotice(
         tier === 'expert'
           ? 'Quý khách vui lòng đăng ký tài khoản (hoặc đăng nhập) để lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Gia Expert (269.000đ).'
-          : tier === 'pro'
-          ? 'Quý khách vui lòng đăng ký tài khoản (hoặc đăng nhập) để lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Sâu Pro.'
-          : 'Quý khách vui lòng đăng ký tài khoản (hoặc đăng nhập) để hệ thống lập lá số và tự động lưu trữ vào Sổ Tay Số Mệnh.'
+          : 'Quý khách vui lòng đăng ký tài khoản (hoặc đăng nhập) để lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Sâu Pro.'
       );
       setIsAuthModalOpen(true);
       return;
@@ -910,7 +920,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       }
     }
 
-    const resolvedNamXem = cleanDuongSo.namXem || new Date().getFullYear();
+    const resolvedNamXem = cleanDuongSo.namXem || getCurrentVietnamTimeInfo().namAm;
     cleanDuongSo.namXem = resolvedNamXem;
     const calculatedLaSo = lapLaSoTuVi(
       { ...cleanDuongSo, anhMat: undefined, anhTay: undefined },
@@ -933,7 +943,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     setReadingError(undefined);
     setChatHistory(existingChatHistory);
     setQuestionsQuota(initialQuota);
-    setIsLoadingReading(!requiresPayment);
+    setIsLoadingReading(!requiresPayment && !isGuestPreviewMode);
 
     // Ghi nhận sự kiện Lead & AnSaoLapLaSo về Meta Pixel khi khách tạo lá số
     if (!isEditing) {
@@ -962,18 +972,9 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
             setTesterChartsCount((prev) => prev + 1);
             refreshTesterInfo();
           }
-
-          // Nếu có đơn hàng đã thanh toán trước đó (ví dụ TV96213), tự động gắn chartId vào đơn hàng đó
-          if (autoUnlockedFromPaidOrder && matchedPaidOrderCode) {
-            try {
-              await supabase
-                .from('tuvi_orders')
-                .update({ chart_id: saveRes.chartId })
-                .eq('order_code', matchedPaidOrderCode);
-            } catch (err) {
-              console.warn('Lỗi gán chart_id vào đơn đã thanh toán:', err);
-            }
-          }
+          // Server (/api/tuvi/reading) sẽ tự động gắn chart_id vào đơn PAID chưa liên kết nếu khớp chủ sở hữu + họ tên
+          void autoUnlockedFromPaidOrder;
+          void matchedPaidOrderCode;
         }
       } catch (e) {
         console.warn('Lỗi tự động lưu lá số:', e);
@@ -991,11 +992,20 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       return;
     }
 
+    // Nếu là khách vãng lai xem bản Miễn Phí: Đã hiện ngay Lá Số 12 Cung ở trên -> dừng ở đây để hiển thị hộp CTA đăng ký mở bài bình giải AI
+    if (isGuestPreviewMode) {
+      setIsLoadingReading(false);
+      return;
+    }
+
     // Gọi AI Thầy Tôn bình giải
+    const expectedChartId = createdChartId;
     try {
       const readingResult = await generateReading(calculatedLaSo, data, effectiveTier, createdChartId);
       if (readingResult) {
-        setReadingHtml(readingResult);
+        if (chartIdRef.current === expectedChartId) {
+          setReadingHtml(readingResult);
+        }
         if (createdChartId) {
           updateChartReading(createdChartId, readingResult);
         }
@@ -1403,9 +1413,12 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     }
   };
 
-  // Xử lý gửi tin nhắn hỏi đáp với Thầy Tôn
-  const handleSendMessage = async (userQuestion: string, mode: 'basic' | 'vip' | 'expert' = 'vip') => {
-    if (!laSo) return;
+  // Xử lý gửi tin nhắn hỏi đáp với Thầy Tôn (trả về true nếu thành công để ChatThayTon chỉ xóa input khi gửi thành công)
+  const handleSendMessage = async (
+    userQuestion: string,
+    mode: 'basic' | 'vip' | 'expert' = 'vip'
+  ): Promise<boolean> => {
+    if (!laSo) return false;
 
     // Kiểm tra quota cứng: Nếu chưa đăng ký gói hoặc đã hỏi đủ hạn mức cho phép thì chặn
     const validCount = chatHistory.filter((c) => !c.isError).length;
@@ -1415,9 +1428,10 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       (questionsQuota?.basicAllowed || 0);
     if (totalAllowed === 0 || validCount >= totalAllowed) {
       alert('Quý khách đã sử dụng hết số lượt câu hỏi của lá số này. Xin vui lòng nạp thêm lượt hỏi để tiếp tục đàm đạo cùng Thầy Tôn.');
-      return;
+      return false;
     }
 
+    const requestChartId = currentChartId;
     setIsLoadingChat(true);
 
     try {
@@ -1427,9 +1441,10 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
           : mode === 'vip'
           ? 'gemini-3.1-pro-preview'
           : 'gemini-2.5-flash';
+      const chatHeaders = await getBearerAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/tuvi/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: chatHeaders,
         body: JSON.stringify({
           userQuestion,
           laSo,
@@ -1441,10 +1456,12 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
           mode,
           model: selectedModel,
           lang: language,
-          chartId: currentChartId,
+          chartId: requestChartId,
           userId: user?.id,
         }),
       });
+
+      const isStillSameChart = chartIdRef.current === requestChartId;
 
       if (!res.ok) {
         const rawText = await res.text().catch(() => '');
@@ -1455,46 +1472,57 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
         } catch {
           // ignore
         }
+        if (isStillSameChart) {
+          setChatHistory((prev) => [
+            ...prev,
+            {
+              q: userQuestion,
+              a: errMsg || 'Thầy đang bận, xin quý khách thử lại sau ít phút.',
+              isError: true,
+              type: mode,
+            },
+          ]);
+        }
+        return false;
+      } else {
+        const json = await res.json();
+        const answer = json.answer || 'Không nhận được câu trả lời từ Thầy Tôn.';
+        if (isStillSameChart) {
+          setChatHistory((prev) => [
+            ...prev,
+            {
+              q: userQuestion,
+              a: answer,
+              isError: false,
+              type: mode,
+            },
+          ]);
+        }
+
+        // Nếu đã đăng nhập và có chartId, lưu tin nhắn vào database nếu server chưa tự lưu
+        if (requestChartId && !json.savedToDb) {
+          saveChatMessage(requestChartId, userQuestion, answer, mode);
+        }
+        return true;
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (chartIdRef.current === requestChartId) {
         setChatHistory((prev) => [
           ...prev,
           {
             q: userQuestion,
-            a: errMsg || 'Thầy đang bận, xin quý khách thử lại sau ít phút.',
+            a: `Lỗi kết nối máy chủ: ${msg}`,
             isError: true,
             type: mode,
           },
         ]);
-      } else {
-        const json = await res.json();
-        const answer = json.answer || 'Không nhận được câu trả lời từ Thầy Tôn.';
-        setChatHistory((prev) => [
-          ...prev,
-          {
-            q: userQuestion,
-            a: answer,
-            isError: false,
-            type: mode,
-          },
-        ]);
-
-        // Nếu đã đăng nhập và có chartId, lưu tin nhắn vào database nếu server chưa tự lưu
-        if (currentChartId && !json.savedToDb) {
-          saveChatMessage(currentChartId, userQuestion, answer, mode);
-        }
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          q: userQuestion,
-          a: `Lỗi kết nối máy chủ: ${msg}`,
-          isError: true,
-          type: mode,
-        },
-      ]);
+      return false;
     } finally {
-      setIsLoadingChat(false);
+      if (chartIdRef.current === requestChartId) {
+        setIsLoadingChat(false);
+      }
     }
   };
 
@@ -1535,17 +1563,32 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                ? 'pro'
                : 'free'));
 
-      // Tự động kiểm tra hóa đơn thanh toán trong tuvi_orders (Cơ chế Self-Healing chỉ khớp đúng lá số này)
+      // Tự động kiểm tra hóa đơn thanh toán trong tuvi_orders (tách query an toàn thay cho .or())
       if (detectedTier !== 'expert') {
         try {
-          const { data: paidOrders } = await supabase
-            .from('tuvi_orders')
-            .select('id, payment_type, status, chart_id, ho_ten')
-            .or(`chart_id.eq.${chartId},user_id.eq.${chart.user_id || user?.id}`)
-            .eq('status', 'PAID')
-            .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip']);
+          const ownerUid = chart.user_id || user?.id;
+          const [byChartRes, byUserRes] = await Promise.all([
+            isValidUuidClient(chartId)
+              ? supabase
+                  .from('tuvi_orders')
+                  .select('id, payment_type, status, chart_id, ho_ten')
+                  .eq('chart_id', chartId)
+                  .eq('status', 'PAID')
+                  .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip'])
+              : Promise.resolve({ data: [] as Array<{ id: string; payment_type: string; status: string; chart_id: string | null; ho_ten: string | null }> }),
+            isValidUuidClient(ownerUid)
+              ? supabase
+                  .from('tuvi_orders')
+                  .select('id, payment_type, status, chart_id, ho_ten')
+                  .eq('user_id', ownerUid)
+                  .is('chart_id', null)
+                  .eq('status', 'PAID')
+                  .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip'])
+              : Promise.resolve({ data: [] as Array<{ id: string; payment_type: string; status: string; chart_id: string | null; ho_ten: string | null }> }),
+          ]);
 
-          const matchingOrders = (paidOrders || []).filter(
+          const combinedOrders = [...(byChartRes.data || []), ...(byUserRes.data || [])];
+          const matchingOrders = combinedOrders.filter(
             (o) =>
               o.chart_id === chartId ||
               (!o.chart_id &&
@@ -1562,7 +1605,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               detectedTier = 'pro';
             }
           }
-        } catch (err) {
+        } catch {
           // ignore
         }
       }
@@ -1573,7 +1616,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       let activeLaSo = chart.laso_data;
       if (chart.duong_so_data) {
         try {
-          const resolvedNamXem = chart.duong_so_data.namXem || new Date().getFullYear();
+          const resolvedNamXem = chart.duong_so_data.namXem || getCurrentVietnamTimeInfo().namAm;
           activeLaSo = lapLaSoTuVi(chart.duong_so_data, resolvedNamXem);
           activeLaSo.tier = detectedTier;
           if (chart.laso_data?.quota) activeLaSo.quota = chart.laso_data.quota;
@@ -1589,29 +1632,6 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       setCurrentDuongSo(chart.duong_so_data);
       setCurrentChartId(chart.id);
       let finalReadingHtml = chart.reading_html ? cleanReadingHtml(chart.reading_html) : undefined;
-      // Khôi phục lại phân tích Thủ tướng (chỉ tay) đứt gãy cung Mệnh cho anh Trần Trọng Vân nếu bị ghi đè trước đó
-      if (
-        finalReadingHtml &&
-        (chart.title?.includes('Trần Trọng Vân') || chart.duong_so_data?.hoTen?.includes('Trần Trọng Vân')) &&
-        !finalReadingHtml.includes('đứt gãy')
-      ) {
-        const palmistrySection = `
-<h4>✦ Soi Chiếu Thủ Tướng (Đường Chỉ Tay) &amp; Huyền Cơ Vết Đứt Gãy Cung Mệnh:</h4>
-<p>Qua đối chiếu trực tiếp hình ảnh <b>Thủ tướng (bàn tay trái và tay phải của đương số)</b> với tọa độ <b>Cung Mệnh tại Thìn</b> và thế đứng Tam Phương Tứ Chính:</p>
-<p>Trên gò Kim Tinh và trục đường <b>Sinh Đạo (Địa Vân)</b> kết hợp đường <b>Trí Đạo</b> của đương số xuất hiện một <b>nét đứt gãy chuyển giao tương ứng với vị trí cung Mệnh tại Thìn (Thiên La - Địa Võng)</b> ở độ tuổi 38 - 45 tuổi (chính là giai đoạn 42 tuổi hiện tại của đương số). Đây là dấu hiệu huyền cơ cực kỳ quan trọng:</p>
-<ul>
-  <li><b>Về biến chuyển vận mệnh &amp; sự nghiệp:</b> Nét đứt gãy cung Mệnh này tuyệt đối <i>không phải</i> điềm báo suy tổn thọ mạng (bởi vì bên dưới có đường Sinh đạo phụ chạy song song nâng đỡ và gò Thái Dương rất sáng), mà thực chất là dấu mốc <b>"Lột xác chuyển đoạn"</b> – báo hiệu đương số phải trải qua một khúc quanh thay đổi môi trường hoặc đổi hẳn ngành nghề/mô hình kinh doanh (từ mô hình cũ chuyển sang làm chủ kinh doanh ẩm thực tại TP. Vinh, Nghệ An).</li>
-  <li><b>Về sức khỏe &amp; tinh thần:</b> Vết đứt đoạn tại cung Mệnh phản ánh giai đoạn này đương số phải lao tâm khổ tứ, hao tổn nhiều tâm trí suy tính cho tương lai. Cần chú trọng chăm sóc hệ tiêu hóa, dạ dày và tránh để stress kéo dài làm ảnh hưởng đến nguyên khí.</li>
-  <li><b>Về chiến lược kinh doanh lâu dài:</b> Sau khúc quanh đứt gãy này, đường Sinh đạo và Tài vận tiếp tục vươn dài vững chắc hướng về gò Thủy Tinh, báo hiệu mô hình kinh doanh sau giai đoạn khó khăn ban đầu sẽ đi vào ổn định, tích tụ tài lộc bền vững đúng cách cục Thân cư Tài Bạch. Cần lấy chữ Tín làm đầu và kiên trì với chiến lược chất lượng.</li>
-</ul>
-`;
-        if (finalReadingHtml.includes('<h3>II.')) {
-          finalReadingHtml = finalReadingHtml.replace('<h3>II.', `${palmistrySection}\n<h3>II.`);
-        } else {
-          finalReadingHtml += palmistrySection;
-        }
-        updateChartReading(chart.id, finalReadingHtml).catch(() => {});
-      }
 
       const isBrokenReading =
         !chart.reading_html ||
@@ -1700,22 +1720,22 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
 
         if (needsNewReading) {
           setIsLoadingReading(true);
-          generateReading(updatedLaSo, chart.duong_so_data, detectedTier, chart.id)
-            .then(async (readingResult) => {
-              if (readingResult) {
-                setReadingHtml(readingResult);
-                await updateChartReading(chart.id, readingResult);
-                await saveOrUpdateChart({
-                  id: chart.id,
-                  title: chart.title,
-                  duongSoData: cleanDuongSo,
-                  lasoData: updatedLaSo,
-                  readingHtml: readingResult,
-                });
-              }
-            })
-            .catch(console.error)
-            .finally(() => setIsLoadingReading(false));
+          try {
+            const readingResult = await generateReading(updatedLaSo, chart.duong_so_data, detectedTier, chart.id);
+            if (readingResult) {
+              setReadingHtml(readingResult);
+              await updateChartReading(chart.id, readingResult);
+              await saveOrUpdateChart({
+                id: chart.id,
+                title: chart.title,
+                duongSoData: cleanDuongSo,
+                lasoData: updatedLaSo,
+                readingHtml: readingResult,
+              });
+            }
+          } catch (genErr) {
+            console.error(genErr);
+          }
         } else if (chart.duong_so_data?.tier !== detectedTier) {
           // Nếu đã có bài luận giải đúng cấp độ rồi, chỉ cập nhật tier mà không sinh lại bài
           saveOrUpdateChart({
@@ -1782,17 +1802,37 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     isLoggingOutRef.current = true;
     isAuthenticatedRef.current = false;
     handleReset();
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('tuvi_active_session');
-    }
+    clearActiveVoucher();
+    emailLinkOwnerRef.current = null;
+    setEmailLinkOwner(null);
+
+    const wipeLocalUserState = () => {
+      if (typeof window === 'undefined') return;
+      try {
+        localStorage.removeItem('tuvi_active_session');
+        localStorage.removeItem('tuvi_active_voucher');
+        localStorage.removeItem('tuvi_customer_email');
+        const keysToDelete: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith('tuvi_quota_') || k.startsWith('tuvi_q_'))) {
+            keysToDelete.push(k);
+          }
+        }
+        keysToDelete.forEach((k) => localStorage.removeItem(k));
+        sessionStorage.removeItem('tuvi_email_link_owner');
+      } catch {
+        // ignore storage errors
+      }
+    };
+
+    wipeLocalUserState();
     try {
       await signOut();
     } catch (err) {
       console.error('Lỗi signOut:', err);
     }
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('tuvi_active_session');
-    }
+    wipeLocalUserState();
     setTimeout(() => {
       isLoggingOutRef.current = false;
     }, 600);
@@ -1836,7 +1876,8 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     }
 
     const urlParams = new URLSearchParams(window.location.search);
-    const urlChartId = urlParams.get('chartId');
+    const rawUrlChartId = (urlParams.get('chartId') || '').trim();
+    const urlChartId = isValidUuidClient(rawUrlChartId) ? rawUrlChartId : null;
 
     // Trên trang đích quảng cáo /van-han: Nếu URL không chỉ định sẵn chartId cụ thể, luôn hiển thị ngay Landing Page + Form lập lá số mới (không tự bung lá số cũ làm che mất trang đích)
     if (isVanHanLanding && !urlChartId) {
@@ -1872,7 +1913,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
             let activeLaSo = session.laSo;
             if (session.duongSo) {
               try {
-                const resolvedNamXem = session.duongSo.namXem || new Date().getFullYear();
+                const resolvedNamXem = session.duongSo.namXem || getCurrentVietnamTimeInfo().namAm;
                 activeLaSo = lapLaSoTuVi(session.duongSo, resolvedNamXem);
                 activeLaSo.tier = session.tier || 'free';
                 if (session.quota) activeLaSo.quota = session.quota;
@@ -1907,6 +1948,11 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               getChartDetails(session.chartId)
                 .then(async ({ chart, chatMessages }) => {
                   if (chart) {
+                    // Khôi phục lại đầy đủ duong_so_data (bao gồm ảnh khuôn mặt & chỉ tay từ DB sau khi F5)
+                    if (chart.duong_so_data) {
+                      duongSoRef.current = chart.duong_so_data;
+                      setCurrentDuongSo(chart.duong_so_data);
+                    }
                     const isBrokenDbReading =
                       !chart.reading_html ||
                       chart.reading_html.trim().length < 400 ||
@@ -1940,17 +1986,31 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                         ? 'pro'
                         : session.tier || 'free');
 
-                    // Kiểm tra Self-Healing từ tuvi_orders (chỉ khớp đúng lá số này)
+                    // Kiểm tra Self-Healing từ tuvi_orders (tách query an toàn thay cho .or())
                     if (detectedTier !== 'expert') {
                       try {
-                        const { data: paidOrders } = await supabase
-                          .from('tuvi_orders')
-                          .select('id, payment_type, status, chart_id, ho_ten')
-                          .or(`chart_id.eq.${session.chartId},user_id.eq.${user.id}`)
-                          .eq('status', 'PAID')
-                          .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip']);
+                        const [byChartRes, byUserRes] = await Promise.all([
+                          isValidUuidClient(session.chartId)
+                            ? supabase
+                                .from('tuvi_orders')
+                                .select('id, payment_type, status, chart_id, ho_ten')
+                                .eq('chart_id', session.chartId)
+                                .eq('status', 'PAID')
+                                .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip'])
+                            : Promise.resolve({ data: [] as Array<{ id: string; payment_type: string; status: string; chart_id: string | null; ho_ten: string | null }> }),
+                          isValidUuidClient(user.id)
+                            ? supabase
+                                .from('tuvi_orders')
+                                .select('id, payment_type, status, chart_id, ho_ten')
+                                .eq('user_id', user.id)
+                                .is('chart_id', null)
+                                .eq('status', 'PAID')
+                                .in('payment_type', ['reading_expert', 'upgrade_expert', 'reading_vip'])
+                            : Promise.resolve({ data: [] as Array<{ id: string; payment_type: string; status: string; chart_id: string | null; ho_ten: string | null }> }),
+                        ]);
 
-                        const matchingOrders = (paidOrders || []).filter(
+                        const combinedOrders = [...(byChartRes.data || []), ...(byUserRes.data || [])];
+                        const matchingOrders = combinedOrders.filter(
                           (o) =>
                             o.chart_id === session.chartId ||
                             (!o.chart_id &&
@@ -1967,7 +2027,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                             detectedTier = 'pro';
                           }
                         }
-                      } catch (err) {}
+                      } catch {}
                     }
 
                     tierRef.current = detectedTier;
@@ -2334,22 +2394,90 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               onOpenSavedCharts={handleOpenSavedCharts}
             />
 
-            {/* Bài Bình Giải Chuyên Sâu */}
-            <LuanGiaiAI
-              readingHtml={readingHtml}
-              isLoading={isLoadingReading}
-              error={readingError}
-              tier={currentTier}
-              onUpgrade={openUpgradeModal}
-              onUpgradeToExpert={() => openUpgradeExpertModal()}
-              isUpgrading={isUpgrading}
-              duongSo={currentDuongSo || undefined}
-              laSo={laSo || undefined}
-              activeVoucher={currentTier === 'free' ? activeVoucher : null}
-            />
+            {/* Bài Bình Giải Chuyên Sâu (Hoặc hộp mời đăng ký miễn phí nhận bình giải cho khách vừa lập lá số vãng lai) */}
+            {!user && !readingHtml && !isLoadingReading && !readingError && laSo && currentDuongSo ? (
+              <div className="w-full max-w-[1060px] mx-auto imperial-card border-2 border-amber-500/50 rounded-3xl p-5 sm:p-7 text-slate-100 shadow-2xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300">
+                      ✨ Đã An Sao Chuẩn Xác 108 Tinh Đẩu
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold font-serif text-gold-gradient">
+                      Nhận Ngay Bản Bình Giải Miễn Phí (~1.000 từ) cho {currentDuongSo.hoTen}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                      Lá số <strong className="text-amber-300">{laSo.banMenh} • {laSo.tenCuc} • {laSo.thuanNghichLy}</strong> đã hiển thị đầy đủ phía trên. Tạo tài khoản miễn phí trong 5 giây để Thầy Tôn bình giải trọn vẹn Mệnh – Tài – Quan, Đại Vận 10 năm &amp; 3 Cung Hạn năm {laSo.namXem}, đồng thời lưu vĩnh viễn vào Sổ Tay Số Mệnh!
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        pendingPostAuthActionRef.current = () => {
+                          handleFormSubmit(currentDuongSo, 'free');
+                        };
+                        setAuthModalTab('signup');
+                        setAuthModalNotice(
+                          `Tạo tài khoản miễn phí (5 giây) để nhận ngay Bản Bình Giải Tử Vi ~1.000 từ cho ${currentDuongSo.hoTen} & lưu trọn đời vào Sổ Tay!`
+                        );
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-500/30 transition transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
+                    >
+                      ✨ Nhận Bình Giải Miễn Phí Ngay →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        pendingPostAuthActionRef.current = () => {
+                          handleFormSubmit(currentDuongSo, 'free');
+                        };
+                        setAuthModalTab('signin');
+                        setAuthModalNotice('');
+                        setIsAuthModalOpen(true);
+                      }}
+                      className="px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-slate-200 font-semibold text-xs sm:text-sm transition cursor-pointer whitespace-nowrap"
+                    >
+                      Đã có tài khoản? Đăng nhập
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <LuanGiaiAI
+                readingHtml={readingHtml}
+                isLoading={isLoadingReading}
+                error={readingError}
+                tier={currentTier}
+                onUpgrade={openUpgradeModal}
+                onUpgradeToExpert={() => openUpgradeExpertModal()}
+                onRetry={async () => {
+                  const activeLaSo = laSoRef.current || laSo;
+                  const activeDuongSo = duongSoRef.current || currentDuongSo;
+                  const activeChartId = chartIdRef.current || currentChartId;
+                  if (!activeLaSo || !activeDuongSo) return;
+                  setReadingError(undefined);
+                  setIsLoadingReading(true);
+                  try {
+                    const resText = await generateReading(activeLaSo, activeDuongSo, currentTier, activeChartId);
+                    if (resText) {
+                      setReadingHtml(resText);
+                      if (activeChartId) updateChartReading(activeChartId, resText);
+                    }
+                  } finally {
+                    setIsLoadingReading(false);
+                  }
+                }}
+                isUpgrading={isUpgrading}
+                duongSo={currentDuongSo || undefined}
+                laSo={laSo || undefined}
+                activeVoucher={currentTier === 'free' ? activeVoucher : null}
+              />
+            )}
 
             {/* Khung Hỏi Đáp Luận Giải Cùng AI Thầy Tôn */}
             <ChatThayTon
+              key={currentChartId || 'guest'}
               chatHistory={chatHistory}
               onSendMessage={handleSendMessage}
               isLoading={isLoadingChat}
@@ -2358,6 +2486,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               onUnlockQuestions={handleUnlockQuestions}
               onUpgradeToPro={openUpgradeModal}
               onUpgradeToExpert={() => openUpgradeExpertModal()}
+              laSo={laSo}
             />
 
             {/* Khối Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast + Giáo trình tương tác 699K) */}
@@ -2373,64 +2502,53 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
       </div>
 
       {/* Modal Thanh Toán Đa Mục Đích */}
-      <PaymentModal
-        isOpen={paymentModalConfig.isOpen}
-        onClose={() => setPaymentModalConfig((prev) => ({ ...prev, isOpen: false }))}
-        onConfirm={() => {
-          if (paymentModalConfig.onConfirm) {
-            paymentModalConfig.onConfirm();
+      {paymentModalConfig.isOpen && (
+        <PaymentModal
+          isOpen={paymentModalConfig.isOpen}
+          onClose={() => setPaymentModalConfig((prev) => ({ ...prev, isOpen: false }))}
+          onConfirm={() => {
+            if (paymentModalConfig.onConfirm) {
+              paymentModalConfig.onConfirm();
+            }
+            setPaymentModalConfig((prev) => ({ ...prev, isOpen: false }));
+          }}
+          hoTen={
+            currentDuongSo?.hoTen ||
+            duongSoRef.current?.hoTen ||
+            profile?.full_name ||
+            verifiedAuthUser?.fullName ||
+            user?.user_metadata?.full_name ||
+            'Đương số'
           }
-          setPaymentModalConfig((prev) => ({ ...prev, isOpen: false }));
-        }}
-        hoTen={
-          currentDuongSo?.hoTen ||
-          duongSoRef.current?.hoTen ||
-          profile?.full_name ||
-          verifiedAuthUser?.fullName ||
-          user?.user_metadata?.full_name ||
-          'Đương số'
-        }
-        paymentType={paymentModalConfig.type}
-        price={paymentModalConfig.price}
-        originalPrice={paymentModalConfig.originalPrice}
-        voucherCode={paymentModalConfig.voucherCode}
-        discountPercent={paymentModalConfig.discountPercent}
-        fallbackUserId={
-          user?.id ||
-          verifiedAuthUser?.id ||
-          emailLinkOwner?.userId ||
-          activeVoucher?.userId ||
-          undefined
-        }
-        fallbackEmail={
-          user?.email ||
-          verifiedAuthUser?.email ||
-          emailLinkOwner?.email ||
-          activeVoucher?.email ||
-          undefined
-        }
-        onVoucherExpired={() => {
-          clearActiveVoucher();
-          setPaymentModalConfig((prev) => ({
-            ...prev,
-            price:
-              prev.type === 'reading_expert'
-                ? 269000
-                : prev.type === 'reading_vip'
-                ? 119000
-                : prev.price,
-            originalPrice: undefined,
-            voucherCode: undefined,
-            discountPercent: undefined,
-          }));
-        }}
-        chartId={currentChartId || chartIdRef.current || undefined}
-      />
+          paymentType={paymentModalConfig.type}
+          price={paymentModalConfig.price}
+          originalPrice={paymentModalConfig.originalPrice}
+          voucherCode={paymentModalConfig.voucherCode}
+          discountPercent={paymentModalConfig.discountPercent}
+          fallbackUserId={
+            user?.id ||
+            verifiedAuthUser?.id ||
+            emailLinkOwner?.userId ||
+            activeVoucher?.userId ||
+            undefined
+          }
+          fallbackEmail={
+            user?.email ||
+            verifiedAuthUser?.email ||
+            emailLinkOwner?.email ||
+            activeVoucher?.email ||
+            undefined
+          }
+          onVoucherExpired={handlePaymentVoucherExpired}
+          chartId={currentChartId || chartIdRef.current || undefined}
+        />
+      )}
 
       {/* Modal Đăng Nhập / Đăng Ký / Quên MK */}
       <AuthModal
         isOpen={isAuthModalOpen}
         defaultTab={authModalTab}
+        initialName={currentDuongSo?.hoTen || duongSoRef.current?.hoTen || undefined}
         onClose={() => {
           setIsAuthModalOpen(false);
           setAuthModalNotice('');
@@ -2447,6 +2565,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
         onClose={() => setIsSavedChartsModalOpen(false)}
         onSelectChart={handleSelectSavedChart}
         onNewChart={handleReset}
+        onDeleteActiveChart={() => handleReset()}
         onUpgradeChart={async (chartId) => {
           await handleSelectSavedChart(chartId);
           openUpgradeModal();
@@ -2463,22 +2582,22 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
 
       <footer className="max-w-[1060px] w-full mx-auto text-center text-xs text-slate-400 pt-5 pb-24 sm:pb-20 border-t border-slate-800/60 print:hidden mt-8 space-y-2">
         <div className="flex items-center justify-center gap-3 sm:gap-5 text-xs text-slate-400 font-medium flex-wrap">
-          <a href="/khoa-hoc" className="text-amber-300 hover:text-amber-200 font-semibold transition">
+          <Link href="/khoa-hoc" className="text-amber-300 hover:text-amber-200 font-semibold transition">
             {t('nav.course', 'Khóa Học Tử Vi')}
-          </a>
-          <span className="text-slate-700">•</span>
-          <a href="/thay-ton" className="hover:text-amber-400 transition">
+          </Link>
+          <span className="text-slate-600">•</span>
+          <Link href="/thay-ton" className="hover:text-amber-400 transition">
             {t('nav.about', 'Hồ Sơ Thầy Tôn')}
-          </a>
-          <span className="text-slate-700">•</span>
-          <a href="/phong-thuy" className="hover:text-amber-400 transition">
+          </Link>
+          <span className="text-slate-600">•</span>
+          <Link href="/phong-thuy" className="hover:text-amber-400 transition">
             {t('about.btnFengShui', 'Phong Thủy Cải Vận')}
-          </a>
-          <span className="text-slate-700">•</span>
-          <a href="/bai-viet" className="hover:text-amber-400 transition">
+          </Link>
+          <span className="text-slate-600">•</span>
+          <Link href="/bai-viet" className="hover:text-amber-400 transition">
             {t('nav.guide', 'Cẩm Nang Tử Vi')}
-          </a>
-          <span className="text-slate-700">•</span>
+          </Link>
+          <span className="text-slate-600">•</span>
           <a
             href="https://tonyenglish.vn"
             target="_blank"
@@ -2487,18 +2606,15 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
           >
             TonyEnglish.vn
           </a>
-          <span className="text-slate-700">•</span>
+          <span className="text-slate-600">•</span>
           <a href="mailto:tranhuyton@gmail.com" className="hover:text-amber-300 transition">
             Email: tranhuyton@gmail.com
           </a>
         </div>
-        <p className="text-slate-500 text-[11px] sm:text-xs">
-          {t('footer.copyright', undefined, { year: new Date().getFullYear() })}{' '}
-          <a href="/admin" className="text-slate-600 hover:text-slate-400 transition ml-1.5" title="Cổng quản trị Thầy Tôn">
-            {t('footer.admin')}
-          </a>
+        <p className="text-slate-400 text-[11px] sm:text-xs">
+          {t('footer.copyright', undefined, { year: getCurrentVietnamTimeInfo().namDuong })}
         </p>
-        <p className="text-slate-500/85 text-[11px] leading-relaxed max-w-3xl mx-auto px-3 pt-1">
+        <p className="text-slate-400/90 text-[11px] leading-relaxed max-w-3xl mx-auto px-3 pt-1">
           {t(
             'footer.disclaimer',
             'Miễn trừ trách nhiệm: Toàn bộ nội dung luận giải Tử Vi, Tướng Pháp, Phong Thủy và Hỏi đáp AI trên hệ thống mang tính chất nghiên cứu văn hóa Á Đông, chiêm nghiệm tâm lý và định hướng tham khảo — hoàn toàn không phải bói toán mê tín dị đoan và không thay thế cho tư vấn y tế, pháp lý hay tài chính chuyên ngành. Mọi quyết định thực tế thuộc quyền tự chủ của quý độc giả.'

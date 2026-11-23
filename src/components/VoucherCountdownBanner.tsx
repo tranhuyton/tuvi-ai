@@ -9,6 +9,7 @@ export interface ClientVoucherInfo {
   discountPercent: 20 | 30;
   durationHours: number;
   expiresAt: string;
+  remainingSeconds?: number;
   userId?: string | null;
   email?: string | null;
   chartId?: string | null;
@@ -46,13 +47,22 @@ export default function VoucherCountdownBanner({
   onExpire,
 }: VoucherCountdownBannerProps) {
   const { language } = useLanguage();
-  const [remainingMs, setRemainingMs] = useState<number>(() =>
-    Math.max(0, new Date(voucher.expiresAt).getTime() - Date.now())
-  );
+  // Tính mốc kết thúc dựa trên remainingSeconds do server tính (chống lệch đồng hồ máy khách)
+  const initialRemainingMs =
+    typeof voucher.remainingSeconds === 'number' && Number.isFinite(voucher.remainingSeconds)
+      ? Math.max(0, voucher.remainingSeconds * 1000)
+      : Math.max(0, new Date(voucher.expiresAt).getTime() - Date.now());
+  const [remainingMs, setRemainingMs] = useState<number>(initialRemainingMs);
 
   useEffect(() => {
+    const baseMs =
+      typeof voucher.remainingSeconds === 'number' && Number.isFinite(voucher.remainingSeconds)
+        ? Math.max(0, voucher.remainingSeconds * 1000)
+        : Math.max(0, new Date(voucher.expiresAt).getTime() - Date.now());
+    const targetEndAt = Date.now() + baseMs;
+
     const update = () => {
-      const diff = new Date(voucher.expiresAt).getTime() - Date.now();
+      const diff = targetEndAt - Date.now();
       if (diff <= 0) {
         setRemainingMs(0);
         onExpire();
@@ -63,7 +73,7 @@ export default function VoucherCountdownBanner({
     update();
     const timer = setInterval(update, 1000);
     return () => clearInterval(timer);
-  }, [voucher.expiresAt, onExpire]);
+  }, [voucher.code, voucher.expiresAt, voucher.remainingSeconds, onExpire]);
 
   if (remainingMs <= 0) return null;
 

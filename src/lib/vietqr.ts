@@ -14,7 +14,10 @@ export const BANK_BIN_MAP: Record<string, string> = {
   MBBANK: '970422',
   BIDV: '970418',
   CTG: '970415',
+  ICB: '970415',
   VIETINBANK: '970415',
+  VBA: '970405',
+  AGRIBANK: '970405',
   ACB: '970416',
   TPB: '970423',
   TPBANK: '970423',
@@ -30,6 +33,8 @@ export const BANK_BIN_MAP: Record<string, string> = {
   HDBANK: '970437',
   SEAB: '970440',
   SEABANK: '970440',
+  NAB: '970428',
+  NAMABANK: '970428',
 };
 
 /**

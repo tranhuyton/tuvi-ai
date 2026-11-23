@@ -16,12 +16,14 @@ import {
   Crown,
   Gem,
 } from 'lucide-react';
-import { getArticleBySlug, type SeoArticle } from '@/lib/seoArticles';
+import type { SeoArticle } from '@/lib/seoArticles';
+import { getArticleMetaBySlug } from '@/lib/seoArticlesIndex';
 import { useLanguage } from '@/context/LanguageContext';
 import {
   EXTERNAL_PAGE_UI,
   getLocalizedStageMeta,
   getLocalizedSeoArticle,
+  getLocalizedSeoArticleMeta,
 } from '@/lib/i18n/externalPagesI18n';
 import GuideMenuDropdown from '@/components/GuideMenuDropdown';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -35,9 +37,9 @@ export default function BaiVietDetailClient({ article: rawArticle }: { article: 
   const stageMeta = getLocalizedStageMeta(rawArticle.funnelStage, language);
 
   const relatedArticles = rawArticle.relatedSlugs
-    .map((s) => getArticleBySlug(s))
+    .map((s) => getArticleMetaBySlug(s))
     .filter((a): a is NonNullable<typeof a> => Boolean(a))
-    .map((a) => getLocalizedSeoArticle(a, language));
+    .map((a) => getLocalizedSeoArticleMeta(a, language));
 
   return (
     <div className="max-w-[920px] mx-auto space-y-8">
@@ -319,7 +321,7 @@ export default function BaiVietDetailClient({ article: rawArticle }: { article: 
         </Link>
       </div>
 
-      <footer className="pt-5 border-t border-slate-800/60 text-center text-[11px] text-slate-500 leading-relaxed max-w-3xl mx-auto">
+      <footer className="pt-5 border-t border-slate-800/60 text-center text-[11px] text-slate-400 leading-relaxed max-w-3xl mx-auto">
         {ui.disclaimer}
       </footer>
     </div>

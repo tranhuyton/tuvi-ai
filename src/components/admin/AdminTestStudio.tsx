@@ -9,6 +9,7 @@ import ChatThayTon from '@/components/ChatThayTon';
 import LanguageSelector from '@/components/LanguageSelector';
 import SmartNumericInput from '@/components/SmartNumericInput';
 import { useLanguage } from '@/context/LanguageContext';
+import { getAdminAuthHeaders } from '@/lib/adminClientAuth';
 import {
   Sparkles,
   Crown,
@@ -147,9 +148,9 @@ export default function AdminTestStudio() {
   const fetchOfflineCharts = async () => {
     setIsLoadingOffline(true);
     try {
-      const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
-      const res = await fetch(`/api/admin/offline-charts?pin=${encodeURIComponent(pin)}`, {
-        headers: { 'x-admin-pin': pin },
+      const authHeaders = await getAdminAuthHeaders();
+      const res = await fetch('/api/admin/offline-charts', {
+        headers: authHeaders,
       });
       if (res.ok) {
         const data = await res.json();
@@ -171,9 +172,10 @@ export default function AdminTestStudio() {
               if (missingOnServer.length > 0) {
                 // Tự động đẩy bù các hồ sơ từ máy tính lên Supabase qua batch POST
                 try {
+                  const postHeaders = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
                   await fetch('/api/admin/offline-charts', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+                    headers: postHeaders,
                     body: JSON.stringify(missingOnServer),
                   });
                 } catch (batchErr) {
@@ -293,7 +295,7 @@ export default function AdminTestStudio() {
 
     setIsSavingChart(true);
     try {
-      const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+      const postHeaders = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
       const payload: Partial<OfflineChartItem> & { hoTen: string; duongSoData: DuLieuDuongSo } = {
         id: activeChartId || undefined,
         hoTen: formData.hoTen.trim(),
@@ -307,10 +309,7 @@ export default function AdminTestStudio() {
 
       const res = await fetch('/api/admin/offline-charts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-pin': pin,
-        },
+        headers: postHeaders,
         body: JSON.stringify(payload),
       });
 
@@ -349,10 +348,10 @@ export default function AdminTestStudio() {
     if (!confirmed) return;
 
     try {
-      const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
-      const res = await fetch(`/api/admin/offline-charts?id=${encodeURIComponent(id)}&pin=${encodeURIComponent(pin)}`, {
+      const delHeaders = await getAdminAuthHeaders();
+      const res = await fetch(`/api/admin/offline-charts?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
-        headers: { 'x-admin-pin': pin },
+        headers: delHeaders,
       });
       if (res.ok) {
         // Đồng bộ xóa khỏi localStorage
@@ -511,7 +510,7 @@ export default function AdminTestStudio() {
     );
 
     // TỰ ĐỘNG LƯU VÀO SỔ TAY KHÁCH OFFLINE NGAY KHI AN SAO (Tránh quên bấm)
-    const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+    const adminJsonHeaders = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
     let savedChartId = activeChartId;
     try {
       const payload: Partial<OfflineChartItem> & { hoTen: string; duongSoData: DuLieuDuongSo } = {
@@ -525,7 +524,7 @@ export default function AdminTestStudio() {
 
       const saveRes = await fetch('/api/admin/offline-charts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+        headers: adminJsonHeaders,
         body: JSON.stringify(payload),
       });
       if (saveRes.ok) {
@@ -548,59 +547,36 @@ export default function AdminTestStudio() {
       let finalReadingText: string | undefined;
       let fallbackError: string | undefined;
 
-      if (testTier !== 'expert') {
-        try {
-          const res = await fetch('/api/tuvi/reading', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              laSo: calculated,
-              tier: testTier,
-              thongTinThem: cleanData.thongTinThem,
-              chieuCao: cleanData.chieuCao,
-              canNang: cleanData.canNang,
-              anhMat: cleanData.anhMat,
-              anhTay: cleanData.anhTay,
-              model: testModel,
-              lang: language,
-            }),
-          });
-
-          if (res.ok) {
-            const json = await res.json();
-            if (json.reading) {
-              finalReadingText = json.reading;
-            } else {
-              fallbackError = json.error;
-            }
-          } else {
-            const errJson = await res.json().catch(() => ({}));
-            fallbackError = errJson.error || `HTTP ${res.status}`;
-          }
-        } catch (fetchErr: any) {
-          fallbackError = fetchErr.message;
-        }
-      }
-
-      // Gọi trực tiếp qua Supabase Edge Function (Mặc định cho gói Expert 3 luồng song song, hoặc khi /api/tuvi/reading bị timeout)
-      if (!finalReadingText) {
-        const { buildReadingParts, callGeminiVision } = await import('@/lib/gemini');
-        const parts = buildReadingParts({
-          laSo: calculated,
-          tier: testTier,
-          thongTinThem: cleanData.thongTinThem,
-          chieuCao: cleanData.chieuCao,
-          canNang: cleanData.canNang,
-          anhMat: cleanData.anhMat,
-          anhTay: cleanData.anhTay,
-          lang: language,
+      try {
+        const res = await fetch('/api/tuvi/reading', {
+          method: 'POST',
+          headers: adminJsonHeaders,
+          body: JSON.stringify({
+            laSo: calculated,
+            tier: testTier,
+            thongTinThem: cleanData.thongTinThem,
+            chieuCao: cleanData.chieuCao,
+            canNang: cleanData.canNang,
+            anhMat: cleanData.anhMat,
+            anhTay: cleanData.anhTay,
+            model: testModel,
+            lang: language,
+          }),
         });
-        const directRes = await callGeminiVision(parts, undefined, testModel);
-        if (directRes.text) {
-          finalReadingText = directRes.text;
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.reading) {
+            finalReadingText = json.reading;
+          } else {
+            fallbackError = json.error;
+          }
         } else {
-          fallbackError = directRes.error || fallbackError;
+          const errJson = await res.json().catch(() => ({}));
+          fallbackError = errJson.error || `HTTP ${res.status}`;
         }
+      } catch (fetchErr: any) {
+        fallbackError = fetchErr.message;
       }
 
       const elapsed = Date.now() - startTime;
@@ -625,7 +601,7 @@ export default function AdminTestStudio() {
           };
           await fetch('/api/admin/offline-charts', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+            headers: adminJsonHeaders,
             body: JSON.stringify(updatePayload),
           });
           fetchOfflineCharts();
@@ -654,13 +630,10 @@ export default function AdminTestStudio() {
           : mode === 'vip'
           ? (testModel || 'gemini-3.1-pro-preview')
           : 'gemini-2.5-flash';
-      const pin = typeof window !== 'undefined' ? (localStorage.getItem('tuvi_admin_pin') || 'thayton2026') : 'thayton2026';
+      const chatHeaders = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/tuvi/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-pin': pin,
-        },
+        headers: chatHeaders,
         body: JSON.stringify({
           userQuestion,
           laSo,
@@ -671,8 +644,6 @@ export default function AdminTestStudio() {
           mode,
           model: selectedModel,
           lang: language,
-          isAdmin: true,
-          adminPin: pin,
         }),
       });
 
@@ -690,10 +661,9 @@ export default function AdminTestStudio() {
 
         // Tự động lưu lịch sử hỏi đáp vào Sổ tay
         if (activeChartId) {
-          const pin = localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
           fetch('/api/admin/offline-charts', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-admin-pin': pin },
+            headers: chatHeaders,
             body: JSON.stringify({
               id: activeChartId,
               hoTen: formData.hoTen.trim(),

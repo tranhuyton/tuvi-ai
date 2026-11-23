@@ -339,7 +339,7 @@ export const HOME_FUNNEL_I18N: Record<Exclude<Language, 'vi'>, HomeFunnelTransla
       <tr class="bg-slate-900/80"><td class="py-3 px-4 text-slate-200 font-medium">Reading Length</td><td class="py-3 px-4 text-slate-300">~1,000 words</td><td class="py-3 px-4 text-slate-300">~2,500 words</td><td class="py-3 px-4 text-slate-300">~4,500 - 6,000 words</td></tr>
       <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">Analytical Scope</td><td class="py-3 px-4 text-slate-300">Life Bureau, Life–Wealth–Career Triad, Body Palace</td><td class="py-3 px-4 text-slate-300">14 Major Stars, Four Transformations, Face &amp; Palm synthesis</td><td class="py-3 px-4 text-slate-300">Exhaustive Palace-by-Palace analysis of all 12 Palaces</td></tr>
       <tr class="bg-slate-900/80"><td class="py-3 px-4 text-slate-200 font-medium">Timing Forecast</td><td class="py-3 px-4 text-slate-300">10-Year Decan &amp; Annual Overview</td><td class="py-3 px-4 text-slate-300">3 Annual Palaces &amp; 4 Seasons (Spring–Winter)</td><td class="py-3 px-4 text-slate-300">3 Annual Palaces + All 12 Lunar Months (Months 1–12)</td></tr>
-      <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">Included Bonus</td><td class="py-3 px-4 text-slate-300">Save Chart, Image &amp; PDF Export</td><td class="py-3 px-4 text-slate-300">2 Free VIP Pro Q&amp;A Credits (worth 99k)</td><td class="py-3 px-4 text-slate-300">2 Free Expert Q&amp;A Credits (worth 149k)</td></tr>
+      <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">Included Bonus</td><td class="py-3 px-4 text-slate-300">Save Chart, Image &amp; PDF Export</td><td class="py-3 px-4 text-slate-300">2 Free VIP Pro Q&amp;A Credits (worth 99k)</td><td class="py-3 px-4 text-slate-300">2 Free Expert Q&amp;A Credits (worth 129k)</td></tr>
     </tbody>
   </table>
 </div>
@@ -419,7 +419,7 @@ export const HOME_FUNNEL_I18N: Record<Exclude<Language, 'vi'>, HomeFunnelTransla
       <tr class="bg-slate-900/80"><td class="py-3 px-4 text-slate-200 font-medium">批命篇幅</td><td class="py-3 px-4 text-slate-300">约 1,000 字</td><td class="py-3 px-4 text-slate-300">约 2,500 字</td><td class="py-3 px-4 text-slate-300">约 4,500 - 6,000 字</td></tr>
       <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">批命范围</td><td class="py-3 px-4 text-slate-300">本命局、命财官三方四正、身宫</td><td class="py-3 px-4 text-slate-300">十四正曜、四化飞星、面相手相合参</td><td class="py-3 px-4 text-slate-300">逐宫深度剖析全部十二宫与身宫</td></tr>
       <tr class="bg-slate-900/80"><td class="py-3 px-4 text-slate-200 font-medium">大运与流年</td><td class="py-3 px-4 text-slate-300">当前大运与流年三宫综述</td><td class="py-3 px-4 text-slate-300">流年三宫详析 + 春夏秋冬四季运势</td><td class="py-3 px-4 text-slate-300">流年三宫详析 + 农历一至十二月逐月详图</td></tr>
-      <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">尊享赠礼</td><td class="py-3 px-4 text-slate-300">保存命盘、导出图片与PDF</td><td class="py-3 px-4 text-slate-300">赠送 2 次 VIP 深度提问（价值99k）</td><td class="py-3 px-4 text-slate-300">赠送 2 次专家级全盘提问（价值149k）</td></tr>
+      <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">尊享赠礼</td><td class="py-3 px-4 text-slate-300">保存命盘、导出图片与PDF</td><td class="py-3 px-4 text-slate-300">赠送 2 次 VIP 深度提问（价值99k）</td><td class="py-3 px-4 text-slate-300">赠送 2 次专家级全盘提问（价值129k）</td></tr>
     </tbody>
   </table>
 </div>
@@ -496,7 +496,7 @@ export const HOME_FUNNEL_I18N: Record<Exclude<Language, 'vi'>, HomeFunnelTransla
       <tr class="bg-slate-900/80"><td class="py-3 px-4 text-slate-200 font-medium">감명 분량</td><td class="py-3 px-4 text-slate-300">약 1,000 단어</td><td class="py-3 px-4 text-slate-300">약 2,500 단어</td><td class="py-3 px-4 text-slate-300">약 4,500 - 6,000 단어</td></tr>
       <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">해독 범위</td><td class="py-3 px-4 text-slate-300">본명국, 명·재·관 삼방사정, 신궁</td><td class="py-3 px-4 text-slate-300">14주성, 사화비성, 관상·손금 대조</td><td class="py-3 px-4 text-slate-300">12궁 전체 및 신궁 개별 완전 해독</td></tr>
       <tr class="bg-slate-900/80"><td class="py-3 px-4 text-slate-200 font-medium">대운 및 세운</td><td class="py-3 px-4 text-slate-300">10년 대운 및 당해 3궁 요약</td><td class="py-3 px-4 text-slate-300">당해 세운 3궁 + 사계절(봄~겨울) 운기</td><td class="py-3 px-4 text-slate-300">당해 세운 3궁 + 음력 1~12월 월별 상세 운세</td></tr>
-      <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">무료 혜택</td><td class="py-3 px-4 text-slate-300">명반 저장, 이미지/PDF 다운로드</td><td class="py-3 px-4 text-slate-300">VIP 심층 질문 2회 증정 (99k 상당)</td><td class="py-3 px-4 text-slate-300">전문가 질문 2회 증정 (149k 상당)</td></tr>
+      <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">무료 혜택</td><td class="py-3 px-4 text-slate-300">명반 저장, 이미지/PDF 다운로드</td><td class="py-3 px-4 text-slate-300">VIP 심층 질문 2회 증정 (99k 상당)</td><td class="py-3 px-4 text-slate-300">전문가 질문 2회 증정 (129k 상당)</td></tr>
     </tbody>
   </table>
 </div>
@@ -573,7 +573,7 @@ export const HOME_FUNNEL_I18N: Record<Exclude<Language, 'vi'>, HomeFunnelTransla
       <tr class="bg-slate-900/80"><td class="py-3 px-4 text-slate-200 font-medium">鑑定文量</td><td class="py-3 px-4 text-slate-300">約 1,000 語相当</td><td class="py-3 px-4 text-slate-300">約 2,500 語相当</td><td class="py-3 px-4 text-slate-300">約 4,500〜6,000 語相当</td></tr>
       <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">鑑定範囲</td><td class="py-3 px-4 text-slate-300">本命局・命財官三方四正・身宮</td><td class="py-3 px-4 text-slate-300">14主星・四化飛星・面相手相照合</td><td class="py-3 px-4 text-slate-300">全12宮および身宮を一つ残らず個別徹底解剖</td></tr>
       <tr class="bg-slate-900/80"><td class="py-3 px-4 text-slate-200 font-medium">時期・運勢</td><td class="py-3 px-4 text-slate-300">10年大運＆当年流年三限の総括</td><td class="py-3 px-4 text-slate-300">流年三限＋春夏秋冬の四季運勢マップ</td><td class="py-3 px-4 text-slate-300">流年三限＋旧暦1月〜12月の月別詳細運勢</td></tr>
-      <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">特典</td><td class="py-3 px-4 text-slate-300">命盤保存・画像/PDF出力</td><td class="py-3 px-4 text-slate-300">VIP深層質問 2回無料進呈（99k相当）</td><td class="py-3 px-4 text-slate-300">専門質問 2回無料進呈（149k相当）</td></tr>
+      <tr class="bg-slate-900/40"><td class="py-3 px-4 text-slate-200 font-medium">特典</td><td class="py-3 px-4 text-slate-300">命盤保存・画像/PDF出力</td><td class="py-3 px-4 text-slate-300">VIP深層質問 2回無料進呈（99k相当）</td><td class="py-3 px-4 text-slate-300">専門質問 2回無料進呈（129k相当）</td></tr>
     </tbody>
   </table>
 </div>

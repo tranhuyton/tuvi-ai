@@ -1,13 +1,14 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   Compass,
   Crown,
   Gem,
   ShieldCheck,
   Sparkles,
-  ArrowDown,
+  ArrowUp,
   GraduationCap,
   Award,
   CheckCircle2,
@@ -204,11 +205,11 @@ export default function VanHanLandingHero() {
                 </span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold font-serif text-white leading-snug">
+              <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold font-serif text-white leading-snug">
                 {c.h1Part1}
                 <span className="text-amber-400">2026 – 2027</span>
                 {c.h1Part2}
-              </h2>
+              </h1>
 
               <p
                 className="text-sm sm:text-base text-slate-200 leading-relaxed"
@@ -261,7 +262,7 @@ export default function VanHanLandingHero() {
               >
                 <Sparkles className="w-4 h-4 fill-slate-950" />
                 <span>{c.ctaBtn}</span>
-                <ArrowDown className="w-4 h-4" />
+                <ArrowUp className="w-4 h-4" />
               </button>
               <span className="text-xs text-slate-300">{c.ctaNote}</span>
             </div>
@@ -271,9 +272,12 @@ export default function VanHanLandingHero() {
           <div className="lg:col-span-5 flex">
             <div className="w-full rounded-2xl bg-slate-950/85 border border-amber-400/35 p-4 sm:p-5 flex flex-col justify-between gap-4 shadow-xl">
               <div className="flex items-center gap-3.5">
-                <img
+                <Image
                   src="/thay-ton.png"
                   alt={c.authorName}
+                  width={96}
+                  height={96}
+                  priority
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-amber-400/70 shadow-lg shrink-0"
                 />
                 <div className="space-y-1">

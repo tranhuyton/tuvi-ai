@@ -3,7 +3,8 @@
 import React, { useState, ChangeEvent } from 'react';
 import { DuLieuDuongSo, GioiTinh, ServiceTier } from '@/types/tuvi';
 import { GIO_ARR, CAN_ARR, CHI_ARR } from '@/lib/tuvi/constants';
-import { solar2Lunar, isValidSolarDate } from '@/lib/tuvi/lunar';
+import { solar2Lunar, lunar2Solar, getLeapMonthOfLunarYear, isValidSolarDate } from '@/lib/tuvi/lunar';
+import { getCurrentVietnamTimeInfo } from '@/lib/tuvi/anSao';
 import {
   Sparkles,
   Upload,
@@ -101,14 +102,20 @@ export default function TuViForm({
 }: TuViFormProps) {
   const { user } = useAuth();
   const { t, tHour, tCanChi } = useLanguage();
-  const currentYear = new Date().getFullYear();
+  const currentYear = React.useMemo(() => getCurrentVietnamTimeInfo().namAm, []);
   const isDienTrachQuanLoc = variant === 'dien-trach-quan-loc';
   const isVanHanLanding = variant === 'van-han' || isDienTrachQuanLoc;
   const [hoTen, setHoTen] = useState(initialData?.hoTen || '');
   const [gioiTinh, setGioiTinh] = useState<GioiTinh>(initialData?.gioiTinh || 'Nam');
+  const [calendarType, setCalendarType] = useState<'solar' | 'lunar'>('solar');
   const [ngayDuong, setNgayDuong] = useState(initialData?.ngayDuong ?? 15);
   const [thangDuong, setThangDuong] = useState(initialData?.thangDuong ?? 8);
   const [namDuong, setNamDuong] = useState(initialData?.namDuong ?? 1995);
+  const [ngayAmInput, setNgayAmInput] = useState<number>(20);
+  const [thangAmInput, setThangAmInput] = useState<number>(7);
+  const [namAmInput, setNamAmInput] = useState<number>(1995);
+  const [isLeapMonthInput, setIsLeapMonthInput] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [gioSinhVal, setGioSinhVal] = useState(initialData?.gioSinhVal || '2'); // Dần (03h-05h)
   const [namXem, setNamXem] = useState<number>(initialData?.namXem || currentYear);
   const [thongTinThem, setThongTinThem] = useState(initialData?.thongTinThem || '');
@@ -179,13 +186,21 @@ export default function TuViForm({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const MAX_RAW_IMAGE_BYTES = 15 * 1024 * 1024;
+    if (file.size > MAX_RAW_IMAGE_BYTES) {
+      alert('Ảnh có dung lượng vượt quá 15MB. Vui lòng chọn ảnh nhẹ hơn hoặc chụp màn hình rồi tải lại nhé!');
+      e.target.value = '';
+      return;
+    }
+
     setConverting(true);
     try {
       let targetBlob: Blob = file;
 
-      // Bước 1: Kiểm tra định dạng HEIC/HEIF (từ iPhone/iPad)
+      // Bước 1: Chỉ nạp thư viện nặng heic-to nếu không phải ảnh chuẩn JPG/PNG/WebP
+      const isStandardWebImage = /^image\/(jpeg|jpg|png|webp|gif)$/i.test(file.type || '');
       let isHeicFormat = isHeicFile(file);
-      if (!isHeicFormat) {
+      if (!isHeicFormat && !isStandardWebImage) {
         try {
           const { isHeic } = await import('heic-to');
           isHeicFormat = await isHeic(file);
@@ -197,18 +212,19 @@ export default function TuViForm({
       if (isHeicFormat) {
         // Bước 2: Thử xem trình duyệt có hỗ trợ giải mã trực tiếp không (Safari trên iOS/macOS hỗ trợ native hardware)
         let decodedNatively = false;
+        const testUrl = URL.createObjectURL(file);
         try {
           const testImg = new Image();
-          const testUrl = URL.createObjectURL(file);
           await new Promise<void>((resolve, reject) => {
             testImg.onload = () => resolve();
             testImg.onerror = () => reject();
             testImg.src = testUrl;
           });
-          URL.revokeObjectURL(testUrl);
           decodedNatively = true;
         } catch {
           decodedNatively = false;
+        } finally {
+          URL.revokeObjectURL(testUrl);
         }
 
         // Bước 3: Nếu trình duyệt không giải mã native được (như Chrome trên Windows/Android), dùng thư viện heic-to hiện đại (libheif 1.22+)
@@ -241,20 +257,74 @@ export default function TuViForm({
   const onSubmitRef = React.useRef(onSubmit);
   onSubmitRef.current = onSubmit;
 
+  const leapMonthOfInputYear = React.useMemo(() => {
+    const y = Number(namAmInput);
+    if (!y || y < 1800 || y > 2200) return 0;
+    return getLeapMonthOfLunarYear(y, 7.0);
+  }, [namAmInput]);
+
+  const handleSwitchCalendar = (nextType: 'solar' | 'lunar') => {
+    if (nextType === calendarType) return;
+    setFormError(null);
+    if (nextType === 'lunar') {
+      if (isValidSolarDate(Number(ngayDuong), Number(thangDuong), Number(namDuong))) {
+        const [ld, lm, ly, isLeap] = solar2Lunar(Number(ngayDuong), Number(thangDuong), Number(namDuong), 7.0);
+        setNgayAmInput(ld);
+        setThangAmInput(lm);
+        setNamAmInput(ly);
+        setIsLeapMonthInput(isLeap);
+      }
+    } else {
+      const converted = lunar2Solar(
+        Number(ngayAmInput),
+        Number(thangAmInput),
+        Number(namAmInput),
+        isLeapMonthInput && leapMonthOfInputYear === Number(thangAmInput),
+        7.0
+      );
+      if (converted) {
+        setNgayDuong(converted[0]);
+        setThangDuong(converted[1]);
+        setNamDuong(converted[2]);
+      }
+    }
+    setCalendarType(nextType);
+  };
+
   const lunarPreview = React.useMemo(() => {
-    const d = Number(ngayDuong);
-    const m = Number(thangDuong);
-    const y = Number(namDuong);
-    if (!d || !m || !y || y < 1800 || y > 2200 || m < 1 || m > 12) {
-      return { valid: false, error: 'Vui lòng nhập ngày, tháng, năm hợp lệ (1900 - 2100).' };
+    let d = Number(ngayDuong);
+    let m = Number(thangDuong);
+    let y = Number(namDuong);
+
+    if (calendarType === 'lunar') {
+      const ld = Number(ngayAmInput);
+      const lm = Number(thangAmInput);
+      const ly = Number(namAmInput);
+      if (!ld || !lm || !ly || ly < 1800 || ly > 2200 || lm < 1 || lm > 12 || ld < 1 || ld > 30) {
+        return { valid: false, error: 'Vui lòng nhập ngày, tháng, năm Âm lịch hợp lệ (1900 - 2100).' };
+      }
+      const effectiveLeap = isLeapMonthInput && leapMonthOfInputYear === lm;
+      const converted = lunar2Solar(ld, lm, ly, effectiveLeap, 7.0);
+      if (!converted) {
+        return {
+          valid: false,
+          error: `Ngày ${ld}/${lm}${effectiveLeap ? ' (Nhuận)' : ''}/${ly} Âm lịch không tồn tại (có thể tháng đó chỉ có 29 ngày).`,
+        };
+      }
+      [d, m, y] = converted;
+    } else {
+      if (!d || !m || !y || y < 1800 || y > 2200 || m < 1 || m > 12) {
+        return { valid: false, error: 'Vui lòng nhập ngày, tháng, năm hợp lệ (1900 - 2100).' };
+      }
+      if (!isValidSolarDate(d, m, y)) {
+        const maxDay = new Date(y, m, 0).getDate();
+        return {
+          valid: false,
+          error: `Ngày ${d}/${m}/${y} Dương lịch không tồn tại (Tháng ${m}/${y} chỉ có ${maxDay} ngày).`,
+        };
+      }
     }
-    if (!isValidSolarDate(d, m, y)) {
-      const maxDay = new Date(y, m, 0).getDate();
-      return {
-        valid: false,
-        error: `Ngày ${d}/${m}/${y} Dương lịch không tồn tại (Tháng ${m}/${y} chỉ có ${maxDay} ngày).`,
-      };
-    }
+
     let nd = d;
     let td = m;
     let ny = y;
@@ -277,6 +347,9 @@ export default function TuViForm({
     const namCanChi = `${CAN_ARR[canIdx]} ${CHI_ARR[chiIdx]}`;
     return {
       valid: true,
+      solarDay: d,
+      solarMonth: m,
+      solarYear: y,
       ngayAm,
       thangAm,
       namAm,
@@ -284,27 +357,34 @@ export default function TuViForm({
       namCanChi,
       isLateTy,
     };
-  }, [ngayDuong, thangDuong, namDuong, gioSinhVal]);
+  }, [calendarType, ngayDuong, thangDuong, namDuong, ngayAmInput, thangAmInput, namAmInput, isLeapMonthInput, leapMonthOfInputYear, gioSinhVal]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     if (!hoTen.trim()) {
-      alert('Vui lòng nhập họ và tên đương số!');
+      setFormError('Vui lòng nhập họ và tên đương số trước khi lập lá số!');
       return;
     }
-    if (!lunarPreview.valid) {
-      alert(lunarPreview.error || 'Ngày tháng năm sinh Dương lịch không hợp lệ!');
+    if (!lunarPreview.valid || !lunarPreview.solarDay || !lunarPreview.solarMonth || !lunarPreview.solarYear) {
+      setFormError(lunarPreview.error || 'Ngày tháng năm sinh không hợp lệ!');
+      return;
+    }
+
+    const resolvedNamXem = Number(namXem) || currentYear;
+    if (resolvedNamXem < lunarPreview.solarYear) {
+      setFormError(`Năm xem hạn (${resolvedNamXem}) không thể nhỏ hơn năm sinh (${lunarPreview.solarYear}).`);
       return;
     }
 
     const payload: DuLieuDuongSo = {
       hoTen: hoTen.trim(),
       gioiTinh,
-      ngayDuong: Number(ngayDuong),
-      thangDuong: Number(thangDuong),
-      namDuong: Number(namDuong),
+      ngayDuong: lunarPreview.solarDay,
+      thangDuong: lunarPreview.solarMonth,
+      namDuong: lunarPreview.solarYear,
       gioSinhVal,
-      namXem: Number(namXem) || currentYear,
+      namXem: resolvedNamXem,
       thongTinThem: thongTinThem.trim() || undefined,
       chieuCao: chieuCao ? Number(chieuCao) : undefined,
       canNang: canNang ? Number(canNang) : undefined,
@@ -313,13 +393,13 @@ export default function TuViForm({
       tier: selectedTier,
     };
 
-    if (!user && onRequireAuth) {
+    // Gói Miễn Phí: Cho phép khách vãng lai xem NGAY Lá Số 12 Cung không cần đăng nhập (tối ưu chuyển đổi đầu phễu!)
+    // Gói Trả Phí (Pro / Expert): Vẫn yêu cầu tài khoản trước khi mở QR để gắn quyền lợi trọn đời vào tài khoản
+    if (!user && onRequireAuth && selectedTier !== 'free') {
       const notice =
         selectedTier === 'expert'
           ? 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản (chỉ 5 giây) để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Gia Expert (269.000đ).'
-          : selectedTier === 'pro'
-          ? 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản (chỉ 5 giây) để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Sâu Pro.'
-          : 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản (chỉ 5 giây) để hệ thống lập lá số và tự động lưu trữ vào Sổ Tay Số Mệnh của quý khách.';
+          : 'Quý khách vui lòng đăng nhập hoặc tạo tài khoản (chỉ 5 giây) để hệ thống lưu giữ lá số vào sổ tay và mở mã QR thanh toán Bản Chuyên Sâu Pro.';
       onRequireAuth(() => {
         onSubmitRef.current(payload, selectedTier);
       }, notice);
@@ -542,23 +622,56 @@ export default function TuViForm({
           </div>
         </div>
 
-        {/* HÀNG 2: NGÀY THÁNG NĂM SINH (DƯƠNG LỊCH) & GIỜ SINH */}
+        {/* HÀNG 2: NGÀY THÁNG NĂM SINH (HỖ TRỢ DƯƠNG LỊCH & ÂM LỊCH) & GIỜ SINH */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
           <div className="md:col-span-7">
-            <label className="block text-xs uppercase tracking-wider text-amber-200/90 font-bold mb-1.5 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-amber-400" />
-              <span>{t('form.calendar', 'Ngày tháng năm sinh (Dương lịch)')}</span>
-              <span className="text-red-400">*</span>
-            </label>
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
+              <label className="text-xs uppercase tracking-wider text-amber-200/90 font-bold flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                <span>
+                  {calendarType === 'solar'
+                    ? t('form.calendar', 'Ngày tháng năm sinh (Dương lịch)')
+                    : 'Ngày tháng năm sinh (Âm lịch)'}
+                </span>
+                <span className="text-red-400">*</span>
+              </label>
+              <div className="inline-flex rounded-lg bg-slate-950/90 border border-slate-700/80 p-0.5 text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchCalendar('solar')}
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                    calendarType === 'solar'
+                      ? 'bg-amber-500 text-slate-950 shadow'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  ☀️ Dương lịch
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchCalendar('lunar')}
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                    calendarType === 'lunar'
+                      ? 'bg-amber-500 text-slate-950 shadow'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  🌙 Âm lịch
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-3 gap-2.5">
               <div className="relative">
                 <SmartNumericInput
                   required
                   maxLength={2}
                   fallbackOnEmpty={15}
-                  value={ngayDuong}
+                  value={calendarType === 'solar' ? ngayDuong : ngayAmInput}
                   onChangeValue={(val) => {
-                    if (val !== undefined) setNgayDuong(val);
+                    if (val !== undefined) {
+                      if (calendarType === 'solar') setNgayDuong(val);
+                      else setNgayAmInput(val);
+                    }
                   }}
                   placeholder={t('form.day', 'Ngày')}
                   className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
@@ -572,9 +685,12 @@ export default function TuViForm({
                   required
                   maxLength={2}
                   fallbackOnEmpty={8}
-                  value={thangDuong}
+                  value={calendarType === 'solar' ? thangDuong : thangAmInput}
                   onChangeValue={(val) => {
-                    if (val !== undefined) setThangDuong(val);
+                    if (val !== undefined) {
+                      if (calendarType === 'solar') setThangDuong(val);
+                      else setThangAmInput(val);
+                    }
                   }}
                   placeholder={t('form.month', 'Tháng')}
                   className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
@@ -588,9 +704,12 @@ export default function TuViForm({
                   required
                   maxLength={4}
                   fallbackOnEmpty={1995}
-                  value={namDuong}
+                  value={calendarType === 'solar' ? namDuong : namAmInput}
                   onChangeValue={(val) => {
-                    if (val !== undefined) setNamDuong(val);
+                    if (val !== undefined) {
+                      if (calendarType === 'solar') setNamDuong(val);
+                      else setNamAmInput(val);
+                    }
                   }}
                   placeholder={t('form.year', 'Năm')}
                   className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
@@ -600,6 +719,17 @@ export default function TuViForm({
                 </span>
               </div>
             </div>
+            {calendarType === 'lunar' && leapMonthOfInputYear > 0 && leapMonthOfInputYear === Number(thangAmInput) && (
+              <label className="mt-2 inline-flex items-center gap-2 text-xs text-amber-300 font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isLeapMonthInput}
+                  onChange={(e) => setIsLeapMonthInput(e.target.checked)}
+                  className="rounded border-amber-500/50 bg-slate-900 text-amber-500 focus:ring-amber-400"
+                />
+                <span>Sinh vào Tháng {leapMonthOfInputYear} Nhuận (năm {namAmInput})</span>
+              </label>
+            )}
           </div>
 
           <div className="md:col-span-5">
@@ -629,6 +759,15 @@ export default function TuViForm({
                 🌙
               </span>
               <span>
+                {calendarType === 'lunar' && lunarPreview.solarDay ? (
+                  <>
+                    Dương lịch quy đổi:{' '}
+                    <strong className="text-sky-300 font-bold">
+                      {lunarPreview.solarDay}/{lunarPreview.solarMonth}/{lunarPreview.solarYear}
+                    </strong>{' '}
+                    •{' '}
+                  </>
+                ) : null}
                 {t('form.lunar', 'Âm lịch')}:{' '}
                 <strong className="text-amber-300 font-bold">
                   {lunarPreview.ngayAm}/{lunarPreview.thangAm}
@@ -666,11 +805,10 @@ export default function TuViForm({
                   <span>{t('form.viewYear', 'Năm xem hạn (Dương lịch)')}</span>
                 </label>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {[
-                    { y: 2025, cc: 'Ất Tỵ' },
-                    { y: 2026, cc: 'Bính Ngọ' },
-                    { y: 2027, cc: 'Đinh Mùi' },
-                  ].map((item) => (
+                  {[currentYear, currentYear + 1, currentYear + 2].map((y) => {
+                    const cc = `${CAN_ARR[(y + 6) % 10]} ${CHI_ARR[(y + 8) % 12]}`;
+                    return { y, cc };
+                  }).map((item) => (
                     <button
                       key={item.y}
                       type="button"
@@ -903,11 +1041,23 @@ export default function TuViForm({
                   </label>
                 )}
               </div>
+              <div className="sm:col-span-2 flex items-center gap-1.5 text-[11px] text-emerald-300/90 bg-emerald-950/35 border border-emerald-500/25 rounded-lg px-2.5 py-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                <span>
+                  Cam kết bảo mật: Ảnh khuôn mặt &amp; chỉ tay chỉ dùng để Thầy Tôn soi chiếu Tướng pháp cho riêng bạn, không hiển thị công khai hay chia sẻ bên thứ ba.
+                </span>
+              </div>
             </div>
           </div>
             </div>
           )}
         </div>
+
+        {formError && (
+          <div className="rounded-xl bg-red-500/15 border border-red-500/40 px-4 py-3 text-xs sm:text-sm text-red-200 font-medium">
+            ⚠️ {formError}
+          </div>
+        )}
 
         {/* LỰA CHỌN GÓI BÌNH GIẢI (3 THẺ HOÀNG GIA CÂN ĐỐI ĐỒNG ĐỀU) */}
         <div className="pt-4 border-t border-amber-500/20">
@@ -1078,7 +1228,7 @@ export default function TuViForm({
         {/* Nút Submit Ánh Kim */}
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isConvertingMat || isConvertingTay}
           className={`btn-shimmer w-full mt-6 py-4 px-6 font-extrabold rounded-2xl tracking-wider uppercase text-base sm:text-lg shadow-xl transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5 cursor-pointer ${
             selectedTier === 'expert'
               ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-purple-950/60 ring-1 ring-purple-300/40'
@@ -1087,10 +1237,14 @@ export default function TuViForm({
               : 'bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white shadow-red-950/50 ring-1 ring-amber-400/40'
           }`}
         >
-          {isLoading ? (
+          {isLoading || isConvertingMat || isConvertingTay ? (
             <>
               <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span>{t('form.btnLoading', 'Thầy Đang Quán Tưởng...')}</span>
+              <span>
+                {isConvertingMat || isConvertingTay
+                  ? 'Đang tối ưu ảnh tải lên...'
+                  : t('form.btnLoading', 'Thầy Đang Quán Tưởng...')}
+              </span>
             </>
           ) : initialData && selectedTier === (initialData.tier || 'free') ? (
             <>

@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ubkvzgwespfvrlpjuxkp.supabase.co';
-const serviceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzExNjM1MSwiZXhwIjoyMDkyNjkyMzUxfQ.Ubmws-Yg0pJKaCaXy7aO8rbt6bw4O3PGgM6GzPR0PLk';
-
-const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
+import { adminSupabase } from '@/lib/supabaseAdmin';
+import { verifyAdminRequest, isValidUuid } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await verifyAdminRequest(req);
+    if (!auth.authorized) {
+      return NextResponse.json({ error: 'Không có quyền truy cập quản trị' }, { status: 401 });
+    }
+
     const chartId = req.nextUrl.searchParams.get('id');
-    if (!chartId) {
-      return NextResponse.json({ error: 'Thiếu mã ID lá số' }, { status: 400 });
+    if (!chartId || !isValidUuid(chartId)) {
+      return NextResponse.json({ error: 'Mã ID lá số không hợp lệ' }, { status: 400 });
     }
 
     const { data, error } = await adminSupabase
@@ -35,6 +34,6 @@ export async function GET(req: NextRequest) {
       laso_data: data.laso_data,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err?.message || 'Lỗi máy chủ' }, { status: 500 });
   }
 }

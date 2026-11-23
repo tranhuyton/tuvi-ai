@@ -4,21 +4,37 @@ import {
   buildCungDataPrompt,
   getCurrentVietnamTimeInfo,
   computeTamHanAnalysis,
+  lapLaSoTuVi,
 } from '@/lib/tuvi/anSao';
 import { callGeminiVision } from '@/lib/gemini';
-import { createClient } from '@supabase/supabase-js';
+import { adminSupabase } from '@/lib/supabaseAdmin';
+import { getAuthenticatedUser, isValidUuid, verifyAdminRequest } from '@/lib/adminAuth';
+import { checkRateLimitDistributed, getClientIp } from '@/lib/rateLimit';
 
 export const maxDuration = 180;
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ubkvzgwespfvrlpjuxkp.supabase.co';
-const serviceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVia3Z6Z3dlc3BmdnJscGp1eGtwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzExNjM1MSwiZXhwIjoyMDkyNjkyMzUxfQ.Ubmws-Yg0pJKaCaXy7aO8rbt6bw4O3PGgM6GzPR0PLk';
-
-const adminSupabase = createClient(supabaseUrl, serviceRoleKey);
-
 export async function POST(req: NextRequest) {
+  let reservedMessageId: string | null = null;
+
   try {
+    const ip = getClientIp(req);
+    const adminAuth = await verifyAdminRequest(req);
+    const isAdmin = adminAuth.authorized;
+
+    if (!isAdmin) {
+      const rl = await checkRateLimitDistributed({
+        key: `tuvi_chat:${ip}`,
+        limit: 20,
+        windowMs: 5 * 60_000,
+      });
+      if (!rl.allowed) {
+        return NextResponse.json(
+          { error: 'Quý khách đang gửi quá nhiều câu hỏi liên tiếp. Vui lòng thử lại sau ít phút.' },
+          { status: 429 }
+        );
+      }
+    }
+
     const body = await req.json();
     const {
       userQuestion,
@@ -35,10 +51,9 @@ export async function POST(req: NextRequest) {
       lang,
       language,
       chartId,
-      userId,
     } = body as {
       userQuestion: string;
-      laSo: LaSoData;
+      laSo?: LaSoData;
       thongTinThem?: string;
       chieuCao?: number;
       canNang?: number;
@@ -51,201 +66,286 @@ export async function POST(req: NextRequest) {
       lang?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
       language?: 'vi' | 'en' | 'zh' | 'ko' | 'ja';
       chartId?: string;
-      userId?: string;
-      isAdmin?: boolean;
-      adminPin?: string;
     };
 
     const targetLang = lang || language || 'vi';
     const activeMode: 'basic' | 'vip' | 'expert' =
-      mode || questionType || (laSo?.tier === 'expert' ? 'expert' : 'vip');
+      mode === 'expert' || questionType === 'expert'
+        ? 'expert'
+        : mode === 'vip' || questionType === 'vip'
+        ? 'vip'
+        : mode === 'basic' || questionType === 'basic'
+        ? 'basic'
+        : laSo?.tier === 'expert'
+        ? 'expert'
+        : 'vip';
 
-    if (!userQuestion || !userQuestion.trim()) {
+    const cleanQuestion = typeof userQuestion === 'string' ? userQuestion.trim() : '';
+    if (!cleanQuestion) {
       return NextResponse.json({ error: 'Câu hỏi không được để trống' }, { status: 400 });
     }
-
-    if (!laSo) {
-      return NextResponse.json({ error: 'Thiếu thông tin lá số' }, { status: 400 });
+    if (cleanQuestion.length > 2500) {
+      return NextResponse.json({ error: 'Câu hỏi quá dài (tối đa 2.500 ký tự)' }, { status: 400 });
     }
 
-    // =========================================================================
-    // 0. XÁC THỰC QUYỀN ADMIN (BYPASS 100% QUOTA NẾU LÀ ADMIN TRONG STUDIO)
-    // =========================================================================
-    const adminPinHeader = req.headers.get('x-admin-pin') || req.nextUrl.searchParams.get('pin');
-    const validPins = [
-      process.env.ADMIN_PIN || 'thayton2026',
-      '0935058688',
-      'thayton2026',
-    ];
-    const isAdmin = Boolean(
-      (adminPinHeader && validPins.includes(adminPinHeader)) ||
-      (body.adminPin && validPins.includes(body.adminPin)) ||
-      (body.isAdmin && (!adminPinHeader || validPins.includes(adminPinHeader)))
-    );
+    const authUser = adminAuth.user || (await getAuthenticatedUser(req));
+    const verifiedUserId = authUser?.id || undefined;
+    const safeChartId = isValidUuid(chartId) ? chartId.trim() : undefined;
+
+    let effectiveLaSo: LaSoData | undefined = laSo;
+    let effectiveReadingHtml: string | undefined = isAdmin ? readingHtml : undefined;
+    let effectiveHistory: ChatMessage[] = isAdmin && Array.isArray(chatHistory) ? chatHistory.slice(-12) : [];
+    let effectiveThongTinThem: string | undefined =
+      typeof thongTinThem === 'string' ? thongTinThem.trim().slice(0, 1500) : undefined;
+    let effectiveChieuCao: number | undefined = chieuCao;
+    let effectiveCanNang: number | undefined = canNang;
 
     // =========================================================================
-    // KIỂM TRA QUOTA CỨNG TỪ PHÍA MÁY CHỦ BẰNG DỮ LIỆU THỰC TẾ TRONG SUPABASE
-    // Tuyệt đối không phụ thuộc vào state phía client để chống gian lận/reset
-    // (Bỏ qua hoàn toàn đối với Admin trong Studio để đàm đạo không giới hạn)
+    // KIỂM TRA QUOTA CỨNG TỪ PHÍA MÁY CHỦ + ĐẶT CHỖ NGUYÊN TỬ TRƯỚC KHI GỌI AI
     // =========================================================================
     let totalAllowed = 0;
     let allowedExpert = 0;
     let allowedPro = 0;
     let allowedBasic = 0;
-    let askedCount = 0;
+    let usedAtomicReservation = false;
 
     if (isAdmin) {
       totalAllowed = 999999;
       allowedExpert = 999999;
       allowedPro = 999999;
       allowedBasic = 999999;
-    } else if (chartId) {
-      // 1. Đếm số câu hỏi thực tế đã được lưu trong DB cho chart này
-      const { count: dbMsgCount } = await adminSupabase
-        .from('tuvi_chat_messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('chart_id', chartId);
-
-      askedCount = dbMsgCount || 0;
-
-      // 2. Kiểm tra quyền lợi Tester
-      let isTester = false;
-      let testerMaxQuestions = 0;
-      if (userId) {
-        const { data: tester } = await adminSupabase
-          .from('tuvi_testers')
-          .select('max_questions_per_chart, is_active')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-        if (tester && tester.is_active !== false) {
-          isTester = true;
-          testerMaxQuestions = Number(tester.max_questions_per_chart || 20);
-        }
-      }
-
-      if (isTester) {
-        allowedExpert = testerMaxQuestions;
-        allowedPro = testerMaxQuestions;
-        totalAllowed = testerMaxQuestions;
-      } else {
-        // 3. Lấy thông tin lá số từ tuvi_charts
-        const { data: dbChart } = await adminSupabase
-          .from('tuvi_charts')
-          .select('user_id, duong_so_data, laso_data')
-          .eq('id', chartId)
-          .maybeSingle();
-
-        const chartUserId = dbChart?.user_id || userId;
-        const chartTier = dbChart?.duong_so_data?.tier || dbChart?.laso_data?.tier || laSo?.tier;
-
-        // Kiểm tra các đơn hàng đã thanh toán (tuvi_orders)
-        let paidExpertOrders = 0;
-        let paidUpgradeExpertOrders = 0;
-        let paidChatExpertOrders = 0;
-        let paidProOrders = 0;
-        let paidChatVipOrders = 0;
-        let paidChatBasicOrders = 0;
-
-        if (chartId || chartUserId) {
-          const filterQuery = chartId && chartUserId
-            ? `chart_id.eq.${chartId},user_id.eq.${chartUserId}`
-            : chartId
-            ? `chart_id.eq.${chartId}`
-            : `user_id.eq.${chartUserId}`;
-
-          const { data: paidOrders } = await adminSupabase
-            .from('tuvi_orders')
-            .select('payment_type, status, chart_id, ho_ten')
-            .or(filterQuery)
-            .eq('status', 'PAID');
-
-          const targetHoTen = (dbChart?.duong_so_data?.hoTen || laSo?.duongSo?.hoTen || '').trim().toLowerCase();
-
-          (paidOrders || [])
-            .filter(
-              (o) =>
-                (chartId && o.chart_id === chartId) ||
-                (!o.chart_id && (!targetHoTen || o.ho_ten?.trim().toLowerCase() === targetHoTen))
-            )
-            .forEach((o) => {
-              if (o.payment_type === 'reading_expert') paidExpertOrders++;
-              else if (o.payment_type === 'upgrade_expert') paidUpgradeExpertOrders++;
-              else if (o.payment_type === 'chat_expert') paidChatExpertOrders++;
-              else if (o.payment_type === 'reading_vip') paidProOrders++;
-              else if (o.payment_type === 'chat_vip') paidChatVipOrders++;
-              else if (o.payment_type === 'chat_free') paidChatBasicOrders++;
-            });
-        }
-
-        // Hạn mức tính từ đơn hàng
-        const orderExpertAllowed =
-          (paidExpertOrders > 0 ? 2 : 0) +
-          (paidUpgradeExpertOrders > 0 ? 2 : 0) +
-          (paidChatExpertOrders * 2);
-        const orderProAllowed = (paidProOrders > 0 ? 2 : 0) + (paidChatVipOrders * 2);
-        const orderBasicAllowed = paidChatBasicOrders * 2;
-
-        // Hạn mức lưu trong laso_data (admin chỉnh tay hoặc khuyến mãi)
-        const quotaExpert = Number(dbChart?.laso_data?.quota?.expertAllowed || laSo?.quota?.expertAllowed || 0);
-        const quotaPro = Number(dbChart?.laso_data?.quota?.proAllowed || laSo?.quota?.proAllowed || 0);
-        const quotaBasic = Number(dbChart?.laso_data?.quota?.basicAllowed || laSo?.quota?.basicAllowed || 0);
-
-        // Mặc định gói Expert có tối thiểu 2 câu Expert, gói Pro có tối thiểu 2 câu Pro
-        const baseExpert = (chartTier === 'expert' || paidExpertOrders > 0 || paidUpgradeExpertOrders > 0) ? 2 : 0;
-        const basePro = (chartTier === 'pro' || paidProOrders > 0) ? 2 : 0;
-
-        allowedExpert = Math.max(baseExpert, orderExpertAllowed, quotaExpert);
-        allowedPro = Math.max(basePro, orderProAllowed, quotaPro);
-        allowedBasic = Math.max(orderBasicAllowed, quotaBasic);
-        totalAllowed = allowedExpert + allowedPro + allowedBasic;
-      }
-
-      // Chặn nếu chưa đăng ký gói
-      if (totalAllowed === 0) {
+    } else {
+      if (!safeChartId || !verifiedUserId) {
         return NextResponse.json(
-          { error: 'Lá số này chưa đăng ký gói câu hỏi đàm đạo cùng Thầy Tôn. Quý khách vui lòng đăng ký gói hỏi đáp để tiếp tục.' },
+          { error: 'Quý khách vui lòng đăng nhập và lưu lá số để sử dụng quyền lợi hỏi đáp cùng Thầy Tôn.' },
           { status: 403 }
         );
       }
 
-      // Chặn nếu đã hỏi hết lượt cho phép
-      if (askedCount >= totalAllowed) {
+      // 1. Tải toàn bộ dữ liệu chuẩn từ DB & xác minh quyền sở hữu tuyệt đối
+      const { data: dbChart } = await adminSupabase
+        .from('tuvi_charts')
+        .select('user_id, duong_so_data, laso_data, reading_html')
+        .eq('id', safeChartId)
+        .maybeSingle();
+
+      if (!dbChart) {
+        return NextResponse.json({ error: 'Không tìm thấy lá số hợp lệ' }, { status: 404 });
+      }
+
+      if (!dbChart.user_id || dbChart.user_id !== verifiedUserId) {
+        return NextResponse.json(
+          { error: 'Quý khách vui lòng đăng nhập đúng tài khoản sở hữu lá số để hỏi đáp.' },
+          { status: 403 }
+        );
+      }
+
+      // Nạp dữ liệu chuẩn từ DB (bỏ qua body.laSo / body.readingHtml / body.chatHistory giả mạo từ client)
+      const dbLaSo = dbChart.laso_data as unknown as LaSoData | null;
+      const dbDuongSo = dbChart.duong_so_data as unknown as LaSoData['duongSo'] | null;
+      if (dbLaSo && Array.isArray(dbLaSo.cungs) && dbLaSo.cungs.length === 12) {
+        effectiveLaSo = { ...dbLaSo, duongSo: dbDuongSo || dbLaSo.duongSo };
+      } else if (dbDuongSo && dbDuongSo.ngayDuong && dbDuongSo.thangDuong && dbDuongSo.namDuong) {
+        effectiveLaSo = lapLaSoTuVi(dbDuongSo);
+      }
+      effectiveReadingHtml = typeof dbChart.reading_html === 'string' ? dbChart.reading_html : undefined;
+      if (dbDuongSo?.thongTinThem && !effectiveThongTinThem) {
+        effectiveThongTinThem = String(dbDuongSo.thongTinThem).slice(0, 1500);
+      }
+      if (!effectiveChieuCao && dbDuongSo?.chieuCao) effectiveChieuCao = Number(dbDuongSo.chieuCao);
+      if (!effectiveCanNang && dbDuongSo?.canNang) effectiveCanNang = Number(dbDuongSo.canNang);
+
+      // Tải tối đa 12 lượt hỏi đáp gần nhất trực tiếp từ Supabase DB
+      const { data: recentDbMsgs } = await adminSupabase
+        .from('tuvi_chat_messages')
+        .select('question, answer, message_type')
+        .eq('chart_id', safeChartId)
+        .neq('answer', '__PENDING__')
+        .order('created_at', { ascending: false })
+        .limit(12);
+
+      effectiveHistory = (recentDbMsgs || [])
+        .reverse()
+        .map((m) => ({
+          q: String(m.question || '').slice(0, 1000),
+          a: String(m.answer || '').slice(0, 2000),
+          type: (m.message_type as 'basic' | 'vip' | 'expert') || 'basic',
+        }));
+
+      // 2. Kiểm tra quyền lợi Tester (giới hạn tối đa gói Pro/VIP, không cấp miễn phí Expert)
+      let testerProQuota = 0;
+      const cleanAuthEmail = (authUser?.email || '').trim().toLowerCase();
+      const { data: testerByUid } = await adminSupabase
+        .from('tuvi_testers')
+        .select('max_questions_per_chart, is_active')
+        .eq('user_id', verifiedUserId)
+        .maybeSingle();
+
+      let testerRow = testerByUid;
+      if (!testerRow && cleanAuthEmail) {
+        const { data: testerByEmail } = await adminSupabase
+          .from('tuvi_testers')
+          .select('max_questions_per_chart, is_active')
+          .eq('email', cleanAuthEmail)
+          .maybeSingle();
+        testerRow = testerByEmail;
+      }
+
+      if (testerRow && testerRow.is_active !== false) {
+        testerProQuota = Number(testerRow.max_questions_per_chart || 20);
+      }
+
+      // 3. Tính hạn mức từ đơn hàng PAID của đúng lá số + tài khoản này
+      const chartTier = dbChart.duong_so_data?.tier || dbChart.laso_data?.tier || 'free';
+      let paidExpertOrders = 0;
+      let paidUpgradeExpertOrders = 0;
+      let paidChatExpertOrders = 0;
+      let paidProOrders = 0;
+      let paidChatVipOrders = 0;
+      let paidChatBasicOrders = 0;
+
+      const [chartOrdersRes, unlinkedUserOrdersRes] = await Promise.all([
+        adminSupabase
+          .from('tuvi_orders')
+          .select('id, payment_type, status, chart_id, ho_ten')
+          .eq('chart_id', safeChartId)
+          .eq('status', 'PAID'),
+        adminSupabase
+          .from('tuvi_orders')
+          .select('id, payment_type, status, chart_id, ho_ten')
+          .eq('user_id', verifiedUserId)
+          .is('chart_id', null)
+          .eq('status', 'PAID'),
+      ]);
+
+      const targetHoTen = (dbChart.duong_so_data?.hoTen || '').trim().toLowerCase();
+      const matchedUnlinked = (unlinkedUserOrdersRes.data || []).filter(
+        (o) => Boolean(targetHoTen) && (o.ho_ten || '').trim().toLowerCase() === targetHoTen
+      );
+
+      // Gắn chart_id nguyên tử phía server cho các đơn chưa liên kết để không tái sử dụng cho lá số khác
+      for (const uo of matchedUnlinked) {
+        await adminSupabase
+          .from('tuvi_orders')
+          .update({ chart_id: safeChartId })
+          .eq('id', uo.id)
+          .is('chart_id', null);
+      }
+
+      const matchedOrders = [...(chartOrdersRes.data || []), ...matchedUnlinked];
+      matchedOrders.forEach((o) => {
+        if (o.payment_type === 'reading_expert') paidExpertOrders++;
+        else if (o.payment_type === 'upgrade_expert') paidUpgradeExpertOrders++;
+        else if (o.payment_type === 'chat_expert') paidChatExpertOrders++;
+        else if (o.payment_type === 'reading_vip') paidProOrders++;
+        else if (o.payment_type === 'chat_vip') paidChatVipOrders++;
+        else if (o.payment_type === 'chat_free') paidChatBasicOrders++;
+      });
+
+      const orderExpertAllowed =
+        (paidExpertOrders > 0 ? 2 : 0) +
+        (paidUpgradeExpertOrders > 0 ? 2 : 0) +
+        paidChatExpertOrders * 2;
+      const orderProAllowed = (paidProOrders > 0 ? 2 : 0) + paidChatVipOrders * 2;
+      const orderBasicAllowed = paidChatBasicOrders * 2;
+
+      const quotaExpert = Number(dbChart.laso_data?.quota?.expertAllowed || 0);
+      const quotaPro = Number(dbChart.laso_data?.quota?.proAllowed || 0);
+      const quotaBasic = Number(dbChart.laso_data?.quota?.basicAllowed || 0);
+
+      const baseExpert =
+        chartTier === 'expert' || paidExpertOrders > 0 || paidUpgradeExpertOrders > 0 ? 2 : 0;
+      const basePro = chartTier === 'pro' || paidProOrders > 0 ? 2 : 0;
+
+      allowedExpert = Math.max(baseExpert, orderExpertAllowed, quotaExpert);
+      allowedPro = Math.max(basePro, orderProAllowed, quotaPro, testerProQuota);
+      allowedBasic = Math.max(orderBasicAllowed, quotaBasic);
+      totalAllowed = allowedExpert + allowedPro + allowedBasic;
+
+      if (totalAllowed === 0) {
         return NextResponse.json(
           {
-            error: `Lá số này đã sử dụng hết toàn bộ ${totalAllowed} lượt câu hỏi đàm đạo (${askedCount}/${totalAllowed}). Quý khách vui lòng nạp thêm câu hỏi để tiếp tục đàm đạo cùng Thầy Tôn.`
+            error:
+              'Lá số này chưa đăng ký gói câu hỏi đàm đạo cùng Thầy Tôn. Quý khách vui lòng đăng ký gói hỏi đáp để tiếp tục.',
           },
           { status: 403 }
         );
       }
-    } else {
-      // Trường hợp khách chưa lưu lá số
-      if (laSo && laSo.quota) {
-        allowedExpert = Number(laSo.quota.expertAllowed || 0);
-        allowedPro = Number(laSo.quota.proAllowed || 0);
-        allowedBasic = Number(laSo.quota.basicAllowed || 0);
-        totalAllowed = allowedExpert + allowedPro + allowedBasic;
-      } else if (laSo?.tier === 'expert') {
-        allowedExpert = 2;
-        totalAllowed = 2;
-      } else if (laSo?.tier === 'pro') {
-        allowedPro = 2;
-        totalAllowed = 2;
-      }
-      askedCount = (chatHistory || []).filter((c) => !c.isError).length;
 
-      if (totalAllowed === 0) {
+      if (activeMode === 'expert' && allowedExpert <= 0) {
         return NextResponse.json(
-          { error: 'Quý khách chưa đăng ký gói câu hỏi đàm đạo cùng Thầy Tôn. Vui lòng thanh toán để mở khóa câu hỏi.' },
+          { error: 'Lá số này chưa mở khóa lượt hỏi Chuyên Gia Expert.' },
           { status: 403 }
         );
       }
-      if (askedCount >= totalAllowed) {
+      if (activeMode === 'vip' && allowedPro <= 0 && allowedExpert <= 0) {
         return NextResponse.json(
-          { error: `Quý khách đã sử dụng hết ${totalAllowed} lượt câu hỏi cho phép. Vui lòng nạp thêm câu hỏi để tiếp tục đàm đạo cùng Thầy Tôn.` },
+          { error: 'Lá số này chưa mở khóa lượt hỏi Chuyên Sâu VIP Pro.' },
           { status: 403 }
         );
       }
+
+      // Tính hạn mức riêng cho hạng mức đang yêu cầu (chống dùng gói 49k Cơ bản để hỏi Expert!)
+      const modeLimit =
+        activeMode === 'expert'
+          ? allowedExpert
+          : activeMode === 'vip'
+          ? allowedPro + allowedExpert
+          : totalAllowed;
+
+      // 4. Đặt chỗ slot nguyên tử bằng PostgreSQL RPC (chống 100% TOCTOU race condition)
+      const { data: reserveData, error: reserveErr } = await adminSupabase.rpc(
+        'tuvi_reserve_chat_slot',
+        {
+          p_chart_id: safeChartId,
+          p_user_id: verifiedUserId,
+          p_question: cleanQuestion,
+          p_mode: activeMode,
+          p_mode_limit: modeLimit,
+          p_total_limit: totalAllowed,
+        }
+      );
+
+      if (!reserveErr && reserveData && typeof reserveData === 'object') {
+        const resObj = reserveData as {
+          ok?: boolean;
+          message_id?: string;
+          mode_used?: number;
+          total_used?: number;
+        };
+        if (!resObj.ok) {
+          return NextResponse.json(
+            {
+              error: `Lá số này đã sử dụng hết lượt câu hỏi phù hợp (${resObj.total_used ?? 0}/${totalAllowed}). Quý khách vui lòng nạp thêm câu hỏi để tiếp tục đàm đạo cùng Thầy Tôn.`,
+            },
+            { status: 403 }
+          );
+        }
+        reservedMessageId = resObj.message_id || null;
+        usedAtomicReservation = Boolean(reservedMessageId);
+      } else {
+        // Fallback nếu migration RPC chưa được push lên DB
+        const { data: existingMsgs } = await adminSupabase
+          .from('tuvi_chat_messages')
+          .select('message_type')
+          .eq('chart_id', safeChartId);
+        const totalUsed = (existingMsgs || []).length;
+        const modeUsed = (existingMsgs || []).filter(
+          (m) => (m.message_type || 'basic') === activeMode
+        ).length;
+        if (totalUsed >= totalAllowed || modeUsed >= modeLimit) {
+          return NextResponse.json(
+            {
+              error: `Lá số này đã sử dụng hết lượt câu hỏi phù hợp (${totalUsed}/${totalAllowed}). Quý khách vui lòng nạp thêm câu hỏi để tiếp tục đàm đạo cùng Thầy Tôn.`,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
+    if (!effectiveLaSo) {
+      return NextResponse.json({ error: 'Thiếu thông tin lá số' }, { status: 400 });
     }
 
     const {
@@ -258,11 +358,10 @@ export async function POST(req: NextRequest) {
       namCanChi,
       tenCuc,
       sinhKhac,
-    } = laSo;
-    const cungDataStr = buildCungDataPrompt(laSo);
+    } = effectiveLaSo;
+    const cungDataStr = buildCungDataPrompt(effectiveLaSo);
 
-    // Tính chính xác Đại Vận & 3 cung hạn năm xem (Tiểu Hạn - Lưu Niên Đại Hạn - Lưu Thái Tuế)
-    const tamHan = computeTamHanAnalysis(laSo);
+    const tamHan = computeTamHanAnalysis(effectiveLaSo);
     let daiVanInfo = '';
     if (tamHan.cungDaiVan && tamHan.startAge !== undefined && tamHan.endAge !== undefined) {
       daiVanInfo = `Đại vận hiện tại: ${tamHan.startAge} - ${tamHan.endAge} tuổi tại ${tamHan.daiVanCoordLabel} (${tamHan.buocNhayMoTa || `${tuoiAmXem} tuổi Âm`}, cấm nhầm đại vận). `;
@@ -270,20 +369,20 @@ export async function POST(req: NextRequest) {
       daiVanInfo = `Đang ở giai đoạn Đồng Hạn (${tuoiAmXem} tuổi Âm). `;
     }
 
-    const tieuVanInfo = `Ba cung hạn năm ${laSo.namXem || ''} (${namXemCanChi}): Cung Tiểu Hạn (tâm tư, mong muốn bên trong) tại ${tamHan.tieuVanCoordLabel || '—'}; Cung Lưu Niên Đại Hạn (điểm rơi của Đại vận 10 năm vào năm nay) tại ${tamHan.lndhCoordLabel || '—'}; Cung Lưu Thái Tuế (hoàn cảnh thực tế bên ngoài) tại ${tamHan.luuThaiTueCoordLabel || '—'} — phân biệt rành mạch 3 cung này, diễn đạt giản dị dễ hiểu, không ghi các con số phần trăm hay nhãn Bước 1/2/3! `;
+    const tieuVanInfo = `Ba cung hạn năm ${effectiveLaSo.namXem || ''} (${namXemCanChi}): Cung Tiểu Hạn (tâm tư, mong muốn bên trong) tại ${tamHan.tieuVanCoordLabel || '—'}; Cung Lưu Niên Đại Hạn (điểm rơi của Đại vận 10 năm vào năm nay) tại ${tamHan.lndhCoordLabel || '—'}; Cung Lưu Thái Tuế (hoàn cảnh thực tế bên ngoài) tại ${tamHan.luuThaiTueCoordLabel || '—'} — phân biệt rành mạch 3 cung này, diễn đạt giản dị dễ hiểu, không ghi các con số phần trăm hay nhãn Bước 1/2/3! `;
 
     let contextChat = '';
-    if (thongTinThem && thongTinThem.trim()) {
-      contextChat += `Hoàn cảnh: ${thongTinThem.trim()}. `;
+    if (effectiveThongTinThem) {
+      contextChat += `Hoàn cảnh: ${effectiveThongTinThem}. `;
     }
-    if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
-      contextChat += `Hình thể: ${chieuCao} cm, ${canNang} kg. `;
+    if (effectiveChieuCao && effectiveCanNang && effectiveChieuCao > 0 && effectiveCanNang > 0) {
+      contextChat += `Hình thể: ${effectiveChieuCao} cm, ${effectiveCanNang} kg. `;
     }
 
     let historyText = '';
-    if (chatHistory && chatHistory.length > 0) {
+    if (effectiveHistory.length > 0) {
       historyText = 'LỊCH SỬ ĐÀM ĐẠO TRƯỚC ĐÓ:\n';
-      chatHistory.forEach((c, idx) => {
+      effectiveHistory.forEach((c, idx) => {
         const tag = c.type === 'expert' ? '[Chuyên Gia Expert]' : c.type === 'vip' ? '[VIP Pro]' : '[Cơ Bản]';
         historyText += `Lượt ${idx + 1} ${tag}:\n- Khách: ${c.q}\n- Thầy Tôn: ${c.a}\n`;
       });
@@ -291,8 +390,8 @@ export async function POST(req: NextRequest) {
     }
 
     let readingContext = '';
-    if (readingHtml && readingHtml.trim()) {
-      const cleanReading = readingHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (effectiveReadingHtml && effectiveReadingHtml.trim()) {
+      const cleanReading = effectiveReadingHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
       readingContext = `\nBÀI BÌNH GIẢI ĐÃ ĐƯỢC THẦY TÔN LUẬN GIẢI CHO ĐƯƠNG SỐ TRƯỚC ĐÓ (Bao gồm cả các dấu ấn Tướng pháp, Diện tướng, Chỉ tay nếu có):\n"${cleanReading.slice(0, 6000)}"\n(QUY TẮC: Khi khách hỏi về những nội dung liên quan đến bài bình giải cũ, đặc biệt là tướng mạo, đường chỉ tay, vết đứt gãy cung mệnh hay những lời khuyên đã dặn trước đó, bạn hãy bám sát và kế thừa chuẩn xác những gì đã luận giải ở trên để trả lời nhất quán và sâu sắc).\n`;
     }
 
@@ -333,53 +432,94 @@ export async function POST(req: NextRequest) {
     } = getCurrentVietnamTimeInfo();
     const curDateSummary = `Ngày ${curDayD}/${curMonthD}/${curYearD} Dương lịch — tức Ngày ${curDayA} Tháng ${curMonthA}${curIsLeap ? ' (Nhuận)' : ''} Âm lịch năm ${curNamCanChi} (${curYearA})`;
 
-    const chatPrompt = `${readingContext}${historyText}Khách hỏi câu mới (${modeLabel}): '${userQuestion.trim()}'
+    // Xử lý chuẩn tháng Giêng (curMonthA === 1) và năm xem khác năm hiện tại
+    const targetNamXem = effectiveLaSo.namXem || curYearA;
+    const pastMonthsNotice =
+      targetNamXem === curYearA && curMonthA > 1
+        ? `Các tháng từ Tháng 1 đến Tháng ${curMonthA - 1} Âm lịch năm ${curYearA} ĐÃ TRÔI QUA TRONG QUÁ KHỨ! TUYỆT ĐỐI CẤM khuyên khách lập kế hoạch tương lai vào các tháng đã qua (Tháng 1 đến Tháng ${curMonthA - 1} Âm lịch năm ${curYearA}).`
+        : targetNamXem === curYearA
+        ? `Hiện đang ở đầu năm mới (Tháng 1 Âm lịch năm ${curYearA}), toàn bộ 12 tháng năm ${curYearA} đều đang ở phía trước.`
+        : `Đương số đang xem hạn năm ${targetNamXem} (khác năm hiện tại ${curYearA}), hãy phân tích trọn vẹn 12 tháng của năm ${targetNamXem}.`;
+
+    const chatPrompt = `${readingContext}${historyText}Khách hỏi câu mới (${modeLabel}): '${cleanQuestion}'
 THỜI ĐIỂM HIỆN TẠI THỰC TẾ (GIỜ VIỆT NAM): Hôm nay là ${curDateSummary}. Hiện đang ở **Tháng ${curMonthA} Âm lịch** năm ${curNamCanChi} (${curYearA}).
-Đương số: ${laSo.duongSo?.hoTen || 'Quý khách'} (${laSo.duongSo?.gioiTinh || 'Nam'}, sinh năm ${namCanChi || ''} - ${amDuongTxt || ''}).
+Đương số: ${effectiveLaSo.duongSo?.hoTen || 'Quý khách'} (${effectiveLaSo.duongSo?.gioiTinh || 'Nam'}, sinh năm ${namCanChi || ''} - ${amDuongTxt || ''}).
 Mệnh: ${banMenh || ''}, Cục: ${tenCuc || ''}, Sinh khắc: ${sinhKhac || ''}.
 Âm Dương: ${thuanNghichLy || ''} (Bắt buộc khẳng định đúng thế "${thuanNghichLy}", tuyệt đối không nói ngược).
 Thân cư: ${thanCuName || 'Thân cư Mệnh'}.
-Năm xem hạn: ${namXemCanChi} (${laSo.namXem || curYearA}), ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${tieuVanInfo}${contextChat}
+Năm xem hạn: ${namXemCanChi} (${targetNamXem}), ${tuoiAmXem} tuổi Âm. ${daiVanInfo}${tieuVanInfo}${contextChat}
 12 CUNG & NGUYỆT VẬN:
 ${cungDataStr}
 
 QUY TẮC BẮT BUỘC VỀ THỜI GIAN THỰC TẾ, CUNG VÔ CHÍNH DIỆU & NGUYỆT VẬN (LƯU NGUYỆT / THÁNG ÂM LỊCH):
-- QUY TẮC SỐ 1 (THỜI GIAN THỰC TẾ HIỆN TẠI): Hôm nay là **${curDateSummary}**. Các tháng từ Tháng 1 đến Tháng ${curMonthA - 1} Âm lịch năm ${curYearA} ĐÃ TRÔI QUA TRONG QUÁ KHỨ! Bạn TUYỆT ĐỐI CẤM viết câu phỏng đoán mù mờ như "Hiện tại nếu đang ở Tháng 3 Âm lịch..." hay đoán mò tháng! Phải khẳng định chuẩn xác hiện tại đang ở **Tháng ${curMonthA} Âm lịch**. Mọi sự việc khách hỏi "hôm nay", "vừa mới", "hiện tại" phải được giải mã trực tiếp bằng Nguyệt vận **Tháng ${curMonthA} Âm lịch**; và mọi lộ trình/sách lược hành động sắp tới cho đương số BẮT BUỘC phải bắt đầu từ **Tháng ${curMonthA} Âm lịch hiện tại đến Tháng 12 Âm lịch năm ${curYearA}** (và nối tiếp sang các tháng đầu năm ${curYearA + 1} theo bảng dữ liệu nối tiếp ở trên nếu lộ trình kéo dài sang năm mới). TUYỆT ĐỐI CẤM khuyên khách lập kế hoạch tương lai vào các tháng đã qua (Tháng 1 đến Tháng ${curMonthA - 1} Âm lịch năm ${curYearA})!
+- QUY TẮC SỐ 1 (THỜI GIAN THỰC TẾ HIỆN TẠI): Hôm nay là **${curDateSummary}**. ${pastMonthsNotice} Bạn TUYỆT ĐỐI CẤM viết câu phỏng đoán mù mờ như "Hiện tại nếu đang ở Tháng 3 Âm lịch..."! Phải khẳng định chuẩn xác hiện tại đang ở **Tháng ${curMonthA} Âm lịch** năm ${curYearA}. Mọi sự việc khách hỏi "hôm nay", "vừa mới", "hiện tại" phải được giải mã trực tiếp bằng Nguyệt vận **Tháng ${curMonthA} Âm lịch**.
 - QUY TẮC SỐ 2 (CUNG VÔ CHÍNH DIỆU): Khi luận giải bất kỳ cung nào không có chính tinh (Vô Chính Diệu), bạn BẮT BUỘC phải nhìn và kết hợp các Chính tinh + Phụ tinh hội chiếu từ Tam Phương Tứ Chính (đặc biệt là mượn Chính tinh của Cung Xung Chiếu kết hợp 2 Cung Tam Hợp và Tuần/Triệt tại bản cung) để phân tích sâu sắc, tuyệt đối không chỉ nhìn mỗi bản cung.
-- QUY TẮC SỐ 3 (TRA CỨU NGUYỆT VẬN CHUẨN 100%): Khi nhắc đến bất kỳ tháng Âm lịch nào, bạn BẮT BUỘC phải tra cứu chính xác theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên để biết tháng đó rơi vào cung nào, có các chính tinh, phụ tinh và đặc biệt là các SAO LƯU nào thủ hoặc chiếu (L.Thái Tuế, L.Tang Môn, L.Bạch Hổ, L.Kình Dương, L.Đà La, L.Thiên Mã, L.Lộc Tồn, L.Thiên Khốc, L.Thiên Hư, L.Đẩu Quân, L.Hóa Lộc, L.Hóa Quyền, L.Hóa Khoa, L.Hóa Kị...). Tuyệt đối KHÔNG được tự suy đoán hay nói nhầm sang cung khác.
-- QUY TẮC SỐ 4 (PHỄU TAM HẠN & MA TRẬN 4 THẾ ĐẠI VẬN x HẠN NĂM): Khi khách hỏi về vận hạn năm hoặc quyết định hành động (kinh doanh, mở rộng, đầu tư, mua đất, chuyển việc, hôn nhân, gia đạo, sức khỏe), BẮT BUỘC tuân thủ nguyên lý Cấp nhỏ phục tùng cấp lớn (Gốc -> Đại Vận 10 năm -> Hạn Năm) và tổng hợp nhân - quả theo trọng số Tam Hạn: đọc tâm thế khởi niệm ở Tiểu Hạn (20% tại ${tamHan.tieuVanCoordLabel || 'bản cung'}) -> đối chiếu sức chịu đựng & độ đồng pha ở Đại Vận + LN. Đại hạn (30% tại ${tamHan.lndhCoordLabel || 'bản cung'}) -> chốt kết quả ngoại cảnh thực tế ở Lưu Thái Tuế + Sao Lưu/Lưu Tứ Hóa (50% tại ${tamHan.luuThaiTueCoordLabel || 'bản cung'}) cùng các Tín hiệu Trùng Phùng/Kích Nổ Đặc Biệt. Đặc biệt cảnh giác nếu Đại Vận xấu mà năm sáng (chỉ nên thu hồi vốn, cơ cấu an toàn, cấm vay mượn mở rộng dài hạn) hoặc Đại Vận tốt mà năm có Sát Kỵ lệch pha đánh vào Phu Thê/Tử Tức/Tật Ách. Văn phong bậc Thầy Mệnh lý Thực chứng: điềm đạm, sắc bén, thấu tình đạt lý, không mê tín hù dọa, không lạm dụng biệt ngữ chứng khoán tiếng Anh.
+- QUY TẮC SỐ 3 (TRA CỨU NGUYỆT VẬN CHUẨN 100%): Khi nhắc đến bất kỳ tháng Âm lịch nào, bạn BẮT BUỘC phải tra cứu chính xác theo 'BẢNG TRA CỨU NGUYỆT VẬN' ở trên để biết tháng đó rơi vào cung nào, có các chính tinh, phụ tinh và đặc biệt là các SAO LƯU nào thủ hoặc chiếu. Tuyệt đối KHÔNG được tự suy đoán hay nói nhầm sang cung khác.
+- QUY TẮC SỐ 4 (PHỄU TAM HẠN & MA TRẬN 4 THẾ ĐẠI VẬN x HẠN NĂM): Khi khách hỏi về vận hạn năm hoặc quyết định hành động, BẮT BUỘC tuân thủ nguyên lý Cấp nhỏ phục tùng cấp lớn (Gốc -> Đại Vận 10 năm -> Hạn Năm) và tổng hợp nhân - quả theo Tam Hạn: đọc tâm thế khởi niệm ở Tiểu Hạn (tại ${tamHan.tieuVanCoordLabel || 'bản cung'}) -> đối chiếu sức chịu đựng & độ đồng pha ở Đại Vận + LN. Đại hạn (tại ${tamHan.lndhCoordLabel || 'bản cung'}) -> chốt kết quả ngoại cảnh thực tế ở Lưu Thái Tuế + Sao Lưu/Lưu Tứ Hóa (tại ${tamHan.luuThaiTueCoordLabel || 'bản cung'}). Văn phong bậc Thầy Mệnh lý Thực chứng: điềm đạm, sắc bén, thấu tình đạt lý, không mê tín hù dọa.
 ${requirementText}${langInstruction}`;
 
     const modelToUse =
-      model ||
-      (activeMode === 'expert'
+      isAdmin && model
+        ? model
+        : activeMode === 'expert'
         ? 'gemini-4-carbon'
         : activeMode === 'vip'
         ? 'gemini-3.1-pro-preview'
-        : 'gemini-2.5-flash');
-    const result = await callGeminiVision([{ text: chatPrompt }], apiKey, modelToUse);
+        : 'gemini-2.5-flash';
+    const result = await callGeminiVision([{ text: chatPrompt }], isAdmin ? apiKey : undefined, modelToUse);
 
-    if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+    if (result.error || !result.text) {
+      if (reservedMessageId) {
+        await adminSupabase
+          .from('tuvi_chat_messages')
+          .delete()
+          .eq('id', reservedMessageId)
+          .eq('answer', '__PENDING__');
+        reservedMessageId = null;
+      }
+      return NextResponse.json({ error: result.error || 'AI tạm thời không phản hồi' }, { status: 500 });
     }
 
-    // Tự động ghi lại tin nhắn vào tuvi_chat_messages trên máy chủ để đảm bảo tính toàn vẹn (không thể bị bỏ qua)
-    if (chartId && !isAdmin) {
+    if (safeChartId && !isAdmin) {
       try {
-        await adminSupabase.from('tuvi_chat_messages').insert({
-          chart_id: chartId,
-          user_id: userId || null,
-          question: userQuestion.trim(),
-          answer: result.text,
-          message_type: activeMode,
-        });
+        if (usedAtomicReservation && reservedMessageId) {
+          await adminSupabase
+            .from('tuvi_chat_messages')
+            .update({ answer: result.text })
+            .eq('id', reservedMessageId);
+          reservedMessageId = null;
+        } else {
+          await adminSupabase.from('tuvi_chat_messages').insert({
+            chart_id: safeChartId,
+            user_id: verifiedUserId || null,
+            question: cleanQuestion,
+            answer: result.text,
+            message_type: activeMode,
+          });
+        }
       } catch (saveErr) {
         console.warn('Lỗi khi tự động lưu tin nhắn từ máy chủ:', saveErr);
       }
     }
 
-    return NextResponse.json({ answer: result.text, mode: activeMode, savedToDb: Boolean(chartId) });
+    return NextResponse.json({
+      answer: result.text,
+      mode: activeMode,
+      savedToDb: Boolean(safeChartId && !isAdmin),
+      modelUsed: result.modelUsed,
+    });
   } catch (error: unknown) {
+    if (reservedMessageId) {
+      try {
+        await adminSupabase
+          .from('tuvi_chat_messages')
+          .delete()
+          .eq('id', reservedMessageId)
+          .eq('answer', '__PENDING__');
+      } catch {
+        // ignore rollback error
+      }
+    }
     const msg = error instanceof Error ? error.message : 'Lỗi máy chủ nội bộ';
     return NextResponse.json({ error: `Lỗi: ${msg}` }, { status: 500 });
   }

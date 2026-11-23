@@ -152,9 +152,11 @@ export const HOA_QUYEN_MAP: Record<number, string> = {
   5: 'THAM LANG', 6: 'VŨ KHÚC', 7: 'THÁI DƯƠNG', 8: 'TỬ VI', 9: 'CỰ MÔN'
 };
 
+// Chuẩn Tử Vi Đẩu Số Tân Biên (Vân Đằng Thái Thứ Lang):
+// Canh: Nhật Vũ Âm Đồng (Thái Âm Hóa Khoa) | Nhâm: Lương Tử Phù Vũ (Tả Phù Hóa Khoa)
 export const HOA_KHOA_MAP: Record<number, string> = {
   0: 'VŨ KHÚC', 1: 'TỬ VI', 2: 'Văn Xương', 3: 'THIÊN CƠ', 4: 'Hữu Bật',
-  5: 'THIÊN LƯƠNG', 6: 'Tả Phù', 7: 'Văn Khúc', 8: 'THIÊN PHỦ', 9: 'THÁI ÂM'
+  5: 'THIÊN LƯƠNG', 6: 'THÁI ÂM', 7: 'Văn Khúc', 8: 'Tả Phù', 9: 'THÁI ÂM'
 };
 
 export const HOA_KY_MAP: Record<number, string> = {
@@ -210,8 +212,8 @@ export const PHU_TINH_DAC_HAM: Record<string, Record<number, string>> = {
   'Thiên Hư': { 0: 'Đ', 6: 'Đ', 3: 'Đ', 9: 'Đ', 1: 'H', 2: 'H', 4: 'H', 5: 'H', 7: 'H', 8: 'H', 10: 'H', 11: 'H' },
   'Đại Hao': { 2: 'Đ', 3: 'Đ', 8: 'Đ', 9: 'Đ', 0: 'H', 1: 'H', 4: 'H', 5: 'H', 6: 'H', 7: 'H', 10: 'H', 11: 'H' },
   'Tiểu Hao': { 2: 'Đ', 3: 'Đ', 8: 'Đ', 9: 'Đ', 0: 'H', 1: 'H', 4: 'H', 5: 'H', 6: 'H', 7: 'H', 10: 'H', 11: 'H' },
-  'Văn Xương': { 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ', 5: 'Đ', 11: 'Đ', 9: 'M', 0: 'M', 3: 'H', 6: 'H' },
-  'Văn Khúc': { 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ', 5: 'Đ', 11: 'Đ', 9: 'M', 0: 'M', 3: 'H', 6: 'H' },
+  'Văn Xương': { 1: 'Đ', 2: 'H', 4: 'Đ', 7: 'Đ', 8: 'H', 10: 'Đ', 5: 'Đ', 11: 'Đ', 9: 'M', 0: 'M', 3: 'H', 6: 'H' },
+  'Văn Khúc': { 1: 'Đ', 2: 'H', 4: 'Đ', 7: 'Đ', 8: 'H', 10: 'Đ', 5: 'Đ', 11: 'Đ', 9: 'M', 0: 'M', 3: 'H', 6: 'H' },
   'Thiên Mã': { 5: 'Đ', 8: 'Đ', 2: 'H', 11: 'H' },
   'Lộc Tồn': { 2: 'M', 3: 'M', 5: 'M', 6: 'M', 8: 'M', 9: 'M', 11: 'M', 0: 'M', 1: 'Đ', 4: 'Đ', 7: 'Đ', 10: 'Đ' },
 };
@@ -288,7 +290,6 @@ export const STAR_NGU_HANH_COLOR: Record<string, string> = {
   'Thiên Y': '#000000',
   'L.Hóa Kỵ': '#000000',
   'L.Hóa Kị': '#000000',
-  'L.Thiên Khốc': '#000000',
   'L.Thiên Hư': '#000000',
 
   // 3. HỎA - Đỏ tươi (#cc0000)
@@ -300,6 +301,7 @@ export const STAR_NGU_HANH_COLOR: Record<string, string> = {
   'Địa Kiếp': '#cc0000',
   'Thiên Không': '#cc0000',
   'Thiên Khốc': '#cc0000',
+  'L.Thiên Khốc': '#cc0000',
   'Thiên Hình': '#cc0000',
   'Thiên Mã': '#cc0000',
   'Thiên Khôi': '#cc0000',

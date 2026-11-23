@@ -16,6 +16,8 @@ export const metadata: Metadata = {
     description:
       'Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế | Luận giải logic, thực chứng, không mê tín cùng Thầy Tôn. Quét mã VietQR mở khóa tự động 24/7.',
     url: 'https://www.tuvithayton.vn/van-han',
+    siteName: 'Tử Vi & Phong Thủy Thầy Tôn',
+    locale: 'vi_VN',
     type: 'website',
     images: [
       {
@@ -25,6 +27,13 @@ export const metadata: Metadata = {
         alt: 'Giải Mã Vận Hạn 2026 – 2027 Chuẩn 3 Tầng Cùng Thầy Tôn',
       },
     ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Giải Mã Vận Hạn 2026 – 2027 Chuẩn 3 Tầng | Tử Vi Thầy Tôn',
+    description:
+      'Tiểu Hạn • LN.Đại Hạn • Lưu Thái Tuế | Luận giải logic, thực chứng, không mê tín cùng Thầy Tôn.',
+    images: ['/thay-ton.png'],
   },
 };
 

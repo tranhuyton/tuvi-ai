@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   COURSE_INFO,
   COURSE_MODULES,
-  COURSE_LESSONS,
+  COURSE_LESSONS_META,
   type CourseLesson,
-} from '@/lib/courseData';
+} from '@/lib/courseMeta';
+import { getAdminAuthHeaders } from '@/lib/adminClientAuth';
 import CoursePlayerClient from '@/components/CoursePlayerClient';
 import { CourseLessonIllustration } from '@/components/MetaphysicalIllustration';
 import {
@@ -23,18 +24,46 @@ import {
   Sparkles,
   Layers,
   FileText,
+  Loader2,
 } from 'lucide-react';
 
 export default function AdminCourseViewer() {
   const [viewMode, setViewMode] = useState<'interactive' | 'full_curriculum'>('full_curriculum');
   const [selectedModule, setSelectedModule] = useState<number>(0); // 0 = Tất cả 4 học phần
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [lessons, setLessons] = useState<CourseLesson[]>(COURSE_LESSONS_META);
+  const [isLoadingCurriculum, setIsLoadingCurriculum] = useState<boolean>(true);
   const [expandedLessonIds, setExpandedLessonIds] = useState<string[]>(
-    COURSE_LESSONS.map((l) => l.id) // Mặc định mở sẵn toàn bộ 24 bài để Admin kéo đọc liền mạch
+    COURSE_LESSONS_META.map((l) => l.id)
   );
 
+  useEffect(() => {
+    let cancelled = false;
+    const loadFullCurriculum = async () => {
+      setIsLoadingCurriculum(true);
+      try {
+        const headers = await getAdminAuthHeaders();
+        const res = await fetch('/api/admin/course-curriculum', { headers, cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled && Array.isArray(data.lessons) && data.lessons.length > 0) {
+            setLessons(data.lessons);
+          }
+        }
+      } catch (err) {
+        console.warn('[AdminCourseViewer] Không thể tải giáo trình đầy đủ:', err);
+      } finally {
+        if (!cancelled) setIsLoadingCurriculum(false);
+      }
+    };
+    void loadFullCurriculum();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filteredLessons = useMemo(() => {
-    return COURSE_LESSONS.filter((lesson) => {
+    return lessons.filter((lesson) => {
       if (selectedModule !== 0 && lesson.moduleId !== selectedModule) return false;
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase().trim();
@@ -48,7 +77,7 @@ export default function AdminCourseViewer() {
         )
       );
     });
-  }, [selectedModule, searchQuery]);
+  }, [lessons, selectedModule, searchQuery]);
 
   const toggleLessonExpand = (id: string) => {
     setExpandedLessonIds((prev) =>
@@ -57,7 +86,7 @@ export default function AdminCourseViewer() {
   };
 
   const expandAll = () => {
-    setExpandedLessonIds(COURSE_LESSONS.map((l) => l.id));
+    setExpandedLessonIds(lessons.map((l) => l.id));
   };
 
   const collapseAll = () => {
@@ -153,7 +182,7 @@ export default function AdminCourseViewer() {
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   }`}
                 >
-                  Tất cả ({COURSE_LESSONS.length} bài)
+                  Tất cả ({lessons.length} bài)
                 </button>
                 {COURSE_MODULES.map((mod) => (
                   <button
@@ -166,7 +195,7 @@ export default function AdminCourseViewer() {
                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     }`}
                   >
-                    Học phần {mod.id} ({COURSE_LESSONS.filter((l) => l.moduleId === mod.id).length} bài)
+                    Học phần {mod.id} ({lessons.filter((l) => l.moduleId === mod.id).length} bài)
                   </button>
                 ))}
               </div>
@@ -241,7 +270,7 @@ export default function AdminCourseViewer() {
                     HỌC PHẦN {mod.id}
                   </span>
                   <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
-                    {COURSE_LESSONS.filter((l) => l.moduleId === mod.id).length} bài
+                    {lessons.filter((l) => l.moduleId === mod.id).length} bài{isLoadingCurriculum ? ' • Đang tải nội dung...' : ''}
                   </span>
                 </div>
                 <div className="text-sm font-bold text-white line-clamp-2">

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -110,9 +111,12 @@ export default function UserNav({
       >
         <div className="relative shrink-0">
           <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-600 opacity-60 blur-[2px] group-hover:opacity-100 transition duration-300" />
-          <img
-            src="/icon.svg"
+          <Image
+            src="/favicon.svg"
             alt="Tử Vi & Phong Thủy Thầy Tôn"
+            width={36}
+            height={36}
+            unoptimized
             className="relative w-8 h-8 md:w-9 md:h-9 rounded-full ring-1 ring-amber-300/60 shadow-md shadow-amber-500/30 group-hover:scale-105 transition"
           />
         </div>
@@ -138,13 +142,13 @@ export default function UserNav({
         <ThemeSelector className="hidden sm:inline-block" />
 
         {/* Nút tắt nhanh Về Thầy Tôn, Khóa Học & Menu Cẩm Nang (Desktop >= sm / lg) */}
-        <a
+        <Link
           href="/thay-ton"
           className="hidden lg:inline-flex items-center gap-1 h-9 px-2.5 rounded-xl text-xs font-medium text-slate-200 hover:text-amber-300 bg-slate-950/70 hover:bg-slate-800/80 border border-slate-700/80 transition shadow-inner whitespace-nowrap"
           title="Hồ sơ chuyên gia Thầy Tôn (Trần Huy Tôn)"
         >
           <span>{t('nav.about', 'Về Thầy Tôn')}</span>
-        </a>
+        </Link>
 
         <Link
           href="/khoa-hoc"

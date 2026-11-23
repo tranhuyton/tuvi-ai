@@ -23,19 +23,18 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
+import { getAdminAuthHeaders } from '@/lib/adminClientAuth';
 
 interface AdminTestersTableProps {
   testers: TesterAccount[];
   isLoading: boolean;
   onRefresh: () => void;
-  adminPin: string;
 }
 
 export default function AdminTestersTable({
   testers,
   isLoading,
   onRefresh,
-  adminPin,
 }: AdminTestersTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
@@ -121,12 +120,10 @@ export default function AdminTestersTable({
     setCreateLoading(true);
 
     try {
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/admin/testers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-pin': adminPin,
-        },
+        headers,
         body: JSON.stringify({
           action: 'create',
           email: createEmail,
@@ -175,12 +172,10 @@ export default function AdminTestersTable({
     setEditLoading(true);
 
     try {
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/admin/testers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-pin': adminPin,
-        },
+        headers,
         body: JSON.stringify({
           action: 'update',
           id: editingTester.id,
@@ -210,12 +205,10 @@ export default function AdminTestersTable({
   // Bật/tắt trạng thái
   const handleToggleActive = async (tester: TesterAccount) => {
     try {
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/admin/testers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-pin': adminPin,
-        },
+        headers,
         body: JSON.stringify({
           action: 'toggle',
           id: tester.id,
@@ -235,12 +228,10 @@ export default function AdminTestersTable({
     if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản tester "${tester.email}" không?`)) return;
 
     try {
+      const headers = await getAdminAuthHeaders({ 'Content-Type': 'application/json' });
       const res = await fetch('/api/admin/testers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-pin': adminPin,
-        },
+        headers,
         body: JSON.stringify({
           action: 'delete',
           id: tester.id,

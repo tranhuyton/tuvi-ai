@@ -1,25 +1,39 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
-import AdminTestStudio from '@/components/admin/AdminTestStudio';
-import AdminCourseViewer from '@/components/admin/AdminCourseViewer';
-import AdminUsersTable, { AdminUser, AdminChatMessage } from '@/components/admin/AdminUsersTable';
-import AdminTransactionsTable, { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
-import AdminAffiliatesTable from '@/components/admin/AdminAffiliatesTable';
-import AdminTestersTable from '@/components/admin/AdminTestersTable';
+import type { AdminUser, AdminChatMessage } from '@/components/admin/AdminUsersTable';
+import type { AdminChartItem, AdminOrderItem, AdminStats } from '@/components/admin/AdminTransactionsTable';
 import { AffiliateItem } from '@/types/affiliate';
 import { TesterAccount } from '@/types/tester';
 import LanguageSelector from '@/components/LanguageSelector';
 import ThemeSelector from '@/components/ThemeSelector';
-import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, ShieldCheck, RefreshCw, Share2, FlaskConical, GraduationCap } from 'lucide-react';
+import { getAdminAuthHeaders } from '@/lib/adminClientAuth';
+import { Sparkles, Crown, Users, BookOpen, KeyRound, LogOut, ArrowLeft, Share2, FlaskConical, GraduationCap, Loader2 } from 'lucide-react';
+
+const AdminTestStudio = dynamic(() => import('@/components/admin/AdminTestStudio'), { ssr: false });
+const AdminCourseViewer = dynamic(() => import('@/components/admin/AdminCourseViewer'), { ssr: false });
+const AdminUsersTable = dynamic(() => import('@/components/admin/AdminUsersTable'), { ssr: false });
+const AdminTransactionsTable = dynamic(() => import('@/components/admin/AdminTransactionsTable'), { ssr: false });
+const AdminAffiliatesTable = dynamic(() => import('@/components/admin/AdminAffiliatesTable'), { ssr: false });
+const AdminTestersTable = dynamic(() => import('@/components/admin/AdminTestersTable'), { ssr: false });
+
+const EXACT_ADMIN_EMAILS = new Set([
+  'tranhuyton@gmail.com',
+  'tonhuytran@gmail.com',
+  'diep.anh.12135@gmail.com',
+  'diep.anh1205@gmail.com',
+]);
 
 type AdminTab = 'studio' | 'course' | 'transactions' | 'affiliates' | 'testers' | 'users';
 
 export default function AdminPage() {
-  const { user } = useAuth();
-  const [pinInput, setPinInput] = useState('');
+  const { user, signIn, signOut, isLoading: isAuthLoading } = useAuth();
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinError, setPinError] = useState('');
   const [activeTab, setActiveTab] = useState<AdminTab>('studio');
@@ -42,60 +56,10 @@ export default function AdminPage() {
   });
   const [isLoadingData, setIsLoadingData] = useState(false);
 
-  // Kiểm tra lưu phiên PIN
-  useEffect(() => {
-    const savedPin = localStorage.getItem('tuvi_admin_pin');
-    const validPins = ['thayton2026', '0935058688'];
-
-    if (savedPin && validPins.includes(savedPin)) {
-      setIsAuthenticated(true);
-      localStorage.setItem('tuvi_course_unlocked', 'true');
-      localStorage.setItem('tuvi_course_order_code', 'VIP-ADMIN');
-      fetchAdminData(savedPin);
-    } else if (
-      user?.email &&
-      (user.email.includes('tranhuyton') ||
-        user.email.includes('tonhuytran') ||
-        user.email.includes('thayton'))
-    ) {
-      // Tự động cho phép nếu đăng nhập tài khoản Thầy Tôn
-      setIsAuthenticated(true);
-      localStorage.setItem('tuvi_admin_pin', 'thayton2026');
-      localStorage.setItem('tuvi_course_unlocked', 'true');
-      localStorage.setItem('tuvi_course_order_code', 'VIP-ADMIN');
-      fetchAdminData('thayton2026');
-    }
-  }, [user]);
-
-  const handleLoginPin = (e: React.FormEvent) => {
-    e.preventDefault();
-    const pin = pinInput.trim();
-    const validPins = ['thayton2026', '0935058688'];
-
-    if (validPins.includes(pin)) {
-      setIsAuthenticated(true);
-      setPinError('');
-      localStorage.setItem('tuvi_admin_pin', pin);
-      localStorage.setItem('tuvi_course_unlocked', 'true');
-      localStorage.setItem('tuvi_course_order_code', 'VIP-ADMIN');
-      fetchAdminData(pin);
-    } else {
-      setPinError('Mã PIN bảo mật không chính xác. Xin vui lòng thử lại!');
-    }
-  };
-
-  const handleLogoutAdmin = () => {
-    localStorage.removeItem('tuvi_admin_pin');
-    setIsAuthenticated(false);
-    setPinInput('');
-  };
-
-  const fetchAffiliatesData = async (pin?: string) => {
-    const activePin = pin || localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+  const fetchAffiliatesData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/affiliates?pin=${encodeURIComponent(activePin)}`, {
-        headers: { 'x-admin-pin': activePin },
-      });
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch('/api/admin/affiliates', { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.affiliates) setAffiliates(data.affiliates);
@@ -104,14 +68,12 @@ export default function AdminPage() {
     } catch (err) {
       console.warn('Lỗi tải dữ liệu affiliate:', err);
     }
-  };
+  }, []);
 
-  const fetchTestersData = async (pin?: string) => {
-    const activePin = pin || localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+  const fetchTestersData = useCallback(async () => {
     try {
-      const res = await fetch(`/api/admin/testers?pin=${encodeURIComponent(activePin)}`, {
-        headers: { 'x-admin-pin': activePin },
-      });
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch('/api/admin/testers', { headers });
       if (res.ok) {
         const data = await res.json();
         if (data.testers) setTesters(data.testers);
@@ -119,15 +81,18 @@ export default function AdminPage() {
     } catch (err) {
       console.warn('Lỗi tải dữ liệu testers:', err);
     }
-  };
+  }, []);
 
-  const fetchAdminData = async (pin?: string) => {
-    const activePin = pin || localStorage.getItem('tuvi_admin_pin') || 'thayton2026';
+  const fetchAdminData = useCallback(async () => {
     setIsLoadingData(true);
     try {
-      const res = await fetch(`/api/admin/data?pin=${encodeURIComponent(activePin)}`, {
-        headers: { 'x-admin-pin': activePin },
-      });
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch('/api/admin/data', { headers });
+      if (res.status === 401) {
+        setIsAuthenticated(false);
+        setPinError('Phiên đăng nhập quản trị không hợp lệ hoặc không có quyền Admin.');
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users || []);
@@ -136,16 +101,68 @@ export default function AdminPage() {
         if (data.orders) setOrders(data.orders);
         if (data.stats) setStats(data.stats);
       }
-      fetchAffiliatesData(activePin);
-      fetchTestersData(activePin);
+      fetchAffiliatesData();
+      fetchTestersData();
     } catch (err) {
       console.warn('Lỗi tải dữ liệu admin:', err);
     } finally {
       setIsLoadingData(false);
     }
+  }, [fetchAffiliatesData, fetchTestersData]);
+
+  // Tự động xác thực bằng Supabase JWT nếu user có quyền admin hoặc email Quản Trị viên
+  const isCurrentUserAdmin = Boolean(
+    user && (user.app_metadata?.role === 'admin' || EXACT_ADMIN_EMAILS.has((user.email || '').trim().toLowerCase()))
+  );
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (isCurrentUserAdmin) {
+      setIsAuthenticated(true);
+      setPinError('');
+      fetchAdminData();
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, [isCurrentUserAdmin, isAuthLoading, fetchAdminData]);
+
+  const handleAdminSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = emailInput.trim().toLowerCase();
+    if (!cleanEmail || !passwordInput) {
+      setPinError('Vui lòng nhập đầy đủ Email và Mật khẩu quản trị.');
+      return;
+    }
+    setIsLoggingIn(true);
+    setPinError('');
+    try {
+      const { error } = await signIn(cleanEmail, passwordInput);
+      if (error) {
+        setPinError('Email hoặc mật khẩu không chính xác. Vui lòng thử lại.');
+        return;
+      }
+      // Kiểm tra quyền Admin ngay với server (/api/admin/data) thay vì chỉ so cứng danh sách email client
+      const headers = await getAdminAuthHeaders();
+      const verifyRes = await fetch('/api/admin/data', { headers });
+      if (verifyRes.status === 401 || verifyRes.status === 403) {
+        setPinError('Tài khoản này không có quyền Quản trị viên được cấp phép.');
+        await signOut();
+        return;
+      }
+      setPasswordInput('');
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
-  // MÀN HÌNH NHẬP MÃ PIN NẾU CHƯA XÁC THỰC
+  const handleLogoutAdmin = async () => {
+    localStorage.removeItem('tuvi_admin_pin');
+    sessionStorage.removeItem('tuvi_admin_env_pin');
+    setIsAuthenticated(false);
+    await signOut();
+  };
+
+  // MÀN HÌNH ĐĂNG NHẬP TÀI KHOẢN QUẢN TRỊ (BẢO MẬT BẰNG SUPABASE JWT)
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen cosmic-bg flex items-center justify-center p-4">
@@ -159,22 +176,51 @@ export default function AdminPage() {
               Cổng Quản Trị Thầy Tôn
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              Nhập mã định danh bảo mật để truy cập bảng điều khiển Admin.
+              Đăng nhập bằng tài khoản Quản trị viên đã được cấp quyền.
             </p>
           </div>
 
-          <form onSubmit={handleLoginPin} className="space-y-4 text-left">
+          {user && !isCurrentUserAdmin && (
+            <div className="p-3 rounded-xl bg-red-950/50 border border-red-500/40 text-xs text-red-200 space-y-2">
+              <p>Tài khoản <b>{user.email}</b> không có quyền Quản trị viên.</p>
+              <button
+                type="button"
+                onClick={handleLogoutAdmin}
+                className="px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white font-semibold"
+              >
+                Đăng xuất để đổi tài khoản
+              </button>
+            </div>
+          )}
+
+          <form onSubmit={handleAdminSignIn} className="space-y-4 text-left">
             <div>
               <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
-                Mã PIN Quản Trị:
+                Email Quản Trị:
+              </label>
+              <input
+                type="email"
+                required
+                autoComplete="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="admin@..."
+                className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-amber-400 transition"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-slate-300 font-semibold mb-1.5">
+                Mật Khẩu:
               </label>
               <input
                 type="password"
                 required
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value)}
-                placeholder="Nhập mã PIN..."
-                className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-center text-lg tracking-widest focus:outline-none focus:border-amber-400 transition"
+                autoComplete="current-password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Nhập mật khẩu tài khoản..."
+                className="w-full px-4 py-3 bg-slate-950/70 border border-slate-700 rounded-xl text-slate-100 text-sm focus:outline-none focus:border-amber-400 transition"
               />
             </div>
 
@@ -184,15 +230,13 @@ export default function AdminPage() {
 
             <button
               type="submit"
-              className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-500/20 transition transform hover:-translate-y-0.5"
+              disabled={isLoggingIn || isAuthLoading}
+              className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-60 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2"
             >
-              Mở Khóa Quản Trị
+              {(isLoggingIn || isAuthLoading) && <Loader2 className="w-4 h-4 animate-spin" />}
+              <span>Đăng Nhập Quản Trị</span>
             </button>
           </form>
-
-          <div className="pt-2 text-center text-[11px] text-slate-500 border-t border-slate-800">
-            Mã PIN mặc định: <code className="text-amber-400 font-mono">thayton2026</code> hoặc số điện thoại <code className="text-amber-400 font-mono">0935058688</code>
-          </div>
 
           <div>
             <Link
@@ -381,7 +425,6 @@ export default function AdminPage() {
             affiliates={affiliates}
             orders={affiliateOrders.length > 0 ? affiliateOrders : orders.filter((o) => !!o.affiliateCode)}
             onRefresh={() => fetchAffiliatesData()}
-            adminPin={localStorage.getItem('tuvi_admin_pin') || 'thayton2026'}
           />
         )}
 
@@ -390,7 +433,6 @@ export default function AdminPage() {
             testers={testers}
             isLoading={isLoadingData}
             onRefresh={() => fetchTestersData()}
-            adminPin={localStorage.getItem('tuvi_admin_pin') || 'thayton2026'}
           />
         )}
       </div>

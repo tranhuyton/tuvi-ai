@@ -102,17 +102,55 @@ body {
 
 .cosmic-bg {
   background-color: var(--bg-color, #0a0a0f);
-  background-image: 
+  background-image:
     radial-gradient(ellipse 80% 50% at 50% -10%, var(--bg-glow-top, rgba(245, 158, 11, 0.14)), transparent 60%),
     radial-gradient(ellipse 70% 50% at 50% 110%, var(--bg-glow-bottom, rgba(183, 28, 28, 0.15)), transparent 60%),
-    radial-gradient(circle at 15% 35%, rgba(139, 92, 246, 0.07), transparent 45%),
-    radial-gradient(circle at 85% 65%, rgba(217, 119, 6, 0.07), transparent 45%),
-    linear-gradient(var(--bg-overlay-start, rgba(10, 10, 15, 0.86)), var(--bg-overlay-end, rgba(10, 10, 15, 0.95))),
-    url("https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&q=80");
+    radial-gradient(circle at 15% 35%, rgba(139, 92, 246, 0.08), transparent 45%),
+    radial-gradient(circle at 85% 65%, rgba(217, 119, 6, 0.08), transparent 45%),
+    radial-gradient(1.5px 1.5px at 20% 25%, rgba(255, 255, 255, 0.25), transparent),
+    radial-gradient(1px 1px at 78% 18%, rgba(253, 230, 138, 0.35), transparent),
+    radial-gradient(1.5px 1.5px at 62% 72%, rgba(255, 255, 255, 0.2), transparent),
+    linear-gradient(var(--bg-overlay-start, rgba(10, 10, 15, 0.9)), var(--bg-overlay-end, rgba(10, 10, 15, 0.98)));
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
   transition: background 0.4s ease, background-color 0.4s ease;
+}
+
+@media (hover: none), (max-width: 768px) {
+  .cosmic-bg {
+    background-attachment: scroll;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out both;
+}
+
+.animate-scale-up {
+  animation: scale-up 0.22s ease-out both;
 }
 
 /* Hiệu ứng xoay chậm Tinh Bàn Bát Quái & Hào Quang Hoàng Gia */
@@ -173,6 +211,19 @@ body {
   transform: translateX(-120%) skewX(-18deg);
   animation: shimmer-sweep 4.2s ease-in-out infinite;
   pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-celestial-spin,
+  .animate-celestial-spin-reverse,
+  .animate-fade-in,
+  .animate-scale-up {
+    animation: none !important;
+  }
+  .btn-shimmer::after {
+    animation: none !important;
+    display: none;
+  }
 }
 
 /* Thẻ Hoàng Gia Huyền Học (Imperial Card) */

@@ -15,18 +15,23 @@ export default function FloatingContact() {
   const zaloUrl = `https://zalo.me/${phoneNumber}`;
   const telUrl = `tel:${phoneNumber}`;
 
-  // Đóng khi click ra ngoài
+  // Đóng khi click ra ngoài hoặc bấm phím Escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsOpen(false);
+    }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
 
@@ -37,7 +42,11 @@ export default function FloatingContact() {
     >
       {/* Menu xổ ra khi bấm mở */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-72 sm:w-80 bg-slate-900/95 border border-amber-500/40 rounded-2xl shadow-2xl backdrop-blur-xl p-3.5 space-y-2.5 animate-in fade-in slide-from-bottom-3 duration-200 text-slate-100">
+        <div
+          role="dialog"
+          aria-label={t('floating.title')}
+          className="absolute bottom-16 right-0 w-72 sm:w-80 bg-slate-900/95 border border-amber-500/40 rounded-2xl shadow-2xl backdrop-blur-xl p-3.5 space-y-2.5 animate-fade-in text-slate-100"
+        >
           <div className="flex items-center justify-between pb-2 border-b border-slate-800">
             <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs">
               <Sparkles className="w-3.5 h-3.5" />
@@ -46,6 +55,7 @@ export default function FloatingContact() {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
+              aria-label={t('floating.close')}
               className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
               title={t('floating.close')}
             >
