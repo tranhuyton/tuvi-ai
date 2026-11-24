@@ -20,6 +20,7 @@ import BookingBanner from '@/components/BookingBanner';
 import CoursePromoBanner from '@/components/CoursePromoBanner';
 import Testimonials from '@/components/Testimonials';
 import VanHanLandingHero from '@/components/VanHanLandingHero';
+import VideoGuideSection, { VideoGuideModal } from '@/components/VideoGuideSection';
 import { useAuth } from '@/context/AuthContext';
 import {
   saveOrUpdateChart,
@@ -57,6 +58,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
   const { user, profile, testerInfo, refreshTesterInfo, isLoading: isAuthLoading, isPasswordRecovery, signOut } = useAuth();
   const { language, t } = useLanguage();
   const [testerChartsCount, setTesterChartsCount] = useState(0);
+  const [isVideoGuideOpen, setIsVideoGuideOpen] = useState(false);
 
   const [laSo, setLaSo] = useState<LaSoData | null>(null);
   const [currentDuongSo, setCurrentDuongSo] = useState<DuLieuDuongSo | null>(null);
@@ -2329,6 +2331,7 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               onSubmit={handleFormSubmit}
               isLoading={isLoadingReading}
               onOpenSavedCharts={handleOpenSavedCharts}
+              onOpenVideoGuide={() => setIsVideoGuideOpen(true)}
               initialData={isEditing ? (currentDuongSo || laSo?.duongSo) : null}
               onCancelEdit={isEditing && laSo ? () => setIsEditing(false) : undefined}
               activeVoucher={currentTier === 'free' ? activeVoucher : null}
@@ -2358,12 +2361,18 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               <>
                 {isVanHanLanding ? (
                   <>
+                    {/* Video hướng dẫn 55s (đặt dưới Form + Hero để tuyệt đối không đẩy Form xuống) */}
+                    <VideoGuideSection placement="van-han" />
+
                     {/* Trên Landing Page /van-han: Ưu tiên khối Uy tín Thầy Tôn ngay dưới Form để tăng niềm tin chốt đơn */}
                     <AboutThayTon />
                     <CoursePromoBanner />
                   </>
                 ) : (
                   <>
+                    {/* 0. Video hướng dẫn nhanh 55 giây (Facade nhẹ 0 bytes video tới khi bấm Play) */}
+                    <VideoGuideSection placement="home" />
+
                     {/* 1. Uy tín Chuyên gia Thầy Tôn ngay dưới Form để tăng niềm tin sớm */}
                     <AboutThayTon />
 
@@ -2687,6 +2696,13 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
           openUpgradeExpertModal(fromTier);
         }}
         activeChartId={currentChartId}
+      />
+
+      {/* Modal Video Hướng Dẫn Nhanh 55s (Chỉ nạp video khi khách bấm mở) */}
+      <VideoGuideModal
+        isOpen={isVideoGuideOpen}
+        onClose={() => setIsVideoGuideOpen(false)}
+        source={isVanHanLanding ? 'form_header_vanhan' : 'form_header_home'}
       />
 
       {/* Nút Liên Hệ Nhanh (Zalo & Gọi Điện Đặt Lịch Offline) */}

@@ -42,6 +42,7 @@ supabase/.temp
 
 # local data cache
 /.data/
+/promo-videos/
 
 # typescript
 *.tsbuildinfo

@@ -100,6 +100,28 @@ const homeJsonLd = {
         },
       })),
     },
+    {
+      '@type': 'VideoObject',
+      '@id': 'https://www.tuvithayton.vn/#guide-video',
+      name: 'Hướng Dẫn Xem Tử Vi Chuẩn Xác Chỉ 30 Giây Tại Tử Vi Thầy Tôn (tuvithayton.vn)',
+      description:
+        'Video hướng dẫn 3 bước lập lá số Tử Vi 108 sao miễn phí theo phái Tân Biên, tải ảnh Khuôn mặt & Chỉ tay soi Tướng Pháp, hỏi đáp cùng Thầy Tôn và xuất PDF trọn đời.',
+      thumbnailUrl: ['https://www.tuvithayton.vn/video-guide-poster.jpg'],
+      uploadDate: '2026-11-25T00:00:00+07:00',
+      duration: 'PT55S',
+      contentUrl:
+        'https://ubkvzgwespfvrlpjuxkp.supabase.co/storage/v1/object/public/tuvi-media/tuvi-guide-16x9.mp4',
+      embedUrl: 'https://www.tuvithayton.vn/#huong-dan-video',
+      inLanguage: 'vi',
+      publisher: {
+        '@type': 'Organization',
+        name: 'Tử Vi & Phong Thủy Thầy Tôn',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://www.tuvithayton.vn/thay-ton.png',
+        },
+      },
+    },
   ],
 };
 

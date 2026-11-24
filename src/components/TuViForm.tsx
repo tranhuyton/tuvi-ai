@@ -21,6 +21,7 @@ import {
   GraduationCap,
   ChevronDown,
   CheckCircle2,
+  Play,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -31,6 +32,7 @@ interface TuViFormProps {
   onSubmit: (data: DuLieuDuongSo, tier: ServiceTier) => void;
   isLoading: boolean;
   onOpenSavedCharts?: () => void;
+  onOpenVideoGuide?: () => void;
   onRequireAuth?: (action: () => void, notice: string) => void;
   initialData?: DuLieuDuongSo | null;
   onCancelEdit?: () => void;
@@ -93,6 +95,7 @@ export default function TuViForm({
   onSubmit,
   isLoading,
   onOpenSavedCharts,
+  onOpenVideoGuide,
   onRequireAuth,
   initialData,
   onCancelEdit,
@@ -101,7 +104,7 @@ export default function TuViForm({
   defaultTier,
 }: TuViFormProps) {
   const { user } = useAuth();
-  const { t, tHour, tCanChi } = useLanguage();
+  const { t, tHour, tCanChi, language } = useLanguage();
   const currentYear = React.useMemo(() => getCurrentVietnamTimeInfo().namAm, []);
   const isDienTrachQuanLoc = variant === 'dien-trach-quan-loc';
   const isVanHanLanding = variant === 'van-han' || isDienTrachQuanLoc;
@@ -451,17 +454,31 @@ export default function TuViForm({
                 </span>
               </span>
 
-              {onOpenSavedCharts ? (
-                <button
-                  type="button"
-                  onClick={onOpenSavedCharts}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 hover:text-amber-100 border border-amber-400/45 text-xs font-bold transition cursor-pointer shadow-sm"
-                  title="Xem danh sách các lá số đã lưu"
-                >
-                  <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{t('nav.savedCharts', 'Sổ Tay Số Mệnh')}</span>
-                </button>
-              ) : null}
+              <div className="flex items-center gap-2 flex-wrap">
+                {onOpenVideoGuide ? (
+                  <button
+                    type="button"
+                    onClick={onOpenVideoGuide}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/85 hover:bg-amber-500/20 text-amber-200 hover:text-amber-100 border border-amber-400/45 text-xs font-bold transition cursor-pointer shadow-sm"
+                    title={language === 'vi' ? 'Xem video hướng dẫn 55 giây' : 'Watch 55s quick guide'}
+                  >
+                    <Play className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+                    <span>{language === 'vi' ? 'Hướng dẫn 55s' : '55s Guide'}</span>
+                  </button>
+                ) : null}
+
+                {onOpenSavedCharts ? (
+                  <button
+                    type="button"
+                    onClick={onOpenSavedCharts}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 hover:text-amber-100 border border-amber-400/45 text-xs font-bold transition cursor-pointer shadow-sm"
+                    title="Xem danh sách các lá số đã lưu"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{t('nav.savedCharts', 'Sổ Tay Số Mệnh')}</span>
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             {isDienTrachQuanLoc ? (
