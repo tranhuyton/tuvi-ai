@@ -202,9 +202,21 @@ export function buildReadingBatches(options: {
     tuoiAmXem,
   } = laSo;
   let expertSubPrompts: string[] | null = null;
-  const cungDataStr = buildCungDataPrompt(laSo);
   const { ngayDuong: curDayD, thangDuong: curMonthD, namDuong: curYearD, ngayAm: curDayA, thangAm: curMonthA, namAm: curYearA, isLeap: curIsLeap, namAmCanChi: curNamCanChi } = getCurrentVietnamTimeInfo();
   const curDateSummary = `Ngày ${curDayD}/${curMonthD}/${curYearD} Dương lịch (tức Ngày ${curDayA} Tháng ${curMonthA}${curIsLeap ? ' Nhuận' : ''} Âm lịch năm ${curNamCanChi} ${curYearA})`;
+  // Tối ưu token đầu vào:
+  // - Bản Free & Expert Phần 1-2 không luận 12 tháng Lưu Nguyệt nên chỉ gửi bảng 12 cung lõi
+  // - Bản Pro gửi kèm 12 tháng Nguyệt Vận (kèm năm sau nếu đang cuối năm từ tháng 9 ÂL)
+  // - Expert Phần 3 (Vận Hạn Năm & 12 Tháng) gửi đầy đủ Nguyệt Vận + nối tiếp năm kế tiếp
+  const cungDataCoreStr = buildCungDataPrompt(laSo, {
+    includeNguyetVan: false,
+    includeNextYear: false,
+  });
+  const cungDataStr = isExpert
+    ? buildCungDataPrompt(laSo, { includeNguyetVan: true, includeNextYear: true })
+    : isPro
+    ? buildCungDataPrompt(laSo, { includeNguyetVan: true, includeNextYear: curMonthA >= 9 })
+    : cungDataCoreStr;
 
   // 1. Tính toán chính xác 100% Đại Vận hiện tại & 3 cung hạn năm xem (Tiểu Hạn - Lưu Niên Đại Hạn - Lưu Thái Tuế)
   const tamHan = computeTamHanAnalysis(laSo);
@@ -298,7 +310,8 @@ NGUYÊN TẮC DIỄN ĐẠT VẬN HẠN NĂM ĐƠN GIẢN, DỄ HIỂU CHO KHÁC
     // ==========================================
     // EXPERT TIER PROMPT: CHIA 3 PHẦN SONG SONG (3600 - 5000 TỪ - GẤP 2 LẦN BẢN PRO, LUẬN GIẢI KỸ TOÀN DIỆN CẢ 12 CUNG, TỐC ĐỘ ~25-35s)
     // ==========================================
-    let expertBaseHeader = `Bạn là ĐẠI TÔNG SƯ TỬ VI THẦY TÔN uyên bác bậc nhất, thấu triệt tinh hoa Dịch học, Tử Vi Đẩu Số Bát Bộ Thần Sát và Tướng Pháp Bí Truyền.
+    const buildExpertHeader = (palaceData: string) => {
+      let header = `Bạn là ĐẠI TÔNG SƯ TỬ VI THẦY TÔN uyên bác bậc nhất, thấu triệt tinh hoa Dịch học, Tử Vi Đẩu Số Bát Bộ Thần Sát và Tướng Pháp Bí Truyền.
 Đang thực hiện BẢN LUẬN GIẢI CHUYÊN GIA ĐẶC BIỆT (EXPERT EDITION) cho đương số: ${duongSo.hoTen}, Giới tính: ${duongSo.gioiTinh}.
 XƯNG HÔ: Bắt buộc xưng 'Thầy Tôn' hoặc 'Thầy', gọi đương số là 'quý khách' hoặc tên '${duongSo.hoTen}'. TUYỆT ĐỐI KHÔNG xưng AI, KHÔNG nhắc tên model AI, KHÔNG dùng bát tự tử bình.
 ĐỊNH DẠNG: KHÔNG dùng cú pháp Markdown (**). DÙNG TOÀN BỘ THẺ HTML CHUẨN (<b>, <h3>, <h4>, <p>, <ul>, <li>).
@@ -315,18 +328,22 @@ THÔNG TIN LÁ SỐ:
 - Xem hạn năm: ${namXemCanChi} (${namXem}), tuổi Âm lịch: ${tuoiAmXem} tuổi.
 ${daiVanPromptStr}${tieuVanPromptStr}
 CHI TIẾT 12 CUNG & TINH ĐẨU:
-${cungDataStr}
+${palaceData}
 `;
+      if (thongTinThem && thongTinThem.trim()) {
+        header += `\nHOÀN CẢNH & DỮ LIỆU CÁ NHÂN THỰC TẾ CỦA ĐƯƠNG SỐ: ${thongTinThem.trim()} (BẮT BUỘC lồng ghép và đối chiếu sát sao hoàn cảnh thực tế này khi luận giải Cung Mệnh, Cung Quan Lộc, Cung Tài Bạch, Cung Phu Thê/Gia Đạo, Cung Tử Tức và Đại Vận/Tiểu Vận!).\n`;
+      }
+      if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
+        header += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
+      }
+      if (overseasPromptDirective) {
+        header += overseasPromptDirective;
+      }
+      return header;
+    };
 
-    if (thongTinThem && thongTinThem.trim()) {
-      expertBaseHeader += `\nHOÀN CẢNH & DỮ LIỆU CÁ NHÂN THỰC TẾ CỦA ĐƯƠNG SỐ: ${thongTinThem.trim()} (BẮT BUỘC lồng ghép và đối chiếu sát sao hoàn cảnh thực tế này khi luận giải Cung Mệnh, Cung Quan Lộc, Cung Tài Bạch, Cung Phu Thê/Gia Đạo, Cung Tử Tức và Đại Vận/Tiểu Vận!).\n`;
-    }
-    if (chieuCao && canNang && chieuCao > 0 && canNang > 0) {
-      expertBaseHeader += `HÌNH THỂ THỰC TẾ: Chiều cao ${chieuCao} cm, Cân nặng ${canNang} kg.\n`;
-    }
-    if (overseasPromptDirective) {
-      expertBaseHeader += overseasPromptDirective;
-    }
+    const expertHeaderCore = buildExpertHeader(cungDataCoreStr);
+    const expertHeaderFull = buildExpertHeader(cungDataStr);
 
     const getExpertPartLangNote = (partIdx: 1 | 2 | 3): string => {
       if (lang === 'vi') return '';
@@ -344,7 +361,7 @@ ${cungDataStr}
     const langSuffixPart2 = getExpertPartLangNote(2);
     const langSuffixPart3 = getExpertPartLangNote(3);
 
-    const part1Prompt = `${expertBaseHeader}
+    const part1Prompt = `${expertHeaderCore}
 NHIỆM VỤ PHẦN 1 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 1.500 TỪ, KHÔNG VIẾT DÀI QUÁ 1.600 TỪ):
 Hãy viết thật sâu sắc, uyên bác nhưng súc tích CHƯƠNG I (khoảng 350 - 400 từ) và NỬA ĐẦU CHƯƠNG II từ Cung số 1 đến Cung số 6 (mỗi cung viết cô đọng khoảng 160 - 190 từ, đi thẳng vào trọng tâm tinh đẩu và cát hung; nếu cung nào Vô Chính Diệu thì bắt buộc lấy sao từ Tam Phương Tứ Chính hội chiếu để luận):
 
@@ -369,7 +386,7 @@ Phân tích từng cung từ Cung 1 đến Cung 6 bằng thẻ <h4> riêng biệ
 
 QUY TẮC BẮT BUỘC CHO PHẦN 1: Tổng độ dài Phần 1 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi kết thúc Mục 6 (Cung Nô Bộc), TUYỆT ĐỐI KHÔNG viết Mục 7 trở đi và KHÔNG viết lời chào kết bài.${langSuffixPart1}`;
 
-    const part2Prompt = `${expertBaseHeader}
+    const part2Prompt = `${expertHeaderCore}
 NHIỆM VỤ PHẦN 2 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.300 - 1.500 TỪ, KHÔNG VIẾT DÀI QUÁ 1.600 TỪ):
 Đây là phần nối tiếp trực tiếp ngay sau Mục 6 (Cung Nô Bộc) của Chương II.
 QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <h4>7. Cung Thiên Di...</h4> dưới đây. TUYỆT ĐỐI KHÔNG viết lời chào mở đầu, KHÔNG lặp lại tiêu đề Chương I hay Chương II.
@@ -389,7 +406,7 @@ Hãy phân tích súc tích, sắc bén từng cung từ Cung 7 đến Cung 12, 
 
 QUY TẮC KẾT THÚC PHẦN 2: Tổng độ dài Phần 2 chỉ khoảng 1.300 - 1.500 từ. Dừng lại ngay sau khi viết xong Chương III, TUYỆT ĐỐI KHÔNG viết Chương IV và KHÔNG viết lời chào kết bài.${langSuffixPart2}`;
 
-    const part3Prompt = `${expertBaseHeader}${tamHanMethodologyRule}
+    const part3Prompt = `${expertHeaderFull}${tamHanMethodologyRule}
 NHIỆM VỤ PHẦN 3 (GIỚI HẠN ĐỘ DÀI NGHIÊM NGẶT: KHOẢNG 1.150 - 1.350 TỪ, KHÔNG VIẾT DÀI QUÁ 1.450 TỪ):
 Đây là phần cuối nối tiếp trực tiếp ngay sau Chương III (Đại Vận 10 Năm).
 QUY TẮC MỞ ĐẦU BẮT BUỘC: Bắt đầu NGAY LẬP TỨC bằng thẻ <h3>IV. VẬN HẠN NĂM ${namXem}...</h3> dưới đây. TUYỆT ĐỐI KHÔNG viết lời chào mở đầu, KHÔNG lặp lại các chương I, II, III.

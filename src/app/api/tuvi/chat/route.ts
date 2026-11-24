@@ -379,20 +379,58 @@ export async function POST(req: NextRequest) {
       contextChat += `Hình thể: ${effectiveChieuCao} cm, ${effectiveCanNang} kg. `;
     }
 
+    const stripHtmlCompact = (raw?: string | null, maxLen?: number): string => {
+      const cleaned = String(raw || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (maxLen && cleaned.length > maxLen) {
+        return cleaned.slice(0, maxLen).trimEnd() + '…';
+      }
+      return cleaned;
+    };
+
+    // Chặn phình lịch sử lũy tiến O(N^2):
+    // - Lược bỏ toàn bộ thẻ HTML thừa trong các lượt hỏi đáp cũ
+    // - Chỉ giữ chi tiết 4 lượt gần nhất (tối đa 600 ký tự câu hỏi + 1.200 ký tự trả lời/lượt)
+    // - Các lượt cũ hơn (tối đa 6 lượt trước đó) chỉ giữ tóm tắt siêu gọn 1 dòng để giữ mạch ngữ cảnh
     let historyText = '';
     if (effectiveHistory.length > 0) {
+      const RECENT_FULL_TURNS = 4;
+      const MAX_OLDER_SUMMARY_TURNS = 6;
+      const totalTurns = effectiveHistory.length;
+      const recentStartIdx = Math.max(0, totalTurns - RECENT_FULL_TURNS);
+      const olderStartIdx = Math.max(0, recentStartIdx - MAX_OLDER_SUMMARY_TURNS);
+
       historyText = 'LỊCH SỬ ĐÀM ĐẠO TRƯỚC ĐÓ:\n';
-      effectiveHistory.forEach((c, idx) => {
+      if (olderStartIdx < recentStartIdx) {
+        historyText += '(Tóm tắt các lượt hỏi cũ hơn):\n';
+        for (let idx = olderStartIdx; idx < recentStartIdx; idx++) {
+          const c = effectiveHistory[idx];
+          const qShort = stripHtmlCompact(c.q, 160);
+          const aShort = stripHtmlCompact(c.a, 220);
+          historyText += `- Lượt ${idx + 1}: Hỏi "${qShort}" => Đáp: ${aShort}\n`;
+        }
+      }
+      for (let idx = recentStartIdx; idx < totalTurns; idx++) {
+        const c = effectiveHistory[idx];
         const tag = c.type === 'expert' ? '[Chuyên Gia Expert]' : c.type === 'vip' ? '[VIP Pro]' : '[Cơ Bản]';
-        historyText += `Lượt ${idx + 1} ${tag}:\n- Khách: ${c.q}\n- Thầy Tôn: ${c.a}\n`;
-      });
+        const qClean = stripHtmlCompact(c.q, 650);
+        const aClean = stripHtmlCompact(c.a, 1200);
+        historyText += `Lượt ${idx + 1} ${tag}:\n- Khách: ${qClean}\n- Thầy Tôn: ${aClean}\n`;
+      }
       historyText += '\n';
     }
 
     let readingContext = '';
     if (effectiveReadingHtml && effectiveReadingHtml.trim()) {
-      const cleanReading = effectiveReadingHtml.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-      readingContext = `\nBÀI BÌNH GIẢI ĐÃ ĐƯỢC THẦY TÔN LUẬN GIẢI CHO ĐƯƠNG SỐ TRƯỚC ĐÓ (Bao gồm cả các dấu ấn Tướng pháp, Diện tướng, Chỉ tay nếu có):\n"${cleanReading.slice(0, 6000)}"\n(QUY TẮC: Khi khách hỏi về những nội dung liên quan đến bài bình giải cũ, đặc biệt là tướng mạo, đường chỉ tay, vết đứt gãy cung mệnh hay những lời khuyên đã dặn trước đó, bạn hãy bám sát và kế thừa chuẩn xác những gì đã luận giải ở trên để trả lời nhất quán và sâu sắc).\n`;
+      const maxReadingCtxChars = activeMode === 'expert' ? 4200 : 3200;
+      const cleanReading = stripHtmlCompact(effectiveReadingHtml, maxReadingCtxChars);
+      readingContext = `\nBÀI BÌNH GIẢI ĐÃ LUẬN TRƯỚC ĐÓ (kèm nhận định Diện tướng/Chỉ tay nếu có):\n"${cleanReading}"\n(Hãy kế thừa nhất quán những điểm đã luận ở trên khi khách hỏi liên quan).\n`;
     }
 
     const requirementText =
