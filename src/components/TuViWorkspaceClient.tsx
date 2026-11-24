@@ -18,7 +18,6 @@ import AboutThayTon from '@/components/AboutThayTon';
 import HomeFunnelContent from '@/components/HomeFunnelContent';
 import BookingBanner from '@/components/BookingBanner';
 import CoursePromoBanner from '@/components/CoursePromoBanner';
-import Testimonials from '@/components/Testimonials';
 import VanHanLandingHero from '@/components/VanHanLandingHero';
 import VideoGuideSection, { VideoGuideModal } from '@/components/VideoGuideSection';
 import { useAuth } from '@/context/AuthContext';
@@ -2379,13 +2378,10 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                     {/* 2. Khối Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast + Giáo trình tương tác 699K) */}
                     <CoursePromoBanner />
 
-                    {/* 3. Cảm nhận thực tế từ Chuyên gia, Doanh nhân & Học viên (Đa ngôn ngữ) */}
-                    <Testimonials />
-
-                    {/* 4. Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */}
+                    {/* 3. Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */}
                     <BookingBanner />
 
-                    {/* 5. Khối Nội dung Trang chủ Chuẩn SEO & GEO (Thu gọn mượt, giữ 100% DOM SEO) */}
+                    {/* 4. Khối Nội dung Trang chủ Chuẩn SEO & GEO (Thu gọn mượt, giữ 100% DOM SEO) */}
                     <HomeFunnelContent />
                   </>
                 )}

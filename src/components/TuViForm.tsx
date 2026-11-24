@@ -544,12 +544,16 @@ export default function TuViForm({
           </div>
         </div>
 
-        {/* Thanh Chỉ Số Tín Nhiệm (4 Trust Badges - Không bị cắt chữ trên Mobile 390px) */}
+        {/* Thanh Chỉ Số Tín Nhiệm (4 Trust Badges thực chứng - Không bị cắt chữ trên Mobile 390px) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 pt-3.5 border-t border-slate-800/80 text-[10.5px] sm:text-xs font-semibold">
           <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl px-2 sm:px-2.5 py-2 text-amber-200 leading-tight">
-            <span className="text-amber-400 text-xs shrink-0">★</span>
-            <span className="sm:hidden">4.9/5 • 15.420+ Lá</span>
-            <span className="hidden sm:inline truncate">4.9/5 (15.420+ Lá Số)</span>
+            <GraduationCap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="sm:hidden">
+              {language === 'vi' ? '18+ Năm Thực Chứng' : '18+ Yrs Empirical'}
+            </span>
+            <span className="hidden sm:inline truncate">
+              {language === 'vi' ? '18+ Năm • Thạc sĩ UK' : '18+ Yrs • Lancaster UK'}
+            </span>
           </div>
           <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl px-2 sm:px-2.5 py-2 text-emerald-300 leading-tight">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
