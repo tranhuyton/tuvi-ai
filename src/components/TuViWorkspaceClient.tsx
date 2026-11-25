@@ -20,6 +20,7 @@ import BookingBanner from '@/components/BookingBanner';
 import CoursePromoBanner from '@/components/CoursePromoBanner';
 import VanHanLandingHero from '@/components/VanHanLandingHero';
 import VideoGuideSection, { VideoGuideModal } from '@/components/VideoGuideSection';
+import RealFeedbackSlider from '@/components/RealFeedbackSlider';
 import { useAuth } from '@/context/AuthContext';
 import {
   saveOrUpdateChart,
@@ -2363,8 +2364,9 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                     {/* Video hướng dẫn 55s (đặt dưới Form + Hero để tuyệt đối không đẩy Form xuống) */}
                     <VideoGuideSection placement="van-han" />
 
-                    {/* Trên Landing Page /van-han: Ưu tiên khối Uy tín Thầy Tôn ngay dưới Form để tăng niềm tin chốt đơn */}
+                    {/* Trên Landing Page /van-han: Ưu tiên khối Uy tín Thầy Tôn + Phản hồi thực tế để tăng niềm tin chốt đơn */}
                     <AboutThayTon />
+                    <RealFeedbackSlider />
                     <CoursePromoBanner />
                   </>
                 ) : (
@@ -2375,13 +2377,16 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
                     {/* 1. Uy tín Chuyên gia Thầy Tôn ngay dưới Form để tăng niềm tin sớm */}
                     <AboutThayTon />
 
-                    {/* 2. Khối Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast + Giáo trình tương tác 699K) */}
+                    {/* 2. Phản hồi nguyên bản từ khách hàng (Facebook & Zalo đã làm mờ tên/avatar bảo mật) */}
+                    <RealFeedbackSlider />
+
+                    {/* 3. Khối Khóa Học Tử Vi Đẩu Số Thực Chiến Online (Podcast + Giáo trình tương tác 699K) */}
                     <CoursePromoBanner />
 
-                    {/* 3. Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */}
+                    {/* 4. Khối Đặt Lịch Xem Trực Tiếp Online & Offline Cùng Thầy Tôn */}
                     <BookingBanner />
 
-                    {/* 4. Khối Nội dung Trang chủ Chuẩn SEO & GEO (Thu gọn mượt, giữ 100% DOM SEO) */}
+                    {/* 5. Khối Nội dung Trang chủ Chuẩn SEO & GEO (Thu gọn mượt, giữ 100% DOM SEO) */}
                     <HomeFunnelContent />
                   </>
                 )}
