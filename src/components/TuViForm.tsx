@@ -22,6 +22,7 @@ import {
   ChevronDown,
   CheckCircle2,
   Play,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -36,6 +37,9 @@ interface TuViFormProps {
   onRequireAuth?: (action: () => void, notice: string) => void;
   initialData?: DuLieuDuongSo | null;
   onCancelEdit?: () => void;
+  onStartNewChart?: () => void;
+  isPaidChartLocked?: boolean;
+  paidEditsRemaining?: number;
   activeVoucher?: ClientVoucherInfo | null;
   variant?: 'default' | 'van-han' | 'dien-trach-quan-loc';
   defaultTier?: ServiceTier;
@@ -99,6 +103,9 @@ export default function TuViForm({
   onRequireAuth,
   initialData,
   onCancelEdit,
+  onStartNewChart,
+  isPaidChartLocked = false,
+  paidEditsRemaining = 1,
   activeVoucher,
   variant = 'default',
   defaultTier,
@@ -147,6 +154,12 @@ export default function TuViForm({
   );
 
   const handleSelectTier = (tier: ServiceTier) => {
+    if (isPaidChartLocked && initialData?.tier) {
+      const rank: Record<ServiceTier, number> = { free: 0, pro: 1, expert: 2 };
+      if (rank[tier] < rank[initialData.tier]) {
+        return; // Không hạ cấp gói trên lá số đã thanh toán
+      }
+    }
     setSelectedTier(tier);
     if (tier === 'pro' || tier === 'expert') {
       setIsOptionalOpen(true);
@@ -575,21 +588,58 @@ export default function TuViForm({
       </div>
 
       {initialData && (
-        <div className="relative z-10 mb-5 p-3.5 bg-amber-500/15 border border-amber-500/45 rounded-2xl flex items-center justify-between gap-2 animate-in fade-in">
-          <div className="text-xs sm:text-sm text-amber-200 font-medium flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-            <span>
-              {t('form.editingBanner', 'Đang chỉnh sửa lá số của')} <strong>{initialData.hoTen}</strong>
-            </span>
+        <div className="relative z-10 mb-5 space-y-2.5 animate-in fade-in">
+          <div className="p-3.5 bg-amber-500/15 border border-amber-500/45 rounded-2xl flex items-center justify-between gap-2">
+            <div className="text-xs sm:text-sm text-amber-200 font-medium flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>
+                {t('form.editingBanner', 'Đang chỉnh sửa lá số của')} <strong>{initialData.hoTen}</strong>
+              </span>
+            </div>
+            {onCancelEdit && (
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="text-xs text-slate-300 hover:text-white underline cursor-pointer shrink-0 font-semibold"
+              >
+                {t('form.cancelEdit', 'Hủy sửa')}
+              </button>
+            )}
           </div>
-          {onCancelEdit && (
-            <button
-              type="button"
-              onClick={onCancelEdit}
-              className="text-xs text-slate-300 hover:text-white underline cursor-pointer shrink-0 font-semibold"
+
+          {isPaidChartLocked && (
+            <div
+              className={`p-3.5 rounded-2xl border text-xs leading-relaxed flex items-start gap-2.5 ${
+                paidEditsRemaining > 0
+                  ? 'bg-emerald-950/45 border-emerald-500/40 text-emerald-100'
+                  : 'bg-rose-950/45 border-rose-500/40 text-rose-100'
+              }`}
             >
-              {t('form.cancelEdit', 'Hủy sửa')}
-            </button>
+              <Lock
+                className={`w-4 h-4 shrink-0 mt-0.5 ${
+                  paidEditsRemaining > 0 ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              />
+              <div>
+                {paidEditsRemaining > 0 ? (
+                  <>
+                    <strong className="text-emerald-300">
+                      Bảo vệ bản quyền lá số trả phí (Còn {paidEditsRemaining}/1 lượt chỉnh sửa miễn phí):
+                    </strong>{' '}
+                    Họ tên, Giới tính, Ngày/Tháng/Năm sinh và Năm xem hạn đã được cố định cho đúng đương số này. Quý khách có thể chỉnh <b>Giờ sinh</b> hoặc bổ sung <b>Ảnh Diện Tướng, Chỉ Tay, Hoàn cảnh</b> để AI luận giải lại trọn vẹn 01 lần.
+                  </>
+                ) : (
+                  <>
+                    <strong className="text-rose-300">
+                      Lá số trả phí này đã sử dụng hết 01/01 lượt chỉnh sửa miễn phí.
+                    </strong>{' '}
+                    {initialData.tier === 'pro'
+                      ? 'Quý khách vẫn có thể bổ sung ảnh & chọn nâng cấp lên Bản Chuyên Gia Expert (150K), hoặc bấm "Lập lá số mới" để xem cho người thân / năm hạn khác.'
+                      : 'Để xem cho người thân hoặc năm hạn khác, quý khách vui lòng bấm "Lập lá số mới" hoặc nhắn Zalo Thầy Tôn (0935.058.688) nếu cần hỗ trợ.'}
+                  </>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -602,26 +652,46 @@ export default function TuViForm({
               <User className="w-3.5 h-3.5 text-amber-400" />
               <span>{t('form.fullName', 'Họ tên đương số')}</span>
               <span className="text-red-400">*</span>
+              {isPaidChartLocked && (
+                <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold normal-case tracking-normal text-amber-300/80">
+                  <Lock className="w-3 h-3" /> Đã khóa
+                </span>
+              )}
             </label>
             <input
               type="text"
               required
+              disabled={isPaidChartLocked}
               value={hoTen}
-              onChange={(e) => setHoTen(e.target.value)}
+              onChange={(e) => {
+                if (!isPaidChartLocked) setHoTen(e.target.value);
+              }}
               placeholder={t('form.fullNamePlaceholder', 'Ví dụ: Trần Huy Tôn...')}
-              className="w-full px-4 py-3 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-medium focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
+              className={`w-full px-4 py-3 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm font-medium focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner ${
+                isPaidChartLocked ? 'opacity-65 cursor-not-allowed' : 'hover:border-amber-500/40'
+              }`}
             />
           </div>
 
           <div className="md:col-span-5">
-            <label className="block text-xs uppercase tracking-wider text-amber-200/90 font-bold mb-1.5">
-              {t('form.gender', 'Giới tính')}
+            <label className="block text-xs uppercase tracking-wider text-amber-200/90 font-bold mb-1.5 flex items-center justify-between">
+              <span>{t('form.gender', 'Giới tính')}</span>
+              {isPaidChartLocked && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold normal-case tracking-normal text-amber-300/80">
+                  <Lock className="w-3 h-3" /> Đã khóa
+                </span>
+              )}
             </label>
-            <div className="grid grid-cols-2 gap-2.5 p-1 rounded-xl bg-slate-950/80 border border-slate-700/80">
+            <div className={`grid grid-cols-2 gap-2.5 p-1 rounded-xl bg-slate-950/80 border border-slate-700/80 ${isPaidChartLocked ? 'opacity-65' : ''}`}>
               <button
                 type="button"
-                onClick={() => setGioiTinh('Nam')}
-                className={`py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                disabled={isPaidChartLocked}
+                onClick={() => {
+                  if (!isPaidChartLocked) setGioiTinh('Nam');
+                }}
+                className={`py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition ${
+                  isPaidChartLocked ? 'cursor-not-allowed' : 'cursor-pointer'
+                } ${
                   gioiTinh === 'Nam'
                     ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/25'
                     : 'text-slate-300 hover:text-white hover:bg-slate-900/70'
@@ -632,8 +702,13 @@ export default function TuViForm({
               </button>
               <button
                 type="button"
-                onClick={() => setGioiTinh('Nữ')}
-                className={`py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+                disabled={isPaidChartLocked}
+                onClick={() => {
+                  if (!isPaidChartLocked) setGioiTinh('Nữ');
+                }}
+                className={`py-2.5 px-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition ${
+                  isPaidChartLocked ? 'cursor-not-allowed' : 'cursor-pointer'
+                } ${
                   gioiTinh === 'Nữ'
                     ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/25'
                     : 'text-slate-300 hover:text-white hover:bg-slate-900/70'
@@ -659,46 +734,55 @@ export default function TuViForm({
                 </span>
                 <span className="text-red-400">*</span>
               </label>
-              <div className="inline-flex rounded-lg bg-slate-950/90 border border-slate-700/80 p-0.5 text-[11px] font-bold">
-                <button
-                  type="button"
-                  onClick={() => handleSwitchCalendar('solar')}
-                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
-                    calendarType === 'solar'
-                      ? 'bg-amber-500 text-slate-950 shadow'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  ☀️ Dương lịch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSwitchCalendar('lunar')}
-                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
-                    calendarType === 'lunar'
-                      ? 'bg-amber-500 text-slate-950 shadow'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  🌙 Âm lịch
-                </button>
-              </div>
+              {isPaidChartLocked ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-300/80">
+                  <Lock className="w-3 h-3" /> Đã khóa
+                </span>
+              ) : (
+                <div className="inline-flex rounded-lg bg-slate-950/90 border border-slate-700/80 p-0.5 text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchCalendar('solar')}
+                    className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                      calendarType === 'solar'
+                        ? 'bg-amber-500 text-slate-950 shadow'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    ☀️ Dương lịch
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchCalendar('lunar')}
+                    className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                      calendarType === 'lunar'
+                        ? 'bg-amber-500 text-slate-950 shadow'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    🌙 Âm lịch
+                  </button>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-2.5">
               <div className="relative">
                 <SmartNumericInput
                   required
+                  disabled={isPaidChartLocked}
                   maxLength={2}
                   fallbackOnEmpty={15}
                   value={calendarType === 'solar' ? ngayDuong : ngayAmInput}
                   onChangeValue={(val) => {
-                    if (val !== undefined) {
+                    if (!isPaidChartLocked && val !== undefined) {
                       if (calendarType === 'solar') setNgayDuong(val);
                       else setNgayAmInput(val);
                     }
                   }}
                   placeholder={t('form.day', 'Ngày')}
-                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
+                  className={`w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner ${
+                    isPaidChartLocked ? 'opacity-65 cursor-not-allowed' : 'hover:border-amber-500/40'
+                  }`}
                 />
                 <span className="pointer-events-none absolute bottom-1.5 inset-x-0 text-[10px] text-slate-400 font-semibold text-center uppercase tracking-wider">
                   {t('form.day', 'Ngày')}
@@ -707,17 +791,20 @@ export default function TuViForm({
               <div className="relative">
                 <SmartNumericInput
                   required
+                  disabled={isPaidChartLocked}
                   maxLength={2}
                   fallbackOnEmpty={8}
                   value={calendarType === 'solar' ? thangDuong : thangAmInput}
                   onChangeValue={(val) => {
-                    if (val !== undefined) {
+                    if (!isPaidChartLocked && val !== undefined) {
                       if (calendarType === 'solar') setThangDuong(val);
                       else setThangAmInput(val);
                     }
                   }}
                   placeholder={t('form.month', 'Tháng')}
-                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
+                  className={`w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner ${
+                    isPaidChartLocked ? 'opacity-65 cursor-not-allowed' : 'hover:border-amber-500/40'
+                  }`}
                 />
                 <span className="pointer-events-none absolute bottom-1.5 inset-x-0 text-[10px] text-slate-400 font-semibold text-center uppercase tracking-wider">
                   {t('form.month', 'Tháng')}
@@ -726,17 +813,20 @@ export default function TuViForm({
               <div className="relative">
                 <SmartNumericInput
                   required
+                  disabled={isPaidChartLocked}
                   maxLength={4}
                   fallbackOnEmpty={1995}
                   value={calendarType === 'solar' ? namDuong : namAmInput}
                   onChangeValue={(val) => {
-                    if (val !== undefined) {
+                    if (!isPaidChartLocked && val !== undefined) {
                       if (calendarType === 'solar') setNamDuong(val);
                       else setNamAmInput(val);
                     }
                   }}
                   placeholder={t('form.year', 'Năm')}
-                  className="w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner"
+                  className={`w-full px-3 pt-2.5 pb-5 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm font-bold text-center placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner ${
+                    isPaidChartLocked ? 'opacity-65 cursor-not-allowed' : 'hover:border-amber-500/40'
+                  }`}
                 />
                 <span className="pointer-events-none absolute bottom-1.5 inset-x-0 text-[10px] text-slate-400 font-semibold text-center uppercase tracking-wider">
                   {t('form.year', 'Năm')}
@@ -747,8 +837,11 @@ export default function TuViForm({
               <label className="mt-2 inline-flex items-center gap-2 text-xs text-amber-300 font-medium cursor-pointer">
                 <input
                   type="checkbox"
+                  disabled={isPaidChartLocked}
                   checked={isLeapMonthInput}
-                  onChange={(e) => setIsLeapMonthInput(e.target.checked)}
+                  onChange={(e) => {
+                    if (!isPaidChartLocked) setIsLeapMonthInput(e.target.checked);
+                  }}
                   className="rounded border-amber-500/50 bg-slate-900 text-amber-500 focus:ring-amber-400"
                 />
                 <span>Sinh vào Tháng {leapMonthOfInputYear} Nhuận (năm {namAmInput})</span>
@@ -757,14 +850,26 @@ export default function TuViForm({
           </div>
 
           <div className="md:col-span-5">
-            <label className="block text-xs uppercase tracking-wider text-amber-200/90 font-bold mb-1.5 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span>{t('form.birthHour', 'Giờ sinh (Chi)')}</span>
+            <label className="block text-xs uppercase tracking-wider text-amber-200/90 font-bold mb-1.5 flex items-center justify-between gap-1.5">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>{t('form.birthHour', 'Giờ sinh (Chi)')}</span>
+              </span>
+              {isPaidChartLocked && paidEditsRemaining <= 0 && selectedTier === (initialData?.tier || 'free') && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold normal-case tracking-normal text-rose-300/90">
+                  <Lock className="w-3 h-3" /> Hết lượt sửa
+                </span>
+              )}
             </label>
             <select
+              disabled={isPaidChartLocked && paidEditsRemaining <= 0 && selectedTier === (initialData?.tier || 'free')}
               value={gioSinhVal}
               onChange={(e) => setGioSinhVal(e.target.value)}
-              className="w-full px-3.5 py-3.5 bg-slate-950/75 border border-slate-700/80 hover:border-amber-500/40 rounded-xl text-slate-100 text-base sm:text-sm font-medium focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition cursor-pointer shadow-inner"
+              className={`w-full px-3.5 py-3.5 bg-slate-950/75 border border-slate-700/80 rounded-xl text-slate-100 text-base sm:text-sm font-medium focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition shadow-inner ${
+                isPaidChartLocked && paidEditsRemaining <= 0 && selectedTier === (initialData?.tier || 'free')
+                  ? 'opacity-65 cursor-not-allowed'
+                  : 'hover:border-amber-500/40 cursor-pointer'
+              }`}
             >
               {Object.entries(GIO_ARR).map(([key, val]) => (
                 <option key={key} value={key}>
@@ -820,33 +925,40 @@ export default function TuViForm({
         )}
 
         {/* HÀNG 3: NĂM XEM HẠN (DƯƠNG LỊCH) */}
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-950/60 border border-amber-500/25">
+        <div className={`p-3.5 sm:p-4 rounded-2xl bg-slate-950/60 border border-amber-500/25 ${isPaidChartLocked ? 'opacity-70' : ''}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="flex-1">
               <div className="flex items-center justify-between flex-wrap gap-2 mb-1.5">
                 <label className="text-xs uppercase tracking-wider text-amber-200 font-bold flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-amber-400" />
                   <span>{t('form.viewYear', 'Năm xem hạn (Dương lịch)')}</span>
+                  {isPaidChartLocked && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold normal-case tracking-normal text-amber-300/80 ml-1">
+                      <Lock className="w-3 h-3" /> Đã khóa
+                    </span>
+                  )}
                 </label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {[currentYear, currentYear + 1, currentYear + 2].map((y) => {
-                    const cc = `${CAN_ARR[(y + 6) % 10]} ${CHI_ARR[(y + 8) % 12]}`;
-                    return { y, cc };
-                  }).map((item) => (
-                    <button
-                      key={item.y}
-                      type="button"
-                      onClick={() => setNamXem(item.y)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-bold border transition cursor-pointer ${
-                        namXem === item.y
-                          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-300 shadow-sm shadow-amber-500/20'
-                          : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:border-amber-400/50 hover:text-amber-200'
-                      }`}
-                    >
-                      {item.y} ({tCanChi(item.cc)})
-                    </button>
-                  ))}
-                </div>
+                {!isPaidChartLocked && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[currentYear, currentYear + 1, currentYear + 2].map((y) => {
+                      const cc = `${CAN_ARR[(y + 6) % 10]} ${CHI_ARR[(y + 8) % 12]}`;
+                      return { y, cc };
+                    }).map((item) => (
+                      <button
+                        key={item.y}
+                        type="button"
+                        onClick={() => setNamXem(item.y)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold border transition cursor-pointer ${
+                          namXem === item.y
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-300 shadow-sm shadow-amber-500/20'
+                            : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:border-amber-400/50 hover:text-amber-200'
+                        }`}
+                      >
+                        {item.y} ({tCanChi(item.cc)})
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <p className="text-[11.5px] text-slate-400">
                 {t(
@@ -857,14 +969,17 @@ export default function TuViForm({
             </div>
             <div className="sm:w-36 shrink-0">
               <SmartNumericInput
+                disabled={isPaidChartLocked}
                 maxLength={4}
                 fallbackOnEmpty={currentYear}
                 value={namXem}
                 onChangeValue={(val) => {
-                  if (val !== undefined) setNamXem(val);
+                  if (!isPaidChartLocked && val !== undefined) setNamXem(val);
                 }}
                 placeholder={`VD: ${currentYear}`}
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-amber-500/50 rounded-xl text-amber-300 font-extrabold text-center text-base sm:text-sm placeholder:text-amber-300/40 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition"
+                className={`w-full px-3.5 py-2.5 bg-slate-900 border border-amber-500/50 rounded-xl text-amber-300 font-extrabold text-center text-base sm:text-sm placeholder:text-amber-300/40 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition ${
+                  isPaidChartLocked ? 'cursor-not-allowed' : ''
+                }`}
               />
             </div>
           </div>
@@ -1256,58 +1371,90 @@ export default function TuViForm({
         </div>
 
         {/* Nút Submit Ánh Kim */}
-        <button
-          type="submit"
-          disabled={isLoading || isConvertingMat || isConvertingTay}
-          className={`btn-shimmer w-full mt-6 py-4 px-6 font-extrabold rounded-2xl tracking-wider uppercase text-base sm:text-lg shadow-xl transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5 cursor-pointer ${
-            selectedTier === 'expert'
-              ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-purple-950/60 ring-1 ring-purple-300/40'
-              : selectedTier === 'pro'
-              ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 shadow-amber-950/50 ring-1 ring-amber-200/60'
-              : 'bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white shadow-red-950/50 ring-1 ring-amber-400/40'
-          }`}
-        >
-          {isLoading || isConvertingMat || isConvertingTay ? (
-            <>
-              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              <span>
-                {isConvertingMat || isConvertingTay
-                  ? 'Đang tối ưu ảnh tải lên...'
-                  : t('form.btnLoading', 'Thầy Đang Quán Tưởng...')}
-              </span>
-            </>
-          ) : initialData && selectedTier === (initialData.tier || 'free') ? (
-            <>
-              <Sparkles className="w-5 h-5 text-amber-300" />
-              <span>{t('form.btnUpdateChart', 'Cập Nhật & An Lại Lá Số (Năm {year})', { year: namXem })}</span>
-            </>
-          ) : selectedTier === 'expert' ? (
-            <>
-              <Gem className="w-5 h-5" />
-              <span>
-                {initialData?.tier === 'pro'
-                  ? t('form.btnUpgradeProToExpert', 'Thanh Toán & Nâng Cấp Bản Expert (150K)')
-                  : activeVoucher
-                  ? `Thanh Toán & Luận Giải Bản Expert (${Math.round(activeVoucher.prices.reading_expert / 1000)}K • -${activeVoucher.discountPercent}%)`
-                  : t('form.btnSubmitExpert', 'Thanh Toán & Luận Giải Bản Expert (269K)')}
-              </span>
-            </>
-          ) : selectedTier === 'pro' ? (
-            <>
-              <Crown className="w-5 h-5" />
-              <span>
-                {activeVoucher
-                  ? `Thanh Toán & Luận Giải Bản Pro (${Math.round(activeVoucher.prices.reading_vip / 1000)}K • -${activeVoucher.discountPercent}%)`
-                  : t('form.btnSubmitPro', 'Thanh Toán & Luận Giải Bản Pro (119K)')}
-              </span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              <span>{t('form.btnSubmitFree', 'An Sao & Nhận Bình Giải Miễn Phí Ngay')}</span>
-            </>
-          )}
-        </button>
+        {(() => {
+          const isSamePaidTierOutOfEdits = Boolean(
+            isPaidChartLocked &&
+              initialData &&
+              selectedTier === (initialData.tier || 'free') &&
+              paidEditsRemaining <= 0
+          );
+          return (
+            <div className="mt-6 space-y-3">
+              <button
+                type="submit"
+                disabled={isLoading || isConvertingMat || isConvertingTay || isSamePaidTierOutOfEdits}
+                className={`btn-shimmer w-full py-4 px-6 font-extrabold rounded-2xl tracking-wider uppercase text-base sm:text-lg shadow-xl transform hover:-translate-y-0.5 transition duration-200 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5 cursor-pointer ${
+                  selectedTier === 'expert'
+                    ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-purple-950/60 ring-1 ring-purple-300/40'
+                    : selectedTier === 'pro'
+                    ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 shadow-amber-950/50 ring-1 ring-amber-200/60'
+                    : 'bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 text-white shadow-red-950/50 ring-1 ring-amber-400/40'
+                }`}
+              >
+                {isLoading || isConvertingMat || isConvertingTay ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span>
+                      {isConvertingMat || isConvertingTay
+                        ? 'Đang tối ưu ảnh tải lên...'
+                        : t('form.btnLoading', 'Thầy Đang Quán Tưởng...')}
+                    </span>
+                  </>
+                ) : isSamePaidTierOutOfEdits ? (
+                  <>
+                    <Lock className="w-5 h-5" />
+                    <span>Đã Hết Lượt Sửa Miễn Phí Trên Lá Số Này</span>
+                  </>
+                ) : initialData && selectedTier === (initialData.tier || 'free') ? (
+                  <>
+                    <Sparkles className="w-5 h-5 text-amber-300" />
+                    <span>
+                      {isPaidChartLocked
+                        ? `Cập Nhật & Luận Lại Lá Số (Còn ${paidEditsRemaining} Lượt Sửa)`
+                        : t('form.btnUpdateChart', 'Cập Nhật & An Lại Lá Số (Năm {year})', { year: namXem })}
+                    </span>
+                  </>
+                ) : selectedTier === 'expert' ? (
+                  <>
+                    <Gem className="w-5 h-5" />
+                    <span>
+                      {initialData?.tier === 'pro'
+                        ? t('form.btnUpgradeProToExpert', 'Thanh Toán & Nâng Cấp Bản Expert (150K)')
+                        : activeVoucher
+                        ? `Thanh Toán & Luận Giải Bản Expert (${Math.round(activeVoucher.prices.reading_expert / 1000)}K • -${activeVoucher.discountPercent}%)`
+                        : t('form.btnSubmitExpert', 'Thanh Toán & Luận Giải Bản Expert (269K)')}
+                    </span>
+                  </>
+                ) : selectedTier === 'pro' ? (
+                  <>
+                    <Crown className="w-5 h-5" />
+                    <span>
+                      {activeVoucher
+                        ? `Thanh Toán & Luận Giải Bản Pro (${Math.round(activeVoucher.prices.reading_vip / 1000)}K • -${activeVoucher.discountPercent}%)`
+                        : t('form.btnSubmitPro', 'Thanh Toán & Luận Giải Bản Pro (119K)')}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    <span>{t('form.btnSubmitFree', 'An Sao & Nhận Bình Giải Miễn Phí Ngay')}</span>
+                  </>
+                )}
+              </button>
+
+              {isSamePaidTierOutOfEdits && onStartNewChart && (
+                <button
+                  type="button"
+                  onClick={onStartNewChart}
+                  className="w-full py-3.5 px-5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/50 text-amber-200 font-bold text-sm flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Lập Lá Số Mới (Cho Người Thân / Năm Hạn Khác)</span>
+                </button>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Đặt lịch xem trực tiếp Online & Offline */}
         <div className="mt-4 pt-3.5 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap text-sm sm:text-xs text-slate-400">

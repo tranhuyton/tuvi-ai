@@ -10,6 +10,7 @@ interface SmartNumericInputProps {
   placeholder?: string;
   className?: string;
   required?: boolean;
+  disabled?: boolean;
   ariaLabel?: string;
 }
 
@@ -27,6 +28,7 @@ export default function SmartNumericInput({
   placeholder,
   className = '',
   required = false,
+  disabled = false,
   ariaLabel,
 }: SmartNumericInputProps) {
   const formatVal = (v: number | undefined) =>
@@ -114,7 +116,8 @@ export default function SmartNumericInput({
       type="text"
       inputMode="numeric"
       pattern="[0-9]*"
-      required={required && !display && !savedBeforeFocusRef.current}
+      required={required && !disabled && !display && !savedBeforeFocusRef.current}
+      disabled={disabled}
       value={display}
       onFocus={handleFocus}
       onChange={handleChange}

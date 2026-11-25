@@ -355,6 +355,9 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               hydratedLaSo = lapLaSoTuVi(chart.duong_so_data, resolvedNamXem);
               hydratedLaSo.tier = detectedTier;
               if (chart.laso_data?.quota) hydratedLaSo.quota = chart.laso_data.quota;
+              if (typeof chart.laso_data?.paidEditCount === 'number') {
+                hydratedLaSo.paidEditCount = chart.laso_data.paidEditCount;
+              }
             } catch {}
           }
 
@@ -743,6 +746,12 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
         } else if (json.error) {
           lastErrMsg = json.error;
         }
+        if (typeof json.paidEditCount === 'number') {
+          setLaSo((prev) => (prev ? { ...prev, paidEditCount: json.paidEditCount } : prev));
+          if (laSoRef.current) {
+            laSoRef.current = { ...laSoRef.current, paidEditCount: json.paidEditCount };
+          }
+        }
       } else {
         const rawText = await res.text().catch(() => '');
         let parsedError = rawText;
@@ -900,11 +909,38 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     setCurrentTier(effectiveTier);
     tierRef.current = effectiveTier;
 
-    // Giữ nguyên dữ liệu đương số (bao gồm cả ảnh diện tướng/chỉ tay đã nén ~60KB để dùng sau khi quét QR và lưu DB)
-    const cleanDuongSo: DuLieuDuongSo = {
-      ...data,
-      tier: effectiveTier,
-    };
+    // Chống lạm dụng trên lá số đã thanh toán: khóa danh tính gốc & giới hạn tối đa 01 lượt sửa/luận lại miễn phí
+    const existingPaidEditCount = Number(laSoRef.current?.paidEditCount || laSo?.paidEditCount || 0);
+    const isEditingLockedPaidChart =
+      isEditing &&
+      previousTier !== 'free' &&
+      Boolean(existingReadingHtml && existingReadingHtml.trim().length >= 300) &&
+      !laSoRef.current?.needsReadingUpgrade;
+
+    if (isEditingLockedPaidChart && !requiresPayment && existingPaidEditCount >= 1) {
+      alert(
+        'Lá số trả phí này đã sử dụng hết 01/01 lượt chỉnh sửa miễn phí. Để xem cho người thân hoặc năm hạn khác, quý khách vui lòng bấm "Lập lá số mới" hoặc nhắn Zalo Thầy Tôn (0935.058.688) nếu cần hỗ trợ.'
+      );
+      return;
+    }
+
+    // Nếu đang sửa lá số trả phí đã khóa danh tính, luôn giữ nguyên danh tính gốc (chỉ cho cập nhật giờ sinh, ảnh tướng pháp, hoàn cảnh)
+    const lockedBaseDuongSo = isEditingLockedPaidChart ? (duongSoRef.current || laSoRef.current?.duongSo) : null;
+    const cleanDuongSo: DuLieuDuongSo = lockedBaseDuongSo
+      ? {
+          ...data,
+          hoTen: lockedBaseDuongSo.hoTen,
+          gioiTinh: lockedBaseDuongSo.gioiTinh,
+          ngayDuong: lockedBaseDuongSo.ngayDuong,
+          thangDuong: lockedBaseDuongSo.thangDuong,
+          namDuong: lockedBaseDuongSo.namDuong,
+          namXem: lockedBaseDuongSo.namXem || data.namXem,
+          tier: effectiveTier,
+        }
+      : {
+          ...data,
+          tier: effectiveTier,
+        };
 
     let initialQuota: QuestionsQuota = {
       basicAllowed: isEditing ? quotaRef.current.basicAllowed : 0,
@@ -953,6 +989,9 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
     );
     calculatedLaSo.tier = effectiveTier;
     calculatedLaSo.quota = initialQuota;
+    if (isEditing && typeof laSoRef.current?.paidEditCount === 'number') {
+      calculatedLaSo.paidEditCount = laSoRef.current.paidEditCount;
+    }
 
     // Đồng bộ cả state lẫn ref ngay lập tức để PaymentModal và onConfirm có sẵn dữ liệu mới nhất
     laSoRef.current = calculatedLaSo;
@@ -1672,6 +1711,9 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
           activeLaSo.tier = detectedTier;
           if (chart.laso_data?.quota) activeLaSo.quota = chart.laso_data.quota;
           if (chart.laso_data?.needsReadingUpgrade) activeLaSo.needsReadingUpgrade = true;
+          if (typeof chart.laso_data?.paidEditCount === 'number') {
+            activeLaSo.paidEditCount = chart.laso_data.paidEditCount;
+          }
         } catch (calcErr) {
           console.warn('Lỗi tính toán lại lá số đã lưu:', calcErr);
         }
@@ -2334,6 +2376,15 @@ export default function TuViWorkspaceClient({ landingMode = 'default' }: TuViWor
               onOpenVideoGuide={() => setIsVideoGuideOpen(true)}
               initialData={isEditing ? (currentDuongSo || laSo?.duongSo) : null}
               onCancelEdit={isEditing && laSo ? () => setIsEditing(false) : undefined}
+              onStartNewChart={handleReset}
+              isPaidChartLocked={Boolean(
+                isEditing &&
+                  currentTier !== 'free' &&
+                  readingHtml &&
+                  readingHtml.trim().length >= 300 &&
+                  !laSo?.needsReadingUpgrade
+              )}
+              paidEditsRemaining={Math.max(0, 1 - Number(laSo?.paidEditCount || 0))}
               activeVoucher={currentTier === 'free' ? activeVoucher : null}
               variant={
                 isVanHanLanding

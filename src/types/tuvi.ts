@@ -86,6 +86,7 @@ export interface LaSoData {
   tier?: ServiceTier;
   quota?: QuestionsQuota;
   needsReadingUpgrade?: boolean;
+  paidEditCount?: number;
   cungs: CungLaSo[];
 }
 

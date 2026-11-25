@@ -87,13 +87,14 @@ export async function POST(req: NextRequest) {
       user_id: string | null;
       duong_so_data: Record<string, unknown> | null;
       laso_data: Record<string, unknown> | null;
+      reading_html: string | null;
     }
     let existingChart: DbChartRow | null = null;
 
     if (safeChartId) {
       const { data } = await adminSupabase
         .from('tuvi_charts')
-        .select('id, user_id, duong_so_data, laso_data')
+        .select('id, user_id, duong_so_data, laso_data, reading_html')
         .eq('id', safeChartId)
         .maybeSingle();
       existingChart = (data as DbChartRow | null) || null;
@@ -248,21 +249,64 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Với lá số trả phí đã lưu trong DB (không phải Admin): dùng dữ liệu lá số lưu trong DB
-    // để ngăn hành vi mua 1 lần rồi gửi body.laSo khác nhau để luận cho người khác!
+    // CHỐNG LẠM DỤNG TRÊN LÁ SỐ TRẢ PHÍ (Pro / Expert):
+    // 1. Khóa danh tính đương số (hoTen, gioiTinh, ngay/thang/namDuong, namXem) từ DB để ngăn mua 1 lần luận cho nhiều người / nhiều năm.
+    // 2. Giới hạn tối đa 01 lượt chỉnh sửa & luận lại miễn phí (giờ sinh / ảnh tướng pháp / hoàn cảnh) trên cùng gói trả phí đã hoàn tất.
+    const MAX_PAID_REGENERATIONS = 1;
+    const tierRank: Record<string, number> = { free: 0, pro: 1, expert: 2 };
+    const existingDbTier = String(
+      existingChart?.duong_so_data?.tier || existingChart?.laso_data?.tier || 'free'
+    );
+    const hasExistingPaidReading =
+      typeof existingChart?.reading_html === 'string' &&
+      existingChart.reading_html.trim().length >= 300;
+    const existingNeedsUpgrade = Boolean(existingChart?.laso_data?.needsReadingUpgrade);
+    const currentPaidEditCount = Number(existingChart?.laso_data?.paidEditCount || 0);
+    const isUpgradeOrFirstPaidGeneration =
+      (tierRank[allowedTier] ?? 0) > (tierRank[existingDbTier] ?? 0) ||
+      !hasExistingPaidReading ||
+      existingNeedsUpgrade;
+
+    if (!isAdmin && allowedTier !== 'free' && existingChart && !isUpgradeOrFirstPaidGeneration) {
+      if (currentPaidEditCount >= MAX_PAID_REGENERATIONS) {
+        return NextResponse.json(
+          {
+            error:
+              'Lá số trả phí này đã hoàn tất bài luận giải và đã sử dụng hết 01 lượt chỉnh sửa miễn phí. Để xem cho người thân hoặc năm hạn khác, quý khách vui lòng lập lá số mới hoặc nhắn Zalo Thầy Tôn (0935.058.688) nếu cần hỗ trợ.',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     let effectiveLaSo: LaSoData = laSo;
     if (!isAdmin && allowedTier !== 'free' && existingChart) {
       const dbLaSo = existingChart.laso_data as unknown as LaSoData | null;
       const dbDuongSo = existingChart.duong_so_data as unknown as LaSoData['duongSo'] | null;
-      if (dbLaSo && Array.isArray(dbLaSo.cungs) && dbLaSo.cungs.length === 12) {
+      if (dbDuongSo && dbDuongSo.ngayDuong && dbDuongSo.thangDuong && dbDuongSo.namDuong) {
+        // Cho phép cập nhật gioSinhVal trong lượt sửa hợp lệ duy nhất, nhưng luôn khóa cứng danh tính gốc từ DB
+        const requestedGioSinh =
+          typeof laSo.duongSo?.gioSinhVal === 'string' && laSo.duongSo.gioSinhVal.trim()
+            ? laSo.duongSo.gioSinhVal.trim()
+            : dbDuongSo.gioSinhVal;
+        const lockedDuongSo: LaSoData['duongSo'] = {
+          ...dbDuongSo,
+          gioSinhVal: requestedGioSinh || dbDuongSo.gioSinhVal,
+          tier: allowedTier,
+        };
+        const lockedNamXem = Number(dbDuongSo.namXem || dbLaSo?.namXem || new Date().getFullYear());
+        effectiveLaSo = {
+          ...lapLaSoTuVi(
+            { ...lockedDuongSo, anhMat: undefined, anhTay: undefined },
+            lockedNamXem
+          ),
+          tier: allowedTier,
+          quota: dbLaSo?.quota,
+        };
+      } else if (dbLaSo && Array.isArray(dbLaSo.cungs) && dbLaSo.cungs.length === 12) {
         effectiveLaSo = {
           ...dbLaSo,
           duongSo: dbDuongSo || dbLaSo.duongSo,
-          tier: allowedTier,
-        };
-      } else if (dbDuongSo && dbDuongSo.ngayDuong && dbDuongSo.thangDuong && dbDuongSo.namDuong) {
-        effectiveLaSo = {
-          ...lapLaSoTuVi(dbDuongSo),
           tier: allowedTier,
         };
       }
@@ -402,20 +446,28 @@ export async function POST(req: NextRequest) {
     }
 
     let savedToDb = false;
+    let persistedPaidEditCount = currentPaidEditCount;
     if (safeChartId && canPersistToChart && existingChart && result.text) {
       try {
-        const existingTier = String(
-          existingChart.duong_so_data?.tier || existingChart.laso_data?.tier || 'free'
-        );
-        const tierRank: Record<string, number> = { free: 0, pro: 1, expert: 2 };
         const persistedTier =
-          (tierRank[allowedTier] ?? 0) >= (tierRank[existingTier] ?? 0)
+          (tierRank[allowedTier] ?? 0) >= (tierRank[existingDbTier] ?? 0)
             ? allowedTier
-            : existingTier;
+            : existingDbTier;
+
+        // Nếu nâng cấp lên gói mới hoặc luận lần đầu sau khi thanh toán -> paidEditCount = 0; nếu luận lại cùng gói trả phí -> tăng thêm 1
+        persistedPaidEditCount =
+          allowedTier === 'free'
+            ? currentPaidEditCount
+            : isUpgradeOrFirstPaidGeneration
+            ? 0
+            : currentPaidEditCount + 1;
 
         const updatedDuongSo = existingChart.duong_so_data
           ? {
               ...existingChart.duong_so_data,
+              ...(effectiveLaSo.duongSo?.gioSinhVal
+                ? { gioSinhVal: effectiveLaSo.duongSo.gioSinhVal }
+                : {}),
               tier: persistedTier,
               ...(safeAnhMat ? { anhMat: safeAnhMat } : {}),
               ...(safeAnhTay ? { anhTay: safeAnhTay } : {}),
@@ -425,20 +477,20 @@ export async function POST(req: NextRequest) {
               ...(resolvedCountryCode ? { countryCode: resolvedCountryCode } : {}),
             }
           : undefined;
-        const updatedLaSo = existingChart.laso_data
-          ? {
-              ...existingChart.laso_data,
-              tier: persistedTier,
-              needsReadingUpgrade: false,
-            }
-          : undefined;
+        const updatedLaSo = {
+          ...(existingChart.laso_data || {}),
+          ...effectiveLaSo,
+          tier: persistedTier,
+          needsReadingUpgrade: false,
+          paidEditCount: persistedPaidEditCount,
+        };
 
         await adminSupabase
           .from('tuvi_charts')
           .update({
             reading_html: result.text,
             ...(updatedDuongSo ? { duong_so_data: updatedDuongSo } : {}),
-            ...(updatedLaSo ? { laso_data: updatedLaSo } : {}),
+            laso_data: updatedLaSo,
             updated_at: new Date().toISOString(),
           })
           .eq('id', safeChartId);
@@ -452,6 +504,7 @@ export async function POST(req: NextRequest) {
       reading: result.text,
       savedToDb,
       modelUsed: result.modelUsed,
+      paidEditCount: persistedPaidEditCount,
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Lỗi máy chủ nội bộ';
