@@ -743,34 +743,44 @@ export default function LuanGiaiAI({
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 pt-1">
-                {onUpgrade && (
-                  <button
-                    type="button"
-                    onClick={onUpgrade}
-                    className="flex-1 sm:flex-initial px-5 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
-                  >
-                    <Crown className="w-4 h-4" />
-                    <span>
-                      {hasFreeVoucher && activeVoucher
-                        ? `⚡ Mở Bản VIP Pro: ${activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
-                        : '⚡ Mở Bản VIP Pro — 119.000đ (+02 Câu Hỏi)'}
-                    </span>
-                  </button>
-                )}
+              <div className="space-y-3 pt-1">
                 {onUpgradeToExpert && (
                   <button
                     type="button"
                     onClick={onUpgradeToExpert}
-                    className="flex-1 sm:flex-initial px-5 py-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-extrabold rounded-xl text-sm shadow-md transition whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full px-5 py-3.5 bg-gradient-to-r from-purple-700 via-fuchsia-600 to-amber-500 hover:from-purple-600 hover:to-amber-400 text-white font-extrabold rounded-xl text-sm sm:text-base shadow-lg shadow-purple-500/25 transition cursor-pointer flex flex-col sm:flex-row items-center justify-center gap-1.5 ring-2 ring-amber-300/80"
                   >
-                    <Gem className="w-4 h-4" />
-                    <span>
-                      {hasFreeVoucher && activeVoucher
-                        ? `💎 Mở Bản Expert 12 Cung: ${activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
-                        : '💎 Mở Bản Expert 12 Cung — 269.000đ (+12 Tháng)'}
+                    <span className="inline-flex items-center gap-1.5">
+                      <Gem className="w-4 h-4 shrink-0" />
+                      <span>
+                        {hasFreeVoucher && activeVoucher
+                          ? `💎 Mở Bản Expert 12 Cung (Khuyên Dùng): ${activeVoucher.prices.reading_expert.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
+                          : '💎 Mở Bản Expert 12 Cung (Khuyên Dùng) — 269.000đ'}
+                      </span>
+                    </span>
+                    <span className="text-[11px] font-bold bg-black/25 text-amber-200 px-2.5 py-0.5 rounded-full">
+                      Đủ 12 Cung + 12 Tháng + 02 Câu Hỏi + Trừ 269k xem 1-1
                     </span>
                   </button>
+                )}
+                {onUpgrade && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={onUpgrade}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-amber-50 text-amber-950 border border-amber-400/90 font-bold rounded-xl text-xs sm:text-sm shadow-xs transition whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Crown className="w-3.5 h-3.5 text-amber-600" />
+                      <span>
+                        {hasFreeVoucher && activeVoucher
+                          ? `Hoặc Bản VIP Pro (4 Mùa): ${activeVoucher.prices.reading_vip.toLocaleString('vi-VN')}đ (-${activeVoucher.discountPercent}%)`
+                          : 'Hoặc Bản VIP Pro (Tứ Trụ & 4 Mùa) — 119.000đ'}
+                      </span>
+                    </button>
+                    <span className="text-[11px] text-slate-600 font-medium">
+                      ✓ Mở khóa tự động sau 5 giây quét VietQR • Lưu trọn đời
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

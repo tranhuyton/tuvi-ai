@@ -6,6 +6,8 @@ const CAPI_META_PREFIX = 'capi:';
 export interface OrderCapiMeta {
   fbp?: string;
   fbc?: string;
+  utmSource?: string;
+  utmCampaign?: string;
   gaCid?: string;
   gaSessionId?: string;
   ip?: string;

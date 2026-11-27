@@ -423,14 +423,35 @@ export async function POST(req: Request) {
       }
     }
 
-    const capiMeta = extractRequestCapiMeta(req, {
-      fbp: typeof body.fbp === 'string' ? body.fbp : undefined,
-      fbc: typeof body.fbc === 'string' ? body.fbc : undefined,
+    const savedUserMetaAttr = (verifiedAuthUser.user_metadata?.tuvi_meta_attr || {}) as Record<
+      string,
+      unknown
+    >;
+    const rawCapiMeta = extractRequestCapiMeta(req, {
+      fbp:
+        (typeof body.fbp === 'string' && body.fbp.trim()) ||
+        (typeof savedUserMetaAttr.fbp === 'string' ? savedUserMetaAttr.fbp : undefined),
+      fbc:
+        (typeof body.fbc === 'string' && body.fbc.trim()) ||
+        (typeof savedUserMetaAttr.fbc === 'string' ? savedUserMetaAttr.fbc : undefined),
       fbclid: typeof body.fbclid === 'string' ? body.fbclid : undefined,
       gaCid: typeof body.gaCid === 'string' ? body.gaCid : undefined,
       gaSessionId: typeof body.gaSessionId === 'string' ? body.gaSessionId : undefined,
       sourceUrl: typeof body.sourceUrl === 'string' ? body.sourceUrl : undefined,
     });
+    const capiMeta = {
+      ...rawCapiMeta,
+      ...(typeof body.utmSource === 'string' && body.utmSource.trim()
+        ? { utmSource: body.utmSource.trim().slice(0, 80) }
+        : typeof savedUserMetaAttr.utmSource === 'string'
+        ? { utmSource: savedUserMetaAttr.utmSource }
+        : {}),
+      ...(typeof body.utmCampaign === 'string' && body.utmCampaign.trim()
+        ? { utmCampaign: body.utmCampaign.trim().slice(0, 120) }
+        : typeof savedUserMetaAttr.utmCampaign === 'string'
+        ? { utmCampaign: savedUserMetaAttr.utmCampaign }
+        : {}),
+    };
 
     // Helper ẩn PII nếu caller không có JWT (luồng voucher xuyên trình duyệt)
     const sanitizeOrderForResponse = <T extends { email?: string; userId?: string }>(ord: T): T =>

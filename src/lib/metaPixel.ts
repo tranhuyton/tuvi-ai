@@ -174,19 +174,31 @@ export function getBrowserMetaAttribution(): {
   fbp?: string;
   fbc?: string;
   fbclid?: string;
+  utmSource?: string;
+  utmCampaign?: string;
+  utmContent?: string;
   gaCid?: string;
   gaSessionId?: string;
   sourceUrl?: string;
 } {
   if (typeof window === 'undefined') return {};
   try {
-    const fbp = readBrowserCookie('_fbp');
+    const cookieFbp = readBrowserCookie('_fbp');
+    let storedFbp: string | undefined;
     const gaCid = getBrowserGaClientId();
     const gaSessionId = getBrowserGaSessionId();
     let fbclid: string | undefined;
     let storedFbc: string | undefined;
+    let utmSource: string | undefined;
+    let utmCampaign: string | undefined;
+    let utmContent: string | undefined;
     try {
       const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+      if (cookieFbp) {
+        localStorage.setItem('tuvi_fbp', cookieFbp);
+      } else {
+        storedFbp = localStorage.getItem('tuvi_fbp') || undefined;
+      }
       const savedTs = Number(localStorage.getItem('tuvi_fbc_ts') || '0');
       const isFbcExpired = Boolean(savedTs && Date.now() - savedTs > NINETY_DAYS_MS);
       if (isFbcExpired) {
@@ -195,17 +207,41 @@ export function getBrowserMetaAttribution(): {
         localStorage.removeItem('tuvi_fbc_ts');
       }
       const params = new URLSearchParams(window.location.search);
-      fbclid = params.get('fbclid') || (!isFbcExpired ? localStorage.getItem('tuvi_fbclid') || undefined : undefined);
-      storedFbc = !isFbcExpired ? localStorage.getItem('tuvi_fbc') || undefined : undefined;
+      const urlClid = params.get('fbclid');
+      if (urlClid) {
+        const now = Date.now();
+        const generatedFbc = `fb.1.${now}.${urlClid}`;
+        localStorage.setItem('tuvi_fbclid', urlClid);
+        localStorage.setItem('tuvi_fbc', generatedFbc);
+        localStorage.setItem('tuvi_fbc_ts', String(now));
+        const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `_fbc=${encodeURIComponent(generatedFbc)}; path=/; max-age=${90 * 24 * 60 * 60}; SameSite=Lax${secureFlag}`;
+        fbclid = urlClid;
+        storedFbc = generatedFbc;
+      } else {
+        fbclid = !isFbcExpired ? localStorage.getItem('tuvi_fbclid') || undefined : undefined;
+        storedFbc = !isFbcExpired ? localStorage.getItem('tuvi_fbc') || undefined : undefined;
+      }
+      const utmTs = Number(localStorage.getItem('tuvi_utm_ts') || '0');
+      const isUtmExpired = Boolean(utmTs && Date.now() - utmTs > NINETY_DAYS_MS);
+      if (!isUtmExpired) {
+        utmSource = params.get('utm_source') || localStorage.getItem('tuvi_utm_source') || undefined;
+        utmCampaign = params.get('utm_campaign') || localStorage.getItem('tuvi_utm_campaign') || undefined;
+        utmContent = params.get('utm_content') || localStorage.getItem('tuvi_utm_content') || undefined;
+      }
     } catch {
       // ignore
     }
+    const fbp = cookieFbp || storedFbp;
     const fbc = readBrowserCookie('_fbc') || storedFbc;
 
     return {
       fbp,
       fbc,
       fbclid,
+      utmSource,
+      utmCampaign,
+      utmContent,
       gaCid,
       gaSessionId,
       sourceUrl: window.location.href,

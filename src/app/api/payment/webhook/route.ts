@@ -462,6 +462,7 @@ export async function POST(req: Request) {
       let ga4Sent = false;
       let resolvedEmail: string | null = order.email || null;
       let resolvedPhone: string | null = null;
+      let enrichedCapiMeta = savedCapiMeta ? { ...savedCapiMeta } : undefined;
       try {
         if (order.userId) {
           const [userRes, profRes] = await Promise.all([
@@ -481,6 +482,19 @@ export async function POST(req: Request) {
               authUser.user_metadata?.so_dien_thoai ||
               authUser.user_metadata?.phoneNumber;
             if (metaPhone && typeof metaPhone === 'string') resolvedPhone = metaPhone;
+            // Khôi phục fbc/fbp xuyên trình duyệt từ user_metadata nếu đơn tạo lúc mất cookie (VD mở từ Email Drip)
+            const storedAttr = authUser.user_metadata?.tuvi_meta_attr as Record<string, unknown> | undefined;
+            if (storedAttr && typeof storedAttr === 'object') {
+              const fallbackFbc = typeof storedAttr.fbc === 'string' ? storedAttr.fbc : undefined;
+              const fallbackFbp = typeof storedAttr.fbp === 'string' ? storedAttr.fbp : undefined;
+              if ((!enrichedCapiMeta?.fbc && fallbackFbc) || (!enrichedCapiMeta?.fbp && fallbackFbp)) {
+                enrichedCapiMeta = {
+                  ...(enrichedCapiMeta || {}),
+                  ...(fallbackFbc && !enrichedCapiMeta?.fbc ? { fbc: fallbackFbc } : {}),
+                  ...(fallbackFbp && !enrichedCapiMeta?.fbp ? { fbp: fallbackFbp } : {}),
+                };
+              }
+            }
           }
           if (!resolvedPhone && profRes?.data?.phone) {
             resolvedPhone = String(profRes.data.phone);
@@ -499,7 +513,7 @@ export async function POST(req: Request) {
             phone: resolvedPhone,
             fullName: order.hoTen,
             userId: order.userId,
-            meta: savedCapiMeta,
+            meta: enrichedCapiMeta,
           }),
           sendGa4ServerPurchase({
             orderCode: order.orderCode,

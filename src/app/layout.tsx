@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: '%s | Thầy Tôn',
   },
   description:
-    'Lập lá số tử vi miễn phí, nhận bình giải ~1.000 từ về Mệnh, Tài, Quan, Đại vận. Nâng cấp bản chuyên sâu chỉ trả phần chênh lệch, từ 119.000đ.',
+    'Lập lá số tử vi miễn phí chuẩn 108 sao, nhận bình giải tổng quan sắc bén về Mệnh, Tài, Quan, Vận hạn 2026–2027. Nâng cấp bản Chuyên Gia 12 Cung chỉ từ 119.000đ.',
   keywords: [
     'tử vi thầy tôn',
     'phong thủy thầy tôn',
@@ -184,7 +184,23 @@ document.head.appendChild(s);
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){
-try{var p=new URLSearchParams(window.location.search),clid=p.get('fbclid');if(clid){var now=Date.now();localStorage.setItem('tuvi_fbclid',clid);localStorage.setItem('tuvi_fbc','fb.1.'+now+'.'+clid);localStorage.setItem('tuvi_fbc_ts',String(now));}}catch(e){}
+try{
+  var p=new URLSearchParams(window.location.search),clid=p.get('fbclid'),now=Date.now(),maxAge=90*24*60*60;
+  var secureFlag=window.location.protocol==='https:'?'; Secure':'';
+  if(clid){
+    var fbcVal='fb.1.'+now+'.'+clid;
+    localStorage.setItem('tuvi_fbclid',clid);
+    localStorage.setItem('tuvi_fbc',fbcVal);
+    localStorage.setItem('tuvi_fbc_ts',String(now));
+    document.cookie='_fbc='+encodeURIComponent(fbcVal)+'; path=/; max-age='+maxAge+'; SameSite=Lax'+secureFlag;
+  }
+  ['utm_source','utm_medium','utm_campaign','utm_content'].forEach(function(k){
+    var v=p.get(k);
+    if(v){localStorage.setItem('tuvi_'+k,v.slice(0,120));localStorage.setItem('tuvi_utm_ts',String(now));}
+  });
+  var mFbp=document.cookie.match(/(?:^|;\\s*)_fbp=([^;]+)/);
+  if(mFbp&&mFbp[1]){localStorage.setItem('tuvi_fbp',decodeURIComponent(mFbp[1]));}
+}catch(e){}
 var h = window.location.hostname;
 var path = window.location.pathname || '';
 var isProd = h !== 'localhost' && h !== '127.0.0.1' && !h.endsWith('.vercel.app') && !path.startsWith('/admin');
